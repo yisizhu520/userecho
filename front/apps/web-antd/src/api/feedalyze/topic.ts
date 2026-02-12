@@ -84,35 +84,35 @@ export interface UpdateTopicStatusParams {
  * 获取主题列表
  */
 export async function getTopicList(params: TopicListParams) {
-  return requestClient.get<Topic[]>('/feedalyze/topics', { params });
+  return requestClient.get<Topic[]>('/app/topics', { params });
 }
 
 /**
  * 获取主题详情
  */
 export async function getTopicDetail(id: string) {
-  return requestClient.get<TopicDetail>(`/feedalyze/topics/${id}`);
+  return requestClient.get<TopicDetail>(`/app/topics/${id}`);
 }
 
 /**
  * 创建主题
  */
 export async function createTopic(data: CreateTopicParams) {
-  return requestClient.post<Topic>('/feedalyze/topics', data);
+  return requestClient.post<Topic>('/app/topics', data);
 }
 
 /**
  * 更新主题
  */
 export async function updateTopic(id: string, data: UpdateTopicParams) {
-  return requestClient.put<Topic>(`/feedalyze/topics/${id}`, data);
+  return requestClient.put<Topic>(`/app/topics/${id}`, data);
 }
 
 /**
  * 更新主题状态
  */
 export async function updateTopicStatus(id: string, data: UpdateTopicStatusParams) {
-  return requestClient.patch<Topic>(`/feedalyze/topics/${id}/status`, data);
+  return requestClient.put<Topic>(`/app/topics/${id}/status`, data);
 }
 
 /** 主题分类选项 */

@@ -70,28 +70,28 @@ export interface ImportResult {
  * 获取反馈列表
  */
 export async function getFeedbackList(params: FeedbackListParams) {
-  return requestClient.get<Feedback[]>('/feedalyze/feedbacks', { params });
+  return requestClient.get<Feedback[]>('/app/feedbacks', { params });
 }
 
 /**
  * 创建反馈
  */
 export async function createFeedback(data: CreateFeedbackParams) {
-  return requestClient.post<Feedback>('/feedalyze/feedbacks', data);
+  return requestClient.post<Feedback>('/app/feedbacks', data);
 }
 
 /**
  * 更新反馈
  */
 export async function updateFeedback(id: string, data: UpdateFeedbackParams) {
-  return requestClient.put<Feedback>(`/feedalyze/feedbacks/${id}`, data);
+  return requestClient.put<Feedback>(`/app/feedbacks/${id}`, data);
 }
 
 /**
  * 删除反馈
  */
 export async function deleteFeedback(id: string) {
-  return requestClient.delete(`/feedalyze/feedbacks/${id}`);
+  return requestClient.delete(`/app/feedbacks/${id}`);
 }
 
 /**
@@ -100,7 +100,7 @@ export async function deleteFeedback(id: string) {
 export async function importFeedbacks(file: File) {
   const formData = new FormData();
   formData.append('file', file);
-  return requestClient.post<ImportResult>('/feedalyze/feedbacks/import', formData, {
+  return requestClient.post<ImportResult>('/app/feedbacks/import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -111,5 +111,5 @@ export async function importFeedbacks(file: File) {
  * 下载导入模板
  */
 export function downloadImportTemplate() {
-  window.open('/api/v1/feedalyze/feedbacks/import/template', '_blank');
+  window.open('/api/v1/app/feedbacks/import/template', '_blank');
 }

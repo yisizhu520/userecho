@@ -11,8 +11,8 @@ from backend.app.feedalyze.api.v1 import (
 )
 from backend.core.conf import settings
 
-# 创建 v1 路由
-v1 = APIRouter(prefix=f'{settings.FASTAPI_API_V1_PATH}/feedalyze')
+# 创建 v1 路由 - 使用 /app 前缀（业务功能区）
+v1 = APIRouter(prefix=f'{settings.FASTAPI_API_V1_PATH}/app', tags=['Business'])
 
 # 注册所有子路由
 v1.include_router(feedback.router)

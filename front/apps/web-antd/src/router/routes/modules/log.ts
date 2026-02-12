@@ -5,7 +5,7 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     name: 'Log',
-    path: '/log',
+    path: '/admin/log',
     meta: {
       title: $t('page.menu.log'),
       icon: 'carbon:cloud-logging',
@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         name: 'LoginLog',
-        path: '/log/login',
+        path: '/admin/log/login',
         component: () => import('#/views/log/login/index.vue'),
         meta: {
           title: $t('page.menu.login'),
@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'OperaLog',
-        path: '/log/opera',
+        path: '/admin/log/opera',
         component: () => import('#/views/log/opera/index.vue'),
         meta: {
           title: $t('page.menu.opera'),

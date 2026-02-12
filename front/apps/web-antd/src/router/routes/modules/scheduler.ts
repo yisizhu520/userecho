@@ -5,15 +5,16 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     name: 'Scheduler',
-    path: '/scheduler',
+    path: '/admin/scheduler',
     meta: {
       title: $t('page.menu.scheduler'),
       icon: 'ix:scheduler',
+      order: 5,
     },
     children: [
       {
         name: 'SchedulerManage',
-        path: '/scheduler/manage',
+        path: '/admin/scheduler/manage',
         component: () => import('#/views/scheduler/manage/index.vue'),
         meta: {
           title: $t('page.menu.schedulerManage'),
@@ -22,7 +23,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'SchedulerRecord',
-        path: '/scheduler/record',
+        path: '/admin/scheduler/record',
         component: () => import('#/views/scheduler/record/index.vue'),
         meta: {
           title: $t('page.menu.schedulerRecord'),

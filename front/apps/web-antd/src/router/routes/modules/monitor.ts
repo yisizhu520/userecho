@@ -5,7 +5,7 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     name: 'Monitor',
-    path: '/monitor',
+    path: '/admin/monitor',
     meta: {
       title: $t('page.menu.monitor'),
       icon: 'mdi:monitor-eye',
@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         name: 'Online',
-        path: '/monitor/online',
+        path: '/admin/monitor/online',
         component: () => import('#/views/monitor/online/index.vue'),
         meta: {
           title: $t('page.menu.online'),
@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'Redis',
-        path: '/monitor/redis',
+        path: '/admin/monitor/redis',
         component: () => import('#/views/monitor/redis/index.vue'),
         meta: {
           title: $t('page.menu.redis'),
@@ -32,7 +32,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'Server',
-        path: '/monitor/server',
+        path: '/admin/monitor/server',
         component: () => import('#/views/monitor/server/index.vue'),
         meta: {
           title: $t('page.menu.server'),

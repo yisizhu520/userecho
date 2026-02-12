@@ -4,58 +4,57 @@ import { $t } from '#/locales';
 
 const routes: RouteRecordRaw[] = [
   {
-    name: 'Feedalyze',
-    path: '/feedalyze',
     meta: {
-      title: $t('page.menu.feedalyze'),
       icon: 'lucide:messages-square',
       order: 0,
+      title: $t('page.feedalyze.title'),
     },
+    name: 'Feedalyze',
+    path: '/app/feedalyze',
     children: [
       {
         name: 'FeedbackList',
-        path: '/feedalyze/feedback/list',
+        path: '/app/feedback/list',
         component: () => import('#/views/feedalyze/feedback/list.vue'),
         meta: {
-          title: $t('page.menu.feedbackList'),
           icon: 'lucide:inbox',
+          title: $t('page.feedalyze.feedback.list'),
         },
       },
       {
         name: 'FeedbackImport',
-        path: '/feedalyze/feedback/import',
+        path: '/app/feedback/import',
         component: () => import('#/views/feedalyze/feedback/import.vue'),
         meta: {
-          title: $t('page.menu.feedbackImport'),
           icon: 'lucide:upload',
+          title: $t('page.feedalyze.feedback.import'),
         },
       },
       {
         name: 'TopicList',
-        path: '/feedalyze/topic/list',
+        path: '/app/topic/list',
         component: () => import('#/views/feedalyze/topic/list.vue'),
         meta: {
-          title: $t('page.menu.topicList'),
           icon: 'lucide:lightbulb',
+          title: $t('page.feedalyze.topic.list'),
         },
       },
       {
         name: 'TopicDetail',
-        path: '/feedalyze/topic/detail/:id',
+        path: '/app/topic/detail/:id',
         component: () => import('#/views/feedalyze/topic/detail.vue'),
         meta: {
           hideInMenu: true,
-          title: $t('page.menu.topicDetail'),
-          icon: 'lucide:file-text',
+          title: $t('page.feedalyze.topic.detail'),
         },
       },
       {
         name: 'CustomerManage',
-        path: '/feedalyze/customer',
+        path: '/app/customer',
         component: () => import('#/views/feedalyze/customer/index.vue'),
         meta: {
-          title: $t('page.menu.customerManage'),
           icon: 'lucide:users',
+          title: $t('page.feedalyze.customer.title'),
         },
       },
     ],

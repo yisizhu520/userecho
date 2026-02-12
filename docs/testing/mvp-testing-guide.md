@@ -167,7 +167,7 @@ source .venv/Scripts/activate  # Windows Git Bash
 # 或 source .venv/bin/activate   # Linux/macOS
 
 # 2. 检查依赖是否完整（可选，首次运行推荐）
-python check_dependencies.py
+source .venv/Scripts/activate && python check_dependencies.py
 # 预期输出: ✅ 所有第三方依赖都已正确声明!
 
 # 3. 检查数据库连接
@@ -182,7 +182,7 @@ python -c "from backend.core.conf import settings; print(f'AI Provider: {setting
 python -c "from backend.core.conf import settings; key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY or settings.GLM_API_KEY; print(f'API Key: {key[:10]}...{key[-4:]}' if key else 'NOT SET')"
 
 # 6. 启动后端服务（确保在 server 目录下）
-python -m backend.run
+source .venv/Scripts/activate && python -m backend.run
 # 预期输出: 
 #   INFO: Uvicorn running on http://127.0.0.1:8000
 #   INFO: Application startup complete

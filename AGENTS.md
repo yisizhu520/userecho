@@ -148,7 +148,7 @@
 
 
 ## Rule
-
+- 执行 python 脚本，需要激活虚拟环境：cd server && source .venv/Scripts/activate
 - 永远都用中文回复我
 - 文档放 docs 目录下
 - 中文不要出现乱码

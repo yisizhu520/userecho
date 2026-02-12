@@ -5,7 +5,7 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     name: 'System',
-    path: '/system',
+    path: '/admin/system',
     meta: {
       title: $t('page.menu.system'),
       icon: 'grommet-icons:system',
@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         name: 'SysDept',
-        path: '/system/dept',
+        path: '/admin/system/dept',
         component: () => import('#/views/system/dept/index.vue'),
         meta: {
           title: $t('page.menu.sysDept'),
@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'SysUser',
-        path: '/system/user',
+        path: '/admin/system/user',
         component: () => import('#/views/system/user/index.vue'),
         meta: {
           title: $t('page.menu.sysUser'),
@@ -32,7 +32,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'SysRole',
-        path: '/system/role',
+        path: '/admin/system/role',
         component: () => import('#/views/system/role/index.vue'),
         meta: {
           title: $t('page.menu.sysRole'),
@@ -41,7 +41,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'SysMenu',
-        path: '/system/menu',
+        path: '/admin/system/menu',
         component: () => import('#/views/system/menu/index.vue'),
         meta: {
           title: $t('page.menu.sysMenu'),
@@ -50,7 +50,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'SysDataPermission',
-        path: '/system/data-permission',
+        path: '/admin/system/data-permission',
         meta: {
           title: $t('page.menu.sysDataPermission'),
           icon: 'icon-park-outline:permissions',
@@ -58,7 +58,7 @@ const routes: RouteRecordRaw[] = [
         children: [
           {
             name: 'SysDataScope',
-            path: '/system/data-scope',
+            path: '/admin/system/data-scope',
             component: () =>
               import('#/views/system/data-permission/scope/index.vue'),
             meta: {
@@ -68,7 +68,7 @@ const routes: RouteRecordRaw[] = [
           },
           {
             name: 'SysDataRule',
-            path: '/system/data-rule',
+            path: '/admin/system/data-rule',
             component: () =>
               import('#/views/system/data-permission/rule/index.vue'),
             meta: {
@@ -80,7 +80,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         name: 'SysPlugin',
-        path: '/system/plugin',
+        path: '/admin/system/plugin',
         component: () => import('#/views/system/plugin/index.vue'),
         meta: {
           title: $t('page.menu.sysPlugin'),
