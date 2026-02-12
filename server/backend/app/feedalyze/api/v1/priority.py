@@ -6,21 +6,17 @@ from backend.app.feedalyze.schema.priority import PriorityScoreCreate
 from backend.app.feedalyze.service import priority_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
+from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/priority', tags=['Feedalyze - 优先级评分'])
-
-
-def get_current_tenant_id() -> str:
-    """获取当前租户ID"""
-    return 'default-tenant'
 
 
 @router.post('/score', summary='创建/更新优先级评分')
 async def create_or_update_priority_score(
     data: PriorityScoreCreate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """
     创建或更新优先级评分
@@ -44,7 +40,7 @@ async def create_or_update_priority_score(
 @router.get('/ranking', summary='获取优先级排行榜')
 async def get_priority_ranking(
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     limit: int = 50,
 ):
     """

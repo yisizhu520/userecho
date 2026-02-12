@@ -6,20 +6,16 @@ from backend.app.feedalyze.schema.customer import CustomerCreate, CustomerOut, C
 from backend.app.feedalyze.service import customer_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
+from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/customers', tags=['Feedalyze - 客户管理'])
 
 
-def get_current_tenant_id() -> str:
-    """获取当前租户ID"""
-    return 'default-tenant'
-
-
 @router.get('', summary='获取客户列表')
 async def get_customers(
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     skip: int = 0,
     limit: int = 100,
 ):
@@ -37,7 +33,7 @@ async def get_customers(
 async def create_customer(
     data: CustomerCreate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """
     创建客户
@@ -59,7 +55,7 @@ async def update_customer(
     customer_id: str,
     data: CustomerUpdate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """更新客户"""
     customer = await customer_service.update_customer(
@@ -77,7 +73,7 @@ async def update_customer(
 async def delete_customer(
     customer_id: str,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """删除客户（软删除）"""
     success = await customer_service.delete_customer(

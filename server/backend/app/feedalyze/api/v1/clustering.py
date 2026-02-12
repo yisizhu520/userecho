@@ -5,20 +5,16 @@ from fastapi import APIRouter, Depends
 from backend.app.feedalyze.service import clustering_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
+from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/clustering', tags=['Feedalyze - AI聚类'])
 
 
-def get_current_tenant_id() -> str:
-    """获取当前租户ID"""
-    return 'default-tenant'
-
-
 @router.post('/trigger', summary='触发聚类任务')
 async def trigger_clustering(
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     max_feedbacks: int = 100,
 ):
     """
@@ -54,7 +50,7 @@ async def trigger_clustering(
 async def get_clustering_suggestions(
     feedback_id: str,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     top_k: int = 5,
 ):
     """

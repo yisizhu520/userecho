@@ -72,11 +72,16 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        return await getFeedbackList({
+        const data = await getFeedbackList({
           skip: (page.currentPage - 1) * page.pageSize,
           limit: page.pageSize,
           ...formValues,
         });
+        // vxe-table 期望的返回格式（根据全局 response 配置）
+        return {
+          items: data,           // 数据数组
+          total: data.length,    // 当前查询到的记录数（临时方案，理想情况下应该由后端返回总数）
+        };
       },
     },
   },

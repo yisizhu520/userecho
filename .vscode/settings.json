@@ -9,5 +9,16 @@
     "**/.venv/**": true,
     "**/__pycache__/**": true,
     "**/log/**": true
-  }
+  },
+  "i18n-ally.localesPaths": [
+    "server/backend/locale",
+    "front/packages/locales",
+    "front/apps/web-antd/src/locales",
+    "front/packages/locales/src/langs",
+    "front/apps/web-antd/src/locales/langs",
+    "front/apps/web-antd/src/plugins/config/langs",
+    "front/apps/web-antd/src/plugins/dict/langs",
+    "front/apps/web-antd/src/plugins/code_generator/langs",
+    "front/apps/web-antd/src/plugins/notice/langs"
+  ]
 }

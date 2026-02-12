@@ -20,6 +20,7 @@ class TypedContextProtocol(Protocol):
 
     permission: str | None
     language: str
+    tenant_id: str | None
 
 
 class TypedContext(TypedContextProtocol, _Context):

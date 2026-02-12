@@ -96,7 +96,7 @@ class Settings(BaseSettings):
     USER_PASSWORD_REQUIRE_SPECIAL_CHAR: bool = False
 
     # 登录
-    LOGIN_CAPTCHA_ENABLED: bool = True
+    LOGIN_CAPTCHA_ENABLED: bool = False
     LOGIN_CAPTCHA_REDIS_PREFIX: str = 'fba:login:captcha'
     LOGIN_CAPTCHA_EXPIRE_SECONDS: int = 60 * 5  # 5 分钟
     LOGIN_FAILURE_PREFIX: str = 'fba:login:failure'

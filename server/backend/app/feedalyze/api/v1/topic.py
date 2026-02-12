@@ -12,14 +12,10 @@ from backend.app.feedalyze.schema.topic import (
 from backend.app.feedalyze.service import topic_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
+from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/topics', tags=['Feedalyze - 需求主题'])
-
-
-def get_current_tenant_id() -> str:
-    """获取当前租户ID"""
-    return 'default-tenant'
 
 
 def get_current_user_id() -> int:
@@ -31,7 +27,7 @@ def get_current_user_id() -> int:
 @router.get('', summary='获取主题列表')
 async def get_topics(
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     skip: int = 0,
     limit: int = 100,
     status: str | None = None,
@@ -64,7 +60,7 @@ async def get_topics(
 async def get_topic_detail(
     topic_id: str,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     current_user_id: int = Depends(get_current_user_id),
 ):
     """
@@ -87,7 +83,7 @@ async def get_topic_detail(
 async def create_topic(
     data: TopicCreate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """创建主题（手动创建）"""
     topic = await topic_service.create_topic(
@@ -103,7 +99,7 @@ async def update_topic(
     topic_id: str,
     data: TopicUpdate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """更新主题"""
     topic = await topic_service.update_topic(
@@ -122,7 +118,7 @@ async def update_topic_status(
     topic_id: str,
     data: TopicStatusUpdateParam,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     current_user_id: int = Depends(get_current_user_id),
 ):
     """

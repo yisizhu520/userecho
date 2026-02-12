@@ -118,10 +118,15 @@ const gridOptions: VxeTableGridOptions<Customer> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
-        return await getCustomerList({
+        const data = await getCustomerList({
           skip: (page.currentPage - 1) * page.pageSize,
           limit: page.pageSize,
         });
+        // vxe-table 期望的返回格式（根据全局 response 配置）
+        return {
+          items: data,           // 数据数组
+          total: data.length,    // 当前查询到的记录数
+        };
       },
     },
   },

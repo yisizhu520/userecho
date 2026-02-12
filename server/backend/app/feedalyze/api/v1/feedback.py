@@ -14,23 +14,16 @@ from backend.app.feedalyze.schema.feedback import (
 from backend.app.feedalyze.service import feedback_service, import_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
+from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/feedbacks', tags=['Feedalyze - 反馈管理'])
 
 
-def get_current_tenant_id() -> str:
-    """
-    获取当前租户ID
-    TODO: 从 JWT token 中提取，暂时返回默认值
-    """
-    return 'default-tenant'
-
-
 @router.get('', summary='获取反馈列表')
 async def get_feedbacks(
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     skip: int = 0,
     limit: int = 100,
     topic_id: str | None = None,
@@ -63,7 +56,7 @@ async def get_feedbacks(
 async def create_feedback(
     data: FeedbackCreate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """创建反馈（自动生成 AI 摘要）"""
     feedback = await feedback_service.create_with_ai_processing(
@@ -80,7 +73,7 @@ async def update_feedback(
     feedback_id: str,
     data: FeedbackUpdate,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """更新反馈"""
     feedback = await feedback_service.update_feedback(
@@ -98,7 +91,7 @@ async def update_feedback(
 async def delete_feedback(
     feedback_id: str,
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """删除反馈（软删除）"""
     success = await feedback_service.delete_feedback(
@@ -115,7 +108,7 @@ async def delete_feedback(
 async def import_feedbacks(
     db: CurrentSession,
     file: UploadFile = File(...),
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
 ):
     """
     导入 Excel 文件
@@ -192,7 +185,7 @@ async def download_template():
 @router.post('/batch-generate-summary', summary='批量生成 AI 摘要')
 async def batch_generate_summary(
     db: CurrentSession,
-    tenant_id: str = Depends(get_current_tenant_id),
+    tenant_id: str = CurrentTenantId,
     limit: int = 100,
 ):
     """

@@ -83,6 +83,7 @@ class GetUserInfoDetail(UserInfoSchemaBase):
     dept_id: int | None = Field(None, description='部门 ID')
     id: int = Field(description='用户 ID')
     uuid: str = Field(description='用户 UUID')
+    tenant_id: str | None = Field(default='default-tenant', description='租户 ID')
     status: StatusType = Field(description='状态')
     is_superuser: bool = Field(description='是否超级管理员')
     is_staff: bool = Field(description='是否管理员')

@@ -264,5 +264,26 @@ async def jwt_authentication(token: str) -> GetUserInfoWithRelationDetail:
     return user
 
 
+def get_current_tenant_id() -> str:
+    """
+    从上下文获取当前租户 ID
+    
+    在 JWT 认证成功后，tenant_id 会自动注入到 ctx
+    用于多租户数据隔离
+    
+    :return: 租户 ID
+    :raises: AuthorizationError 如果租户信息缺失
+    """
+    from backend.common.context import ctx
+    
+    tenant_id = ctx.tenant_id
+    if not tenant_id:
+        raise errors.AuthorizationError(msg='租户信息缺失')
+    return tenant_id
+
+
+# 租户 ID 依赖注入
+CurrentTenantId = Depends(get_current_tenant_id)
+
 # 超级管理员鉴权依赖注入
 DependsSuperUser = Depends(superuser_verify)
