@@ -221,6 +221,24 @@ class Settings(BaseSettings):
     GRAFANA_OTLP_GRPC_ENDPOINT: str = 'fba_alloy:4317'
 
     ##################################################
+    # [ App ] feedalyze
+    ##################################################
+    # .env AI 配置
+    DEEPSEEK_API_KEY: str = ''
+    OPENAI_API_KEY: str = ''
+    
+    # AI 配置
+    AI_DEFAULT_PROVIDER: str = 'deepseek'
+    
+    # 聚类配置
+    CLUSTERING_SIMILARITY_THRESHOLD: float = 0.75
+    CLUSTERING_MIN_SAMPLES: int = 2
+    
+    # 导入配置
+    IMPORT_MAX_FILE_SIZE: int = 10485760  # 10MB
+    IMPORT_ALLOWED_EXTENSIONS: list[str] = ['.xlsx', '.xls', '.csv']
+
+    ##################################################
     # [ App ] task
     ##################################################
     # .env Redis

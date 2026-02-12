@@ -43,7 +43,7 @@ erDiagram
     TENANT ||--o{ TOPIC : contains
 
     %% 核心业务关系
-    CUSTOMER ||--o{ FEEDBACK : submits
+    CUSTOMER ||--o{ FEEDBACK : "submits (optional)"
     TOPIC ||--o{ FEEDBACK : aggregates
     TOPIC ||--|| PRIORITY_SCORE : has
     TOPIC ||--o{ STATUS_HISTORY : tracks
@@ -94,13 +94,16 @@ erDiagram
     FEEDBACK {
         string id PK "反馈ID (UUID)"
         string tenant_id FK "租户ID"
-        string customer_id FK "客户ID"
+        string customer_id FK "客户ID (可选)"
+        string anonymous_author "匿名作者名"
+        string anonymous_source "匿名来源平台"
         string topic_id FK "需求主题ID (NULL=未聚类)"
         text content "反馈内容"
-        string source "来源: manual, excel_import"
+        string source "来源: manual, excel_import, social_media"
         string ai_summary "AI生成的摘要 (20字)"
         boolean is_urgent "是否紧急"
-        json ai_metadata "AI处理元数据 (embedding等)"
+        vector embedding "pgvector向量"
+        json ai_metadata "AI处理元数据"
         timestamp submitted_at "提交时间"
         timestamp created_at
         timestamp updated_at
@@ -283,13 +286,16 @@ END;
 CREATE TABLE feedbacks (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
     tenant_id VARCHAR(36) NOT NULL,
-    customer_id VARCHAR(36) NOT NULL,
+    customer_id VARCHAR(36) NULL COMMENT '已知客户ID,匿名反馈时为NULL',
+    anonymous_author VARCHAR(100) NULL COMMENT '匿名作者名称(如"小红书用户123")',
+    anonymous_source VARCHAR(50) NULL COMMENT '匿名来源平台(xiaohongshu/zhihu/weibo等)',
     topic_id VARCHAR(36) NULL COMMENT 'NULL表示未聚类',
     content TEXT NOT NULL,
-    source ENUM('manual', 'excel_import', 'api') DEFAULT 'manual',
+    source ENUM('manual', 'excel_import', 'api', 'social_media') DEFAULT 'manual',
     ai_summary VARCHAR(50) NULL COMMENT 'AI生成的20字摘要',
     is_urgent BOOLEAN DEFAULT FALSE,
-    ai_metadata JSON NULL COMMENT '存储embedding向量和置信度',
+    embedding VECTOR(768) NULL COMMENT 'pgvector向量字段',
+    ai_metadata JSON NULL COMMENT '存储AI处理元数据',
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -301,29 +307,54 @@ CREATE TABLE feedbacks (
     INDEX idx_is_urgent (is_urgent),
     INDEX idx_submitted_at (submitted_at),
     INDEX idx_deleted_at (deleted_at),
-    FULLTEXT idx_content (content),
+    INDEX idx_anonymous_source (anonymous_source),
+    -- pgvector 向量索引
+    INDEX idx_embedding USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100),
     
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
-    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE SET NULL
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE SET NULL,
+    
+    -- 业务约束：要么有customer_id，要么有anonymous_author
+    CONSTRAINT chk_author_exists CHECK (
+        customer_id IS NOT NULL OR anonymous_author IS NOT NULL
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 **关键设计:**
-- `topic_id` 可为 NULL: 导入后未聚类的反馈
-- `ai_metadata` JSON 字段: 存储 embedding 向量和 AI 处理元数据
-  ```json
-  {
-    "embedding": [0.123, -0.456, ...],  // 768维向量
-    "model": "deepseek-v3",
-    "processed_at": "2025-12-21T10:00:00Z",
-    "confidence": 0.85
-  }
-  ```
-- `FULLTEXT` 索引: 支持中文全文搜索 (需要 ngram parser)
 
-**性能优化:**
-- 对于向量相似度搜索,考虑使用 pgvector (PostgreSQL) 或独立的向量数据库
+**1. 匿名反馈支持 (核心变更)**
+```sql
+customer_id NULL              -- 已知客户时填写
+anonymous_author VARCHAR(100) -- 匿名用户时填写（如"小红书用户夏天"）
+anonymous_source VARCHAR(50)  -- 匿名来源平台
+```
+
+**为什么这样设计？**
+- 真实场景：社交媒体、官网留言、未登录用户反馈
+- NULL 诚实地表达"没有客户记录"这个事实
+- 保留原始作者信息，便于后续分析和溯源
+- 业务约束：必须二选一（要么有客户，要么有作者名）
+
+**2. 向量存储 (pgvector)**
+- `embedding VECTOR(768)`: 直接存储在 PostgreSQL
+- 使用 IVFFlat 索引 (Inverted File with Flat quantization)
+- 相似度计算：Cosine Similarity
+
+**3. AI 元数据**
+```json
+{
+  "model": "deepseek-v3",
+  "processed_at": "2025-12-21T10:00:00Z",
+  "confidence": 0.85,
+  "cluster_candidates": ["topic-1", "topic-2"]
+}
+```
+
+**4. 外键约束优化**
+- `customer_id`: CASCADE → SET NULL (客户删除不影响反馈)
+- `topic_id`: SET NULL (主题删除后反馈变回未聚类状态)
 
 ---
 
@@ -594,30 +625,58 @@ PARTITION BY RANGE (YEAR(changed_at)) (
 );
 ```
 
-### 6.2 向量搜索优化
+### 6.2 向量搜索优化 (pgvector)
 
-**方案 A: PostgreSQL + pgvector**
+**安装 pgvector 插件**
 ```sql
--- 创建向量列 (需要 pgvector 插件)
-ALTER TABLE feedbacks 
-ADD COLUMN embedding vector(768);
+-- PostgreSQL 14+ 支持
+CREATE EXTENSION IF NOT EXISTS vector;
 
--- 创建 HNSW 索引
+-- 验证安装
+SELECT * FROM pg_extension WHERE extname = 'vector';
+```
+
+**索引策略**
+
+MVP 阶段使用 **IVFFlat** (速度快，精度够用):
+```sql
 CREATE INDEX idx_feedbacks_embedding 
-ON feedbacks USING hnsw (embedding vector_cosine_ops);
+ON feedbacks USING ivfflat (embedding vector_cosine_ops) 
+WITH (lists = 100);
+```
 
--- 相似度查询
-SELECT id, content, 1 - (embedding <=> '[0.1,0.2,...]') AS similarity
+如果数据量 > 10 万，升级为 **HNSW** (更快，内存占用高):
+```sql
+CREATE INDEX idx_feedbacks_embedding 
+ON feedbacks USING hnsw (embedding vector_cosine_ops) 
+WITH (m = 16, ef_construction = 64);
+```
+
+**相似度查询**
+```sql
+-- 查找最相似的 10 条反馈
+SELECT 
+    id, 
+    content,
+    customer_id,
+    anonymous_author,
+    1 - (embedding <=> $1::vector) AS similarity
 FROM feedbacks
-WHERE tenant_id = ?
-ORDER BY embedding <=> '[0.1,0.2,...]'
+WHERE tenant_id = $2
+    AND deleted_at IS NULL
+    AND embedding IS NOT NULL
+ORDER BY embedding <=> $1::vector
 LIMIT 10;
 ```
 
-**方案 B: 独立向量数据库 (Milvus/Qdrant)**
-- feedbacks 表只存储业务数据
-- embedding 存储在向量数据库
-- 通过 feedback_id 关联
+**性能参数**
+```sql
+-- 设置查询精度（越大越准确但越慢）
+SET ivfflat.probes = 10;  -- 默认值，适合 MVP
+
+-- 对于 HNSW 索引
+SET hnsw.ef_search = 40;  -- 默认值
+```
 
 ### 6.3 缓存策略
 
@@ -682,6 +741,7 @@ VALUES
 |----|-----|
 | `manual` | 手动录入 |
 | `excel_import` | Excel批量导入 |
+| `social_media` | 社交媒体抓取 |
 | `api` | API接口 (预留) |
 
 **需求分类 (category):**

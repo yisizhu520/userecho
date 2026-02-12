@@ -37,3 +37,4 @@ class User(Base):
 
     # 逻辑外键
     dept_id: Mapped[int | None] = mapped_column(sa.BigInteger, default=None, comment='部门关联ID')
+    tenant_id: Mapped[str | None] = mapped_column(sa.String(36), default='default-tenant', comment='租户ID')

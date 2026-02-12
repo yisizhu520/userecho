@@ -1,0 +1,74 @@
+"""聚类 API 端点"""
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.app.feedalyze.service import clustering_service
+from backend.common.response.response_schema import response_base
+from backend.database.db import CurrentSession
+
+router = APIRouter(prefix='/clustering', tags=['Feedalyze - AI聚类'])
+
+
+def get_current_tenant_id() -> str:
+    """获取当前租户ID"""
+    return 'default-tenant'
+
+
+@router.post('/trigger', summary='触发聚类任务')
+async def trigger_clustering(
+    db: CurrentSession,
+    tenant_id: str = Depends(get_current_tenant_id),
+    max_feedbacks: int = 100,
+):
+    """
+    触发 AI 聚类任务
+
+    自动聚类未聚类的反馈，生成需求主题
+
+    - **max_feedbacks**: 最多处理的反馈数量（默认100）
+
+    流程：
+    1. 获取未聚类的反馈
+    2. 提取 AI embedding 向量
+    3. 执行 DBSCAN 聚类
+    4. 为每个聚类生成主题标题
+    5. 批量更新反馈的主题关联
+    """
+    result = await clustering_service.trigger_clustering(
+        db=db,
+        tenant_id=tenant_id,
+        max_feedbacks=max_feedbacks,
+    )
+
+    if result['status'] == 'error':
+        return await response_base.fail(msg=result.get('message', '聚类失败'))
+
+    if result['status'] == 'skipped':
+        return await response_base.fail(msg=result.get('message', '聚类已跳过'))
+
+    return await response_base.success(data=result, msg='聚类完成')
+
+
+@router.get('/suggestions/{feedback_id}', summary='获取聚类建议')
+async def get_clustering_suggestions(
+    feedback_id: str,
+    db: CurrentSession,
+    tenant_id: str = Depends(get_current_tenant_id),
+    top_k: int = 5,
+):
+    """
+    获取反馈的聚类建议（查找相似反馈）
+
+    用于人工调整时参考
+
+    - **top_k**: 返回最相似的 K 个反馈（默认5个）
+    """
+    suggestions = await clustering_service.get_clustering_suggestions(
+        db=db,
+        tenant_id=tenant_id,
+        feedback_id=feedback_id,
+        top_k=top_k,
+    )
+
+    return await response_base.success(data=suggestions)
