@@ -19,34 +19,193 @@
 
 ---
 
+## 🚀 快速启动指南（5分钟）
+
+如果你已经配置好环境，只是想快速启动服务进行测试：
+
+### 后端启动
+
+```bash
+# 1. 进入 server 目录
+cd server
+
+# 2. 激活虚拟环境
+source .venv/Scripts/activate  # Windows Git Bash
+# .venv\Scripts\activate.bat   # Windows CMD
+# source .venv/bin/activate     # Linux/macOS
+
+# 3. 启动服务（注意：必须在 server 目录，不是 backend 子目录）
+source .venv/Scripts/activate && python -m backend.run
+
+# 看到以下输出表示成功（约 2-3 秒启动）：
+# INFO: Uvicorn running on http://127.0.0.1:8000
+# INFO: Application startup complete
+```
+
+**✅ 关于 Redis（已配置 Upstash）：**
+- **项目已配置 Upstash Redis**（云端托管，无需本地启动）
+- 服务器启动时会自动连接 Upstash Redis（约 2-3 秒）
+- 如需测试 Redis 连接，运行：
+  ```bash
+  cd server
+  source .venv/Scripts/activate
+  python test_upstash_redis.py
+  ```
+- 如果想切换到本地 Redis，修改 `.env` 中的 `REDIS_URL` 为空，并配置 `REDIS_HOST`
+
+### 前端启动
+
+```bash
+# 新开一个终端窗口
+cd front
+
+# 启动开发服务器
+pnpm dev:antd
+
+# 看到以下输出表示成功：
+# Local: http://localhost:5555
+```
+
+### 验证
+
+- 访问后端文档：http://localhost:8000/docs
+- 访问前端页面：http://localhost:5555
+- 登录用户名：`admin`（密码根据你的配置）
+
+**如果启动失败，请跳转到"第一部分：测试前准备"进行完整的环境检查。**
+
+---
+
 ## 第一部分：测试前准备 (15分钟)
+
+### 1.0 依赖安装（首次运行必做）
+
+在开始测试之前，必须确保所有依赖已正确安装：
+
+```bash
+# 1. 后端依赖安装
+cd server
+
+# 如果没有虚拟环境，创建一个
+# python -m venv .venv  # 或使用 uv venv
+
+# 激活虚拟环境
+source .venv/Scripts/activate  # Windows Git Bash
+# 或 .venv\Scripts\activate.bat  # Windows CMD
+# 或 source .venv/bin/activate   # Linux/macOS
+
+# 安装依赖（推荐使用 uv，更快）
+uv sync
+
+# 或使用传统 pip
+pip install -r requirements.txt
+
+# 验证依赖完整性
+python check_dependencies.py
+# 预期输出: ✅ 所有第三方依赖都已正确声明!
+
+# 2. 前端依赖安装
+cd ../front
+
+# 安装依赖
+pnpm install
+
+# 验证安装
+pnpm list vxe-table ant-design-vue
+```
+
+**依赖清单（参考）：**
+
+后端核心依赖：
+- FastAPI 生态：`fastapi`, `uvicorn`, `pydantic`
+- 数据库：`sqlalchemy`, `alembic`, `asyncpg`/`pymysql`
+- AI 功能：`openai`, `numpy`, `scikit-learn`, `pandas`
+- 其他：`pyyaml`, `python-dotenv`, `redis`, `celery`
+
+前端核心依赖：
+- Vue 生态：`vue`, `vue-router`, `pinia`
+- UI 框架：`ant-design-vue`, `vxe-table`
+- 工具库：`axios`, `dayjs`, `lodash-es`
+
+**预期结果：**
+- ✅ 后端虚拟环境已激活
+- ✅ 所有 Python 依赖已安装（无 ModuleNotFoundError）
+- ✅ 依赖检查脚本通过
+- ✅ 前端 node_modules 已生成
+- ✅ 前端依赖验证通过
+
+**故障排查：**
+```bash
+# 如果 uv sync 失败，尝试清理后重装
+cd server
+rm -rf .venv
+uv venv
+uv sync
+
+# 如果 pnpm install 失败
+cd front
+rm -rf node_modules
+rm pnpm-lock.yaml
+pnpm install
+```
+
+---
 
 ### 1.1 环境检查清单
 
 #### ✅ 后端服务检查
 
-```bash
-# 1. 检查数据库连接
-cd server/backend
-python -c "from backend.database.db import async_engine; print('Database OK')"
+**⚠️ 重要提示：**
+- 必须先激活虚拟环境
+- 必须从 `server` 目录启动（不是 `server/backend`）
 
-# 2. 检查环境变量
+```bash
+# 1. 进入 server 目录并激活虚拟环境
+cd server
+source .venv/Scripts/activate  # Windows Git Bash
+# 或 .venv\Scripts\activate.bat  # Windows CMD
+# 或 source .venv/bin/activate   # Linux/macOS
+
+# 2. 检查依赖是否完整（可选，首次运行推荐）
+python check_dependencies.py
+# 预期输出: ✅ 所有第三方依赖都已正确声明!
+
+# 3. 检查数据库连接
+cd backend
+python -c "from database.db import async_engine; print('Database OK')"
+cd ..
+
+# 4. 检查环境变量
 python -c "from backend.core.conf import settings; print(f'AI Provider: {settings.AI_DEFAULT_PROVIDER}')"
 
-# 3. 检查 AI API 密钥（不显示完整密钥）
-python -c "from backend.core.conf import settings; key = settings.DEEPSEEK_API_KEY; print(f'API Key: {key[:10]}...{key[-4:]}' if key else 'NOT SET')"
+# 5. 检查 AI API 密钥（不显示完整密钥）
+python -c "from backend.core.conf import settings; key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY or settings.GLM_API_KEY; print(f'API Key: {key[:10]}...{key[-4:]}' if key else 'NOT SET')"
 
-# 4. 启动后端服务
-python run.py
-# 预期输出: Application startup complete
+# 6. 启动后端服务（确保在 server 目录下）
+python -m backend.run
+# 预期输出: 
+#   INFO: Uvicorn running on http://127.0.0.1:8000
+#   INFO: Application startup complete
 # 访问: http://localhost:8000/docs 应该能看到 Swagger 文档
 ```
 
 **预期结果:**
+- ✅ 虚拟环境已激活（命令提示符前显示 `(.venv)`）
+- ✅ 所有依赖已安装
 - ✅ 数据库连接成功
 - ✅ AI API 密钥已配置
 - ✅ 服务启动在 8000 端口
 - ✅ `/docs` 可以访问并显示 Feedalyze 相关接口
+
+**常见启动问题：**
+
+| 错误信息 | 原因 | 解决方案 |
+|---------|------|---------|
+| `ModuleNotFoundError: No module named 'backend'` | 在错误的目录运行 | 确保在 `server` 目录，不是 `server/backend` |
+| `ModuleNotFoundError: No module named 'numpy'` | 依赖未安装 | 运行 `uv sync` 或 `pip install -r requirements.txt` |
+| `ModuleNotFoundError: No module named 'openai'` | 缺失 AI 相关依赖 | 运行 `uv sync` 重新安装依赖 |
+| 虚拟环境找不到命令 | 未激活虚拟环境 | 先执行 `source .venv/Scripts/activate` |
+| ~~`Redis TimeoutError`~~ (已修复) | ~~Redis 未启动~~ | **已优化**：现在即使 Redis 未启动也能秒级启动 |
 
 #### ✅ 前端服务检查
 
@@ -748,6 +907,58 @@ SELECT tenant_id, COUNT(*) FROM feedbacks GROUP BY tenant_id;
 ---
 
 ## 第七部分：常见问题排查
+
+### 问题 0: 后端启动失败 - 缺少依赖 ⭐
+
+**现象:** 启动后端时报错 `ModuleNotFoundError: No module named 'xxx'`
+
+**常见缺失的依赖包:**
+- `numpy` - 聚类算法需要
+- `scikit-learn` (导入为 `sklearn`) - DBSCAN 聚类
+- `openai` - AI API 客户端
+- `pandas` - Excel 导入
+- `pyyaml` (导入为 `yaml`) - 配置文件解析
+- `python-dotenv` (导入为 `dotenv`) - 环境变量加载
+
+**快速修复：**
+```bash
+cd server
+source .venv/Scripts/activate
+
+# 方法 1: 使用 uv 同步（推荐）
+uv sync
+
+# 方法 2: 使用 pip 安装
+pip install -r requirements.txt
+
+# 验证依赖
+python check_dependencies.py
+```
+
+**根本原因分析：**
+
+这些依赖在代码中被使用，但之前未在 `pyproject.toml` 中声明。已修复：
+- ✅ 添加了 `numpy>=1.26.0`
+- ✅ 添加了 `scikit-learn>=1.5.0`
+- ✅ 添加了 `openai>=1.67.0`
+- ✅ 添加了 `pandas>=2.2.0`
+- ✅ 添加了 `pyyaml>=6.0.3`
+- ✅ 添加了 `python-dotenv>=1.2.1`
+- ✅ 添加了 `typing-extensions>=4.15.0`
+
+**预防措施：**
+
+项目现在包含 `check_dependencies.py` 脚本，可以自动检查所有导入的包是否已声明：
+
+```bash
+cd server
+python check_dependencies.py
+# 输出: ✅ 所有第三方依赖都已正确声明!
+```
+
+如果输出显示缺失依赖，需要在 `pyproject.toml` 的 `dependencies` 中添加它们，然后运行 `uv sync`。
+
+---
 
 ### 问题 1: 导入 Excel 失败
 

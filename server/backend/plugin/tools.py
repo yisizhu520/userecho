@@ -123,11 +123,15 @@ def parse_plugin_config() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     # 使用独立单例，避免与主线程冲突
     current_redis_client = RedisCli()
 
-    # 清理未知插件信息
-    run_await(current_redis_client.delete_prefix)(
-        settings.PLUGIN_REDIS_PREFIX,
-        exclude=[f'{settings.PLUGIN_REDIS_PREFIX}:{key}' for key in plugins],
-    )
+    # 清理未知插件信息（容错处理，不阻塞启动）
+    try:
+        run_await(current_redis_client.delete_prefix)(
+            settings.PLUGIN_REDIS_PREFIX,
+            exclude=[f'{settings.PLUGIN_REDIS_PREFIX}:{key}' for key in plugins],
+        )
+    except Exception:
+        # Redis 未启动或连接失败时跳过清理，不影响应用启动
+        pass
 
     for plugin in plugins:
         data = load_plugin_config(plugin)

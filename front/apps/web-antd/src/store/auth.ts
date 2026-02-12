@@ -75,11 +75,9 @@ export const useAuthStore = defineStore('auth', () => {
         if (accessStore.loginExpired) {
           accessStore.setLoginExpired(false);
         } else {
-          onSuccess
-            ? await onSuccess?.()
-            : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
-              );
+          // 跳转到根路径，让路由守卫处理动态路由加载和重定向
+          // 避免直接跳转到动态路由导致 404
+          onSuccess ? await onSuccess?.() : await router.push('/');
         }
 
         // 初始化WebSocket连接

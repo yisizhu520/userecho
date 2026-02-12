@@ -71,7 +71,12 @@ function setupAccessGuard(router: Router) {
             preferences.app.defaultHomePath,
         );
       }
-      return true;
+      // 如果是根路径且已登录但动态路由未加载，继续执行后续逻辑加载动态路由
+      if (to.path === '/' && accessStore.accessToken && !accessStore.isAccessChecked) {
+        // 继续执行，让下面的动态路由加载逻辑处理
+      } else {
+        return true;
+      }
     }
 
     // accessToken 检查
@@ -119,10 +124,19 @@ function setupAccessGuard(router: Router) {
     accessStore.setAccessMenus(accessibleMenus);
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
-    const redirectPath = (from.query.redirect ??
-      (to.path === preferences.app.defaultHomePath
-        ? userInfo.homePath || preferences.app.defaultHomePath
-        : to.fullPath)) as string;
+    
+    // 计算重定向路径
+    let redirectPath: string;
+    if (from.query.redirect) {
+      // 优先使用 query 中的 redirect
+      redirectPath = from.query.redirect as string;
+    } else if (to.path === '/' || to.path === preferences.app.defaultHomePath) {
+      // 如果访问根路径或默认首页，重定向到用户首页或系统默认首页
+      redirectPath = userInfo.homePath || preferences.app.defaultHomePath;
+    } else {
+      // 其他情况，跳转到目标路径
+      redirectPath = to.fullPath;
+    }
 
     return {
       ...router.resolve(decodeURIComponent(redirectPath)),

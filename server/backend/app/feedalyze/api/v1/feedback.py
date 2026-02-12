@@ -110,8 +110,8 @@ async def delete_feedback(
 
 @router.post('/import', summary='导入 Excel 反馈')
 async def import_feedbacks(
+    db: CurrentSession,
     file: UploadFile = File(...),
-    db: CurrentSession = Depends(),
     tenant_id: str = Depends(get_current_tenant_id),
 ):
     """

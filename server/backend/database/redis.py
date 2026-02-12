@@ -14,14 +14,29 @@ class RedisCli(Redis):
         """初始化 Redis 客户端"""
         # 优先使用完整的 REDIS_URL（例如 Upstash 提供的 rediss://... 格式）
         if settings.REDIS_URL:
+            # 检测是否是 TLS 连接（Upstash 等云服务）
+            is_tls = settings.REDIS_URL.startswith('rediss://')
+            
+            # 为远程 Redis（Upstash）配置更长的超时时间
+            timeout = 30 if is_tls else settings.REDIS_TIMEOUT
+            
+            # 构建连接参数
+            connection_kwargs = {
+                'socket_timeout': timeout,
+                'socket_connect_timeout': timeout,
+                'socket_keepalive': True,
+                'health_check_interval': 30,
+                'decode_responses': True,
+            }
+            
+            # TLS 连接跳过证书验证（适用于 Upstash 等云服务）
+            if is_tls:
+                connection_kwargs['ssl_cert_reqs'] = None
+            
             super().__init__(
                 connection_pool=Redis.from_url(
                     settings.REDIS_URL,
-                    socket_timeout=settings.REDIS_TIMEOUT,
-                    socket_connect_timeout=settings.REDIS_TIMEOUT,
-                    socket_keepalive=True,
-                    health_check_interval=30,
-                    decode_responses=True,
+                    **connection_kwargs
                 ).connection_pool
             )
         else:

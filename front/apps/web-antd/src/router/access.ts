@@ -25,7 +25,9 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
     IFrameView,
   };
 
-  return await generateAccessible(preferences.app.accessMode, {
+  const accessMode = preferences.app.accessMode;
+
+  const baseOptions: GenerateMenuAndRoutesOptions = {
     ...options,
     fetchMenuListAsync: async () => {
       message.loading({
@@ -39,7 +41,17 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
     // 如果 route.meta.menuVisibleWithForbidden = true
     layoutMap,
     pageMap,
-  });
+  };
+
+  const result = await generateAccessible(accessMode, baseOptions);
+  if (accessMode === 'backend' && result.accessibleRoutes.length === 0) {
+    console.warn(
+      '[access] Backend menus are empty, fallback to frontend routes to avoid 404 after login.',
+    );
+    return await generateAccessible('frontend', baseOptions);
+  }
+
+  return result;
 }
 
 export { generateAccess };
