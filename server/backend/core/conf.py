@@ -45,10 +45,14 @@ class Settings(BaseSettings):
     DATABASE_PK_MODE: Literal['autoincrement', 'snowflake'] = 'autoincrement'
 
     # .env Redis
-    REDIS_HOST: str
-    REDIS_PORT: int
-    REDIS_PASSWORD: str
-    REDIS_DATABASE: int
+    # 优先使用 REDIS_URL（完整连接字符串，例如 Upstash 提供的 rediss://... 格式）
+    # 如果没有设置 REDIS_URL，则使用以下独立参数
+    REDIS_URL: str | None = None
+    REDIS_HOST: str = 'localhost'
+    REDIS_PORT: int = 6379
+    REDIS_USERNAME: str | None = None
+    REDIS_PASSWORD: str = ''
+    REDIS_DATABASE: int = 0
 
     # Redis
     REDIS_TIMEOUT: int = 5
@@ -226,9 +230,15 @@ class Settings(BaseSettings):
     # .env AI 配置
     DEEPSEEK_API_KEY: str = ''
     OPENAI_API_KEY: str = ''
+    GLM_API_KEY: str = ''  # 智谱 AI
+    VOLCENGINE_API_KEY: str = ''  # 火山引擎（豆包）
     
     # AI 配置
     AI_DEFAULT_PROVIDER: str = 'deepseek'
+    
+    # 火山引擎 Endpoint ID（必须配置）
+    VOLCENGINE_EMBEDDING_ENDPOINT: str = ''  # embedding endpoint ID，如：ep-20241221xxx-xxxxx
+    VOLCENGINE_CHAT_ENDPOINT: str = ''  # chat endpoint ID，如：ep-20241221xxx-xxxxx
     
     # 聚类配置
     CLUSTERING_SIMILARITY_THRESHOLD: float = 0.75

@@ -31,7 +31,17 @@ def init_celery() -> celery.Celery:
 
     broker_url = f'amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}'
     if settings.CELERY_BROKER == 'redis':
-        broker_url = f'redis://:{urllib.parse.quote(settings.REDIS_PASSWORD)}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}'
+        if settings.REDIS_URL:
+            # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
+            # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
+            broker_url = settings.REDIS_URL.rsplit('/', 1)[0] + f'/{settings.CELERY_BROKER_REDIS_DATABASE}'
+        else:
+            # 构造 Redis URL
+            password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ''
+            auth = f':{password}' if password else ''
+            if settings.REDIS_USERNAME:
+                auth = f'{settings.REDIS_USERNAME}:{password}'
+            broker_url = f'redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}'
 
     result_backend = f'db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}'
     if DataBaseType.mysql == settings.DATABASE_TYPE:

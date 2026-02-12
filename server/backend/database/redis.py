@@ -12,17 +12,32 @@ class RedisCli(Redis):
 
     def __init__(self) -> None:
         """初始化 Redis 客户端"""
-        super().__init__(
-            host=settings.REDIS_HOST,
-            port=settings.REDIS_PORT,
-            password=settings.REDIS_PASSWORD,
-            db=settings.REDIS_DATABASE,
-            socket_timeout=settings.REDIS_TIMEOUT,
-            socket_connect_timeout=settings.REDIS_TIMEOUT,
-            socket_keepalive=True,  # 保持连接
-            health_check_interval=30,  # 健康检查间隔
-            decode_responses=True,  # 转码 utf-8
-        )
+        # 优先使用完整的 REDIS_URL（例如 Upstash 提供的 rediss://... 格式）
+        if settings.REDIS_URL:
+            super().__init__(
+                connection_pool=Redis.from_url(
+                    settings.REDIS_URL,
+                    socket_timeout=settings.REDIS_TIMEOUT,
+                    socket_connect_timeout=settings.REDIS_TIMEOUT,
+                    socket_keepalive=True,
+                    health_check_interval=30,
+                    decode_responses=True,
+                ).connection_pool
+            )
+        else:
+            # 使用独立参数连接
+            super().__init__(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                username=settings.REDIS_USERNAME,
+                password=settings.REDIS_PASSWORD,
+                db=settings.REDIS_DATABASE,
+                socket_timeout=settings.REDIS_TIMEOUT,
+                socket_connect_timeout=settings.REDIS_TIMEOUT,
+                socket_keepalive=True,  # 保持连接
+                health_check_interval=30,  # 健康检查间隔
+                decode_responses=True,  # 转码 utf-8
+            )
 
     async def open(self) -> None:
         """触发初始化连接"""

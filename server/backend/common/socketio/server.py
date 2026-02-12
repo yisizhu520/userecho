@@ -7,11 +7,24 @@ from backend.common.security.jwt import jwt_authentication
 from backend.core.conf import settings
 from backend.database.redis import redis_client
 
+
+def get_redis_url_for_socketio() -> str:
+    """获取 Socket.IO 使用的 Redis URL"""
+    if settings.REDIS_URL:
+        return settings.REDIS_URL
+    
+    # 构造 Redis URL
+    password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ''
+    auth = f':{password}' if password else ''
+    if settings.REDIS_USERNAME:
+        auth = f'{settings.REDIS_USERNAME}:{password}'
+    
+    return f'redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DATABASE}'
+
+
 # 创建 Socket.IO 服务器实例
 sio = socketio.AsyncServer(
-    client_manager=socketio.AsyncRedisManager(
-        f'redis://:{urllib.parse.quote(settings.REDIS_PASSWORD)}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DATABASE}',
-    ),
+    client_manager=socketio.AsyncRedisManager(get_redis_url_for_socketio()),
     async_mode='asgi',
     cors_allowed_origins=settings.CORS_ALLOWED_ORIGINS,
     cors_credentials=True,
