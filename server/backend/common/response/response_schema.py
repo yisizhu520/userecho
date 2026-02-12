@@ -84,14 +84,18 @@ class ResponseBase:
         *,
         res: CustomResponseCode | CustomResponse = CustomResponseCode.HTTP_200,
         data: Any | None = None,
+        msg: str | None = None,
     ) -> ResponseModel | ResponseSchemaModel:
         """
         成功响应
 
         :param res: 返回信息
         :param data: 返回数据
+        :param msg: 自定义消息（便捷参数，会覆盖 res 中的消息）
         :return:
         """
+        if msg is not None:
+            res = CustomResponse(code=res.code, msg=msg)
         return self.__response(res=res, data=data)
 
     def fail(
@@ -99,14 +103,18 @@ class ResponseBase:
         *,
         res: CustomResponseCode | CustomResponse = CustomResponseCode.HTTP_400,
         data: Any = None,
+        msg: str | None = None,
     ) -> ResponseModel | ResponseSchemaModel:
         """
         失败响应
 
         :param res: 返回信息
         :param data: 返回数据
+        :param msg: 自定义消息（便捷参数，会覆盖 res 中的消息）
         :return:
         """
+        if msg is not None:
+            res = CustomResponse(code=res.code, msg=msg)
         return self.__response(res=res, data=data)
 
     @staticmethod

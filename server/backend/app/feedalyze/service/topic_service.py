@@ -55,7 +55,7 @@ class TopicService:
             }
 
         except Exception as e:
-            log.error(f'Failed to get topic detail: {e}')
+            log.error(f'Failed to get topic detail for topic {topic_id}, tenant {tenant_id}: {e}')
             return None
 
     async def update_status_with_history(
@@ -106,7 +106,7 @@ class TopicService:
             return topic
 
         except Exception as e:
-            log.error(f'Failed to update topic status: {e}')
+            log.error(f'Failed to update topic {topic_id} status to {data.status} for tenant {tenant_id}: {e}')
             raise
 
     async def create_topic(

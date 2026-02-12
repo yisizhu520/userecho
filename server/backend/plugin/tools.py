@@ -249,8 +249,16 @@ def inject_extend_router(plugin: dict[str, Any]) -> None:
                     tags=[tags] if tags else [],
                     dependencies=[Depends(PluginStatusChecker(plugin_name))],
                 )
+            except ModuleNotFoundError as e:
+                # 插件依赖缺失，记录警告但不影响主应用启动
+                log.warning(f'Plugin {plugin_name} skipped due to missing dependency: {e}')
+            except PluginInjectError:
+                # 插件注入错误，应该中断启动
+                raise
             except Exception as e:
-                raise PluginInjectError(f'扩展级插件 {plugin_name} 路由注入失败：{e!s}') from e
+                # 其他错误，记录但不中断
+                log.error(f'Plugin {plugin_name} file {file} failed to load: {e}')
+                log.warning(f'Plugin {plugin_name} will be partially disabled')
 
 
 def inject_app_router(plugin: dict[str, Any], target_router: APIRouter) -> None:
@@ -278,8 +286,16 @@ def inject_app_router(plugin: dict[str, Any], target_router: APIRouter) -> None:
 
             # 将插件路由注入到目标路由中
             target_router.include_router(plugin_router, dependencies=[Depends(PluginStatusChecker(plugin_name))])
+    except ModuleNotFoundError as e:
+        # 插件依赖缺失，记录警告但不影响主应用启动
+        log.warning(f'Plugin {plugin_name} skipped due to missing dependency: {e}')
+    except (PluginConfigError, PluginInjectError):
+        # 插件配置错误，应该中断启动
+        raise
     except Exception as e:
-        raise PluginInjectError(f'应用级插件 {plugin_name} 路由注入失败：{e!s}') from e
+        # 其他错误，记录但不中断
+        log.error(f'Plugin {plugin_name} failed to load: {e}')
+        log.warning(f'Plugin {plugin_name} will be disabled')
 
 
 def build_final_router() -> APIRouter:

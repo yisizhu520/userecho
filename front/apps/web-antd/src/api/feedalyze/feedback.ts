@@ -70,28 +70,28 @@ export interface ImportResult {
  * 获取反馈列表
  */
 export async function getFeedbackList(params: FeedbackListParams) {
-  return requestClient.get<Feedback[]>('/app/feedbacks', { params });
+  return requestClient.get<Feedback[]>('/api/v1/app/feedbacks', { params });
 }
 
 /**
  * 创建反馈
  */
 export async function createFeedback(data: CreateFeedbackParams) {
-  return requestClient.post<Feedback>('/app/feedbacks', data);
+  return requestClient.post<Feedback>('/api/v1/app/feedbacks', data);
 }
 
 /**
  * 更新反馈
  */
 export async function updateFeedback(id: string, data: UpdateFeedbackParams) {
-  return requestClient.put<Feedback>(`/app/feedbacks/${id}`, data);
+  return requestClient.put<Feedback>(`/api/v1/app/feedbacks/${id}`, data);
 }
 
 /**
  * 删除反馈
  */
 export async function deleteFeedback(id: string) {
-  return requestClient.delete(`/app/feedbacks/${id}`);
+  return requestClient.delete(`/api/v1/app/feedbacks/${id}`);
 }
 
 /**
@@ -100,7 +100,7 @@ export async function deleteFeedback(id: string) {
 export async function importFeedbacks(file: File) {
   const formData = new FormData();
   formData.append('file', file);
-  return requestClient.post<ImportResult>('/app/feedbacks/import', formData, {
+  return requestClient.post<ImportResult>('/api/v1/app/feedbacks/import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

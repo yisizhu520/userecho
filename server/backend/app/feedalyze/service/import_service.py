@@ -4,6 +4,7 @@
 """
 
 from datetime import datetime
+from io import BytesIO, StringIO
 from typing import Any
 
 import pandas as pd
@@ -86,14 +87,33 @@ class ImportService:
 
                 # 根据文件类型读取
                 if file_ext in ['xlsx', 'xls']:
-                    df = pd.read_excel(content)
+                    excel_io = BytesIO(content)
+                    try:
+                        if file_ext == 'xlsx':
+                            df = pd.read_excel(excel_io, engine='openpyxl')
+                        else:
+                            df = pd.read_excel(excel_io)
+                    except ImportError as e:
+                        missing = str(e)
+                        if 'openpyxl' in missing:
+                            return {
+                                'status': 'error',
+                                'message': '服务端缺少依赖 openpyxl，无法解析 .xlsx 文件，请安装 openpyxl 后重试',
+                            }
+                        if 'xlrd' in missing:
+                            return {
+                                'status': 'error',
+                                'message': '服务端缺少依赖 xlrd，无法解析 .xls 文件，请安装 xlrd 后重试',
+                            }
+                        raise
                 elif file_ext == 'csv':
-                    df = pd.read_csv(content)
+                    text = content.decode('utf-8-sig', errors='replace')
+                    df = pd.read_csv(StringIO(text))
                 else:
                     return {'status': 'error', 'message': f'不支持的文件格式: {file_ext}'}
 
             except Exception as e:
-                log.error(f'Failed to read file: {e}')
+                log.error(f'Failed to read file for tenant {tenant_id}, filename={file.filename}: {e}')
                 return {'status': 'error', 'message': f'文件读取失败: {str(e)}'}
 
             # 3. 验证必填列
@@ -108,7 +128,7 @@ class ImportService:
                     'found_columns': list(df.columns)
                 }
 
-            log.info(f'Excel loaded: {len(df)} rows, columns: {list(df.columns)}')
+            log.debug(f'Excel loaded: {len(df)} rows, columns: {list(df.columns)}')
 
             # 4. 逐行导入
             success_count = 0
@@ -136,7 +156,16 @@ class ImportService:
                     submitted_at = timezone.now()
                     if '提交时间' in row and not pd.isna(row['提交时间']):
                         try:
-                            submitted_at = pd.to_datetime(row['提交时间'])
+                            # pd.to_datetime 返回 tz-naive Timestamp，需要转为 timezone-aware
+                            dt = pd.to_datetime(row['提交时间'])
+                            # 转为 Python datetime
+                            if hasattr(dt, 'to_pydatetime'):
+                                dt = dt.to_pydatetime()
+                            # 添加时区信息（假定输入为本地时区时间）
+                            if dt.tzinfo is None:
+                                submitted_at = dt.replace(tzinfo=timezone.tz_info)
+                            else:
+                                submitted_at = dt
                         except:
                             pass
 
@@ -180,7 +209,7 @@ class ImportService:
                         'content': str(row.get('反馈内容', ''))[:50]
                     })
 
-            log.info(f'Import completed: {success_count} success, {len(errors)} errors')
+            log.info(f'Excel import completed for tenant {tenant_id}: {success_count} success, {len(errors)} errors, file: {file.filename}')
 
             return {
                 'status': 'completed',
@@ -192,7 +221,7 @@ class ImportService:
             }
 
         except Exception as e:
-            log.error(f'Import failed: {e}')
+            log.error(f'Excel import failed for tenant {tenant_id}, file {file.filename}: {e}')
             return {
                 'status': 'error',
                 'message': str(e),

@@ -26,6 +26,7 @@ from backend.core.path_conf import STATIC_DIR, UPLOAD_DIR
 from backend.database.db import create_tables
 from backend.database.redis import redis_client
 from backend.middleware.access_middleware import AccessMiddleware
+from backend.middleware.debug_middleware import DebugMiddleware
 from backend.middleware.i18n_middleware import I18nMiddleware
 from backend.middleware.jwt_auth_middleware import JwtAuthMiddleware
 from backend.middleware.opera_log_middleware import OperaLogMiddleware
@@ -221,6 +222,9 @@ def register_middleware(app: FastAPI) -> None:
     :param app: FastAPI 应用实例
     :return:
     """
+    # Debug（开发环境调试，只在 DEBUG 级别生效）
+    app.add_middleware(DebugMiddleware)
+
     # Opera log
     app.add_middleware(OperaLogMiddleware)
 

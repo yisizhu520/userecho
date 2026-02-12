@@ -13,6 +13,7 @@ import {
   generateMenus,
   generateRoutesByBackend,
   generateRoutesByFrontend,
+  isHttpUrl,
   isFunction,
   isString,
   mapTree,
@@ -109,8 +110,8 @@ async function generateRoutes(
 
   /**
    * 调整路由树，做以下处理：
-   * 1. 对未添加redirect的路由添加redirect
-   * 2. 将懒加载的组件名称修改为当前路由的名称（如果启用了keep-alive的话）
+   * 1. 将懒加载的组件名称修改为当前路由的名称（如果启用了keep-alive的话）
+   * 2. 对未添加redirect的路由添加redirect（兼容子路由相对路径）
    */
   resultRoutes = mapTree(resultRoutes, (route) => {
     // 重新包装component，使用与路由名称相同的name以支持keep-alive的条件缓存。
@@ -134,23 +135,64 @@ async function generateRoutes(
         });
       };
     }
-
-    // 如果有redirect或者没有子路由，则直接返回
-    if (route.redirect || !route.children || route.children.length === 0) {
-      return route;
-    }
-    const firstChild = route.children[0];
-
-    // 如果子路由不是以/开头，则直接返回,这种情况需要计算全部父级的path才能得出正确的path，这里不做处理
-    if (!firstChild?.path || !firstChild.path.startsWith('/')) {
-      return route;
-    }
-
-    route.redirect = firstChild.path;
     return route;
   });
 
+  applyDefaultRedirect(resultRoutes);
   return resultRoutes;
+}
+
+function resolveFullPath(
+  parentFullPath: string,
+  routePath: string | undefined,
+): string {
+  if (!routePath) {
+    return parentFullPath || '/';
+  }
+
+  if (isHttpUrl(routePath)) {
+    return routePath;
+  }
+
+  if (routePath.startsWith('/')) {
+    return routePath;
+  }
+
+  const normalizedParent =
+    parentFullPath === '/'
+      ? ''
+      : (parentFullPath || '').replace(/\/+$/, '');
+  const normalizedChild = routePath.replace(/^\/+/, '');
+
+  if (!normalizedChild) {
+    return normalizedParent || '/';
+  }
+
+  return `${normalizedParent}/${normalizedChild}` || '/';
+}
+
+function applyDefaultRedirect(routes: RouteRecordRaw[], parentFullPath = '') {
+  for (const route of routes) {
+    const currentFullPath = resolveFullPath(parentFullPath, route.path);
+    const children = route.children;
+
+    if (!children || children.length === 0) {
+      continue;
+    }
+
+    applyDefaultRedirect(children, currentFullPath);
+
+    if (route.redirect) {
+      continue;
+    }
+
+    const firstChild = children[0];
+    if (firstChild?.path && isHttpUrl(firstChild.path)) {
+      continue;
+    }
+
+    route.redirect = resolveFullPath(currentFullPath, firstChild?.path);
+  }
 }
 
 export { generateAccessible };

@@ -1,7 +1,6 @@
 """需求主题 API 端点"""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.feedalyze.schema.topic import (
     TopicCreate,
@@ -11,6 +10,7 @@ from backend.app.feedalyze.schema.topic import (
     TopicUpdate,
 )
 from backend.app.feedalyze.service import topic_service
+from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.database.db import CurrentSession
 
@@ -57,7 +57,7 @@ async def get_topics(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    return await response_base.success(data=topics)
+    return response_base.success(data=topics)
 
 
 @router.get('/{topic_id}', summary='获取主题详情')
@@ -78,9 +78,9 @@ async def get_topic_detail(
     )
 
     if not detail:
-        return await response_base.fail(msg='主题不存在')
+        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
 
-    return await response_base.success(data=detail)
+    return response_base.success(data=detail)
 
 
 @router.post('', summary='创建主题')
@@ -95,7 +95,7 @@ async def create_topic(
         tenant_id=tenant_id,
         data=data
     )
-    return await response_base.success(data=topic)
+    return response_base.success(data=topic)
 
 
 @router.put('/{topic_id}', summary='更新主题')
@@ -113,8 +113,8 @@ async def update_topic(
         data=data
     )
     if not topic:
-        return await response_base.fail(msg='主题不存在')
-    return await response_base.success(data=topic)
+        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
+    return response_base.success(data=topic)
 
 
 @router.patch('/{topic_id}/status', summary='更新主题状态')
@@ -139,5 +139,5 @@ async def update_topic_status(
         current_user_id=current_user_id
     )
     if not topic:
-        return await response_base.fail(msg='主题不存在')
-    return await response_base.success(data=topic, msg='状态更新成功')
+        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
+    return response_base.success(data=topic, res=CustomResponse(code=200, msg='状态更新成功'))

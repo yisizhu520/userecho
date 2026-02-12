@@ -1,13 +1,13 @@
 {
-    "i18n-ally.localesPaths": [
-        "front/packages/locales",
-        "server/backend/locale",
-        "front/apps/web-antd/src/locales",
-        "front/packages/locales/src/langs",
-        "front/apps/web-antd/src/locales/langs",
-        "front/apps/web-antd/src/plugins/code_generator/langs",
-        "front/apps/web-antd/src/plugins/config/langs",
-        "front/apps/web-antd/src/plugins/dict/langs",
-        "front/apps/web-antd/src/plugins/notice/langs"
-    ]
+  "python.defaultInterpreterPath": "${workspaceFolder}/server/.venv/Scripts/python.exe",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/server"
+  ],
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/log/**": true
+  }
 }

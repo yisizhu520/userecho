@@ -1,7 +1,9 @@
 """反馈 API 端点"""
 
+from io import BytesIO
+
 from fastapi import APIRouter, Depends, File, UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
+import pandas as pd
 
 from backend.app.feedalyze.schema.feedback import (
     FeedbackCreate,
@@ -10,6 +12,7 @@ from backend.app.feedalyze.schema.feedback import (
     FeedbackUpdate,
 )
 from backend.app.feedalyze.service import feedback_service, import_service
+from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.database.db import CurrentSession
 
@@ -53,7 +56,7 @@ async def get_feedbacks(
         is_urgent=is_urgent,
         has_topic=has_topic,
     )
-    return await response_base.success(data=feedbacks)
+    return response_base.success(data=feedbacks)
 
 
 @router.post('', summary='创建反馈')
@@ -69,7 +72,7 @@ async def create_feedback(
         data=data,
         generate_summary=True
     )
-    return await response_base.success(data=feedback)
+    return response_base.success(data=feedback)
 
 
 @router.put('/{feedback_id}', summary='更新反馈')
@@ -87,8 +90,8 @@ async def update_feedback(
         data=data
     )
     if not feedback:
-        return await response_base.fail(msg='反馈不存在')
-    return await response_base.success(data=feedback)
+        return response_base.fail(res=CustomResponse(code=400, msg='反馈不存在'))
+    return response_base.success(data=feedback)
 
 
 @router.delete('/{feedback_id}', summary='删除反馈')
@@ -104,8 +107,8 @@ async def delete_feedback(
         feedback_id=feedback_id
     )
     if not success:
-        return await response_base.fail(msg='反馈不存在或已删除')
-    return await response_base.success(msg='删除成功')
+        return response_base.fail(res=CustomResponse(code=400, msg='反馈不存在或已删除'))
+    return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
 
 
 @router.post('/import', summary='导入 Excel 反馈')
@@ -128,40 +131,59 @@ async def import_feedbacks(
     - 提交时间
     - 是否紧急
     """
-    result = await import_service.import_excel(
-        db=db,
-        tenant_id=tenant_id,
-        file=file,
-        generate_summary=True
-    )
+    from backend.common.log import log
+    
+    log.info('[DEBUG] Starting import_feedbacks handler')
+    
+    try:
+        result = await import_service.import_excel(
+            db=db,
+            tenant_id=tenant_id,
+            file=file,
+            generate_summary=True
+        )
+        log.info(f'[DEBUG] import_excel returned: type={type(result)}, result={result}')
 
-    if result['status'] == 'error':
-        return await response_base.fail(msg=result['message'])
+        if result['status'] == 'error':
+            log.info('[DEBUG] Returning error response')
+            resp = response_base.fail(res=CustomResponse(code=400, msg=result['message']))
+            log.info(f'[DEBUG] Error response created: type={type(resp)}, resp={resp}')
+            return resp
 
-    return await response_base.success(data=result)
+        log.info('[DEBUG] Returning success response')
+        resp = response_base.success(data=result)
+        log.info(f'[DEBUG] Success response created: type={type(resp)}, resp={resp}')
+        return resp
+    except Exception as e:
+        log.error(f'[DEBUG] Exception in import_feedbacks: {e}')
+        import traceback
+        log.error(f'[DEBUG] Traceback: {traceback.format_exc()}')
+        raise
 
 
 @router.get('/import/template', summary='下载导入模板')
 async def download_template():
     """下载 Excel 导入模板"""
-    from io import BytesIO
     from fastapi.responses import StreamingResponse
 
     template_df = import_service.generate_template()
 
     # 生成 Excel 文件
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        template_df.to_excel(writer, index=False, sheet_name='反馈导入模板')
-
-    output.seek(0)
-
-    return StreamingResponse(
-        output,
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': 'attachment; filename=feedback_import_template.xlsx'}
-    )
-
-
-# 需要导入 pandas
-import pandas as pd
+    try:
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            template_df.to_excel(writer, index=False, sheet_name='反馈导入模板')
+        output.seek(0)
+        return StreamingResponse(
+            output,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': 'attachment; filename=feedback_import_template.xlsx'},
+        )
+    except ImportError:
+        csv_text = template_df.to_csv(index=False)
+        csv_bytes = csv_text.encode('utf-8-sig')
+        return StreamingResponse(
+            BytesIO(csv_bytes),
+            media_type='text/csv; charset=utf-8',
+            headers={'Content-Disposition': 'attachment; filename=feedback_import_template.csv'},
+        )

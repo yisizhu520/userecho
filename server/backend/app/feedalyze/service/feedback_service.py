@@ -59,7 +59,7 @@ class FeedbackService:
             return feedback
 
         except Exception as e:
-            log.error(f'Failed to create feedback: {e}')
+            log.error(f'Failed to create feedback for tenant {tenant_id}: {e}')
             raise
 
     async def get_list(

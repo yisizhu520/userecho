@@ -1,10 +1,10 @@
 """优先级评分 API 端点"""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.feedalyze.schema.priority import PriorityScoreCreate
 from backend.app.feedalyze.service import priority_service
+from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.database.db import CurrentSession
 
@@ -38,7 +38,7 @@ async def create_or_update_priority_score(
         tenant_id=tenant_id,
         data=data
     )
-    return await response_base.success(data=score, msg='评分成功')
+    return response_base.success(data=score, res=CustomResponse(code=200, msg='评分成功'))
 
 
 @router.get('/ranking', summary='获取优先级排行榜')
@@ -59,4 +59,4 @@ async def get_priority_ranking(
         tenant_id=tenant_id,
         limit=limit
     )
-    return await response_base.success(data=ranking)
+    return response_base.success(data=ranking)

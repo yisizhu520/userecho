@@ -40,28 +40,28 @@ export interface CustomerListParams {
  * 获取客户列表
  */
 export async function getCustomerList(params: CustomerListParams) {
-  return requestClient.get<Customer[]>('/app/customers', { params });
+  return requestClient.get<Customer[]>('/api/v1/app/customers', { params });
 }
 
 /**
  * 创建客户
  */
 export async function createCustomer(data: CreateCustomerParams) {
-  return requestClient.post<Customer>('/app/customers', data);
+  return requestClient.post<Customer>('/api/v1/app/customers', data);
 }
 
 /**
  * 更新客户
  */
 export async function updateCustomer(id: string, data: UpdateCustomerParams) {
-  return requestClient.put<Customer>(`/app/customers/${id}`, data);
+  return requestClient.put<Customer>(`/api/v1/app/customers/${id}`, data);
 }
 
 /**
  * 删除客户
  */
 export async function deleteCustomer(id: string) {
-  return requestClient.delete(`/app/customers/${id}`);
+  return requestClient.delete(`/api/v1/app/customers/${id}`);
 }
 
 /** 客户类型选项 */

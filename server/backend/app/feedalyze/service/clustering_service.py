@@ -51,7 +51,7 @@ class ClusteringService:
                     'topics_created': 0
                 }
 
-            log.info(f'Found {len(feedbacks)} unclustered feedbacks')
+            log.debug(f'Found {len(feedbacks)} unclustered feedbacks for tenant {tenant_id}')
 
             # 2. 批量获取 embedding
             embeddings = []
@@ -76,7 +76,7 @@ class ClusteringService:
                 }
 
             embeddings_array = np.array(embeddings)
-            log.info(f'Got {len(embeddings)} valid embeddings, shape: {embeddings_array.shape}')
+            log.debug(f'Got {len(embeddings)} valid embeddings, shape: {embeddings_array.shape}')
 
             # 3. 执行聚类
             labels = clustering_engine.cluster(embeddings_array)
@@ -92,7 +92,7 @@ class ClusteringService:
                         clusters[label] = []
                     clusters[label].append(valid_feedbacks[idx])
 
-            log.info(f'Clustering completed: {len(clusters)} clusters')
+            log.info(f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters, {len(created_topics)} topics created')
 
             # 5. 为每个聚类创建 Topic
             created_topics = []
@@ -134,10 +134,10 @@ class ClusteringService:
                         'is_noise': str(label).startswith('noise_')
                     })
 
-                    log.info(f'Created topic: {topic.title} with {len(cluster_feedbacks)} feedbacks')
+                    log.debug(f'Created topic: {topic.title} with {len(cluster_feedbacks)} feedbacks')
 
                 except Exception as e:
-                    log.error(f'Failed to create topic for cluster {label}: {e}')
+                    log.error(f'Failed to create topic for cluster {label}, tenant {tenant_id}: {e}')
                     failed_topics.append({'label': label, 'error': str(e)})
 
             # 6. 计算聚类质量
@@ -154,7 +154,7 @@ class ClusteringService:
             }
 
         except Exception as e:
-            log.error(f'Clustering failed: {e}')
+            log.error(f'Clustering failed for tenant {tenant_id}: {e}')
             return {
                 'status': 'error',
                 'message': str(e),
@@ -239,7 +239,7 @@ class ClusteringService:
             return results
 
         except Exception as e:
-            log.error(f'Failed to get clustering suggestions: {e}')
+            log.error(f'Failed to get clustering suggestions for feedback {feedback_id}, tenant {tenant_id}: {e}')
             return []
 
 

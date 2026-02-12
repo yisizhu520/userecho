@@ -2,11 +2,10 @@
 import type { UploadProps } from 'ant-design-vue';
 import type { ImportResult } from '#/api';
 
-import { ref, computed } from 'vue';
+import { ref, computed, h, resolveComponent } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { VbenButton } from '@vben/common-ui';
-import { $t } from '@vben/locales';
 
 import { message, Modal } from 'ant-design-vue';
 import {
@@ -112,30 +111,33 @@ const showErrorDetails = () => {
     content: err.content || '-',
   }));
 
+  const ATable = resolveComponent('a-table') as any;
+
   Modal.info({
     title: '导入错误详情',
     width: 800,
-    content: () => (
-      <div>
-        <p>以下数据导入失败，请检查后重新导入：</p>
-        <a-table
-          dataSource={errorList}
-          columns={[
+    content: () =>
+      h('div', [
+        h('p', '以下数据导入失败，请检查后重新导入：'),
+        h(ATable, {
+          dataSource: errorList,
+          columns: [
             { title: '行号', dataIndex: 'row', width: 80 },
             { title: '错误信息', dataIndex: 'error', width: 200 },
             { title: '反馈内容', dataIndex: 'content', ellipsis: true },
-          ]}
-          size="small"
-          pagination={false}
-          scroll={{ y: 400 }}
-        />
-        {importResult.value?.has_more_errors && (
-          <p style="color: #ff4d4f; margin-top: 12px;">
-            * 仅显示前 10 条错误，完整错误列表请下载日志文件
-          </p>
-        )}
-      </div>
-    ),
+          ],
+          size: 'small',
+          pagination: false,
+          scroll: { y: 400 },
+        }),
+        importResult.value?.has_more_errors
+          ? h(
+              'p',
+              { style: { color: '#ff4d4f', marginTop: '12px' } },
+              '* 仅显示前 10 条错误，完整错误列表请下载日志文件',
+            )
+          : null,
+      ]),
   });
 };
 
@@ -161,7 +163,7 @@ const handleReset = () => {
  * 前往列表
  */
 const goToList = () => {
-  router.push('/feedalyze/feedback/list');
+  router.push('/app/feedback/list');
 };
 
 /**

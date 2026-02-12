@@ -38,7 +38,7 @@ export interface ClusteringSuggestion {
  * 触发聚类任务
  */
 export async function triggerClustering(maxFeedbacks = 100) {
-  return requestClient.post<ClusteringResult>('/app/clustering/trigger', null, {
+  return requestClient.post<ClusteringResult>('/api/v1/app/clustering/trigger', null, {
     params: { max_feedbacks: maxFeedbacks },
   });
 }
@@ -48,7 +48,7 @@ export async function triggerClustering(maxFeedbacks = 100) {
  */
 export async function getClusteringSuggestions(feedbackId: string, topK = 5) {
   return requestClient.get<ClusteringSuggestion[]>(
-    `/app/clustering/suggestions/${feedbackId}`,
+    `/api/v1/app/clustering/suggestions/${feedbackId}`,
     {
       params: { top_k: topK },
     },

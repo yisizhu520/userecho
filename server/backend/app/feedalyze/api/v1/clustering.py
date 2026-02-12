@@ -1,9 +1,9 @@
 """聚类 API 端点"""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.feedalyze.service import clustering_service
+from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.database.db import CurrentSession
 
@@ -42,12 +42,12 @@ async def trigger_clustering(
     )
 
     if result['status'] == 'error':
-        return await response_base.fail(msg=result.get('message', '聚类失败'))
+        return response_base.fail(res=CustomResponse(code=400, msg=result.get('message', '聚类失败')))
 
     if result['status'] == 'skipped':
-        return await response_base.fail(msg=result.get('message', '聚类已跳过'))
+        return response_base.fail(res=CustomResponse(code=400, msg=result.get('message', '聚类已跳过')))
 
-    return await response_base.success(data=result, msg='聚类完成')
+    return response_base.success(data=result, res=CustomResponse(code=200, msg='聚类完成'))
 
 
 @router.get('/suggestions/{feedback_id}', summary='获取聚类建议')
@@ -71,4 +71,4 @@ async def get_clustering_suggestions(
         top_k=top_k,
     )
 
-    return await response_base.success(data=suggestions)
+    return response_base.success(data=suggestions)

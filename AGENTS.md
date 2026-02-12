@@ -152,6 +152,112 @@
 - 永远都用中文回复我
 - 文档放 docs 目录下
 - 中文不要出现乱码
-- 超过200行的代码改动，一定要执行 pnpm type-check 命令检查，如果有错误自行修复，直到所有错误修复完成
+- 超过200行的代码改动，一定要执行 pnpm check:type 命令检查，如果有错误自行修复，直到所有错误修复完成
 - 不要自动运行 npm run build, pnpm dev, pnpm build，除非主动让你执行
+
+## 日志打印规范
+
+> "日志不是写给你自己看的，是给凌晨 3 点被叫醒的运维看的。" - Linus
+
+### 核心原则
+
+**记录失败，不记录成功** - 失败才需要调查，成功是预期行为
+
+### 使用方式
+
+```python
+# 统一导入
+from backend.common.log import log
+```
+
+### 何时记录日志
+
+**✅ 必须记录：**
+1. **异常情况** - 所有 `except` 块都要记录，包含完整上下文
+   ```python
+   try:
+       result = await some_operation(tenant_id, data)
+   except Exception as e:
+       log.error(f'Failed to [操作] for tenant {tenant_id}: {e}')
+       raise
+   ```
+
+2. **外部服务调用失败** - API、数据库、Redis、AI 服务等
+   ```python
+   log.warning(f'Failed to initialize {provider_name} client: {e}')
+   log.error(f'Database connection failed after {retries} retries: {e}')
+   ```
+
+3. **关键业务节点** - 批量操作、定时任务、状态变更
+   ```python
+   log.info(f'Starting Excel import for tenant: {tenant_id}')
+   log.info(f'Clustering completed: {len(clusters)} clusters, {elapsed:.2f}s')
+   ```
+
+4. **降级处理** - 使用 fallback 或默认值
+   ```python
+   log.warning(f'Config {key} not found, using default: {default_value}')
+   log.info(f'Default provider unavailable, switched to {new_provider}')
+   ```
+
+**❌ 不要记录：**
+1. **成功的正常操作** - 不要 `log.info('operation completed successfully')`
+2. **循环中的每次迭代** - 批量操作批量记录，或用 DEBUG 级别
+3. **敏感信息** - 密码、Token、API Key、完整用户输入
+4. **无意义的信息** - `log.error('error')` 是垃圾
+
+### 日志级别指南
+
+```python
+# DEBUG - 调试信息（生产环境关闭）
+log.debug(f'Calculated similarity score: {score:.4f}')
+log.debug(f'Request params: {args}')
+
+# INFO - 关键业务节点
+log.info(f'Starting batch job for {count} items')
+log.info(f'{ctx.ip} | {method} | {code} | {path} | {elapsed:.3f}ms')
+
+# WARNING - 可恢复的异常
+log.warning(f'Retry {attempt}/{max_retries} failed: {e}')
+log.warning('VOLCENGINE_EMBEDDING_ENDPOINT not configured')
+
+# ERROR - 操作失败
+log.error(f'Failed to create feedback for tenant {tenant_id}: {e}')
+log.error(f'Database query failed: {query_type}, {e}')
+
+# CRITICAL - 系统级故障（慎用）
+log.critical('All database connections exhausted')
+log.critical('JWT secret key not configured. Authentication disabled!')
+```
+
+### 格式规范
+
+**包含 5W 信息：** Who（哪个租户/用户）、What（什么操作）、When（自动时间戳）、Where（哪个资源）、Why（失败原因）
+
+```python
+# ✅ 好的日志
+log.error(f'Failed to update topic {topic_id} status to {new_status} for tenant {tenant_id}: {e}')
+log.info(f'Excel import completed: success={success_count}, failed={error_count}, total={total}')
+log.warning(f'Rate limit approaching for tenant {tenant_id}: {current}/{limit}')
+
+# ❌ 垃圾日志
+log.error('error')
+log.info('processing')
+log.warning('invalid data')
+```
+
+### 快速检查清单
+
+编写代码时，确保：
+- [ ] 所有 `except` 块都有 `log.error()`，包含完整上下文
+- [ ] 外部服务调用失败都有日志
+- [ ] 没有在正常流程记录 INFO（成功不需要庆祝）
+- [ ] 没有在循环中滥用日志
+- [ ] 没有记录敏感信息（密码、Token、API Key）
+- [ ] 日志级别使用正确
+- [ ] 永远不使用 `print()`，始终使用 `log`
+
+### 完整指南
+
+详细的日志打印最佳实践请查看：`docs/development/logging-best-practices.md`
 

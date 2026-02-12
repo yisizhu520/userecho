@@ -114,9 +114,28 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 username = None
 
             # 日志记录
-            log.debug(f'接口摘要：[{summary}]')
-            log.debug(f'请求地址：[{ctx.ip}]')
-            log.debug(f'请求参数：{args}')
+            is_failed = bool(error)
+            try:
+                code_int = int(code) if isinstance(code, (int, str)) and str(code).isdigit() else StandardResponseCode.HTTP_500
+            except Exception:
+                code_int = StandardResponseCode.HTTP_500
+            if code_int >= 400:
+                is_failed = True
+
+            if is_failed:
+                trace_id = get_request_trace_id()
+                if code_int >= 500:
+                    log.error(
+                        f'请求失败上下文 | trace_id={trace_id} | ip={ctx.ip} | method={method} | path={path} | args={args}'
+                    )
+                else:
+                    log.warning(
+                        f'请求失败上下文 | trace_id={trace_id} | ip={ctx.ip} | method={method} | path={path} | args={args}'
+                    )
+            else:
+                log.debug(f'接口摘要：[{summary}]')
+                log.debug(f'请求地址：[{ctx.ip}]')
+                log.debug(f'请求参数：{args}')
             log.info(f'{ctx.ip: <15} | {request.method: <8} | {code!s: <6} | {path} | {elapsed:.3f}ms')
             if request.method != 'OPTIONS':
                 log.debug('<-- 请求结束')
@@ -170,32 +189,37 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         if path_params:
             args['path_params'] = await self.desensitization(path_params)
 
-        # Tip: .body() 必须在 .form() 之前获取
-        # https://github.com/encode/starlette/discussions/1933
-        content_type = request.headers.get('Content-Type', '').split(';')
+        content_type_header = request.headers.get('Content-Type', '')
+        content_type_value = content_type_header.split(';', 1)[0].strip().lower()
+        is_json = 'application/json' in content_type_value
+        is_form = content_type_value in {'application/x-www-form-urlencoded', 'multipart/form-data'} or (
+            'multipart/form-data' in content_type_header.lower()
+        )
 
-        # 请求体
+        if is_form:
+            # ⚠️ 不能调用 request.form()，会消费 body stream，导致业务代码拿不到数据
+            # multipart/form-data 的 stream 只能被读取一次，不能在中间件里提前消费
+            # 只记录 Content-Type，具体字段由业务代码处理
+            if 'multipart/form-data' in content_type_header.lower():
+                args['form-data'] = '<multipart/form-data>'
+            else:
+                args['x-www-form-urlencoded'] = '<application/x-www-form-urlencoded>'
+            return args or None
+
         body_data = await request.body()
         if body_data:
-            # 注意：非 json 数据默认使用 data 作为键
-            if 'application/json' not in content_type:
-                args['data'] = str(body_data)
-            else:
+            if is_json:
                 json_data = await request.json()
                 if isinstance(json_data, dict):
                     args['json'] = await self.desensitization(json_data)
                 else:
-                    args['data'] = str(body_data)
-
-        # 表单参数
-        form_data = await request.form()
-        if len(form_data) > 0:
-            for k, v in form_data.items():
-                form_data = {k: v.filename} if isinstance(v, UploadFile) else {k: v}
-            if 'multipart/form-data' not in content_type:
-                args['x-www-form-urlencoded'] = await self.desensitization(form_data)
+                    args['data'] = str(json_data)
             else:
-                args['form-data'] = await self.desensitization(form_data)
+                preview = body_data[:2048]
+                args['data'] = {
+                    'size': len(body_data),
+                    'preview': preview.decode('utf-8', errors='replace'),
+                }
 
         return args or None
 

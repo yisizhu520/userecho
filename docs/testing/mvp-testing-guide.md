@@ -908,6 +908,83 @@ SELECT tenant_id, COUNT(*) FROM feedbacks GROUP BY tenant_id;
 
 ## 第七部分：常见问题排查
 
+### 问题 -2: 后端响应参数错误 ⭐⭐
+
+**现象:** API 请求返回 500 错误
+```json
+{
+  "code": 500,
+  "msg": "ResponseBase.fail() got an unexpected keyword argument 'msg'",
+  "data": null
+}
+```
+
+**问题原因:**
+原始的 `ResponseBase` 类不支持直接传递 `msg` 参数，但 Feedalyze 代码中使用了 `response_base.fail(msg='...')`。
+
+**已修复:** ✅ v1.0.2 (2025-12-22)
+- 扩展了 `ResponseBase.success()` 方法，支持 `msg` 参数
+- 扩展了 `ResponseBase.fail()` 方法，支持 `msg` 参数
+- 修改文件：`server/backend/common/response/response_schema.py`
+
+**使用方式:**
+```python
+# 现在可以这样使用（便捷方式）
+await response_base.fail(msg='反馈不存在')
+await response_base.success(data=result, msg='操作成功')
+
+# 也兼容原有方式
+await response_base.fail(res=CustomResponse(code=400, msg='错误'))
+```
+
+**如果你遇到此问题:**
+```bash
+cd server
+git pull  # 获取最新修复
+# 重启后端服务（Ctrl+C 停止，然后重新启动）
+source .venv/Scripts/activate && python -m backend.run
+```
+
+---
+
+### 问题 -1: 导入反馈时 404 错误 ⭐⭐⭐
+
+**现象:** 上传 Excel 文件时报错 `POST http://localhost:5173/app/feedbacks/import 404 (Not Found)`
+
+**问题原因:**
+前端 API 路径配置错误，缺少了 `/api/v1` 前缀。
+
+**已修复:** ✅ v1.0.1 (2025-12-22)
+- 修复了所有 Feedalyze API 的路径配置
+- 正确路径格式：`/api/v1/app/{resource}`
+- 受影响文件：
+  * `feedback.ts` - 反馈管理 API
+  * `topic.ts` - 主题管理 API
+  * `customer.ts` - 客户管理 API
+  * `clustering.ts` - 聚类 API
+  * `priority.ts` - 优先级评分 API
+
+**如果你遇到此问题:**
+```bash
+cd front
+git pull  # 获取最新修复
+pnpm dev:antd  # 重启前端服务
+```
+
+**验证修复:**
+```bash
+# 检查浏览器开发者工具 (F12) → Network 面板
+# 应该看到请求发往: http://localhost:5555/api/v1/app/feedbacks/import
+# Vite 代理会自动转发到: http://localhost:8000/api/v1/app/feedbacks/import
+```
+
+**技术细节:**
+- 后端路由结构: `/api/v1` + `/app` + `/{resource}` + `/{action}`
+- Vite 代理配置: `/api` → `http://localhost:8000`
+- 前端必须使用完整路径: `/api/v1/app/...`
+
+---
+
 ### 问题 0: 后端启动失败 - 缺少依赖 ⭐
 
 **现象:** 启动后端时报错 `ModuleNotFoundError: No module named 'xxx'`

@@ -286,44 +286,46 @@ function getCustomerTypeConfig(type: string) {
 </script>
 
 <template>
-  <Grid>
-    <template #toolbar-actions>
-      <VbenButton @click="() => addModalApi.open()">
-        <MaterialSymbolsAdd class="size-5" />
-        新建客户
-      </VbenButton>
-    </template>
+  <div>
+    <Grid>
+      <template #toolbar-actions>
+        <VbenButton @click="() => addModalApi.open()">
+          <MaterialSymbolsAdd class="size-5" />
+          新建客户
+        </VbenButton>
+      </template>
 
-    <!-- 客户类型 -->
-    <template #customer_type="{ row }">
-      <a-tag 
-        :color="getCustomerTypeConfig(row.customer_type).business_value >= 5 ? 'gold' : 'blue'"
-      >
-        {{ getCustomerTypeConfig(row.customer_type).label }}
-      </a-tag>
-    </template>
+      <!-- 客户类型 -->
+      <template #customer_type="{ row }">
+        <a-tag 
+          :color="getCustomerTypeConfig(row.customer_type).business_value >= 5 ? 'gold' : 'blue'"
+        >
+          {{ getCustomerTypeConfig(row.customer_type).label }}
+        </a-tag>
+      </template>
 
-    <!-- 商业价值 -->
-    <template #business_value="{ row }">
-      <a-rate 
-        :value="row.business_value" 
-        :count="10" 
-        disabled 
-        style="font-size: 14px"
-      />
-      <span class="ml-2">{{ row.business_value }}</span>
-    </template>
-  </Grid>
+      <!-- 商业价值 -->
+      <template #business_value="{ row }">
+        <a-rate 
+          :value="row.business_value" 
+          :count="10" 
+          disabled 
+          style="font-size: 14px"
+        />
+        <span class="ml-2">{{ row.business_value }}</span>
+      </template>
+    </Grid>
 
-  <!-- 编辑弹窗 -->
-  <editModal>
-    <EditForm />
-  </editModal>
+    <!-- 编辑弹窗 -->
+    <editModal>
+      <EditForm />
+    </editModal>
 
-  <!-- 新建弹窗 -->
-  <addModal>
-    <AddForm />
-  </addModal>
+    <!-- 新建弹窗 -->
+    <addModal>
+      <AddForm />
+    </addModal>
+  </div>
 </template>
 
 <style scoped>

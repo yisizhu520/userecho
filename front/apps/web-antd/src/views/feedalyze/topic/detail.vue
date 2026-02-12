@@ -201,7 +201,7 @@ onMounted(() => {
   <div v-else-if="topic" class="topic-detail-page">
     <!-- 顶部导航 -->
     <div class="page-header">
-      <VbenButton variant="ghost" @click="() => router.push('/feedalyze/topic/list')">
+      <VbenButton variant="ghost" @click="() => router.push('/app/topic/list')">
         <LeftOutlined />
         返回列表
       </VbenButton>

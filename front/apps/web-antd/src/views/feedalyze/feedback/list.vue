@@ -223,7 +223,7 @@ onMounted(() => {
         <span class="iconify lucide--sparkles" />
         AI 智能聚类
       </VbenButton>
-      <VbenButton variant="outline" @click="() => $router.push('/feedalyze/feedback/import')">
+      <VbenButton variant="outline" @click="() => $router.push('/app/feedback/import')">
         <span class="iconify lucide--upload" />
         导入 Excel
       </VbenButton>
@@ -231,7 +231,7 @@ onMounted(() => {
 
     <template #topic="{ row }">
       <span v-if="row.topic_id && row.topic_title">
-        <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/feedalyze/topic/detail/${row.topic_id}`)">
+        <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/app/topic/detail/${row.topic_id}`)">
           {{ row.topic_title }}
         </a-tag>
       </span>

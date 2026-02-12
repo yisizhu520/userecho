@@ -46,14 +46,14 @@ export interface PriorityRankingItem {
  * 创建/更新优先级评分
  */
 export async function createOrUpdatePriorityScore(data: PriorityScoreParams) {
-  return requestClient.post<PriorityScore>('/app/priority/score', data);
+  return requestClient.post<PriorityScore>('/api/v1/app/priority/score', data);
 }
 
 /**
  * 获取优先级排行榜
  */
 export async function getPriorityRanking(limit = 50) {
-  return requestClient.get<PriorityRankingItem[]>('/app/priority/ranking', {
+  return requestClient.get<PriorityRankingItem[]>('/api/v1/app/priority/ranking', {
     params: { limit },
   });
 }

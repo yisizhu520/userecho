@@ -42,7 +42,7 @@ class CustomerService:
             )
 
         except Exception as e:
-            log.error(f'Failed to create customer: {e}')
+            log.error(f'Failed to create customer "{data.name}" for tenant {tenant_id}: {e}')
             raise
 
     async def update_customer(

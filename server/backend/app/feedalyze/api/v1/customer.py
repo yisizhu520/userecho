@@ -1,10 +1,10 @@
 """客户 API 端点"""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.feedalyze.schema.customer import CustomerCreate, CustomerOut, CustomerUpdate
 from backend.app.feedalyze.service import customer_service
+from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.database.db import CurrentSession
 
@@ -30,7 +30,7 @@ async def get_customers(
         skip=skip,
         limit=limit
     )
-    return await response_base.success(data=customers)
+    return response_base.success(data=customers)
 
 
 @router.post('', summary='创建客户')
@@ -51,7 +51,7 @@ async def create_customer(
         tenant_id=tenant_id,
         data=data
     )
-    return await response_base.success(data=customer)
+    return response_base.success(data=customer)
 
 
 @router.put('/{customer_id}', summary='更新客户')
@@ -69,8 +69,8 @@ async def update_customer(
         data=data
     )
     if not customer:
-        return await response_base.fail(msg='客户不存在')
-    return await response_base.success(data=customer)
+        return response_base.fail(res=CustomResponse(code=400, msg='客户不存在'))
+    return response_base.success(data=customer)
 
 
 @router.delete('/{customer_id}', summary='删除客户')
@@ -86,5 +86,5 @@ async def delete_customer(
         customer_id=customer_id
     )
     if not success:
-        return await response_base.fail(msg='客户不存在或已删除')
-    return await response_base.success(msg='删除成功')
+        return response_base.fail(res=CustomResponse(code=400, msg='客户不存在或已删除'))
+    return response_base.success(res=CustomResponse(code=200, msg='删除成功'))

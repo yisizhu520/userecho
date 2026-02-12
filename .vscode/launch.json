@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🔥 Debug FastAPI (推荐 - 无热重载)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "backend.main:app",
+        "--host", "127.0.0.1",
+        "--port", "8000"
+      ],
+      "cwd": "${workspaceFolder}/server",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/server"
+      },
+      "console": "integratedTerminal", 
+      "justMyCode": false,
+      "python": "${workspaceFolder}/server/.venv/Scripts/python.exe",
+      "subProcess": false
+    },
+    {
+      "name": "🔧 Debug FastAPI (with reload - 慢)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "backend.main:app",
+        "--host", "127.0.0.1",
+        "--port", "8000",
+        "--reload",
+        "--reload-dir", "backend"
+      ],
+      "cwd": "${workspaceFolder}/server",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/server"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/server/.venv/Scripts/python.exe",
+      "subProcess": true
+    },
+    {
+      "name": "📝 Debug Current Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/server",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/server"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "python": "${workspaceFolder}/server/.venv/Scripts/python.exe"
+    }
+  ]
+}
+

@@ -99,7 +99,7 @@ function onRefresh() {
 function onActionClick({ code, row }: OnActionClickParams<Topic>) {
   switch (code) {
     case 'detail': {
-      router.push(`/feedalyze/topic/detail/${row.id}`);
+      router.push(`/app/topic/detail/${row.id}`);
       break;
     }
     case 'edit': {
@@ -199,7 +199,7 @@ const [addModal, addModalApi] = useVbenModal({
         <MaterialSymbolsAdd class="size-5" />
         手动创建主题
       </VbenButton>
-      <VbenButton variant="outline" @click="() => router.push('/feedalyze/feedback/list')">
+      <VbenButton variant="outline" @click="() => router.push('/app/feedback/list')">
         <span class="iconify lucide--inbox" />
         查看反馈列表
       </VbenButton>
@@ -236,7 +236,7 @@ const [addModal, addModalApi] = useVbenModal({
         :count="row.feedback_count" 
         :number-style="{ backgroundColor: '#52c41a' }"
         style="cursor: pointer"
-        @click="router.push(`/feedalyze/topic/detail/${row.id}`)"
+        @click="router.push(`/app/topic/detail/${row.id}`)"
       />
     </template>
 

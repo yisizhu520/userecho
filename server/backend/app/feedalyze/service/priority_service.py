@@ -44,7 +44,7 @@ class PriorityService:
             )
 
         except Exception as e:
-            log.error(f'Failed to calculate priority score: {e}')
+            log.error(f'Failed to calculate priority score for topic {data.topic_id}, tenant {tenant_id}: {e}')
             raise
 
     async def get_ranking(
@@ -103,7 +103,7 @@ class PriorityService:
             return ranking
 
         except Exception as e:
-            log.error(f'Failed to get priority ranking: {e}')
+            log.error(f'Failed to get priority ranking for tenant {tenant_id}: {e}')
             return []
 
 
