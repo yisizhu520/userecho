@@ -3,11 +3,11 @@ from datetime import datetime
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.common.model import MappedBase as Base, TimeZone
+from backend.common.model import MappedBase, TimeZone
 from backend.utils.timezone import timezone
 
 
-class ManualAdjustment(Base):
+class ManualAdjustment(MappedBase):
     """人工调整记录表"""
 
     __tablename__ = 'manual_adjustments'
@@ -27,3 +27,7 @@ class ManualAdjustment(Base):
     reason: Mapped[str | None] = mapped_column(Text, default=None, comment='调整原因')
     adjusted_by: Mapped[int] = mapped_column(comment='操作人用户ID')
     adjusted_at: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='调整时间')
+    
+    # 时间戳字段
+    created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
+    updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')

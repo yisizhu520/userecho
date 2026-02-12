@@ -140,7 +140,7 @@ async def import_feedbacks(
             db=db,
             tenant_id=tenant_id,
             file=file,
-            generate_summary=True
+            generate_summary=False  # 导入时不生成摘要，避免超时
         )
         log.info(f'[DEBUG] import_excel returned: type={type(result)}, result={result}')
 
@@ -187,3 +187,72 @@ async def download_template():
             media_type='text/csv; charset=utf-8',
             headers={'Content-Disposition': 'attachment; filename=feedback_import_template.csv'},
         )
+
+
+@router.post('/batch-generate-summary', summary='批量生成 AI 摘要')
+async def batch_generate_summary(
+    db: CurrentSession,
+    tenant_id: str = Depends(get_current_tenant_id),
+    limit: int = 100,
+):
+    """
+    为没有 AI 摘要的反馈批量生成摘要
+    
+    适用场景：
+    - Excel 导入后批量补充摘要
+    - 历史数据补充摘要
+    
+    Args:
+        limit: 最多处理多少条反馈（默认 100）
+    """
+    from backend.app.feedalyze.model.feedback import Feedback
+    from backend.utils.ai_client import ai_client
+    from backend.common.log import log
+    from sqlalchemy import select
+    
+    try:
+        # 1. 查询没有摘要的反馈 (ai_summary IS NULL)
+        query = select(Feedback).where(
+            Feedback.tenant_id == tenant_id,
+            Feedback.ai_summary.is_(None),
+            Feedback.deleted_at.is_(None)
+        ).limit(limit)
+        
+        result = await db.execute(query)
+        feedbacks = list(result.scalars().all())
+        
+        if not feedbacks:
+            return response_base.success(data={
+                'total': 0,
+                'success': 0,
+                'failed': 0,
+                'message': '没有需要生成摘要的反馈'
+            })
+        
+        # 2. 批量生成摘要
+        success_count = 0
+        failed_count = 0
+        
+        for feedback in feedbacks:
+            try:
+                ai_summary = await ai_client.generate_summary(feedback.content, max_length=20)
+                feedback.ai_summary = ai_summary
+                success_count += 1
+            except Exception as e:
+                log.warning(f'Failed to generate summary for feedback {feedback.id}: {e}')
+                failed_count += 1
+        
+        await db.commit()
+        
+        log.info(f'Batch summary generation completed for tenant {tenant_id}: {success_count} success, {failed_count} failed')
+        
+        return response_base.success(data={
+            'total': len(feedbacks),
+            'success': success_count,
+            'failed': failed_count,
+            'message': f'成功为 {success_count} 条反馈生成摘要'
+        })
+        
+    except Exception as e:
+        log.error(f'Batch summary generation failed for tenant {tenant_id}: {e}')
+        return response_base.fail(res=CustomResponse(code=500, msg=f'批量生成摘要失败: {str(e)}'))

@@ -3,12 +3,12 @@ from datetime import datetime
 from sqlalchemy import CheckConstraint, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.common.model import MappedBase as Base, TimeZone
+from backend.common.model import MappedBase, TimeZone
 from backend.database.db import uuid4_str
 from backend.utils.timezone import timezone
 
 
-class Feedback(Base):
+class Feedback(MappedBase):
     """用户反馈表"""
 
     __tablename__ = 'feedbacks'
@@ -48,6 +48,10 @@ class Feedback(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(
         TimeZone, default=None, comment='软删除时间'
     )
+    
+    # 时间戳字段
+    created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
+    updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')
 
     __table_args__ = (
         CheckConstraint(
