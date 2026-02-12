@@ -42,6 +42,9 @@ class Feedback(MappedBase):
     ai_metadata: Mapped[dict | None] = mapped_column(
         JSON, default=None, comment='AI相关元数据(embedding等)'
     )
+    embedding: Mapped[str | None] = mapped_column(
+        Text, default=None, comment='Embedding向量(pgvector VECTOR(768),存储为文本)'
+    )
     submitted_at: Mapped[datetime] = mapped_column(
         TimeZone, default=timezone.now, comment='提交时间'
     )

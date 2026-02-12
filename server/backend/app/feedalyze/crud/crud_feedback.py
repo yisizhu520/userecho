@@ -70,6 +70,177 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         await db.commit()
         return result.rowcount
 
+    async def update_embedding(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        feedback_id: str,
+        embedding: list[float],
+    ) -> bool:
+        """
+        更新反馈的 embedding 缓存（写入 VECTOR 字段）
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            feedback_id: 反馈ID
+            embedding: embedding 向量
+
+        Returns:
+            是否更新成功
+        """
+        from sqlalchemy import update
+
+        # 转换为 pgvector 格式：'[0.1,0.2,...]'
+        embedding_str = f"[{','.join(map(str, embedding))}]"
+
+        stmt = (
+            update(self.model)
+            .where(
+                self.model.id == feedback_id,
+                self.model.tenant_id == tenant_id,
+                self.model.deleted_at.is_(None)
+            )
+            .values(embedding=embedding_str)
+        )
+
+        result = await db.execute(stmt)
+        await db.commit()
+        return result.rowcount > 0
+
+    async def batch_update_embeddings(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        feedback_embeddings: dict[str, list[float]],
+    ) -> int:
+        """
+        批量更新反馈的 embedding 缓存（写入 VECTOR 字段）
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            feedback_embeddings: {feedback_id: embedding} 字典
+
+        Returns:
+            更新的记录数量
+        """
+        if not feedback_embeddings:
+            return 0
+
+        updated_count = 0
+
+        # 批量获取反馈
+        feedback_ids = list(feedback_embeddings.keys())
+        query = select(self.model).where(
+            self.model.id.in_(feedback_ids),
+            self.model.tenant_id == tenant_id,
+            self.model.deleted_at.is_(None)
+        )
+        result = await db.execute(query)
+        feedbacks = result.scalars().all()
+
+        # 更新每个反馈的 embedding
+        for feedback in feedbacks:
+            if feedback.id in feedback_embeddings:
+                embedding = feedback_embeddings[feedback.id]
+                
+                # 转换为 pgvector 格式
+                embedding_str = f"[{','.join(map(str, embedding))}]"
+                feedback.embedding = embedding_str
+                
+                updated_count += 1
+
+        await db.commit()
+        return updated_count
+
+    def get_cached_embedding(self, feedback: Feedback) -> list[float] | None:
+        """
+        获取缓存的 embedding（从 VECTOR 字段）
+
+        Args:
+            feedback: 反馈实例
+
+        Returns:
+            embedding 向量，如果没有缓存则返回 None
+        """
+        if not feedback.embedding:
+            return None
+
+        try:
+            # pgvector 返回的是字符串，需要解析
+            if isinstance(feedback.embedding, str):
+                # 格式: '[0.123,0.456,...]'
+                embedding_str = feedback.embedding.strip('[]')
+                return [float(x) for x in embedding_str.split(',')]
+            elif isinstance(feedback.embedding, list):
+                return feedback.embedding
+        except Exception:
+            return None
+
+        return None
+
+    async def find_similar_feedbacks(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        query_embedding: list[float],
+        limit: int = 10,
+        min_similarity: float = 0.7,
+    ) -> list[tuple[Feedback, float]]:
+        """
+        使用 pgvector 查找相似的反馈（向量搜索）
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            query_embedding: 查询向量
+            limit: 返回数量
+            min_similarity: 最小相似度阈值（0-1）
+
+        Returns:
+            [(反馈, 相似度), ...] 按相似度从高到低排序
+        """
+        from sqlalchemy import text
+
+        # 转换为 pgvector 格式
+        embedding_str = f"[{','.join(map(str, query_embedding))}]"
+
+        # 使用 pgvector 余弦相似度搜索
+        # <=> 是余弦距离操作符，1 - 余弦距离 = 余弦相似度
+        query = text("""
+            SELECT 
+                id,
+                1 - (embedding <=> :query_vector::vector) as similarity
+            FROM feedbacks
+            WHERE 
+                tenant_id = :tenant_id
+                AND embedding IS NOT NULL
+                AND deleted_at IS NULL
+                AND (1 - (embedding <=> :query_vector::vector)) >= :min_similarity
+            ORDER BY embedding <=> :query_vector::vector
+            LIMIT :limit
+        """)
+
+        result = await db.execute(
+            query,
+            {
+                'tenant_id': tenant_id,
+                'query_vector': embedding_str,
+                'min_similarity': min_similarity,
+                'limit': limit
+            }
+        )
+
+        # 获取完整的反馈对象
+        similar_feedbacks = []
+        for row in result:
+            feedback = await self.get_by_id(db, tenant_id, row.id)
+            if feedback:
+                similar_feedbacks.append((feedback, float(row.similarity)))
+
+        return similar_feedbacks
+
     async def get_list_with_relations(
         self,
         db: AsyncSession,

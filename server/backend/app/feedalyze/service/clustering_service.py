@@ -53,17 +53,50 @@ class ClusteringService:
 
             log.debug(f'Found {len(feedbacks)} unclustered feedbacks for tenant {tenant_id}')
 
-            # 2. 批量获取 embedding
+            # 2. 获取 embedding（优先使用缓存，然后批量调用 API）
             embeddings = []
             valid_feedbacks = []
+            feedbacks_need_embedding = []  # 需要调用 API 的反馈
+            feedbacks_need_embedding_indices = []  # 对应的索引
 
-            for feedback in feedbacks:
-                embedding = await ai_client.get_embedding(feedback.content)
-                if embedding:
-                    embeddings.append(embedding)
+            # 2.1 先尝试从缓存读取
+            cache_hit = 0
+            for idx, feedback in enumerate(feedbacks):
+                cached_embedding = crud_feedback.get_cached_embedding(feedback)
+                if cached_embedding:
+                    embeddings.append(cached_embedding)
                     valid_feedbacks.append(feedback)
+                    cache_hit += 1
                 else:
-                    log.warning(f'Failed to get embedding for feedback: {feedback.id}')
+                    # 需要调用 API
+                    feedbacks_need_embedding.append(feedback)
+                    feedbacks_need_embedding_indices.append(idx)
+
+            log.info(f'Embedding cache hit: {cache_hit}/{len(feedbacks)} ({cache_hit/len(feedbacks)*100:.1f}%)')
+
+            # 2.2 批量调用 API 获取缺失的 embedding
+            if feedbacks_need_embedding:
+                contents = [f.content for f in feedbacks_need_embedding]
+                embeddings_batch = await ai_client.get_embeddings_batch(contents, batch_size=50)
+
+                # 2.3 缓存新获取的 embedding
+                embeddings_to_cache = {}
+                for feedback, embedding in zip(feedbacks_need_embedding, embeddings_batch):
+                    if embedding:
+                        embeddings.append(embedding)
+                        valid_feedbacks.append(feedback)
+                        embeddings_to_cache[feedback.id] = embedding
+                    else:
+                        log.warning(f'Failed to get embedding for feedback: {feedback.id}')
+
+                # 2.4 批量写入缓存
+                if embeddings_to_cache:
+                    cached_count = await crud_feedback.batch_update_embeddings(
+                        db=db,
+                        tenant_id=tenant_id,
+                        feedback_embeddings=embeddings_to_cache
+                    )
+                    log.info(f'Cached {cached_count} new embeddings to database')
 
             if len(embeddings) < 2:
                 return {
@@ -76,12 +109,12 @@ class ClusteringService:
                 }
 
             embeddings_array = np.array(embeddings)
-            log.debug(f'Got {len(embeddings)} valid embeddings, shape: {embeddings_array.shape}')
+            log.info(f'Batch embedding completed: {len(embeddings)}/{len(feedbacks)} valid, shape: {embeddings_array.shape}')
 
-            # 3. 执行聚类
+            # 4. 执行聚类
             labels = clustering_engine.cluster(embeddings_array)
 
-            # 4. 按聚类结果分组
+            # 5. 按聚类结果分组
             clusters: dict[int, list] = {}
             for idx, label in enumerate(labels):
                 if label == -1:  # 噪声点，每个单独成一个主题
@@ -92,9 +125,9 @@ class ClusteringService:
                         clusters[label] = []
                     clusters[label].append(valid_feedbacks[idx])
 
-            log.info(f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters, {len(created_topics)} topics created')
+            log.info(f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters created')
 
-            # 5. 为每个聚类创建 Topic
+            # 6. 为每个聚类创建 Topic
             created_topics = []
             failed_topics = []
 
@@ -140,7 +173,9 @@ class ClusteringService:
                     log.error(f'Failed to create topic for cluster {label}, tenant {tenant_id}: {e}')
                     failed_topics.append({'label': label, 'error': str(e)})
 
-            # 6. 计算聚类质量
+            log.info(f'Topic creation completed for tenant {tenant_id}: {len(created_topics)} created, {len(failed_topics)} failed')
+
+            # 7. 计算聚类质量
             quality_metrics = clustering_engine.calculate_cluster_quality(embeddings_array, labels)
 
             return {

@@ -48,6 +48,8 @@ class FeedbackClustering:
             similarity_matrix = cosine_similarity(embeddings)
 
             # 转换为距离矩阵 (1 - similarity)
+            # clip 确保相似度在 [-1, 1] 范围内，距离非负
+            similarity_matrix = np.clip(similarity_matrix, -1.0, 1.0)
             distance_matrix = 1 - similarity_matrix
 
             # DBSCAN 聚类

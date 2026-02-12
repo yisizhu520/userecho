@@ -78,7 +78,7 @@ class AIClient:
 
     async def get_embedding(self, text: str, max_retries: int = 2) -> list[float] | None:
         """
-        获取文本 embedding 向量
+        获取文本 embedding 向量（单条）
 
         Args:
             text: 输入文本
@@ -133,6 +133,131 @@ class AIClient:
 
         log.error(f'Failed to get embedding after {max_retries} retries')
         return None
+
+    async def get_embeddings_batch(
+        self,
+        texts: list[str],
+        batch_size: int = 50,
+        max_retries: int = 2
+    ) -> list[list[float] | None]:
+        """
+        批量获取文本 embedding 向量
+
+        所有 AI 提供商（OpenAI, GLM, Volcengine）都支持批量 embedding API。
+        参考：https://www.volcengine.com/docs/82379/1521766
+
+        Args:
+            texts: 输入文本列表
+            batch_size: 单次请求的批量大小（默认 50，避免请求过大）
+            max_retries: 最大重试次数
+
+        Returns:
+            embedding 向量列表，失败的返回 None
+        """
+        if not texts:
+            return []
+
+        # 过滤和截断文本
+        processed_texts = []
+        for text in texts:
+            if text and text.strip():
+                processed_texts.append(text[:2000])  # 截断超长文本
+            else:
+                processed_texts.append('')  # 空文本用空字符串占位
+
+        results: list[list[float] | None] = []
+
+        # 分批处理
+        for i in range(0, len(processed_texts), batch_size):
+            batch = processed_texts[i:i + batch_size]
+            batch_results = await self._get_embeddings_batch_single(batch, max_retries)
+            results.extend(batch_results)
+
+        return results
+
+    async def _get_embeddings_batch_single(
+        self,
+        texts: list[str],
+        max_retries: int = 2
+    ) -> list[list[float] | None]:
+        """
+        单次批量获取 embedding（内部方法）
+
+        Args:
+            texts: 输入文本列表
+            max_retries: 最大重试次数
+
+        Returns:
+            embedding 向量列表
+        """
+        # 过滤空文本，记录索引
+        non_empty_texts = []
+        non_empty_indices = []
+        for idx, text in enumerate(texts):
+            if text and text.strip():
+                non_empty_texts.append(text)
+                non_empty_indices.append(idx)
+
+        # 如果全是空文本，直接返回 None 列表
+        if not non_empty_texts:
+            return [None] * len(texts)
+
+        for attempt in range(max_retries):
+            # 确保当前 provider 可用
+            if self.current_provider not in self.clients:
+                break
+
+            try:
+                config = self.PROVIDERS_CONFIG[self.current_provider]
+
+                # 获取 embedding model
+                embedding_model = config['embedding_model']
+
+                # 火山引擎特殊处理：从环境变量读取 endpoint ID
+                if self.current_provider == 'volcengine':
+                    embedding_model = getattr(settings, 'VOLCENGINE_EMBEDDING_ENDPOINT', None)
+                    if not embedding_model:
+                        log.warning('VOLCENGINE_EMBEDDING_ENDPOINT not configured')
+                        self._fallback_to_next_provider()
+                        continue
+
+                # 如果当前 provider 不支持 embedding，跳到下一个
+                if embedding_model is None:
+                    log.info(f'{self.current_provider} does not support embedding, trying next provider')
+                    self._fallback_to_next_provider()
+                    continue
+
+                # 批量调用 embedding API
+                # 所有 provider（OpenAI, GLM, Volcengine）都支持 input 为数组
+                response = await self.clients[self.current_provider].embeddings.create(
+                    model=embedding_model,
+                    input=non_empty_texts  # 批量输入
+                )
+
+                # 提取 embedding 向量
+                embeddings_map = {idx: item.embedding for idx, item in enumerate(response.data)}
+
+                # 重建完整结果（包含空文本的 None）
+                results = []
+                embedding_idx = 0
+                for original_idx in range(len(texts)):
+                    if original_idx in non_empty_indices:
+                        results.append(embeddings_map.get(embedding_idx))
+                        embedding_idx += 1
+                    else:
+                        results.append(None)
+
+                log.info(f'Batch embedding completed: {len(non_empty_texts)}/{len(texts)} texts, provider: {self.current_provider}')
+                return results
+
+            except Exception as e:
+                log.warning(f'Batch embedding failed (attempt {attempt + 1}/{max_retries}): {e}')
+
+                # 尝试降级到其他可用的 provider
+                self._fallback_to_next_provider()
+
+        log.error(f'Failed to get batch embeddings after {max_retries} retries')
+        return [None] * len(texts)
     
     def _fallback_to_next_provider(self):
         """降级到下一个可用的 provider"""
