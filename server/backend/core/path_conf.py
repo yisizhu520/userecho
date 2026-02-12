@@ -1,6 +1,6 @@
 from pathlib import Path
 
-# 项目根目录
+# 项目根目录（backend 目录）
 BASE_PATH = Path(__file__).resolve().parent.parent
 
 # alembic 迁移文件存放路径

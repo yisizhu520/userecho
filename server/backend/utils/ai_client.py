@@ -275,5 +275,55 @@ class AIClient:
         return content[:max_length] + ('...' if len(content) > max_length else '')
 
 
-# 全局单例
-ai_client = AIClient()
+# ============= Lazy Initialization Proxy =============
+# "Never initialize expensive resources at module import time!" - Linus
+#
+# Problem: AIClient.__init__() creates AsyncOpenAI clients which may do:
+#   - DNS resolution
+#   - Network connections  
+#   - Connection pool warmup
+# This can take 60-120 seconds during module import!
+#
+# Solution: Use proxy pattern for lazy initialization
+# - First access triggers initialization
+# - Zero cost at import time
+# - Fully compatible with existing code
+
+class _AIClientLazyProxy:
+    """Lazy initialization proxy for AIClient
+    
+    Delays expensive AI client initialization until first use.
+    """
+    
+    def __init__(self):
+        self._instance: AIClient | None = None
+        self._initializing = False
+    
+    def _ensure_initialized(self) -> AIClient:
+        """Initialize client on first access"""
+        if self._instance is None and not self._initializing:
+            self._initializing = True
+            try:
+                log.info('Initializing AI clients (lazy)...')
+                self._instance = AIClient()
+                log.info('AI clients initialized successfully')
+            finally:
+                self._initializing = False
+        
+        return self._instance
+    
+    def __getattr__(self, name):
+        """Forward all attribute access to real AIClient instance"""
+        instance = self._ensure_initialized()
+        if instance is None:
+            raise RuntimeError('AIClient initialization failed')
+        return getattr(instance, name)
+    
+    def __bool__(self):
+        """Support truthiness check"""
+        instance = self._ensure_initialized()
+        return instance is not None
+
+
+# Global singleton (lazy initialized)
+ai_client = _AIClientLazyProxy()

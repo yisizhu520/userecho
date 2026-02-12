@@ -24,7 +24,7 @@ from backend.core.conf import settings
 from backend.core.path_conf import BASE_PATH
 from backend.database.db import async_db_session, create_tables, drop_tables
 from backend.database.redis import redis_client
-from backend.plugin.tools import get_plugin_sql, get_plugins
+from backend.plugin.tools import get_plugin_sql, get_plugins, install_requirements
 from backend.utils.console import console
 from backend.utils.file_ops import install_git_plugin, install_zip_plugin, parse_sql_script
 from backend.utils.import_parse import import_module_cached
@@ -377,6 +377,49 @@ class Celery:
     subcmd: cappa.Subcommands[Worker | Beat | Flower]
 
 
+@cappa.command(help='检查并安装插件依赖', default_long=True)
+@dataclass
+class CheckDeps:
+    plugin: Annotated[
+        str | None,
+        cappa.Arg(default=None, help='指定插件名称，不指定则检查所有插件'),
+    ]
+    
+    def __call__(self) -> None:
+        from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+        from rich.text import Text
+        import time
+        
+        plugins = [self.plugin] if self.plugin else get_plugins()
+        
+        console.print(Panel(
+            f'检查 {len(plugins)} 个插件的依赖...',
+            title='Plugin Dependencies Check',
+            border_style='cyan'
+        ))
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn('{task.description}'),
+            TextColumn('{task.completed}/{task.total}', style='bold green'),
+            TimeElapsedColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task('检查插件依赖...', total=len(plugins))
+            for plugin in plugins:
+                start = time.time()
+                progress.update(task, description=f'[cyan]检查插件 {plugin}...[/]')
+                try:
+                    install_requirements(plugin)
+                    duration = time.time() - start
+                    console.print(f'  ✓ {plugin}: {duration:.2f}s', style='green')
+                except Exception as e:
+                    console.print(f'  ✗ {plugin}: {e}', style='red')
+                progress.advance(task)
+        
+        console.print('\n所有插件依赖检查完成！', style='bold green')
+
+
 @cappa.command(help='新增插件', default_long=True)
 @dataclass
 class Add:
@@ -403,6 +446,12 @@ class Add:
 
     async def __call__(self) -> None:
         await install_plugin(self.path, self.repo_url, self.no_sql, self.db_type, self.pk_type)
+
+
+@cappa.command(help='插件管理')
+@dataclass
+class Plugin:
+    subcmd: cappa.Subcommands[CheckDeps | Add]
 
 
 @cappa.command(help='导入代码生成业务和模型列', default_long=True)
@@ -453,7 +502,7 @@ class FbaCli:
         str,
         cappa.Arg(value_name='PATH', default='', show_default=False, help='在事务中执行 SQL 脚本'),
     ]
-    subcmd: cappa.Subcommands[Init | Run | Celery | Add | CodeGenerator | None] = None
+    subcmd: cappa.Subcommands[Init | Run | Celery | Plugin | CodeGenerator | None] = None
 
     async def __call__(self) -> None:
         if self.sql:

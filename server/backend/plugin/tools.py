@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import warnings
 
 from functools import lru_cache
@@ -113,25 +114,18 @@ def load_plugin_config(plugin: str) -> dict[str, Any]:
 
 
 def parse_plugin_config() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """解析插件配置"""
+    """
+    解析插件配置
+    
+    WARNING: This function is called during module import, MUST be fast!
+    - NO Redis operations (deferred to lifespan)
+    - Only parse config files from disk
+    """
 
     extend_plugins = []
     app_plugins = []
 
     plugins = get_plugins()
-
-    # 使用独立单例，避免与主线程冲突
-    current_redis_client = RedisCli()
-
-    # 清理未知插件信息（容错处理，不阻塞启动）
-    try:
-        run_await(current_redis_client.delete_prefix)(
-            settings.PLUGIN_REDIS_PREFIX,
-            exclude=[f'{settings.PLUGIN_REDIS_PREFIX}:{key}' for key in plugins],
-        )
-    except Exception:
-        # Redis 未启动或连接失败时跳过清理，不影响应用启动
-        pass
 
     for plugin in plugins:
         data = load_plugin_config(plugin)
@@ -154,27 +148,49 @@ def parse_plugin_config() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
                 raise PluginConfigError(f'应用级插件 {plugin} 配置文件缺少 app.router 配置')
             app_plugins.append(data)
 
-        # 补充插件信息
-        plugin_cache_info = run_await(current_redis_client.get)(f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}')
-        if plugin_cache_info:
-            data['plugin']['enable'] = json.loads(plugin_cache_info)['plugin']['enable']
-        else:
-            data['plugin']['enable'] = str(StatusType.enable.value)
+        # Default: all plugins enabled (runtime check via PluginStatusChecker)
+        data['plugin']['enable'] = str(StatusType.enable.value)
         data['plugin']['name'] = plugin
 
-        # 缓存最新插件信息
-        run_await(current_redis_client.set)(
+    return extend_plugins, app_plugins
+
+
+async def sync_plugin_config_to_redis() -> None:
+    """
+    Sync plugin configurations to Redis
+    
+    Should be called during lifespan startup (async context)
+    """
+    plugins = get_plugins()
+    
+    # Clean up stale plugin info
+    await redis_client.delete_prefix(
+        settings.PLUGIN_REDIS_PREFIX,
+        exclude=[f'{settings.PLUGIN_REDIS_PREFIX}:{key}' for key in plugins],
+    )
+    
+    # Load and cache each plugin config
+    for plugin in plugins:
+        data = load_plugin_config(plugin)
+        
+        # Check if plugin was previously disabled
+        plugin_cache_info = await redis_client.get(f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}')
+        if plugin_cache_info:
+            cached_data = json.loads(plugin_cache_info)
+            data['plugin']['enable'] = cached_data['plugin']['enable']
+        else:
+            data['plugin']['enable'] = str(StatusType.enable.value)
+        
+        data['plugin']['name'] = plugin
+        
+        # Cache plugin info
+        await redis_client.set(
             f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}',
             json.dumps(data, ensure_ascii=False),
         )
-
-    # 重置插件变更状态
-    run_await(current_redis_client.delete)(f'{settings.PLUGIN_REDIS_PREFIX}:changed')
-
-    # 关闭连接
-    run_await(current_redis_client.aclose)()
-
-    return extend_plugins, app_plugins
+    
+    # Reset plugin change flag
+    await redis_client.delete(f'{settings.PLUGIN_REDIS_PREFIX}:changed')
 
 
 def inject_extend_router(plugin: dict[str, Any]) -> None:
