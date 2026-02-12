@@ -1,0 +1,389 @@
+---
+description: AI 辅助开发指南和注意事项
+tags: [ai, guidelines, best-practices]
+---
+
+# AI 辅助开发指南
+
+## 代码生成建议
+
+### 生成新功能
+
+当 AI 生成新功能时，应遵循以下原则：
+
+1. **明确需求**:
+   - 理解功能的完整需求和边界条件
+   - 询问不清楚的业务逻辑
+   - 确认输入输出格式
+
+2. **遵循架构**:
+   - 遵循项目的伪三层架构 (api → schema → service → crud → model)
+   - 将代码放在正确的目录
+   - 使用统一的命名规范
+
+3. **完整实现**:
+   ```python
+   # ✅ 完整的功能实现示例
+   
+   # 1. Model (backend/app/user/model.py)
+   class User(Base):
+       __tablename__ = 'users'
+       id = Column(Integer, primary_key=True)
+       username = Column(String(50), unique=True, nullable=False)
+       email = Column(String(255), unique=True, nullable=False)
+   
+   # 2. Schema (backend/app/user/schema.py)
+   class UserCreate(BaseModel):
+       username: str = Field(min_length=3, max_length=50)
+       email: EmailStr
+   
+   class UserResponse(BaseModel):
+       id: int
+       username: str
+       email: str
+   
+   # 3. CRUD (backend/app/user/crud.py)
+   class UserCRUD:
+       async def create(self, db: AsyncSession, user_data: UserCreate) -> User:
+           # 实现创建逻辑
+           pass
+   
+   # 4. Service (backend/app/user/service.py)
+   class UserService:
+       async def create_user(self, db: AsyncSession, user_data: UserCreate) -> User:
+           # 业务逻辑处理
+           # 包含验证、错误处理等
+           pass
+   
+   # 5. API (backend/app/user/api.py)
+   @router.post('/users', response_model=UserResponse)
+   async def create_user(
+       user_data: UserCreate,
+       db: AsyncSession = Depends(get_db)
+   ):
+       """创建用户 API"""
+       return await user_service.create_user(db, user_data)
+   ```
+
+4. **类型注解**:
+   - 所有函数添加完整的类型注解
+   - 使用准确的类型而非 `any`
+   - 包含返回值类型
+
+5. **错误处理**:
+   ```python
+   # ✅ 包含错误处理
+   async def get_user(user_id: int) -> User:
+       try:
+           user = await user_crud.get(db, user_id)
+           if not user:
+               raise HTTPException(
+                   status_code=404,
+                   detail='用户不存在'
+               )
+           return user
+       except SQLAlchemyError as e:
+           logger.error(f'数据库错误: {e}')
+           raise HTTPException(
+               status_code=500,
+               detail='服务器错误'
+           )
+   ```
+
+6. **添加注释**:
+   - 函数文档字符串
+   - 复杂逻辑的行内注释
+   - 参数和返回值说明
+
+### 重构代码
+
+重构时应注意：
+
+1. **保持功能不变**:
+   ```python
+   # 重构前
+   def get_active_users(db):
+       users = db.query(User).filter(User.is_active == True).all()
+       return users
+   
+   # ✅ 重构后 - 改进但功能相同
+   async def get_active_users(db: AsyncSession) -> list[User]:
+       """获取所有活跃用户"""
+       result = await db.execute(
+           select(User).where(User.is_active.is_(True))
+       )
+       return result.scalars().all()
+   ```
+
+2. **提升可读性**:
+   ```typescript
+   // 重构前
+   const u = data.filter(x => x.s === 'active').map(x => x.n);
+   
+   // ✅ 重构后 - 更清晰
+   const activeUserNames = users
+     .filter(user => user.status === 'active')
+     .map(user => user.name);
+   ```
+
+3. **遵循 SOLID 原则**:
+   ```python
+   # ❌ 违反单一职责原则
+   class UserService:
+       def create_user(self, data):
+           # 创建用户
+           # 发送邮件
+           # 记录日志
+           # 更新缓存
+           pass
+   
+   # ✅ 拆分职责
+   class UserService:
+       def __init__(self, email_service, cache_service):
+           self.email_service = email_service
+           self.cache_service = cache_service
+       
+       async def create_user(self, data: UserCreate) -> User:
+           user = await self.user_crud.create(data)
+           await self.email_service.send_welcome_email(user.email)
+           await self.cache_service.invalidate(f'user:{user.id}')
+           return user
+   ```
+
+4. **不破坏 API**:
+   - 保持公共接口不变
+   - 如需修改，提供向后兼容
+   - 使用弃用警告
+
+### 修复 Bug
+
+修复 Bug 时的步骤：
+
+1. **理解问题**:
+   - 仔细阅读错误信息
+   - 理解问题的根本原因
+   - 不要只修复症状
+
+2. **最小化修改**:
+   ```python
+   # ❌ 过度修改
+   # 修复一个小 bug 却重构了整个模块
+   
+   # ✅ 针对性修复
+   # 只修改导致 bug 的代码
+   ```
+
+3. **添加注释**:
+   ```python
+   # ✅ 说明修复原因
+   # 修复: 当用户名包含特殊字符时，正则匹配失败
+   # 原因: 正则表达式没有转义特殊字符
+   # 解决: 使用 re.escape() 转义用户输入
+   username_pattern = re.escape(username)
+   ```
+
+4. **考虑测试**:
+   ```python
+   # ✅ 添加测试防止回归
+   @pytest.mark.asyncio
+   async def test_special_chars_in_username():
+       """测试用户名包含特殊字符的情况"""
+       user = await create_user({'username': 'user@#$%'})
+       assert user.username == 'user@#$%'
+   ```
+
+## 提问建议
+
+向 AI 提问时，提供以下信息可以获得更好的帮助：
+
+### 1. 具体的错误信息
+
+```bash
+# ✅ 好的提问
+我在运行 `pnpm dev:antd` 时遇到以下错误：
+
+```
+Error: Cannot find module '@vben/types'
+  at Module._resolveFilename (node:internal/modules/cjs/loader:1048:15)
+  ...
+```
+
+项目环境：
+- Node: v20.10.0
+- pnpm: 10.12.4
+- 操作系统: Windows 11
+
+# ❌ 不好的提问
+前端启动不了，怎么办？
+```
+
+### 2. 相关代码片段
+
+```typescript
+// ✅ 好的提问
+我在尝试实现用户登录，但是 token 没有正确保存。以下是相关代码：
+
+// api.ts
+export async function login(credentials: LoginCredentials) {
+  const response = await axios.post('/api/auth/login', credentials);
+  // Token 在这里获取到了
+  console.log('Token:', response.data.token);
+  return response.data;
+}
+
+// useAuth.ts
+const { data } = await login(credentials);
+// 但是这里 data.token 是 undefined
+console.log('Data:', data);
+
+期望：data.token 应该包含 JWT token
+实际：data.token 是 undefined
+
+// ❌ 不好的提问
+登录功能有问题
+```
+
+### 3. 已尝试的解决方案
+
+````markdown
+# ✅ 好的提问
+我在尝试修复一个数据库连接池耗尽的问题。
+
+**问题描述**：
+运行一段时间后，应用报错 "TimeoutError: QueuePool limit of size 20 overflow 10 reached"
+
+**已尝试的方案**：
+1. 增加连接池大小到 50 - 只是延缓了问题
+2. 检查是否有未关闭的连接 - 使用了 async with 管理会话
+3. 查看日志 - 发现高峰期并发请求数超过 100
+
+**相关代码**：
+```python
+engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=20,
+    max_overflow=10,
+)
+```
+
+希望了解是否有更好的配置方案或架构优化建议。
+
+# ❌ 不好的提问
+数据库连接有问题，怎么解决？
+````
+
+### 4. 期望的行为
+
+```markdown
+# ✅ 好的提问
+我在实现文章列表的分页功能。
+
+**当前行为**：
+- 第一页显示 20 条记录 ✓
+- 点击第二页时，返回相同的 20 条记录 ✗
+
+**期望行为**：
+- 第一页显示前 20 条记录
+- 第二页显示第 21-40 条记录
+
+**相关代码**：
+[贴上代码]
+
+# ❌ 不好的提问
+分页不对
+```
+
+## 代码审查清单
+
+在提交代码前，AI 和开发者都应检查：
+
+### 基本检查
+
+- [ ] 代码符合项目规范（命名、格式、结构）
+- [ ] 类型注解完整且准确
+- [ ] 包含必要的注释和文档
+- [ ] 移除了所有 `console.log` / `print` 调试代码
+- [ ] 通过 Lint 检查 (`pnpm lint` / `prek`)
+- [ ] 通过类型检查 (`pnpm check:type` / `mypy`)
+
+### 功能检查
+
+- [ ] 功能按照需求正确实现
+- [ ] 边界情况得到处理
+- [ ] 错误处理完善
+- [ ] 测试通过（如有）
+
+### 安全检查
+
+- [ ] 没有硬编码的密码、密钥、token
+- [ ] 用户输入得到验证和清理
+- [ ] SQL 注入防护（使用参数化查询）
+- [ ] XSS 防护（正确转义输出）
+- [ ] 敏感操作有权限验证
+
+### 性能检查
+
+- [ ] 数据库查询优化（使用索引、避免 N+1）
+- [ ] 避免不必要的重复计算
+- [ ] 大数据量使用分页
+- [ ] 合理使用缓存
+
+## 特别注意事项
+
+### 禁止操作
+
+- ❌ 提交敏感信息（密码、API 密钥、token）
+- ❌ 提交依赖目录（node_modules、__pycache__、.venv）
+- ❌ 直接修改自动生成的文件（migrations、锁文件）
+- ❌ 绕过 Lint 和类型检查
+- ❌ 使用已弃用的 API 或库
+
+### 强制要求
+
+- ✅ 所有 API 接口必须有权限验证
+- ✅ 数据库操作必须有事务处理
+- ✅ 用户输入必须验证和清理
+- ✅ 错误必须有适当的日志记录
+- ✅ 公共 API 必须有完整文档
+
+### 最佳实践
+
+1. **渐进式开发**:
+   - 先实现核心功能
+   - 再添加边界情况处理
+   - 最后优化性能
+
+2. **保持简单**:
+   - 优先使用简单的解决方案
+   - 避免过度设计
+   - 不要过早优化
+
+3. **代码复用**:
+   - 提取公共逻辑到工具函数
+   - 使用组合而非继承
+   - 遵循 DRY 原则
+
+4. **可维护性**:
+   - 编写自解释的代码
+   - 添加必要的注释
+   - 保持函数简短
+
+## 参考资源
+
+### 官方文档
+
+- [FastAPI 文档](https://fastapi.tiangolo.com/) - 后端框架
+- [Vue 3 文档](https://cn.vuejs.org/) - 前端框架
+- [Vben Admin 文档](https://www.vben.pro/) - 管理后台框架
+- [Ant Design Vue](https://antdv.com/) - UI 组件库
+- [Pydantic 文档](https://docs.pydantic.dev/) - 数据验证
+- [SQLAlchemy 文档](https://docs.sqlalchemy.org/) - ORM
+
+### 社区资源
+
+- [FastAPI Best Architecture](https://github.com/fastapi-practices/fastapi_best_architecture)
+- [Vue Vben Admin](https://github.com/vbenjs/vue-vben-admin)
+
+---
+
+**最后更新**: 2025-12-20

@@ -1,0 +1,189 @@
+---
+description: 前端代码规范、命名约定和最佳实践
+tags: [frontend, vue, typescript, coding-standards]
+---
+
+# 前端代码规范
+
+## Vue 组件规范
+
+1. **组件语法**:
+   - 优先使用 `<script setup>` 语法
+   - 使用 Composition API，避免 Options API
+   - 组件文件使用 PascalCase 命名 (如 `UserProfile.vue`)
+   - 使用 `defineProps`、`defineEmits` 进行类型定义
+   - Props 和 emits 必须添加 TypeScript 类型注解
+
+2. **组件示例**:
+   ```vue
+   <script setup lang="ts">
+   import { ref, computed } from 'vue';
+   
+   interface Props {
+     userId: string;
+     name?: string;
+   }
+   
+   interface Emits {
+     (e: 'update', value: string): void;
+     (e: 'delete'): void;
+   }
+   
+   const props = defineProps<Props>();
+   const emit = defineEmits<Emits>();
+   
+   const count = ref(0);
+   const displayName = computed(() => props.name || 'Anonymous');
+   </script>
+   ```
+
+## TypeScript 规范
+
+1. **类型系统**:
+   - 启用严格模式 (`strict: true`)
+   - 避免使用 `any`，优先使用具体类型或泛型
+   - 接口命名使用 PascalCase
+   - 类型文件放在 `packages/types` 或组件同级 `types.ts`
+   - 优先使用 `interface` 而非 `type`（除非需要联合类型）
+
+2. **类型定义示例**:
+   ```typescript
+   // ✅ 推荐
+   interface User {
+     id: string;
+     name: string;
+     email: string;
+     role: 'admin' | 'user';
+   }
+   
+   // 联合类型使用 type
+   type Status = 'pending' | 'success' | 'error';
+   
+   // 泛型使用
+   interface ApiResponse<T> {
+     code: number;
+     msg: string;
+     data: T;
+   }
+   ```
+
+## 样式规范
+
+1. **CSS 优先级**:
+   - 优先使用 Tailwind CSS 工具类
+   - 复杂样式使用 CSS Modules 或 scoped style
+   - 避免内联样式，除非是动态计算的值
+   - 颜色、间距等使用设计 token
+
+2. **样式示例**:
+   ```vue
+   <template>
+     <!-- ✅ Tailwind 工具类 -->
+     <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow">
+       <button class="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600">
+         提交
+       </button>
+     </div>
+   </template>
+   
+   <style scoped>
+   /* 复杂样式使用 scoped */
+   .custom-component {
+     background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+   }
+   </style>
+   ```
+
+## 导入顺序
+
+```typescript
+// 1. Vue 核心
+import { ref, computed, onMounted } from 'vue';
+
+// 2. 第三方库
+import { message } from 'ant-design-vue';
+import axios from 'axios';
+
+// 3. workspace 包
+import { useUserStore } from '@vben/stores';
+import { ACCESS_TOKEN_KEY } from '@vben/constants';
+
+// 4. 本地导入
+import { fetchUserData } from './api';
+import UserCard from './components/UserCard.vue';
+
+// 5. 类型导入
+import type { User, UserProfile } from './types';
+```
+
+## 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 变量、函数 | camelCase | `getUserInfo`, `totalCount` |
+| 常量 | UPPER_SNAKE_CASE | `API_BASE_URL`, `MAX_RETRY` |
+| 组件 | PascalCase | `UserCard`, `DataTable` |
+| 组合式函数 | use 前缀 | `useAuth`, `useRequest` |
+| 类型/接口 | PascalCase | `UserProfile`, `ApiResponse` |
+| 文件名（组件） | PascalCase | `UserProfile.vue` |
+| 文件名（工具） | kebab-case | `user-utils.ts` |
+
+## 最佳实践
+
+1. **响应式数据**:
+   ```typescript
+   // ✅ 推荐
+   const count = ref(0);
+   const user = reactive({ name: 'John', age: 30 });
+   
+   // ❌ 避免
+   let count = 0; // 非响应式
+   ```
+
+2. **计算属性 vs 方法**:
+   ```typescript
+   // ✅ 使用计算属性（有缓存）
+   const fullName = computed(() => `${user.firstName} ${user.lastName}`);
+   
+   // ❌ 避免在模板中使用方法
+   function getFullName() {
+     return `${user.firstName} ${user.lastName}`;
+   }
+   ```
+
+3. **组件通信**:
+   ```typescript
+   // ✅ Props down, Events up
+   // 父组件
+   const handleUpdate = (value: string) => {
+     // 处理更新
+   };
+   
+   // 子组件
+   emit('update', newValue);
+   ```
+
+4. **异步操作**:
+   ```typescript
+   // ✅ 推荐
+   const loading = ref(false);
+   const error = ref<Error | null>(null);
+   
+   async function fetchData() {
+     loading.value = true;
+     error.value = null;
+     try {
+       const data = await api.getData();
+       return data;
+     } catch (e) {
+       error.value = e as Error;
+       message.error('加载失败');
+     } finally {
+       loading.value = false;
+     }
+   }
+   ```
+
+---
+
+**最后更新**: 2025-12-20

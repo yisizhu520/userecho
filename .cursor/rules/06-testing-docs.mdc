@@ -1,0 +1,466 @@
+---
+description: 测试规范和文档编写指南
+tags: [testing, documentation, best-practices]
+---
+
+# 测试与文档规范
+
+## 测试规范
+
+### 前端测试
+
+1. **单元测试 (Vitest)**:
+   ```typescript
+   // UserCard.test.ts
+   import { describe, it, expect } from 'vitest';
+   import { mount } from '@vue/test-utils';
+   import UserCard from './UserCard.vue';
+   
+   describe('UserCard', () => {
+     it('renders user name correctly', () => {
+       const wrapper = mount(UserCard, {
+         props: {
+           user: { id: 1, name: '张三', email: 'zhang@example.com' }
+         }
+       });
+       
+       expect(wrapper.text()).toContain('张三');
+     });
+     
+     it('emits delete event when button clicked', async () => {
+       const wrapper = mount(UserCard, {
+         props: { user: { id: 1, name: '张三' } }
+       });
+       
+       await wrapper.find('.delete-btn').trigger('click');
+       expect(wrapper.emitted('delete')).toBeTruthy();
+     });
+   });
+   ```
+
+2. **组合式函数测试**:
+   ```typescript
+   // useCounter.test.ts
+   import { describe, it, expect } from 'vitest';
+   import { useCounter } from './useCounter';
+   
+   describe('useCounter', () => {
+     it('increments counter', () => {
+       const { count, increment } = useCounter();
+       expect(count.value).toBe(0);
+       
+       increment();
+       expect(count.value).toBe(1);
+     });
+     
+     it('starts with initial value', () => {
+       const { count } = useCounter(10);
+       expect(count.value).toBe(10);
+     });
+   });
+   ```
+
+3. **E2E 测试 (Playwright)**:
+   ```typescript
+   // e2e/login.spec.ts
+   import { test, expect } from '@playwright/test';
+   
+   test.describe('Login Flow', () => {
+     test('successful login redirects to dashboard', async ({ page }) => {
+       await page.goto('/login');
+       
+       await page.fill('[name="username"]', 'testuser');
+       await page.fill('[name="password"]', 'password123');
+       await page.click('button[type="submit"]');
+       
+       await expect(page).toHaveURL('/dashboard');
+       await expect(page.locator('.welcome-message')).toContainText('欢迎');
+     });
+     
+     test('displays error on invalid credentials', async ({ page }) => {
+       await page.goto('/login');
+       
+       await page.fill('[name="username"]', 'invalid');
+       await page.fill('[name="password"]', 'wrong');
+       await page.click('button[type="submit"]');
+       
+       await expect(page.locator('.error-message')).toBeVisible();
+     });
+   });
+   ```
+
+### 后端测试
+
+1. **单元测试 (pytest)**:
+   ```python
+   # tests/test_user_service.py
+   import pytest
+   from backend.app.user.service import UserService
+   from backend.app.user.schema import UserCreate
+   
+   @pytest.mark.asyncio
+   async def test_create_user(db_session):
+       """测试创建用户"""
+       user_data = UserCreate(
+           username='testuser',
+           email='test@example.com',
+           password='password123'
+       )
+       
+       user = await UserService.create_user(db_session, user_data)
+       
+       assert user.id is not None
+       assert user.username == 'testuser'
+       assert user.email == 'test@example.com'
+   
+   @pytest.mark.asyncio
+   async def test_duplicate_email_raises_error(db_session):
+       """测试重复邮箱抛出错误"""
+       user_data = UserCreate(
+           username='testuser',
+           email='test@example.com',
+           password='password123'
+       )
+       
+       await UserService.create_user(db_session, user_data)
+       
+       with pytest.raises(ValueError, match='邮箱已存在'):
+           await UserService.create_user(db_session, user_data)
+   ```
+
+2. **API 测试**:
+   ```python
+   # tests/test_api_users.py
+   import pytest
+   from httpx import AsyncClient
+   
+   @pytest.mark.asyncio
+   async def test_get_users(client: AsyncClient, auth_headers):
+       """测试获取用户列表"""
+       response = await client.get(
+           '/api/v1/users',
+           headers=auth_headers
+       )
+       
+       assert response.status_code == 200
+       data = response.json()
+       assert data['code'] == 200
+       assert 'items' in data['data']
+   
+   @pytest.mark.asyncio
+   async def test_create_user(client: AsyncClient, auth_headers):
+       """测试创建用户"""
+       user_data = {
+           'username': 'newuser',
+           'email': 'new@example.com',
+           'password': 'password123'
+       }
+       
+       response = await client.post(
+           '/api/v1/users',
+           json=user_data,
+           headers=auth_headers
+       )
+       
+       assert response.status_code == 201
+       data = response.json()
+       assert data['code'] == 201
+       assert data['data']['username'] == 'newuser'
+   
+   @pytest.mark.asyncio
+   async def test_unauthorized_access(client: AsyncClient):
+       """测试未授权访问"""
+       response = await client.get('/api/v1/users')
+       assert response.status_code == 401
+   ```
+
+3. **测试 Fixtures**:
+   ```python
+   # tests/conftest.py
+   import pytest
+   from httpx import AsyncClient
+   from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+   from backend.main import app
+   from backend.database.db import Base
+   
+   @pytest.fixture
+   async def db_session():
+       """数据库会话 fixture"""
+       engine = create_async_engine('sqlite+aiosqlite:///:memory:')
+       async with engine.begin() as conn:
+           await conn.run_sync(Base.metadata.create_all)
+       
+       async with AsyncSession(engine) as session:
+           yield session
+       
+       await engine.dispose()
+   
+   @pytest.fixture
+   async def client():
+       """HTTP 客户端 fixture"""
+       async with AsyncClient(app=app, base_url='http://test') as ac:
+           yield ac
+   
+   @pytest.fixture
+   async def auth_headers(db_session):
+       """认证头 fixture"""
+       # 创建测试用户并获取 token
+       token = await create_test_user_and_get_token(db_session)
+       return {'Authorization': f'Bearer {token}'}
+   ```
+
+### 测试覆盖率
+
+```bash
+# 前端测试覆盖率
+pnpm test:unit --coverage
+
+# 后端测试覆盖率
+pytest --cov=backend --cov-report=html
+
+# 目标覆盖率: >80%
+```
+
+## 文档规范
+
+### 代码注释
+
+#### 前端注释 (JSDoc)
+
+```typescript
+/**
+ * 获取用户信息
+ * @param userId - 用户 ID
+ * @returns Promise 包含用户详细信息
+ * @throws {Error} 当用户不存在时抛出错误
+ * 
+ * @example
+ * ```ts
+ * const user = await getUserInfo('123');
+ * console.log(user.name);
+ * ```
+ */
+async function getUserInfo(userId: string): Promise<UserInfo> {
+  const response = await api.get(`/users/${userId}`);
+  return response.data;
+}
+
+/**
+ * 用户信息接口
+ */
+interface UserInfo {
+  /** 用户 ID */
+  id: string;
+  /** 用户名 */
+  name: string;
+  /** 邮箱地址 */
+  email: string;
+  /** 用户角色 */
+  role: 'admin' | 'user';
+  /** 创建时间 */
+  createdAt: Date;
+}
+
+/**
+ * 用户列表组合式函数
+ * 
+ * @param options - 查询选项
+ * @returns 用户列表和相关操作方法
+ * 
+ * @example
+ * ```vue
+ * <script setup>
+ * const { users, loading, refresh } = useUserList({ pageSize: 20 });
+ * </script>
+ * ```
+ */
+export function useUserList(options?: UserListOptions) {
+  // 实现...
+}
+```
+
+#### 后端注释 (Docstring)
+
+```python
+async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+    """
+    根据 ID 获取用户信息
+    
+    此函数从数据库中查询指定 ID 的用户。如果用户不存在，返回 None。
+    
+    Args:
+        db: 数据库会话对象
+        user_id: 用户唯一标识符
+    
+    Returns:
+        User 对象，如果用户不存在则返回 None
+    
+    Raises:
+        DatabaseError: 当数据库查询失败时抛出
+    
+    Example:
+        >>> async with get_db() as db:
+        ...     user = await get_user_by_id(db, 123)
+        ...     print(user.name)
+    """
+    result = await db.execute(
+        select(User).where(User.id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+class UserService:
+    """
+    用户服务类
+    
+    提供用户相关的业务逻辑处理，包括用户创建、更新、删除等操作。
+    
+    Attributes:
+        crud: 用户数据访问对象
+    """
+    
+    def __init__(self):
+        self.crud = UserCRUD()
+    
+    async def create_user(
+        self,
+        db: AsyncSession,
+        user_data: UserCreate
+    ) -> User:
+        """
+        创建新用户
+        
+        Args:
+            db: 数据库会话
+            user_data: 用户创建数据
+        
+        Returns:
+            创建的用户对象
+        
+        Raises:
+            ValueError: 当邮箱已存在时抛出
+        """
+        # 实现...
+```
+
+### README 编写规范
+
+每个模块应包含 README.md：
+
+````markdown
+# 模块名称
+
+简短描述模块的功能和用途。
+
+## 功能特性
+
+- 功能点 1
+- 功能点 2
+- 功能点 3
+
+## 安装
+
+```bash
+# 安装依赖
+pnpm install
+```
+
+## 使用方法
+
+```typescript
+import { useAuth } from '@vben/hooks';
+
+const { login, logout, isLoggedIn } = useAuth();
+```
+
+## API 文档
+
+### `useAuth()`
+
+用户认证组合式函数。
+
+**返回值:**
+
+- `login(credentials)`: 登录方法
+- `logout()`: 登出方法
+- `isLoggedIn`: 登录状态
+
+**示例:**
+
+```typescript
+const { login } = useAuth();
+await login({ username: 'admin', password: '123456' });
+```
+
+## 配置选项
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `timeout` | `number` | `5000` | 请求超时时间 |
+| `retry` | `number` | `3` | 重试次数 |
+
+## 开发
+
+```bash
+# 开发模式
+pnpm dev
+
+# 构建
+pnpm build
+
+# 测试
+pnpm test
+```
+
+## 许可证
+
+MIT
+````
+
+### API 文档示例
+
+使用 FastAPI 自动生成文档：
+
+```python
+from fastapi import APIRouter, Path, Query
+from typing import Annotated
+
+router = APIRouter(prefix='/api/v1/users', tags=['用户管理'])
+
+@router.get('/{user_id}', summary='获取用户信息', response_model=UserResponse)
+async def get_user(
+    user_id: Annotated[int, Path(description='用户 ID', ge=1)],
+    include_posts: Annotated[bool, Query(description='是否包含用户文章')] = False,
+    db: AsyncSession = Depends(get_db)
+) -> UserResponse:
+    """
+    获取指定 ID 的用户信息
+    
+    - **user_id**: 用户的唯一标识符，必须大于等于 1
+    - **include_posts**: 是否在响应中包含用户的文章列表
+    
+    返回用户的详细信息，包括姓名、邮箱、创建时间等。
+    
+    **响应示例:**
+    ```json
+    {
+        "code": 200,
+        "msg": "Success",
+        "data": {
+            "id": 1,
+            "username": "zhangsan",
+            "email": "zhang@example.com",
+            "created_at": "2025-12-20T10:00:00"
+        }
+    }
+    ```
+    """
+    user = await user_service.get_user(db, user_id, include_posts)
+    if not user:
+        raise HTTPException(status_code=404, detail='用户不存在')
+    return user
+```
+
+---
+
+**最后更新**: 2025-12-20

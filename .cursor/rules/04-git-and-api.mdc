@@ -1,0 +1,261 @@
+---
+description: Git 提交规范和 RESTful API 设计指南
+tags: [git, api, rest, conventions]
+---
+
+# Git 提交规范
+
+## Conventional Commits
+
+### 提交格式
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Type 类型
+
+| Type | 说明 | 示例 |
+|------|------|------|
+| `feat` | 新功能 | `feat(auth): 添加 OAuth2 登录` |
+| `fix` | 修复 bug | `fix(user): 修复用户头像上传失败问题` |
+| `docs` | 文档更新 | `docs(readme): 更新安装说明` |
+| `style` | 代码格式调整 | `style: 统一代码缩进为 2 空格` |
+| `refactor` | 重构 | `refactor(api): 重构用户认证逻辑` |
+| `perf` | 性能优化 | `perf(query): 优化用户列表查询性能` |
+| `test` | 测试相关 | `test(user): 添加用户注册单元测试` |
+| `chore` | 构建/工具链 | `chore(deps): 升级 Vue 到 3.4.0` |
+| `ci` | CI 配置 | `ci: 添加自动部署脚本` |
+| `revert` | 回滚 | `revert: 回滚 commit abc123` |
+
+### 提交示例
+
+```bash
+# ✅ 好的提交
+feat(auth): 添加 JWT 刷新令牌功能
+
+- 实现 refresh token 机制
+- 添加 token 过期时间配置
+- 更新相关文档
+- 添加单元测试
+
+Closes #123
+
+# ✅ 简单提交
+fix(ui): 修复按钮颜色错误
+
+# ✅ Breaking Change
+feat(api)!: 重构用户 API 响应格式
+
+BREAKING CHANGE: 用户 API 响应结构已更改
+- 旧格式: { user: {...} }
+- 新格式: { data: { user: {...} } }
+
+# ❌ 不好的提交
+fix: bug修复
+update
+修改了一些东西
+```
+
+## API 设计规范
+
+### RESTful 风格
+
+| 方法 | 用途 | 示例 |
+|------|------|------|
+| GET | 获取资源 | `GET /api/v1/users` - 获取用户列表 |
+| POST | 创建资源 | `POST /api/v1/users` - 创建用户 |
+| PUT | 完整更新 | `PUT /api/v1/users/1` - 完整更新用户 |
+| PATCH | 部分更新 | `PATCH /api/v1/users/1` - 部分更新用户 |
+| DELETE | 删除资源 | `DELETE /api/v1/users/1` - 删除用户 |
+
+### URL 设计规范
+
+```bash
+# ✅ 推荐
+GET    /api/v1/users              # 获取用户列表
+GET    /api/v1/users/1            # 获取单个用户
+POST   /api/v1/users              # 创建用户
+PUT    /api/v1/users/1            # 更新用户
+DELETE /api/v1/users/1            # 删除用户
+
+# 嵌套资源
+GET    /api/v1/users/1/posts      # 获取用户的文章
+POST   /api/v1/users/1/posts      # 为用户创建文章
+
+# 多词资源使用连字符
+GET    /api/v1/user-profiles      # 用户资料
+GET    /api/v1/article-comments   # 文章评论
+
+# 版本控制
+GET    /api/v1/users              # 版本 1
+GET    /api/v2/users              # 版本 2
+
+# ❌ 避免
+GET    /api/v1/getUsers           # 不要在 URL 中使用动词
+GET    /api/v1/user               # 使用复数形式
+GET    /api/v1/user_profiles      # 使用连字符而非下划线
+```
+
+### 响应格式规范
+
+#### 成功响应
+
+```python
+# 标准成功响应
+{
+    "code": 200,
+    "msg": "Success",
+    "data": {
+        "id": 1,
+        "name": "张三",
+        "email": "zhang@example.com"
+    }
+}
+
+# 列表响应（带分页）
+{
+    "code": 200,
+    "msg": "Success",
+    "data": {
+        "items": [
+            {"id": 1, "name": "张三"},
+            {"id": 2, "name": "李四"}
+        ],
+        "total": 100,
+        "page": 1,
+        "size": 10,
+        "pages": 10
+    }
+}
+
+# 创建成功
+{
+    "code": 201,
+    "msg": "Created successfully",
+    "data": {
+        "id": 123,
+        "name": "新用户"
+    }
+}
+```
+
+#### 错误响应
+
+```python
+# 客户端错误 (4xx)
+{
+    "code": 400,
+    "msg": "参数错误",
+    "data": null,
+    "errors": [
+        {
+            "field": "email",
+            "message": "邮箱格式不正确"
+        }
+    ]
+}
+
+# 认证错误
+{
+    "code": 401,
+    "msg": "未授权，请先登录",
+    "data": null
+}
+
+# 权限错误
+{
+    "code": 403,
+    "msg": "无权限访问此资源",
+    "data": null
+}
+
+# 资源不存在
+{
+    "code": 404,
+    "msg": "用户不存在",
+    "data": null
+}
+
+# 服务器错误 (5xx)
+{
+    "code": 500,
+    "msg": "服务器内部错误",
+    "data": null
+}
+```
+
+### HTTP 状态码
+
+| 状态码 | 说明 | 使用场景 |
+|--------|------|----------|
+| 200 | OK | 成功获取/更新资源 |
+| 201 | Created | 成功创建资源 |
+| 204 | No Content | 成功删除资源 |
+| 400 | Bad Request | 请求参数错误 |
+| 401 | Unauthorized | 未认证 |
+| 403 | Forbidden | 无权限 |
+| 404 | Not Found | 资源不存在 |
+| 409 | Conflict | 资源冲突（如重复创建） |
+| 422 | Unprocessable Entity | 语义错误（如业务逻辑验证失败） |
+| 429 | Too Many Requests | 请求过多，限流 |
+| 500 | Internal Server Error | 服务器错误 |
+| 502 | Bad Gateway | 网关错误 |
+| 503 | Service Unavailable | 服务不可用 |
+
+### 查询参数规范
+
+```bash
+# 分页
+GET /api/v1/users?page=1&size=20
+
+# 排序
+GET /api/v1/users?sort=created_at&order=desc
+
+# 筛选
+GET /api/v1/users?status=active&role=admin
+
+# 搜索
+GET /api/v1/users?q=zhang
+
+# 字段过滤
+GET /api/v1/users?fields=id,name,email
+
+# 日期范围
+GET /api/v1/orders?start_date=2025-01-01&end_date=2025-12-31
+```
+
+### API 文档示例
+
+```python
+from fastapi import APIRouter, Depends, Query
+from typing import Annotated
+
+router = APIRouter(prefix='/api/v1/users', tags=['用户管理'])
+
+@router.get('', summary='获取用户列表')
+async def get_users(
+    page: Annotated[int, Query(ge=1, description='页码')] = 1,
+    size: Annotated[int, Query(ge=1, le=100, description='每页数量')] = 20,
+    status: Annotated[str | None, Query(description='状态筛选')] = None,
+    db: AsyncSession = Depends(get_db)
+) -> UserListResponse:
+    """
+    获取用户列表
+    
+    - **page**: 页码，从 1 开始
+    - **size**: 每页数量，范围 1-100
+    - **status**: 状态筛选，可选值: active, inactive, banned
+    
+    返回用户列表和分页信息
+    """
+    return await user_service.get_users(db, page, size, status)
+```
+
+---
+
+**最后更新**: 2025-12-20

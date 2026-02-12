@@ -1,0 +1,98 @@
+---
+description: Feedalyze 项目概述、技术栈和项目结构
+tags: [overview, architecture, structure]
+---
+
+# Feedalyze 项目概述
+
+## 项目简介
+
+Feedalyze 是一个基于 FastAPI Best Architecture 和 Vben Admin 的全栈企业级应用。采用前后端分离架构，实现 RBAC 权限控制系统。
+
+## 技术栈
+
+### 前端 (front/)
+
+- **框架**: Vue 3 (Composition API + `<script setup>`)
+- **语言**: TypeScript (严格模式)
+- **构建工具**: Vite 5+
+- **UI 框架**: Ant Design Vue
+- **状态管理**: Pinia
+- **路由**: Vue Router
+- **CSS**: Tailwind CSS + CSS Modules
+- **包管理**: pnpm (>=9.12.0)
+- **Node 版本**: >=20.10.0
+
+### 后端 (server/)
+
+- **框架**: FastAPI (>=0.123.5)
+- **Python 版本**: >=3.10
+- **ORM**: SQLAlchemy 2.0+
+- **数据库**: MySQL 8.0+ / PostgreSQL 16.0+
+- **缓存**: Redis 7.1+
+- **异步任务**: Celery + celery-aio-pool
+- **数据验证**: Pydantic v2
+- **迁移工具**: Alembic
+- **认证**: JWT (python-jose)
+- **包管理**: uv / pip
+
+## 项目结构
+
+```
+feedalyze/
+├── front/                          # 前端 monorepo
+│   ├── apps/
+│   │   └── web-antd/              # 主应用 (Ant Design)
+│   │       ├── src/
+│   │       │   ├── api/           # API 接口
+│   │       │   ├── router/        # 路由配置
+│   │       │   ├── store/         # 状态管理
+│   │       │   ├── views/         # 页面组件
+│   │       │   └── locales/       # 国际化
+│   ├── packages/                  # 共享包
+│   │   ├── @core/                 # 核心功能
+│   │   ├── constants/             # 常量
+│   │   ├── effects/               # 副作用/组件
+│   │   ├── stores/                # 共享状态
+│   │   ├── types/                 # 类型定义
+│   │   └── utils/                 # 工具函数
+│   └── internal/                  # 内部工具
+│       ├── lint-configs/          # Lint 配置
+│       └── vite-config/           # Vite 配置
+├── server/                         # 后端
+│   └── backend/
+│       ├── app/                   # 应用模块
+│       │   ├── api/               # API 路由
+│       │   ├── schema/            # Pydantic Schema
+│       │   ├── service/           # 业务逻辑
+│       │   ├── crud/              # 数据访问
+│       │   └── model/             # 数据模型
+│       ├── common/                # 公共模块
+│       ├── core/                  # 核心配置
+│       ├── database/              # 数据库配置
+│       ├── middleware/            # 中间件
+│       ├── utils/                 # 工具函数
+│       └── plugin/                # 插件
+└── .cursor/                       # Cursor 配置
+    └── rules/                     # 项目规则
+```
+
+## 架构模式
+
+### 后端伪三层架构
+
+```
+api (controller) → schema (dto) → service → crud (dao) → model
+```
+
+| 层级 | Java 对应 | Feedalyze | 说明 |
+|------|-----------|-----------|------|
+| 视图层 | controller | api | 处理请求响应 |
+| 数据传输 | dto | schema | Pydantic 模型 |
+| 业务逻辑 | service + impl | service | 业务逻辑处理 |
+| 数据访问 | dao / mapper | crud | 数据库操作 |
+| 数据模型 | model / entity | model | SQLAlchemy 模型 |
+
+---
+
+**最后更新**: 2025-12-20

@@ -1,0 +1,72 @@
+# ========================================
+# 服务器项目 .gitignore
+# ========================================
+
+# ===== Python 相关 =====
+# 字节码
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ===== 虚拟环境 =====
+venv/
+.venv/
+env/
+ENV/
+.python-version
+
+# ===== IDE =====
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+
+# ===== 缓存和临时文件 =====
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.coverage
+.hypothesis/
+*.cover
+*.py,cover
+htmlcov/
+.tox/
+.nox/
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 环境变量 =====
+.env
+.env.local
+.env.*.local
+
+# ===== 数据库 =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== Celery =====
+celerybeat-schedule
+celerybeat.pid
+
+# ===== 工具 =====
+.claude/
+
+# ===== 构建和发布 =====
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+wheels/
+pip-wheel-metadata/
+
+# ===== 备份文件 =====
+*.bak
+*.swp
+*~

@@ -1,0 +1,107 @@
+# ========================================
+# Feedalyze 项目 - 根目录 .gitignore
+# ========================================
+
+# ===== 操作系统文件 =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===== IDE 和编辑器 =====
+.idea/
+# .vscode/
+.cursor/turbo
+*.swp
+*.swo
+*.swn
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.history/
+*.code-workspace
+
+# ===== 日志文件 =====
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== 临时文件 =====
+*.tmp
+*.temp
+.tmp/
+.temp/
+.cache/
+
+# ===== 环境变量文件 =====
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ===== 依赖目录 (根级别) =====
+node_modules/
+venv/
+.venv/
+env/
+ENV/
+
+# ===== 构建输出 (根级别) =====
+dist/
+build/
+out/
+*.zip
+*.tar
+*.tar.gz
+*.war
+
+# ===== Python 相关 =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.python-version
+
+# ===== 测试和覆盖率 =====
+coverage/
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+
+# ===== 数据库 =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== 备份文件 =====
+*.bak
+*.backup
+*~
+
+# ===== 文档生成 =====
+site/
+docs/_build/
+
+# ===== 其他 =====
+.VSCodeCounter/
+*.pid
+*.seed
+*.pid.lock

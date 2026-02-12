@@ -1,0 +1,41 @@
+{% if default_datetime_column %}
+from datetime import datetime
+
+{% endif %}
+from pydantic import ConfigDict, Field
+
+from backend.common.schema import SchemaBase
+
+
+class {{ schema_name }}SchemaBase(SchemaBase):
+    """{{ doc_comment }}基础模型"""
+    {% for model in models %}
+    {{ model.name }}: {% if model.is_nullable %}{{ model.pd_type }} | None = Field(None, description='{{ model.comment }}'){% else %}{{ model.pd_type }} = Field(description='{{ model.comment }}'){% endif %}
+
+    {% endfor %}
+
+
+class Create{{ schema_name }}Param({{ schema_name }}SchemaBase):
+    """创建{{ doc_comment }}参数"""
+
+
+class Update{{ schema_name }}Param({{ schema_name }}SchemaBase):
+    """更新{{ doc_comment }}参数"""
+
+
+class Delete{{ schema_name }}Param(SchemaBase):
+    """删除{{ doc_comment }}参数"""
+
+    pks: list[int] = Field(description='{{ doc_comment }} ID 列表')
+
+
+class Get{{ schema_name }}Detail({{ schema_name }}SchemaBase):
+    """{{ doc_comment }}详情"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    {% if default_datetime_column %}
+    created_time: datetime
+    updated_time: datetime | None = None
+    {% endif %}

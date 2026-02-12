@@ -1,0 +1,103 @@
+{
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "codeLogin": "Code Login",
+    "qrcodeLogin": "Qr Code Login",
+    "forgetPassword": "Forget Password",
+    "captchaPlaceholder": "Please enter the captcha",
+    "captchaRequired": "The captcha is required"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "analytics": "Analytics",
+    "workspace": "Workspace"
+  },
+  "menu": {
+    "system": "System",
+    "scheduler": "Scheduler",
+    "schedulerManage": "Manage",
+    "schedulerRecord": "Record",
+    "log": "System Log",
+    "login": "Login",
+    "monitor": "System Monitor",
+    "opera": "Opera",
+    "online": "Online",
+    "redis": "Redis",
+    "server": "Server",
+    "sysDataPermission": "Data Permission",
+    "sysDataScope": "Data Scope",
+    "sysDataRule": "Data Rule",
+    "sysPlugin": "Plugin",
+    "sysDept": "Dept",
+    "sysMenu": "User",
+    "sysRole": "Role",
+    "sysUser": "User",
+    "profile": "Profile"
+  },
+  "monitor": {
+    "redis": {
+      "cards": {
+        "commands": {
+          "title": "Command Statistics"
+        },
+        "memory": {
+          "title": "Memory Status"
+        }
+      },
+      "desc": {
+        "title": "Basic Information"
+      },
+      "info": {
+        "arch": "Arch",
+        "clients": "Connections",
+        "commands_processed": "Commands Processed",
+        "connections_received": "Connections Received",
+        "keys_command_stats": "Keys Stats",
+        "keys_num": "Keys Num",
+        "memory_human": "Allocated Memory",
+        "mode": "Mode",
+        "os": "OS",
+        "rejected_connections": "Rejected Connections",
+        "role": "Role",
+        "title": "Basic Info",
+        "uptime": "Uptime",
+        "used_cpu": "Used CPU",
+        "used_cpu_children": "Used CPU Children",
+        "version": "Version"
+      },
+      "stats": {
+        "title": {
+          "used_memory": "Used Memory"
+        }
+      }
+    },
+    "server": {
+      "cpu": {
+        "current_freq": "Current Freq",
+        "logical_num": "Logical Num",
+        "physical_num": "Physical Num",
+        "usage": "Usage"
+      },
+      "disk": {
+        "device": "Device",
+        "dir": "Dir",
+        "free": "Free",
+        "title": "Disk",
+        "total": "Total",
+        "type": "Type",
+        "usage": "Usage",
+        "used": "Used"
+      },
+      "memory": {
+        "free": "Free",
+        "title": "Memory",
+        "total": "Total",
+        "usage": "Usage",
+        "used": "Used"
+      },
+      "service": "Service",
+      "system": "System"
+    }
+  }
+}

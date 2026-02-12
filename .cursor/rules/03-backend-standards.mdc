@@ -1,0 +1,262 @@
+---
+description: 后端代码规范、命名约定和最佳实践
+tags: [backend, fastapi, python, coding-standards]
+---
+
+# 后端代码规范
+
+## 伪三层架构详解
+
+### 架构层次
+
+```
+api (controller) → schema (dto) → service → crud (dao) → model
+```
+
+1. **API 层 (api/)**:
+   - 处理 HTTP 请求和响应
+   - 路由定义和参数验证
+   - 权限验证和错误处理
+
+2. **Schema 层 (schema/)**:
+   - Pydantic 数据传输对象
+   - 请求参数验证
+   - 响应数据序列化
+
+3. **Service 层 (service/)**:
+   - 业务逻辑处理
+   - 多个 CRUD 操作的组合
+   - 业务规则验证
+
+4. **CRUD 层 (crud/)**:
+   - 数据库操作封装
+   - 基础 CRUD 方法
+   - 复杂查询构建
+
+5. **Model 层 (model/)**:
+   - SQLAlchemy 数据模型
+   - 表结构定义
+   - 关系映射
+
+## 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 文件、模块 | snake_case | `user_service.py`, `auth_utils.py` |
+| 类 | PascalCase | `UserService`, `TokenManager` |
+| 函数、方法 | snake_case | `get_user_by_id`, `validate_token` |
+| 常量 | UPPER_SNAKE_CASE | `MAX_LOGIN_ATTEMPTS`, `JWT_ALGORITHM` |
+| 私有方法 | `_` 前缀 | `_validate_password`, `_hash_token` |
+| 变量 | snake_case | `user_id`, `total_count` |
+
+## 类型注解规范
+
+1. **函数类型注解**:
+   ```python
+   # ✅ 推荐 - 完整的类型注解
+   async def get_user_by_id(
+       db: AsyncSession,
+       user_id: int,
+       *,
+       include_deleted: bool = False
+   ) -> User | None:
+       """根据 ID 获取用户信息"""
+       pass
+   
+   # 使用 Python 3.10+ 新式类型
+   def get_user_list(
+       page: int = 1,
+       size: int = 10
+   ) -> list[User]:  # ✅ 使用 list[User] 而非 List[User]
+       pass
+   ```
+
+2. **复杂类型定义**:
+   ```python
+   from typing import TypeAlias, Literal
+   
+   # 类型别名
+   UserId: TypeAlias = int
+   UserRole: TypeAlias = Literal['admin', 'user', 'guest']
+   
+   # 泛型类型
+   from typing import TypeVar, Generic
+   
+   T = TypeVar('T')
+   
+   class ApiResponse(Generic[T]):
+       code: int
+       msg: str
+       data: T | None
+   ```
+
+## 异步编程规范
+
+1. **数据库操作**:
+   ```python
+   # ✅ 推荐 - 使用异步
+   async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
+       """创建用户"""
+       async with db.begin():
+           user = User(**user_data.model_dump())
+           db.add(user)
+           await db.flush()
+           await db.refresh(user)
+           return user
+   
+   # ✅ 使用 async with 管理会话
+   async def get_user_with_posts(user_id: int) -> User:
+       async with get_db_session() as db:
+           result = await db.execute(
+               select(User)
+               .options(selectinload(User.posts))
+               .where(User.id == user_id)
+           )
+           return result.scalar_one()
+   ```
+
+2. **I/O 操作**:
+   ```python
+   # ✅ 使用异步库
+   import aiofiles
+   
+   async def read_file(path: str) -> str:
+       async with aiofiles.open(path, 'r') as f:
+           content = await f.read()
+           return content
+   ```
+
+## 错误处理规范
+
+1. **自定义异常**:
+   ```python
+   # 定义异常类
+   class UserNotFoundError(Exception):
+       """用户不存在异常"""
+       pass
+   
+   class InvalidCredentialsError(Exception):
+       """认证失败异常"""
+       pass
+   ```
+
+2. **API 层错误处理**:
+   ```python
+   from fastapi import HTTPException, status
+   
+   @router.get('/users/{user_id}')
+   async def get_user(
+       user_id: int,
+       db: AsyncSession = Depends(get_db)
+   ) -> UserResponse:
+       """获取用户信息"""
+       try:
+           user = await user_service.get_user_by_id(db, user_id)
+           if not user:
+               raise HTTPException(
+                   status_code=status.HTTP_404_NOT_FOUND,
+                   detail='用户不存在'
+               )
+           return user
+       except Exception as e:
+           logger.error(f'获取用户失败: {e}')
+           raise HTTPException(
+               status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+               detail='服务器错误'
+           )
+   ```
+
+## 导入顺序
+
+```python
+# 1. 标准库
+from typing import Annotated, Any
+from datetime import datetime
+import asyncio
+
+# 2. 第三方库
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel, Field
+
+# 3. 本地导入 - 通用
+from backend.common.response import success_response
+from backend.common.exception import UserNotFoundError
+from backend.database.db import get_db
+
+# 4. 本地导入 - 应用
+from backend.app.user.model import User
+from backend.app.user.schema import UserCreate, UserUpdate
+from backend.app.user.service import UserService
+from backend.app.user.crud import user_crud
+```
+
+## 最佳实践
+
+1. **依赖注入**:
+   ```python
+   # ✅ 使用 FastAPI 依赖注入
+   from typing import Annotated
+   
+   CurrentUser = Annotated[User, Depends(get_current_user)]
+   DatabaseSession = Annotated[AsyncSession, Depends(get_db)]
+   
+   @router.post('/posts')
+   async def create_post(
+       post_data: PostCreate,
+       current_user: CurrentUser,
+       db: DatabaseSession
+   ) -> PostResponse:
+       return await post_service.create(db, post_data, current_user.id)
+   ```
+
+2. **数据库查询优化**:
+   ```python
+   # ✅ 使用 joinedload 避免 N+1 查询
+   from sqlalchemy.orm import selectinload, joinedload
+   
+   async def get_users_with_posts(db: AsyncSession) -> list[User]:
+       result = await db.execute(
+           select(User)
+           .options(selectinload(User.posts))  # 一对多使用 selectinload
+           .options(joinedload(User.profile))  # 一对一使用 joinedload
+       )
+       return result.scalars().all()
+   ```
+
+3. **事务管理**:
+   ```python
+   # ✅ 显式事务控制
+   async def transfer_money(
+       db: AsyncSession,
+       from_user_id: int,
+       to_user_id: int,
+       amount: float
+   ) -> None:
+       async with db.begin():
+           # 所有操作在同一事务中
+           await deduct_balance(db, from_user_id, amount)
+           await add_balance(db, to_user_id, amount)
+           await create_transaction_log(db, from_user_id, to_user_id, amount)
+           # 如果任何操作失败，自动回滚
+   ```
+
+4. **日志记录**:
+   ```python
+   from loguru import logger
+   
+   # ✅ 记录关键操作
+   async def delete_user(db: AsyncSession, user_id: int) -> None:
+       logger.info(f'开始删除用户: user_id={user_id}')
+       try:
+           await user_crud.delete(db, user_id)
+           logger.info(f'用户删除成功: user_id={user_id}')
+       except Exception as e:
+           logger.error(f'用户删除失败: user_id={user_id}, error={e}')
+           raise
+   ```
+
+---
+
+**最后更新**: 2025-12-20
