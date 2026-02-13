@@ -18,6 +18,10 @@ export const overridesPreferences = defineOverridesPreferences({
   logo: {
     source: 'https://wu-clan.github.io/picx-images-hosting/logo/fba.png',
   },
+  // 禁用标签页功能
+  tabbar: {
+    enable: false,
+  },
   theme: {
     mode: 'auto',
   },
