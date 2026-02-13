@@ -4,8 +4,14 @@
 执行方式: python scripts/update_role_menus.py
 """
 import asyncio
+import io
 import sys
 from pathlib import Path
+
+# 修复 Windows 控制台编码问题
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # 添加项目根目录到 Python 路径
 backend_path = Path(__file__).resolve().parent.parent

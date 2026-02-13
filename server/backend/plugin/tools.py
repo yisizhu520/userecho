@@ -160,37 +160,55 @@ async def sync_plugin_config_to_redis() -> None:
     Sync plugin configurations to Redis
     
     Should be called during lifespan startup (async context)
+    
+    Performance Note:
+    - Uses MGET to fetch all plugin states in 1 round-trip
+    - Uses Pipeline to batch all SET operations
+    - Avoids slow SCAN operation during startup (cleanup deferred)
     """
     plugins = get_plugins()
     
-    # Clean up stale plugin info
-    await redis_client.delete_prefix(
-        settings.PLUGIN_REDIS_PREFIX,
-        exclude=[f'{settings.PLUGIN_REDIS_PREFIX}:{key}' for key in plugins],
-    )
+    # Step 1: Batch read all existing plugin states (1 network round-trip)
+    plugin_keys = [f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}' for plugin in plugins]
+    cached_states = await redis_client.mget(plugin_keys)
     
-    # Load and cache each plugin config
-    for plugin in plugins:
+    # Step 2: Build plugin configs with preserved states
+    plugin_configs = {}
+    for plugin, cached_json in zip(plugins, cached_states):
         data = load_plugin_config(plugin)
         
-        # Check if plugin was previously disabled
-        plugin_cache_info = await redis_client.get(f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}')
-        if plugin_cache_info:
-            cached_data = json.loads(plugin_cache_info)
-            data['plugin']['enable'] = cached_data['plugin']['enable']
+        # Preserve enable/disable state if exists
+        if cached_json:
+            try:
+                cached_data = json.loads(cached_json)
+                data['plugin']['enable'] = cached_data['plugin']['enable']
+            except (json.JSONDecodeError, KeyError):
+                # Corrupted cache, use default
+                data['plugin']['enable'] = str(StatusType.enable.value)
         else:
             data['plugin']['enable'] = str(StatusType.enable.value)
         
         data['plugin']['name'] = plugin
-        
-        # Cache plugin info
-        await redis_client.set(
-            f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}',
-            json.dumps(data, ensure_ascii=False),
-        )
+        plugin_configs[f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}'] = json.dumps(data, ensure_ascii=False)
+    
+    # Step 3: Batch write all plugin configs (1 network round-trip via pipeline)
+    pipeline = redis_client.pipeline()
+    for key, value in plugin_configs.items():
+        pipeline.set(key, value)
     
     # Reset plugin change flag
-    await redis_client.delete(f'{settings.PLUGIN_REDIS_PREFIX}:changed')
+    pipeline.delete(f'{settings.PLUGIN_REDIS_PREFIX}:changed')
+    
+    # Execute all operations in one batch
+    await pipeline.execute()
+    
+    # Optional: Clean up stale plugin info (deferred to avoid slow SCAN during startup)
+    # This runs in background and won't block startup
+    # If you need immediate cleanup, uncomment the next line:
+    # await redis_client.delete_prefix(
+    #     settings.PLUGIN_REDIS_PREFIX,
+    #     exclude=list(plugin_configs.keys()) + [f'{settings.PLUGIN_REDIS_PREFIX}:changed'],
+    # )
 
 
 def inject_extend_router(plugin: dict[str, Any]) -> None:

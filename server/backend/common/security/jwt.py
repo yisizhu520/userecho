@@ -206,6 +206,9 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
     if not user.status:
         raise errors.AuthorizationError(msg='用户已被锁定，请联系系统管理员')
     if user.dept_id:
+        if not user.dept:
+            log.error(f'User {user.id} has dept_id {user.dept_id} but dept object is None')
+            raise errors.AuthorizationError(msg='用户所属部门数据异常，请联系系统管理员')
         if not user.dept.status:
             raise errors.AuthorizationError(msg='用户所属部门已被锁定，请联系系统管理员')
         if user.dept.del_flag:

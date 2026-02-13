@@ -81,8 +81,8 @@ values
 (76, '导入', 'ImportGenCode', null, 0, null, 2, null, 'codegen:table:import', 1, 0, 1, '', null, 69, '2025-06-26 20:29:06', null),
 (77, '写入', 'WriteGenCode', null, 0, null, 2, null, 'codegen:local:write', 1, 0, 1, '', null, 69, '2025-06-26 20:29:06', null);
 
-insert into sys_role (id, name, status, is_filter_scopes, remark, created_time, updated_time)
-values (1, '测试', 1, true, null, now(), null);
+insert into sys_role (id, name, status, is_filter_scopes, role_type, remark, created_time, updated_time)
+values (1, '测试', 1, true, 'business', null, now(), null);
 
 insert into sys_role_menu (id, role_id, menu_id)
 values

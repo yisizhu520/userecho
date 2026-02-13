@@ -1,183 +1,221 @@
-#!/usr/bin/env python3
-"""
-创建测试用户脚本
+"""创建测试用户脚本
 
 用于测试路由隔离功能的不同角色用户
+执行方式: python scripts/create_test_users.py
 """
 import asyncio
+import io
 import sys
 from pathlib import Path
 
-import bcrypt
-from sqlalchemy import insert, select
+# 修复 Windows 控制台编码问题
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # 添加项目根目录到 Python 路径
-backend_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(backend_dir))
+backend_path = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(backend_path))
 
-from backend.app.admin.model.role import Role
-from backend.app.admin.model.user import User
-from backend.app.admin.utils.password_security import get_hash_password
-from backend.app.admin.model.m2m import user_role
+import bcrypt
+from sqlalchemy import select
+from backend.app.admin.model import User, Role, Dept, user_role
 from backend.database.db import async_db_session
+from backend.app.admin.utils.password_security import get_hash_password
+
+
+# 测试用户配置
+TEST_USERS = [
+    {
+        'username': 'sysadmin',
+        'nickname': '系统管理员',
+        'email': 'sysadmin@userecho.com',
+        'role': '系统管理员',
+        'description': '系统管理员角色，只能访问系统管理菜单',
+    },
+    {
+        'username': 'pm',
+        'nickname': '产品经理',
+        'email': 'pm@userecho.com',
+        'role': 'PM',
+        'description': 'PM角色，可管理全部反馈功能',
+    },
+    {
+        'username': 'cs',
+        'nickname': '客户成功',
+        'email': 'cs@userecho.com',
+        'role': 'CS',
+        'description': 'CS角色，可查看反馈和客户',
+    },
+    {
+        'username': 'dev',
+        'nickname': '开发人员',
+        'email': 'dev@userecho.com',
+        'role': '开发',
+        'description': '开发角色，只读需求主题',
+    },
+    {
+        'username': 'boss',
+        'nickname': '租户管理员',
+        'email': 'boss@userecho.com',
+        'role': '老板',
+        'description': '老板角色，查看全部',
+    },
+    {
+        'username': 'hybrid',
+        'nickname': '混合角色用户',
+        'email': 'hybrid@userecho.com',
+        'role': ['系统管理员', 'PM'],
+        'description': '混合角色，同时拥有系统管理员和PM权限',
+    },
+]
+
+# 统一密码
+TEST_PASSWORD = 'Test123456'
 
 
 async def create_test_users():
     """创建测试用户"""
-    print('🚀 开始创建测试用户...\n')
-    
-    async with async_db_session() as db:
-        # 1. 查询现有角色
-        role_result = await db.execute(select(Role))
-        roles = {role.name: role for role in role_result.scalars().all()}
-        
-        print(f'📋 现有角色列表:')
-        for name, role in roles.items():
-            print(f'  - {name} (ID: {role.id}, type: {role.role_type})')
+    async with async_db_session.begin() as db:
+        print('=' * 60)
+        print('🚀 测试用户创建脚本')
+        print('=' * 60)
         print()
         
-        # 2. 获取部门 ID（使用默认的测试部门）
-        dept_id = 1
+        # 获取默认部门
+        default_dept = await db.scalar(
+            select(Dept).where(Dept.name == '测试').limit(1)
+        )
+        if not default_dept:
+            default_dept = await db.scalar(select(Dept).limit(1))
         
-        # 3. 定义测试用户
-        test_users = [
-            {
-                'username': 'sysadmin',
-                'nickname': '系统管理员',
-                'password': 'Admin123456',
-                'email': 'sysadmin@userecho.com',
-                'roles': ['系统管理员'] if '系统管理员' in roles else [],
-                'description': '只能看到 /admin/* 系统管理菜单',
-            },
-            {
-                'username': 'pm',
-                'nickname': '产品经理',
-                'password': 'PM123456',
-                'email': 'pm@userecho.com',
-                'roles': ['PM'] if 'PM' in roles else [],
-                'description': '只能看到 /app/* 业务功能菜单（全权限）',
-            },
-            {
-                'username': 'cs',
-                'nickname': '客户成功',
-                'password': 'CS123456',
-                'email': 'cs@userecho.com',
-                'roles': ['CS'] if 'CS' in roles else [],
-                'description': '只能看到 /app/* 部分业务菜单（反馈+客户）',
-            },
-            {
-                'username': 'dev',
-                'nickname': '开发人员',
-                'password': 'Dev123456',
-                'email': 'dev@userecho.com',
-                'roles': ['开发'] if '开发' in roles else [],
-                'description': '只能看到 /app/* 部分业务菜单（只读需求）',
-            },
-            {
-                'username': 'boss',
-                'nickname': '租户管理员',
-                'password': 'Boss123456',
-                'email': 'boss@userecho.com',
-                'roles': ['老板'] if '老板' in roles else [],
-                'description': '可以看到 /app/* 全部业务功能',
-            },
-            {
-                'username': 'hybrid',
-                'nickname': '混合角色用户',
-                'password': 'Hybrid123456',
-                'email': 'hybrid@userecho.com',
-                'roles': ['系统管理员', 'PM'] if all(r in roles for r in ['系统管理员', 'PM']) else [],
-                'description': '同时拥有系统+业务角色，能看到全部菜单',
-            },
-        ]
+        dept_id = default_dept.id if default_dept else 1
+        
+        # 获取所有角色
+        roles = await db.scalars(select(Role))
+        role_map = {role.name: role for role in roles}
         
         created_count = 0
         skipped_count = 0
         
-        for user_data in test_users:
-            username = user_data['username']
+        for user_config in TEST_USERS:
+            username = user_config['username']
             
             # 检查用户是否已存在
-            existing_user = await db.execute(
+            existing_user = await db.scalar(
                 select(User).where(User.username == username)
             )
-            if existing_user.scalar_one_or_none():
-                print(f'⏭️  跳过：用户 {username} 已存在')
+            
+            if existing_user:
+                print(f'⏭️  跳过: 用户 {username} 已存在')
                 skipped_count += 1
                 continue
-            
-            # 检查角色是否存在
-            if not user_data['roles']:
-                print(f'⚠️  警告：角色不存在，跳过用户 {username}')
-                skipped_count += 1
-                continue
-            
-            # 生成密码哈希
-            salt = bcrypt.gensalt()
-            hashed_password = get_hash_password(user_data['password'], salt)
             
             # 创建用户
-            new_user = User(
+            salt = bcrypt.gensalt()
+            password_hash = get_hash_password(TEST_PASSWORD, salt)
+            
+            user = User(
                 username=username,
-                nickname=user_data['nickname'],
-                password=hashed_password,
+                nickname=user_config['nickname'],
+                password=password_hash,
                 salt=salt,
-                email=user_data['email'],
-                dept_id=dept_id,
+                email=user_config['email'],
                 status=1,
                 is_superuser=False,
                 is_staff=True,
                 is_multi_login=True,
+                dept_id=dept_id,
             )
-            db.add(new_user)
+            
+            db.add(user)
             await db.flush()
             
             # 关联角色
-            role_ids = [roles[role_name].id for role_name in user_data['roles']]
-            user_role_data = [
-                {'user_id': new_user.id, 'role_id': role_id}
-                for role_id in role_ids
-            ]
-            user_role_stmt = insert(user_role)
-            await db.execute(user_role_stmt, user_role_data)
+            role_names = user_config['role'] if isinstance(user_config['role'], list) else [user_config['role']]
+            assigned_roles = []
             
-            print(f'✅ 创建用户：{username}')
-            print(f'   昵称：{user_data["nickname"]}')
-            print(f'   密码：{user_data["password"]}')
-            print(f'   邮箱：{user_data["email"]}')
-            print(f'   角色：{", ".join(user_data["roles"])}')
-            print(f'   说明：{user_data["description"]}')
-            print()
+            for role_name in role_names:
+                role = role_map.get(role_name)
+                if role:
+                    await db.execute(
+                        user_role.insert().values(user_id=user.id, role_id=role.id)
+                    )
+                    assigned_roles.append(role_name)
             
+            print(f'✅ 创建用户: {username} ({", ".join(assigned_roles)})')
             created_count += 1
         
         await db.commit()
         
-        print(f'\n📊 统计信息：')
-        print(f'   ✅ 成功创建：{created_count} 个用户')
-        print(f'   ⏭️  跳过：{skipped_count} 个用户')
-        print(f'\n🎉 测试用户创建完成！')
+        print()
+        print('=' * 60)
+        print(f'✅ 测试用户创建完成！')
+        print(f'   创建: {created_count} 个')
+        print(f'   跳过: {skipped_count} 个')
+        print('=' * 60)
+        print()
+        print('📝 测试账号清单 - 统一密码：Test123456')
+        print('=' * 60)
+        print(f'{"账号":<12} {"角色":<20} {"菜单权限"}')
+        print('-' * 60)
+        print(f'{"sysadmin":<12} {"系统管理员":<20} /admin/* 菜单')
+        print(f'{"pm":<12} {"PM":<20} /app/* 全部菜单')
+        print(f'{"cs":<12} {"CS":<20} /app/* 部分菜单')
+        print(f'{"dev":<12} {"开发":<20} /app/* 只读菜单')
+        print(f'{"boss":<12} {"老板":<20} /app/* 全部菜单')
+        print(f'{"hybrid":<12} {"混合角色":<20} 全部菜单')
+        print()
+        print('💡 提示：使用上述账号登录前端测试菜单显示功能')
+        print()
+
+
+async def verify_users():
+    """验证测试用户"""
+    async with async_db_session() as db:
+        print('🔍 验证测试用户...')
+        print()
         
-        # 打印登录信息表格
-        print('\n' + '='*80)
-        print('📝 测试账号清单')
-        print('='*80)
-        print(f'{"账号":<15} {"密码":<15} {"角色":<20} {"说明":<30}')
-        print('-'*80)
-        for user_data in test_users:
-            roles_str = ', '.join(user_data['roles']) if user_data['roles'] else '无角色'
-            print(
-                f'{user_data["username"]:<15} '
-                f'{user_data["password"]:<15} '
-                f'{roles_str:<20} '
-                f'{user_data["description"]:<30}'
+        for user_config in TEST_USERS:
+            username = user_config['username']
+            user = await db.scalar(
+                select(User).where(User.username == username)
             )
-        print('='*80)
-        print('\n💡 提示：')
-        print('  1. 使用上述账号密码登录前端测试菜单显示')
-        print('  2. 如果看不到角色，需要先执行：python scripts/init_business_menus.py')
-        print('  3. 超级管理员账号：admin / Admin123456 (可以看到全部菜单)')
+            
+            if user:
+                # 查询用户的角色
+                roles = await db.scalars(
+                    select(Role)
+                    .join(user_role, Role.id == user_role.c.role_id)
+                    .where(user_role.c.user_id == user.id)
+                )
+                role_names = [role.name for role in roles]
+                print(f'  ✅ {username:<12} - {", ".join(role_names)}')
+            else:
+                print(f'  ❌ {username:<12} - 不存在')
+        
+        print()
+
+
+async def main():
+    """主函数"""
+    await create_test_users()
+    await verify_users()
 
 
 if __name__ == '__main__':
-    asyncio.run(create_test_users())
+    print('=' * 60)
+    print('测试用户创建脚本')
+    print('=' * 60)
+    print()
+    
+    try:
+        asyncio.run(main())
+        print('=' * 60)
+        print('✅ 初始化成功！')
+        print('=' * 60)
+    except Exception as e:
+        print(f'\n❌ 初始化失败: {e}')
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

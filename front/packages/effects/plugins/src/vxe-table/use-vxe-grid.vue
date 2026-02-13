@@ -17,6 +17,7 @@ import type { ExtendedVxeGridApi, VxeGridProps } from './types';
 import {
   computed,
   nextTick,
+  onActivated,
   onMounted,
   onUnmounted,
   toRaw,
@@ -350,6 +351,14 @@ const isCompactForm = computed(() => {
 onMounted(() => {
   props.api?.mount?.(gridRef.value, formApi);
   init();
+});
+
+// KeepAlive 激活时重新加载数据
+onActivated(() => {
+  const enableProxyConfig = options.value.proxyConfig?.enabled;
+  if (enableProxyConfig) {
+    props.api.reload(formApi.getLatestSubmissionValues() ?? {});
+  }
 });
 
 onUnmounted(() => {

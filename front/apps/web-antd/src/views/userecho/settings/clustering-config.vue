@@ -2,12 +2,12 @@
   <div class="clustering-config-container p-6">
     <div class="card bg-white rounded-lg shadow-md p-6">
       <h2 class="text-2xl font-bold mb-6">聚类策略设置</h2>
-      
+
       <!-- 当前配置展示 -->
       <div v-if="currentConfig" class="alert alert-info mb-4 p-4 bg-blue-50 rounded-md">
         <span class="font-medium">当前策略：{{ getCurrentPresetName() }}</span>
       </div>
-      
+
       <!-- 预设模式选择 -->
       <div class="preset-selection space-y-4">
         <div
@@ -45,7 +45,7 @@
           <p class="text-gray-500 text-sm ml-8">{{ preset.use_case }}</p>
         </div>
       </div>
-      
+
       <!-- 预览结果展示 -->
       <div
         v-if="previewResult && previewResult.status === 'success'"
@@ -76,14 +76,14 @@
           </div>
         </div>
       </div>
-      
+
       <div
         v-else-if="previewResult && previewResult.status === 'insufficient_data'"
         class="alert alert-warning mt-6 p-4 bg-yellow-50 rounded-md text-yellow-800"
       >
         {{ previewResult.message }}
       </div>
-      
+
       <!-- 操作按钮 -->
       <div class="action-buttons mt-6 flex justify-end space-x-4">
         <button
@@ -110,8 +110,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import { 
-  getClusteringPresets, 
+import {
+  getClusteringPresets,
   getClusteringConfig,
   updateClusteringPreset,
   previewClusteringConfig,
