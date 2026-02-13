@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import CheckConstraint, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -42,8 +43,8 @@ class Feedback(MappedBase):
     ai_metadata: Mapped[dict | None] = mapped_column(
         JSON, default=None, comment='AI相关元数据(embedding等)'
     )
-    embedding: Mapped[str | None] = mapped_column(
-        Text, default=None, comment='Embedding向量(pgvector VECTOR(768),存储为文本)'
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(768), default=None, comment='Embedding向量(pgvector)'
     )
     submitted_at: Mapped[datetime] = mapped_column(
         TimeZone, default=timezone.now, comment='提交时间'

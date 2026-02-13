@@ -91,9 +91,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         """
         from sqlalchemy import update
 
-        # 转换为 pgvector 格式：'[0.1,0.2,...]'
-        embedding_str = f"[{','.join(map(str, embedding))}]"
-
+        # SQLAlchemy + pgvector 自动处理 list[float] <-> vector 转换
         stmt = (
             update(self.model)
             .where(
@@ -101,7 +99,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 self.model.tenant_id == tenant_id,
                 self.model.deleted_at.is_(None)
             )
-            .values(embedding=embedding_str)
+            .values(embedding=embedding)
         )
 
         result = await db.execute(stmt)
@@ -145,9 +143,8 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             if feedback.id in feedback_embeddings:
                 embedding = feedback_embeddings[feedback.id]
                 
-                # 转换为 pgvector 格式
-                embedding_str = f"[{','.join(map(str, embedding))}]"
-                feedback.embedding = embedding_str
+                # SQLAlchemy + pgvector 自动处理类型转换
+                feedback.embedding = embedding
                 
                 updated_count += 1
 
@@ -164,21 +161,8 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         Returns:
             embedding 向量，如果没有缓存则返回 None
         """
-        if not feedback.embedding:
-            return None
-
-        try:
-            # pgvector 返回的是字符串，需要解析
-            if isinstance(feedback.embedding, str):
-                # 格式: '[0.123,0.456,...]'
-                embedding_str = feedback.embedding.strip('[]')
-                return [float(x) for x in embedding_str.split(',')]
-            elif isinstance(feedback.embedding, list):
-                return feedback.embedding
-        except Exception:
-            return None
-
-        return None
+        # SQLAlchemy + pgvector 自动转换为 list[float]
+        return feedback.embedding
 
     async def find_similar_feedbacks(
         self,
@@ -203,8 +187,9 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         """
         from sqlalchemy import text
 
-        # 转换为 pgvector 格式
-        embedding_str = f"[{','.join(map(str, query_embedding))}]"
+        # pgvector 需要字符串格式：'[0.1,0.2,...]'
+        # 这是 PostgreSQL 的 vector 类型输入格式
+        embedding_str = str(query_embedding)
 
         # 使用 pgvector 余弦相似度搜索
         # <=> 是余弦距离操作符，1 - 余弦距离 = 余弦相似度
