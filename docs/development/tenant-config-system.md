@@ -11,6 +11,24 @@
 
 ## 架构设计
 
+### 前端菜单结构
+
+```
+回响 (UserEcho)
+├─ 反馈列表          /app/feedback/list
+├─ AI 发现中心       /app/ai/discovery
+├─ 导入反馈          /app/feedback/import
+├─ 需求主题          /app/topic/list
+├─ 客户管理          /app/customer
+└─ 设置              /app/settings
+   └─ 聚类策略       /app/settings/clustering
+```
+
+**设计原则**：
+- 业务功能（反馈、主题、客户）平铺在一级菜单，快速访问
+- 配置功能（聚类、通知等）归入"设置"分组，避免与业务菜单混淆
+- 所有文本使用多语言配置（`$t()`），消除硬编码
+
 ### 系统架构图
 
 ```
@@ -398,7 +416,37 @@ async def update_notification_config(
 
 #### 步骤 5：注册路由
 
-在 `front/apps/web-antd/src/router/routes/modules/userecho.ts` 添加路由
+在 `front/apps/web-antd/src/router/routes/modules/userecho.ts` 的 `Settings` 子路由中添加：
+
+```typescript
+{
+  name: 'NotificationConfig',
+  path: '/app/settings/notification',
+  component: () => import('#/views/userecho/settings/notification-config.vue'),
+  meta: {
+    icon: 'lucide:bell',
+    title: $t('page.userecho.settings.notification'),
+  },
+}
+```
+
+#### 步骤 6：更新多语言配置
+
+在 `front/apps/web-antd/src/locales/langs/zh-CN/page.json` 和 `en-US/page.json` 中添加：
+
+```json
+{
+  "page": {
+    "userecho": {
+      "settings": {
+        "title": "设置",
+        "clustering": "聚类策略",
+        "notification": "通知配置"
+      }
+    }
+  }
+}
+```
 
 **无需修改数据库表结构！**
 
@@ -582,6 +630,7 @@ if 'new_field' not in config:
 
 ## 相关文档
 
+- [菜单权限配置指南](./menu-permission-guide.md) - **重要**：如何让配置页面在左侧菜单栏显示
 - [聚类配置测试指南](../testing/clustering-config-test-guide.md)
 - [聚类实现详解](./clustering-implementation-review.md)
 - [API 文档](http://localhost:8000/docs)

@@ -54,6 +54,13 @@
       },
       "customer": {
         "title": "Customer Management"
+      },
+      "discovery": {
+        "title": "AI Discovery"
+      },
+      "settings": {
+        "title": "Settings",
+        "clustering": "Clustering Strategy"
       }
     }
   },

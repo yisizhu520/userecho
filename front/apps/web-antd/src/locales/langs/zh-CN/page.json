@@ -55,6 +55,13 @@
       },
       "customer": {
         "title": "客户管理"
+      },
+      "discovery": {
+        "title": "AI 发现中心"
+      },
+      "settings": {
+        "title": "设置",
+        "clustering": "聚类策略"
       }
     }
   },

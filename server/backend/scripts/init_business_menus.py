@@ -59,13 +59,22 @@ async def init_business_menus():
                 'sort': 1,
             },
             {
+                'title': 'AI 发现中心',
+                'name': 'AIDiscovery',
+                'path': '/app/ai/discovery',
+                'component': '/userecho/discovery/index',
+                'icon': 'lucide:sparkles',
+                'perms': 'app:ai:view',
+                'sort': 2,
+            },
+            {
                 'title': '导入反馈',
                 'name': 'FeedbackImport',
                 'path': '/app/feedback/import',
                 'component': '/userecho/feedback/import',
                 'icon': 'lucide:upload',
                 'perms': 'app:feedback:import',
-                'sort': 2,
+                'sort': 3,
             },
             {
                 'title': '需求主题',
@@ -74,7 +83,7 @@ async def init_business_menus():
                 'component': '/userecho/topic/list',
                 'icon': 'lucide:lightbulb',
                 'perms': 'app:topic:view',
-                'sort': 3,
+                'sort': 4,
             },
             {
                 'title': '客户管理',
@@ -83,7 +92,7 @@ async def init_business_menus():
                 'component': '/userecho/customer/index',
                 'icon': 'lucide:users',
                 'perms': 'app:customer:view',
-                'sort': 4,
+                'sort': 5,
             },
         ]
         
@@ -120,8 +129,79 @@ async def init_business_menus():
         else:
             print('   ⏭️  所有子菜单已是最新，跳过')
         
-        # ========== 3. 创建业务角色 ==========
-        print('\n3️⃣  创建业务角色...')
+        # ========== 3. 创建设置目录和子菜单 ==========
+        print('\n3️⃣  创建设置目录和子菜单...')
+        settings_menu = await db.scalar(
+            select(Menu).where(Menu.path == '/app/settings')
+        )
+        
+        if not settings_menu:
+            settings_menu = Menu(
+                title='设置',
+                name='Settings',
+                path='/app/settings',
+                icon='lucide:settings',
+                type=0,  # 目录
+                sort=6,
+                status=1,
+                display=1,
+                parent_id=userecho_menu.id,
+            )
+            db.add(settings_menu)
+            await db.flush()
+            print('   ✅ 创建设置目录')
+        else:
+            print('   ⏭️  设置目录已存在，跳过')
+        
+        # 设置子菜单
+        settings_sub_menus = [
+            {
+                'title': '聚类策略',
+                'name': 'ClusteringConfig',
+                'path': '/app/settings/clustering',
+                'component': '/userecho/settings/clustering-config',
+                'icon': 'lucide:layers',
+                'perms': 'app:settings:clustering',
+                'sort': 1,
+            },
+        ]
+        
+        created_settings_menus = []
+        updated_settings_menus = []
+        for menu_data in settings_sub_menus:
+            existing = await db.scalar(
+                select(Menu).where(Menu.path == menu_data['path'])
+            )
+            if not existing:
+                menu = Menu(
+                    **menu_data,
+                    parent_id=settings_menu.id,
+                    type=1,  # 菜单
+                    status=1,
+                    display=1
+                )
+                db.add(menu)
+                created_settings_menus.append(menu_data['title'])
+            else:
+                # 更新已存在的菜单
+                existing.component = menu_data['component']
+                existing.icon = menu_data['icon']
+                existing.sort = menu_data['sort']
+                existing.perms = menu_data['perms']
+                existing.parent_id = settings_menu.id
+                updated_settings_menus.append(menu_data['title'])
+        
+        if created_settings_menus or updated_settings_menus:
+            await db.flush()
+            if created_settings_menus:
+                print(f'   ✅ 创建设置子菜单: {", ".join(created_settings_menus)}')
+            if updated_settings_menus:
+                print(f'   🔄 更新设置子菜单: {", ".join(updated_settings_menus)}')
+        else:
+            print('   ⏭️  所有设置子菜单已是最新，跳过')
+        
+        # ========== 4. 创建业务角色 ==========
+        print('\n4️⃣  创建业务角色...')
         business_roles = [
             {
                 'name': 'PM',
@@ -133,13 +213,13 @@ async def init_business_menus():
                 'name': 'CS',
                 'role_type': 'business',
                 'remark': '客户成功，可查看反馈和客户',
-                'menus': ['/app/feedback/list', '/app/customer'],
+                'menus': ['/app/feedback/list', '/app/customer', '/app/ai/discovery'],
             },
             {
                 'name': '开发',
                 'role_type': 'business',
                 'remark': '开发人员，只读需求主题',
-                'menus': ['/app/topic/list'],
+                'menus': ['/app/topic/list', '/app/ai/discovery'],
             },
             {
                 'name': '老板',
@@ -204,7 +284,9 @@ async def init_business_menus():
         print('\n✅ 业务菜单和角色初始化完成！')
         print('\n📝 创建的资源：')
         print('   - 反馈管理目录')
-        print('   - 4 个子菜单（反馈列表、导入反馈、需求主题、客户管理）')
+        print('   - 5 个功能菜单（反馈列表、AI 发现中心、导入反馈、需求主题、客户管理）')
+        print('   - 设置目录')
+        print('   - 1 个设置子菜单（聚类策略）')
         print('   - 4 个业务角色（PM、CS、开发、老板）')
 
 
@@ -232,14 +314,19 @@ async def verify_initialization():
             print(f'   - {role.name} ({role.remark})')
 
 
+async def main():
+    """主函数：合并初始化和验证到同一个 event loop"""
+    await init_business_menus()
+    await verify_initialization()
+
+
 if __name__ == '__main__':
     print('=' * 60)
     print('🚀 UserEcho 业务菜单和角色初始化脚本')
     print('=' * 60)
     
     try:
-        asyncio.run(init_business_menus())
-        asyncio.run(verify_initialization())
+        asyncio.run(main())
         print('\n' + '=' * 60)
         print('✅ 初始化成功！')
         print('=' * 60)

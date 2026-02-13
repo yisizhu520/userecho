@@ -20,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'lucide:sparkles',
       order: 1,
-      title: 'AI 发现中心',
+      title: $t('page.userecho.discovery.title'),
     },
   },
   {
@@ -63,14 +63,24 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    name: 'ClusteringConfig',
-    path: '/app/settings/clustering',
-    component: () => import('#/views/userecho/settings/clustering-config.vue'),
+    name: 'Settings',
+    path: '/app/settings',
     meta: {
       icon: 'lucide:settings',
       order: 5,
-      title: '聚类策略配置',
+      title: $t('page.userecho.settings.title'),
     },
+    children: [
+      {
+        name: 'ClusteringConfig',
+        path: '/app/settings/clustering',
+        component: () => import('#/views/userecho/settings/clustering-config.vue'),
+        meta: {
+          icon: 'lucide:layers',
+          title: $t('page.userecho.settings.clustering'),
+        },
+      },
+    ],
   },
 ];
 

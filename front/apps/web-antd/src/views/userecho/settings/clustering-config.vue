@@ -152,7 +152,7 @@ const getQualityClass = (rating?: string) => {
 const loadPresets = async () => {
   try {
     const res = await getClusteringPresets();
-    presets.value = res.data;
+    presets.value = res;
   } catch (error) {
     message.error('加载预设模式失败');
     console.error(error);
@@ -162,8 +162,8 @@ const loadPresets = async () => {
 const loadCurrentConfig = async () => {
   try {
     const res = await getClusteringConfig();
-    currentConfig.value = res.data;
-    selectedPreset.value = res.data.preset_mode;
+    currentConfig.value = res;
+    selectedPreset.value = res.preset_mode;
   } catch (error) {
     message.error('加载配置失败');
     console.error(error);
@@ -174,8 +174,8 @@ const handlePreview = async () => {
   previewLoading.value = true;
   try {
     const res = await previewClusteringConfig(selectedPreset.value);
-    previewResult.value = res.data;
-    if (res.data.status === 'success') {
+    previewResult.value = res;
+    if (res.status === 'success') {
       message.success('预览生成成功');
     }
   } catch (error) {
