@@ -26,6 +26,8 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         - 仅处理 topic_id IS NULL
         - clustering_status in (pending, failed?)
         """
+        from backend.common.log import log
+        
         statuses = ['pending']
         if include_failed:
             statuses.append('failed')
@@ -40,8 +42,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             self.model.deleted_at.is_(None),
         ).limit(limit)
 
+        log.debug(f'Query pending clustering: tenant={tenant_id}, statuses={statuses}, limit={limit}')
         result = await db.execute(query)
-        return list(result.scalars().all())
+        feedbacks = list(result.scalars().all())
+        log.debug(f'Found {len(feedbacks)} pending feedbacks')
+        return feedbacks
 
     async def get_unclustered(
         self,

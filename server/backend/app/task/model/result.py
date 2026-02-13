@@ -17,7 +17,7 @@ class Task(MappedBase):
     __tablename__ = 'task_result'
     __table_args__ = {'comment': '任务结果表'}
 
-    id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'), primary_key=True, autoincrement=True)
+    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(64), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
@@ -47,7 +47,8 @@ class Task(MappedBase):
     @classmethod
     def configure(cls, schema=None, name=None) -> None:  # noqa: ANN001
         cls.__table__.schema = schema
-        cls.id.default.schema = schema
+        if cls.id.default is not None and hasattr(cls.id.default, 'schema'):
+            cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
 
 
@@ -83,7 +84,7 @@ class TaskSet(MappedBase):
     __tablename__ = 'task_set_result'
     __table_args__ = {'comment': '任务集结果表'}
 
-    id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'), autoincrement=True, primary_key=True)
+    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(TimeZone, default=timezone.now, nullable=True)
@@ -105,5 +106,6 @@ class TaskSet(MappedBase):
     @classmethod
     def configure(cls, schema=None, name=None) -> None:  # noqa: ANN001
         cls.__table__.schema = schema
-        cls.id.default.schema = schema
+        if cls.id.default is not None and hasattr(cls.id.default, 'schema'):
+            cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__

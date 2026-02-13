@@ -22,9 +22,21 @@ def get_redis_url_for_socketio() -> str:
     return f'redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DATABASE}'
 
 
+def get_redis_manager_kwargs() -> dict:
+    """获取 Redis Manager 的连接参数（包含 SSL 配置）"""
+    redis_url = get_redis_url_for_socketio()
+    kwargs = {'url': redis_url}
+    
+    # TLS 连接跳过证书验证（与 redis.py、celery.py 保持一致）
+    if redis_url.startswith('rediss://'):
+        kwargs['redis_options'] = {'ssl_cert_reqs': None}
+    
+    return kwargs
+
+
 # 创建 Socket.IO 服务器实例
 sio = socketio.AsyncServer(
-    client_manager=socketio.AsyncRedisManager(get_redis_url_for_socketio()),
+    client_manager=socketio.AsyncRedisManager(**get_redis_manager_kwargs()),
     async_mode='asgi',
     cors_allowed_origins=settings.CORS_ALLOWED_ORIGINS,
     cors_credentials=True,

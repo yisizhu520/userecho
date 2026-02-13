@@ -29,9 +29,9 @@ class Topic(MappedBase):
 
     # 聚类增量匹配/合并建议的基础：中心向量 + 质量
     centroid: Mapped[list[float] | None] = mapped_column(
-        Vector(768),
+        Vector(4096),
         default=None,
-        comment='主题中心向量(所有反馈 embedding 的平均值)',
+        comment='主题中心向量(所有反馈 embedding 的平均值, 火山引擎 4096维)',
     )
     cluster_quality: Mapped[dict | None] = mapped_column(
         JSON,

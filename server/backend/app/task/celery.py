@@ -30,11 +30,16 @@ def init_celery() -> celery.Celery:
     celery.app.trace.reset_worker_optimizations()
 
     broker_url = f'amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}'
+    broker_use_ssl = None
     if settings.CELERY_BROKER == 'redis':
         if settings.REDIS_URL:
             # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
             # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
             broker_url = settings.REDIS_URL.rsplit('/', 1)[0] + f'/{settings.CELERY_BROKER_REDIS_DATABASE}'
+            
+            # TLS 连接跳过证书验证（与 redis.py 保持一致）
+            if settings.REDIS_URL.startswith('rediss://'):
+                broker_use_ssl = {'ssl_cert_reqs': None}
         else:
             # 构造 Redis URL
             password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ''
@@ -48,24 +53,27 @@ def init_celery() -> celery.Celery:
         result_backend = result_backend.replace('postgresql+psycopg', 'mysql+pymysql')
 
     # https://docs.celeryq.dev/en/stable/userguide/configuration.html
-    app = celery.Celery(
-        'fba_celery',
-        broker_url=broker_url,
-        broker_connection_retry_on_startup=True,
-        result_backend=result_backend,
-        result_extended=True,
-        database_engine_options={'echo': settings.DATABASE_ECHO},
-        # result_expires=0,
-        # beat_sync_every=1,
-        beat_schedule=LOCAL_BEAT_SCHEDULE,
-        beat_scheduler='backend.app.task.utils.schedulers:DatabaseScheduler',
-        task_cls='backend.app.task.tasks.base:TaskBase',
-        task_track_started=True,
-        enable_utc=False,
-        timezone=settings.DATETIME_TIMEZONE,
-        worker_send_task_events=True,
-        task_send_sent_event=True,
-    )
+    celery_config = {
+        'broker_url': broker_url,
+        'broker_connection_retry_on_startup': True,
+        'result_backend': result_backend,
+        'result_extended': True,
+        'database_engine_options': {'echo': settings.DATABASE_ECHO},
+        'beat_schedule': LOCAL_BEAT_SCHEDULE,
+        'beat_scheduler': 'backend.app.task.utils.schedulers:DatabaseScheduler',
+        'task_cls': 'backend.app.task.tasks.base:TaskBase',
+        'task_track_started': True,
+        'enable_utc': False,
+        'timezone': settings.DATETIME_TIMEZONE,
+        'worker_send_task_events': True,
+        'task_send_sent_event': True,
+    }
+    
+    # 如果需要 SSL 配置，添加到配置中
+    if broker_use_ssl is not None:
+        celery_config['broker_use_ssl'] = broker_use_ssl
+    
+    app = celery.Celery('fba_celery', **celery_config)
 
     # 在 Celery 中设置此参数无效
     # 参数：https://github.com/celery/celery/issues/7270

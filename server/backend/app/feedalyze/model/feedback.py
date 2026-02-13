@@ -44,7 +44,7 @@ class Feedback(MappedBase):
         JSON, default=None, comment='AI相关元数据(embedding等)'
     )
     embedding: Mapped[list[float] | None] = mapped_column(
-        Vector(768), default=None, comment='Embedding向量(pgvector)'
+        Vector(4096), default=None, comment='Embedding向量(pgvector, 火山引擎 4096维)'
     )
 
     # 聚类状态与元数据（用于避免 topic_id=NULL 的噪声点被反复聚类）

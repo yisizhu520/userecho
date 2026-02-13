@@ -61,7 +61,12 @@ export interface TriggerClusteringParams {
  */
 export async function triggerClustering(params: TriggerClusteringParams = {}) {
   return requestClient.post<ClusteringResult | ClusteringTaskAccepted>('/api/v1/app/clustering/trigger', null, {
-    params: { max_feedbacks: 100, force_recluster: false, async_mode: false, ...params },
+    params: { 
+      max_feedbacks: 100, 
+      force_recluster: false, 
+      async_mode: true,  // 默认使用异步模式，避免请求超时
+      ...params 
+    },
   });
 }
 
