@@ -197,71 +197,73 @@ const [addModal, addModalApi] = useVbenModal({
 </script>
 
 <template>
-  <Grid>
-    <template #toolbar-actions>
-      <VbenButton @click="() => addModalApi.open()">
-        <MaterialSymbolsAdd class="size-5" />
-        手动创建主题
-      </VbenButton>
+  <div>
+    <Grid>
+      <template #toolbar-actions>
+        <VbenButton @click="() => addModalApi.open()">
+          <MaterialSymbolsAdd class="size-5" />
+          手动创建主题
+        </VbenButton>
       <VbenButton variant="outline" @click="() => router.push('/app/feedback/list')">
         <span class="iconify lucide--inbox" />
         查看反馈列表
       </VbenButton>
-    </template>
+      </template>
 
-    <!-- 主题标题（带 AI 标识） -->
-    <template #title="{ row }">
-      <div class="topic-title">
-        <span>{{ row.title }}</span>
-        <a-tag v-if="row.ai_generated" color="purple" size="small" class="ml-2">
-          <span class="iconify lucide--sparkles" /> AI
+      <!-- 主题标题（带 AI 标识） -->
+      <template #title="{ row }">
+        <div class="topic-title">
+          <span>{{ row.title }}</span>
+          <a-tag v-if="row.ai_generated" color="purple" size="small" class="ml-2">
+            <span class="iconify lucide--sparkles" /> AI
+          </a-tag>
+        </div>
+      </template>
+
+      <!-- 分类 -->
+      <template #category="{ row }">
+        <a-tag :color="getCategoryConfig(row.category).value === 'bug' ? 'red' : 'blue'">
+          {{ categoryIcons[row.category] || '' }}
+          {{ getCategoryConfig(row.category).label }}
         </a-tag>
-      </div>
-    </template>
+      </template>
 
-    <!-- 分类 -->
-    <template #category="{ row }">
-      <a-tag :color="getCategoryConfig(row.category).value === 'bug' ? 'red' : 'blue'">
-        {{ categoryIcons[row.category] || '' }}
-        {{ getCategoryConfig(row.category).label }}
-      </a-tag>
-    </template>
+      <!-- 状态 -->
+      <template #status="{ row }">
+        <a-tag :color="getStatusConfig(row.status).color">
+          {{ getStatusConfig(row.status).label }}
+        </a-tag>
+      </template>
 
-    <!-- 状态 -->
-    <template #status="{ row }">
-      <a-tag :color="getStatusConfig(row.status).color">
-        {{ getStatusConfig(row.status).label }}
-      </a-tag>
-    </template>
-
-    <!-- 反馈数量 -->
-    <template #feedback_count="{ row }">
-      <a-badge 
-        :count="row.feedback_count" 
+      <!-- 反馈数量 -->
+      <template #feedback_count="{ row }">
+      <a-badge
+        :count="row.feedback_count"
         :number-style="{ backgroundColor: '#52c41a' }"
         style="cursor: pointer"
         @click="router.push(`/app/topic/detail/${row.id}`)"
       />
-    </template>
+      </template>
 
-    <!-- AI 生成标识 -->
-    <template #ai_generated="{ row }">
-      <a-tag v-if="row.ai_generated" color="purple">
-        <span class="iconify lucide--sparkles" /> AI
-      </a-tag>
-      <a-tag v-else color="default">手动</a-tag>
-    </template>
-  </Grid>
+      <!-- AI 生成标识 -->
+      <template #ai_generated="{ row }">
+        <a-tag v-if="row.ai_generated" color="purple">
+          <span class="iconify lucide--sparkles" /> AI
+        </a-tag>
+        <a-tag v-else color="default">手动</a-tag>
+      </template>
+    </Grid>
 
-  <!-- 编辑弹窗 -->
-  <editModal>
-    <EditForm />
-  </editModal>
+    <!-- 编辑弹窗 -->
+    <editModal>
+      <EditForm />
+    </editModal>
 
-  <!-- 新建弹窗 -->
-  <addModal>
-    <AddForm />
-  </addModal>
+    <!-- 新建弹窗 -->
+    <addModal>
+      <AddForm />
+    </addModal>
+  </div>
 </template>
 
 <style scoped>

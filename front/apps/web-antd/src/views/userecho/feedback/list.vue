@@ -320,20 +320,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <Grid>
-    <template #toolbar-actions>
-      <VbenButton @click="() => addModalApi.open()">
-        <MaterialSymbolsAdd class="size-5" />
-        新建反馈
-      </VbenButton>
-      <VbenButton
-        variant="outline"
-        @click="handleTriggerClustering"
-        :loading="clusteringLoading"
-      >
-        <span class="iconify lucide--sparkles" />
-        AI 智能聚类
-      </VbenButton>
+  <div>
+    <Grid>
+      <template #toolbar-actions>
+        <VbenButton @click="() => addModalApi.open()">
+          <MaterialSymbolsAdd class="size-5" />
+          新建反馈
+        </VbenButton>
+        <VbenButton
+          variant="outline"
+          @click="handleTriggerClustering"
+          :loading="clusteringLoading"
+        >
+          <span class="iconify lucide--sparkles" />
+          AI 智能聚类
+        </VbenButton>
       <VbenButton variant="outline" @click="() => $router.push('/app/feedback/import')">
         <span class="iconify lucide--upload" />
         导入 Excel
@@ -346,59 +347,60 @@ onMounted(() => {
           {{ row.topic_title }}
         </a-tag>
       </span>
-      <span v-else class="text-gray-400">未聚类</span>
-    </template>
+        <span v-else class="text-gray-400">未聚类</span>
+      </template>
 
-    <template #clustering_status="{ row }">
-      <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
-      <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
-      <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
-      <a-tag
-        v-else-if="row.clustering_status === 'clustered'"
-        :color="row.topic_id ? 'green' : 'default'"
-      >
-        {{ row.topic_id ? '已归类' : '待观察' }}
-      </a-tag>
-      <span v-else class="text-gray-400">-</span>
-    </template>
+      <template #clustering_status="{ row }">
+        <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
+        <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
+        <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
+        <a-tag
+          v-else-if="row.clustering_status === 'clustered'"
+          :color="row.topic_id ? 'green' : 'default'"
+        >
+          {{ row.topic_id ? '已归类' : '待观察' }}
+        </a-tag>
+        <span v-else class="text-gray-400">-</span>
+      </template>
 
-    <template #urgent="{ row }">
-      <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
-      <a-tag v-else color="default">📝 常规</a-tag>
-    </template>
-  </Grid>
+      <template #urgent="{ row }">
+        <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
+        <a-tag v-else color="default">📝 常规</a-tag>
+      </template>
+    </Grid>
 
-  <!-- 编辑弹窗 -->
-  <editModal>
-    <EditForm />
-  </editModal>
+    <!-- 编辑弹窗 -->
+    <editModal>
+      <EditForm />
+    </editModal>
 
-  <!-- 新建弹窗 -->
-  <addModal>
-    <AddForm />
-  </addModal>
+    <!-- 新建弹窗 -->
+    <addModal>
+      <AddForm />
+    </addModal>
 
-  <a-modal
-    v-model:open="clusteringModalOpen"
-    title="AI 智能聚类"
-    :footer="null"
-    :maskClosable="false"
-    @cancel="onClusteringModalCancel"
-  >
-    <a-steps :current="clusteringStep" size="small">
-      <a-step title="任务提交" />
-      <a-step title="处理中" />
-      <a-step title="完成" />
-    </a-steps>
+    <a-modal
+      v-model:open="clusteringModalOpen"
+      title="AI 智能聚类"
+      :footer="null"
+      :maskClosable="false"
+      @cancel="onClusteringModalCancel"
+    >
+      <a-steps :current="clusteringStep" size="small">
+        <a-step title="任务提交" />
+        <a-step title="处理中" />
+        <a-step title="完成" />
+      </a-steps>
 
-    <div class="mt-4">
-      <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
-      <div class="text-gray-500 mt-2">
-        <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
-        <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
+      <div class="mt-4">
+        <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
+        <div class="text-gray-500 mt-2">
+          <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
+          <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
+        </div>
       </div>
-    </div>
-  </a-modal>
+    </a-modal>
+  </div>
 </template>
 
 <style scoped>
