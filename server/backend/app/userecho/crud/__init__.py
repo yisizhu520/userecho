@@ -8,6 +8,7 @@ from .crud_feedback import crud_feedback
 from .crud_priority import crud_priority_score
 from .crud_status_history import crud_status_history
 from .crud_tenant import crud_tenant
+from .crud_tenant_config import tenant_config_dao
 from .crud_topic import crud_topic
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     'crud_topic',
     'crud_priority_score',
     'crud_status_history',
+    'tenant_config_dao',
 ]

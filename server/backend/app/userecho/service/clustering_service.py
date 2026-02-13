@@ -10,28 +10,33 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.crud import crud_feedback, crud_topic
+from backend.app.userecho.service.clustering_config_service import clustering_config_service
 from backend.common.log import log
 from backend.core.conf import settings
-from backend.utils.timezone import timezone
 from backend.utils.ai_client import ai_client
-from backend.utils.clustering import clustering_engine
+from backend.utils.clustering import FeedbackClustering
+from backend.utils.timezone import timezone
 
 
 class ClusteringService:
     """AI 聚类服务"""
 
     @staticmethod
-    def _is_clustering_acceptable(quality: dict[str, float]) -> bool:
+    def _is_clustering_acceptable(quality: dict[str, float], config: dict) -> bool:
         """
         质量门槛：先评估，再创建 Topic（避免制造低质量垃圾数据）
 
         注意：当没有任何有效聚类（全是噪声点）时，silhouette/noise_ratio 会非常差，
-        但这不是错误，只代表“这批数据暂时不该生成 Topic”。
+        但这不是错误，只代表"这批数据暂时不该生成 Topic"。
+        
+        Args:
+            quality: 质量指标
+            config: 租户聚类配置
         """
         try:
             return (
-                quality.get('silhouette', 0.0) >= settings.CLUSTERING_MIN_SILHOUETTE
-                and quality.get('noise_ratio', 1.0) <= settings.CLUSTERING_MAX_NOISE_RATIO
+                quality.get('silhouette', 0.0) >= config.get('min_silhouette', 0.3)
+                and quality.get('noise_ratio', 1.0) <= config.get('max_noise_ratio', 0.5)
             )
         except Exception:
             return False
@@ -58,6 +63,10 @@ class ClusteringService:
         try:
             log.info(f'Starting clustering for tenant: {tenant_id}')
 
+            # 0. 获取租户聚类配置
+            tenant_config = await clustering_config_service.get_clustering_config(db, tenant_id)
+            log.info(f'Using clustering config for tenant {tenant_id}: preset={tenant_config.get("preset_mode")}')
+
             # 1. 获取待聚类的反馈（避免噪声点 topic_id=NULL 被反复聚类）
             feedbacks = await crud_feedback.get_pending_clustering(
                 db=db,
@@ -67,7 +76,7 @@ class ClusteringService:
                 force_recluster=force_recluster,
             )
 
-            min_required = max(2, settings.CLUSTERING_MIN_SAMPLES)
+            min_required = max(2, tenant_config.get('min_samples', 2))
             if len(feedbacks) < min_required:
                 return {
                     'status': 'skipped',
@@ -171,7 +180,11 @@ class ClusteringService:
             embeddings_array = np.array(embeddings)
             log.info(f'Batch embedding completed: {len(embeddings)}/{len(feedbacks)} valid, shape: {embeddings_array.shape}')
 
-            # 4. 执行聚类
+            # 4. 使用租户配置创建聚类引擎并执行聚类
+            clustering_engine = FeedbackClustering(
+                similarity_threshold=tenant_config.get('similarity_threshold', 0.85),
+                min_samples=tenant_config.get('min_samples', 2),
+            )
             labels = clustering_engine.cluster(embeddings_array)
 
             # 5. 质量评估（先评估，再创建）
@@ -207,7 +220,7 @@ class ClusteringService:
                     'quality_metrics': quality_metrics,
                 }
 
-            if not self._is_clustering_acceptable(quality_metrics):
+            if not self._is_clustering_acceptable(quality_metrics, tenant_config):
                 # 不生成 Topic，把反馈放回 pending（等待更多数据/参数调整）
                 pending_ids = [f.id for f in valid_feedbacks]
                 if pending_ids:
@@ -272,7 +285,8 @@ class ClusteringService:
 
                     # 简单置信度：相似度 + 规模（MVP 版本）
                     size_factor = min(1.0, len(indices) / 5.0)
-                    similarity_factor = max(0.0, min(1.0, (avg_similarity - settings.CLUSTERING_SIMILARITY_THRESHOLD) / (1 - settings.CLUSTERING_SIMILARITY_THRESHOLD)))
+                    threshold = tenant_config.get('similarity_threshold', 0.85)
+                    similarity_factor = max(0.0, min(1.0, (avg_similarity - threshold) / (1 - threshold)))
                     confidence = float(min(1.0, 0.2 + 0.8 * size_factor * similarity_factor))
 
                     topic = await crud_topic.create(
@@ -397,6 +411,9 @@ class ClusteringService:
             相似反馈列表
         """
         try:
+            # 获取租户聚类配置
+            tenant_config = await clustering_config_service.get_clustering_config(db, tenant_id)
+            
             # 获取目标反馈
             target_feedback = await crud_feedback.get_by_id(db, tenant_id, feedback_id)
             if not target_feedback:
@@ -416,12 +433,13 @@ class ClusteringService:
                 )
 
             # 使用 pgvector 向量搜索（性能更好，避免 Python 侧 O(n^2)）
+            threshold = tenant_config.get('similarity_threshold', 0.85)
             similar = await crud_feedback.find_similar_feedbacks(
                 db=db,
                 tenant_id=tenant_id,
                 query_embedding=target_embedding,
                 limit=top_k + 1,  # 多取 1 个，方便过滤自己
-                min_similarity=min(0.8, settings.CLUSTERING_SIMILARITY_THRESHOLD),
+                min_similarity=min(0.8, threshold),
             )
 
             # 过滤自己

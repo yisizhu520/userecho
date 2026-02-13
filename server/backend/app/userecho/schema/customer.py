@@ -35,5 +35,5 @@ class CustomerOut(CustomerBase):
     id: str = Field(description='客户ID')
     tenant_id: str = Field(description='租户ID')
     created_time: datetime = Field(description='创建时间')
-    updated_time: datetime = Field(description='更新时间')
+    updated_time: datetime | None = Field(None, description='更新时间')
     deleted_at: datetime | None = Field(None, description='删除时间')

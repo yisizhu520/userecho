@@ -62,6 +62,16 @@ const routes: RouteRecordRaw[] = [
       title: $t('page.userecho.customer.title'),
     },
   },
+  {
+    name: 'ClusteringConfig',
+    path: '/app/settings/clustering',
+    component: () => import('#/views/userecho/settings/clustering-config.vue'),
+    meta: {
+      icon: 'lucide:settings',
+      order: 5,
+      title: '聚类策略配置',
+    },
+  },
 ];
 
 export default routes;

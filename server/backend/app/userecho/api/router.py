@@ -7,6 +7,7 @@ from backend.app.userecho.api.v1 import (
     customer,
     feedback,
     priority,
+    tenant_config,
     topic,
 )
 from backend.core.conf import settings
@@ -19,4 +20,5 @@ v1.include_router(feedback.router)
 v1.include_router(topic.router)
 v1.include_router(customer.router)
 v1.include_router(clustering.router)
+v1.include_router(tenant_config.router)
 v1.include_router(priority.router)

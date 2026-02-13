@@ -14,6 +14,7 @@ from .feedback import (
 from .priority import PriorityScoreCreate, PriorityScoreOut, PriorityScoreUpdate
 from .status_history import StatusHistoryOut
 from .tenant import TenantCreate, TenantOut, TenantUpdate
+from .tenant_config import TenantConfigCreate, TenantConfigOut, TenantConfigUpdate
 from .topic import (
     TopicCreate,
     TopicDetailOut,
@@ -28,6 +29,10 @@ __all__ = [
     'TenantCreate',
     'TenantUpdate',
     'TenantOut',
+    # Tenant Config
+    'TenantConfigCreate',
+    'TenantConfigUpdate',
+    'TenantConfigOut',
     # Customer
     'CustomerCreate',
     'CustomerUpdate',

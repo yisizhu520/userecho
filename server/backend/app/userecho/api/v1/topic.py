@@ -53,7 +53,9 @@ async def get_topics(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    return response_base.success(data=topics)
+    # ✅ Pydantic 自动将 ORM 对象列表转换为 TopicOut 列表（排除 centroid）
+    topics_out = [TopicOut.model_validate(topic) for topic in topics]
+    return response_base.success(data=topics_out)
 
 
 @router.get('/{topic_id}', summary='获取主题详情')
@@ -76,7 +78,19 @@ async def get_topic_detail(
     if not detail:
         return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
 
-    return response_base.success(data=detail)
+    # ✅ 手动转换嵌套结构（ORM → Pydantic）
+    from backend.app.userecho.schema.feedback import FeedbackOut
+    from backend.app.userecho.schema.priority import PriorityScoreOut
+    from backend.app.userecho.schema.status_history import StatusHistoryOut
+    
+    detail_out = {
+        'topic': TopicOut.model_validate(detail['topic']),
+        'feedbacks': [FeedbackOut.model_validate(fb) for fb in detail['feedbacks']],
+        'priority_score': PriorityScoreOut.model_validate(detail['priority_score']) if detail['priority_score'] else None,
+        'status_history': [StatusHistoryOut.model_validate(sh) for sh in detail['status_history']]
+    }
+
+    return response_base.success(data=detail_out)
 
 
 @router.post('', summary='创建主题')
@@ -91,7 +105,9 @@ async def create_topic(
         tenant_id=tenant_id,
         data=data
     )
-    return response_base.success(data=topic)
+    # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut（排除 centroid）
+    topic_out = TopicOut.model_validate(topic)
+    return response_base.success(data=topic_out)
 
 
 @router.put('/{topic_id}', summary='更新主题')
@@ -110,7 +126,9 @@ async def update_topic(
     )
     if not topic:
         return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
-    return response_base.success(data=topic)
+    # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut
+    topic_out = TopicOut.model_validate(topic)
+    return response_base.success(data=topic_out)
 
 
 @router.api_route('/{topic_id}/status', methods=['PUT', 'PATCH'], summary='更新主题状态')
@@ -136,4 +154,6 @@ async def update_topic_status(
     )
     if not topic:
         return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
-    return response_base.success(data=topic, res=CustomResponse(code=200, msg='状态更新成功'))
+    # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut
+    topic_out = TopicOut.model_validate(topic)
+    return response_base.success(data=topic_out, res=CustomResponse(code=200, msg='状态更新成功'))

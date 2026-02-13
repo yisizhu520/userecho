@@ -56,9 +56,7 @@ class FeedbackService:
                 ai_summary=ai_summary
             )
 
-            # 转换为字典并排除 embedding 字段（避免序列化 numpy.ndarray 失败）
-            feedback_dict = {c.name: getattr(feedback, c.name) for c in feedback.__table__.columns if c.name != 'embedding'}
-            return feedback_dict
+            return feedback
 
         except Exception as e:
             log.error(f'Failed to create feedback for tenant {tenant_id}: {e}')
@@ -110,22 +108,15 @@ class FeedbackService:
             data: 更新数据
 
         Returns:
-            更新后的反馈字典（排除 embedding）
+            更新后的反馈实例
         """
         update_dict = data.model_dump(exclude_unset=True)
-        feedback = await crud_feedback.update(
+        return await crud_feedback.update(
             db=db,
             tenant_id=tenant_id,
             id=feedback_id,
             **update_dict
         )
-        
-        if not feedback:
-            return None
-            
-        # 转换为字典并排除 embedding 字段
-        feedback_dict = {c.name: getattr(feedback, c.name) for c in feedback.__table__.columns if c.name != 'embedding'}
-        return feedback_dict
 
     async def delete_feedback(
         self,

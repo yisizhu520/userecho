@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from backend.common.schema import SchemaBase
 
@@ -44,8 +44,11 @@ class FeedbackOut(FeedbackBase):
     ai_metadata: dict | None = Field(None, description='AI元数据')
     submitted_at: datetime = Field(description='提交时间')
     created_time: datetime = Field(description='创建时间')
-    updated_time: datetime = Field(description='更新时间')
+    updated_time: datetime | None = Field(None, description='更新时间')
     deleted_at: datetime | None = Field(None, description='删除时间')
+    
+    # ✅ 支持从 ORM/dict 创建（自动排除 embedding 字段）
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FeedbackImportRow(SchemaBase):

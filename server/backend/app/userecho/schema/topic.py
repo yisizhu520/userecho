@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from backend.common.schema import SchemaBase
 
@@ -43,8 +43,11 @@ class TopicOut(TopicBase):
     ai_confidence: float | None = Field(None, description='AI置信度 (0-1)')
     feedback_count: int = Field(description='关联反馈数量')
     created_time: datetime = Field(description='创建时间')
-    updated_time: datetime = Field(description='更新时间')
+    updated_time: datetime | None = Field(None, description='更新时间')
     deleted_at: datetime | None = Field(None, description='删除时间')
+    
+    # ✅ 支持从 ORM 对象创建（自动排除 centroid 字段）
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TopicDetailOut(TopicOut):

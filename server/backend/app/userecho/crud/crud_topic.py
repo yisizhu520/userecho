@@ -72,7 +72,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             topic_id: 主题ID
         
         Returns:
-            主题详情字典 或 None
+            包含 topic 和 feedbacks 的字典，或 None
         """
         from backend.app.userecho.model.feedback import Feedback
 

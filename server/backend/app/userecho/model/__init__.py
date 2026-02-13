@@ -4,6 +4,7 @@ from .manual_adjustment import ManualAdjustment
 from .priority_score import PriorityScore
 from .status_history import StatusHistory
 from .tenant import Tenant
+from .tenant_config import TenantConfig
 from .topic import Topic
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     'PriorityScore',
     'StatusHistory',
     'ManualAdjustment',
+    'TenantConfig',
 ]

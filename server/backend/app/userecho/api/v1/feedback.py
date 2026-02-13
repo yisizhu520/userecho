@@ -52,7 +52,10 @@ async def get_feedbacks(
         has_topic=has_topic,
         clustering_status=clustering_status,
     )
-    return response_base.success(data=feedbacks)
+    # ✅ 关联查询返回字典（包含 customer_name, topic_title），已在 CRUD 层处理
+    # 字典可以直接被 Pydantic 验证（FeedbackOut 支持 from_attributes）
+    feedbacks_out = [FeedbackOut.model_validate(fb) for fb in feedbacks]
+    return response_base.success(data=feedbacks_out)
 
 
 @router.post('', summary='创建反馈')
@@ -68,7 +71,9 @@ async def create_feedback(
         data=data,
         generate_summary=True
     )
-    return response_base.success(data=feedback)
+    # ✅ Pydantic 自动将 ORM 对象转换为 FeedbackOut（排除 embedding）
+    feedback_out = FeedbackOut.model_validate(feedback)
+    return response_base.success(data=feedback_out)
 
 
 @router.put('/{feedback_id}', summary='更新反馈')
@@ -87,7 +92,9 @@ async def update_feedback(
     )
     if not feedback:
         return response_base.fail(res=CustomResponse(code=400, msg='反馈不存在'))
-    return response_base.success(data=feedback)
+    # ✅ Pydantic 自动将 ORM 对象转换为 FeedbackOut
+    feedback_out = FeedbackOut.model_validate(feedback)
+    return response_base.success(data=feedback_out)
 
 
 @router.delete('/{feedback_id}', summary='删除反馈')

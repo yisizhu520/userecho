@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from backend.common.schema import SchemaBase
 
@@ -37,4 +37,7 @@ class PriorityScoreOut(PriorityScoreBase):
     topic_id: str = Field(description='主题ID')
     total_score: float = Field(description='总分')
     created_time: datetime = Field(description='创建时间')
-    updated_time: datetime = Field(description='更新时间')
+    updated_time: datetime | None = Field(None, description='更新时间')
+    
+    # ✅ 支持从 ORM 对象创建
+    model_config = ConfigDict(from_attributes=True)
