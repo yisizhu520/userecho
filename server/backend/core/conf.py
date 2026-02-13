@@ -243,8 +243,8 @@ class Settings(BaseSettings):
     # 聚类配置
     CLUSTERING_SIMILARITY_THRESHOLD: float = 0.85  # 相似度阈值（0.75太宽松，改为0.85更严格）
     CLUSTERING_MIN_SAMPLES: int = 2  # 最小聚类大小（至少2条相似反馈才能形成聚类）
-    CLUSTERING_MIN_SILHOUETTE: float = 0.0  # 最低轮廓系数（越高越好）0.0=测试阶段放开，生产建议 0.3
-    CLUSTERING_MAX_NOISE_RATIO: float = 1.0  # 最高噪声率（越低越好）1.0=测试阶段放开，生产建议 0.5
+    CLUSTERING_MIN_SILHOUETTE: float = 0.3  # 最低轮廓系数（越高越好）0.0=测试阶段放开，生产建议 0.3
+    CLUSTERING_MAX_NOISE_RATIO: float = 0.5  # 最高噪声率（越低越好）1.0=测试阶段放开，生产建议 0.5
     
     # 导入配置
     IMPORT_MAX_FILE_SIZE: int = 10485760  # 10MB

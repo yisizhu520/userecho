@@ -2,6 +2,9 @@
 
 import numpy as np
 from fastapi import APIRouter
+from sklearn.cluster import DBSCAN
+from sklearn.metrics import silhouette_score
+from sklearn.metrics.pairwise import cosine_similarity
 
 from backend.app.userecho.service import clustering_service
 from backend.app.userecho.crud import crud_feedback
@@ -9,9 +12,9 @@ from backend.app.task.celery import celery_app
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
+from backend.core.conf import settings
 from backend.database.db import CurrentSession
 from backend.utils.ai_client import ai_client
-from sklearn.metrics.pairwise import cosine_similarity
 
 router = APIRouter(prefix='/clustering', tags=['UserEcho - AI聚类'])
 
@@ -115,23 +118,38 @@ async def get_clustering_suggestions(
     return response_base.success(data=suggestions)
 
 
-@router.get('/debug/similarity-matrix', summary='【调试】查看反馈相似度矩阵')
+@router.get('/debug/similarity-matrix', summary='【调试】查看反馈相似度矩阵和聚类结果')
 async def debug_similarity_matrix(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     limit: int = 20,
+    similarity_threshold: float | None = None,
+    min_samples: int | None = None,
 ):
     """
-    调试接口：查看待聚类反馈之间的相似度矩阵
+    调试接口：查看待聚类反馈之间的相似度矩阵 + 实际聚类结果
     
-    帮助调整聚类参数（CLUSTERING_SIMILARITY_THRESHOLD）
+    帮助调整聚类参数
+    
+    - **similarity_threshold**: 自定义相似度阈值（默认使用配置值）
+    - **min_samples**: 自定义最小簇大小（默认使用配置值）
+    
+    返回：
+    - 相似度矩阵
+    - 高相似度对
+    - 实际聚类结果（每个簇包含哪些反馈）
+    - 质量指标（轮廓系数、噪声率）
     """
+    # 使用自定义参数或配置默认值
+    threshold = similarity_threshold if similarity_threshold is not None else settings.CLUSTERING_SIMILARITY_THRESHOLD
+    min_samples_val = min_samples if min_samples is not None else settings.CLUSTERING_MIN_SAMPLES
+    
     # 获取待聚类的反馈
     feedbacks = await crud_feedback.get_pending_clustering(
         db=db,
         tenant_id=tenant_id,
         limit=limit,
-        include_failed=False,
+        include_failed=True,
         force_recluster=False,
     )
     
@@ -161,7 +179,7 @@ async def debug_similarity_matrix(
     embeddings_array = np.array(embeddings)
     similarity_matrix = cosine_similarity(embeddings_array)
     
-    # 构造返回数据
+    # 构造反馈信息
     feedbacks_info = [
         {
             'id': fb.id,
@@ -188,7 +206,125 @@ async def debug_similarity_matrix(
     # 按相似度降序排列
     high_similarity_pairs.sort(key=lambda x: x['similarity'], reverse=True)
     
+    # ========================================
+    # 执行 DBSCAN 聚类
+    # ========================================
+    # 转换为距离矩阵（1 - 相似度）
+    # 注意：clip 到 [0, 1] 避免浮点数误差导致负值
+    similarity_matrix_clipped = np.clip(similarity_matrix, 0, 1)
+    distance_matrix = 1 - similarity_matrix_clipped
+    
+    # 再次确保距离矩阵非负（防御性编程）
+    distance_matrix = np.maximum(distance_matrix, 0)
+    
+    # DBSCAN 参数：eps = 1 - threshold（距离阈值）
+    eps = 1 - threshold
+    dbscan = DBSCAN(eps=eps, min_samples=min_samples_val, metric='precomputed')
+    labels = dbscan.fit_predict(distance_matrix)
+    
+    # ========================================
+    # 计算质量指标
+    # ========================================
+    noise_count = np.sum(labels == -1)
+    noise_ratio = noise_count / len(labels)
+    
+    # 计算轮廓系数（需要至少 2 个簇且有非噪声样本）
+    unique_labels = set(labels)
+    n_clusters = len(unique_labels) - (1 if -1 in unique_labels else 0)
+    
+    silhouette = None
+    if n_clusters >= 2 and noise_count < len(labels):
+        # 只对非噪声样本计算轮廓系数
+        non_noise_mask = labels != -1
+        non_noise_count = np.sum(non_noise_mask)
+        
+        # 需要至少 2 个样本且至少 2 个不同的簇
+        if non_noise_count >= 2 and len(set(labels[non_noise_mask])) >= 2:
+            try:
+                # 使用欧几里得距离（最稳定，不会有负值问题）
+                silhouette = silhouette_score(
+                    embeddings_array[non_noise_mask],
+                    labels[non_noise_mask],
+                    metric='euclidean',
+                )
+            except Exception as e:
+                # 如果还是失败，记录错误并跳过
+                from backend.common.log import log
+                log.warning(f'Failed to calculate silhouette score: {e}')
+                silhouette = None
+    
+    # ========================================
+    # 构造聚类结果
+    # ========================================
+    clusters_result = []
+    
+    for label in sorted(unique_labels):
+        if label == -1:
+            continue  # 噪声单独处理
+        
+        cluster_indices = np.where(labels == label)[0]
+        cluster_feedbacks = [
+            {
+                'id': valid_feedbacks[idx].id,
+                'content': feedbacks_info[idx]['content'],
+                'full_content': valid_feedbacks[idx].content,
+            }
+            for idx in cluster_indices
+        ]
+        
+        # 计算簇内平均相似度
+        cluster_similarities = []
+        for i in range(len(cluster_indices)):
+            for j in range(i + 1, len(cluster_indices)):
+                cluster_similarities.append(similarity_matrix[cluster_indices[i]][cluster_indices[j]])
+        
+        avg_similarity = float(np.mean(cluster_similarities)) if cluster_similarities else 0.0
+        
+        clusters_result.append({
+            'cluster_id': int(label),
+            'size': len(cluster_feedbacks),
+            'feedbacks': cluster_feedbacks,
+            'avg_similarity': round(avg_similarity, 4),
+        })
+    
+    # 噪声样本
+    noise_indices = np.where(labels == -1)[0]
+    noise_feedbacks = [
+        {
+            'id': valid_feedbacks[idx].id,
+            'content': feedbacks_info[idx]['content'],
+            'full_content': valid_feedbacks[idx].content,
+        }
+        for idx in noise_indices
+    ]
+    
+    # ========================================
+    # 质量判断
+    # ========================================
+    quality_pass = True
+    quality_issues = []
+    
+    if n_clusters == 0:
+        quality_pass = False
+        quality_issues.append('未形成任何聚类簇')
+    
+    if noise_ratio > settings.CLUSTERING_MAX_NOISE_RATIO:
+        quality_pass = False
+        quality_issues.append(
+            f'噪声率过高: {noise_ratio:.2%} > {settings.CLUSTERING_MAX_NOISE_RATIO:.2%}'
+        )
+    
+    if silhouette is not None and silhouette < settings.CLUSTERING_MIN_SILHOUETTE:
+        quality_pass = False
+        quality_issues.append(
+            f'轮廓系数过低: {silhouette:.3f} < {settings.CLUSTERING_MIN_SILHOUETTE:.3f}'
+        )
+    
+    # ========================================
+    # 返回完整数据
+    # ========================================
     return response_base.success(data={
+        # 原有数据
         'feedbacks': feedbacks_info,
         'similarity_matrix': similarity_matrix.tolist(),
         'high_similarity_pairs': high_similarity_pairs,
@@ -198,5 +334,33 @@ async def debug_similarity_matrix(
             'max_similarity': float(np.max(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
             'min_similarity': float(np.min(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
             'pairs_above_075': len(high_similarity_pairs),
-        }
+        },
+        
+        # 新增：聚类结果
+        'clustering': {
+            'parameters': {
+                'similarity_threshold': threshold,
+                'min_samples': min_samples_val,
+                'eps': round(eps, 4),
+            },
+            'results': {
+                'n_clusters': n_clusters,
+                'clusters': clusters_result,
+                'noise': {
+                    'count': int(noise_count),
+                    'ratio': round(noise_ratio, 4),
+                    'feedbacks': noise_feedbacks,
+                },
+            },
+            'quality': {
+                'silhouette_score': round(silhouette, 4) if silhouette is not None else None,
+                'noise_ratio': round(noise_ratio, 4),
+                'pass': quality_pass,
+                'issues': quality_issues,
+                'thresholds': {
+                    'min_silhouette': settings.CLUSTERING_MIN_SILHOUETTE,
+                    'max_noise_ratio': settings.CLUSTERING_MAX_NOISE_RATIO,
+                },
+            },
+        },
     })
