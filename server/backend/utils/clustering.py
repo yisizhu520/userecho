@@ -3,6 +3,7 @@
 使用 DBSCAN 进行基于相似度的聚类
 """
 
+import math
 import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.metrics.pairwise import cosine_similarity
@@ -108,7 +109,7 @@ class FeedbackClustering:
         self,
         embeddings: np.ndarray,
         labels: np.ndarray
-    ) -> dict[str, float]:
+    ) -> dict[str, float | None]:
         """
         计算聚类质量指标
 
@@ -118,36 +119,50 @@ class FeedbackClustering:
 
         Returns:
             包含质量指标的字典
+            - silhouette: 轮廓系数 (-1 到 1，越接近 1 越好)
+            - davies_bouldin: Davies-Bouldin 指数 (越小越好，None 表示无法计算)
+            - noise_ratio: 噪声比例 (0 到 1)
         """
         try:
             from sklearn.metrics import silhouette_score, davies_bouldin_score
 
             # 过滤噪声点
             mask = labels != -1
-            if mask.sum() < 2:
-                return {'silhouette': 0.0, 'davies_bouldin': float('inf'), 'noise_ratio': 1.0}
+            filtered_labels = labels[mask]
+            
+            # 检查是否有足够的聚类用于计算质量指标
+            n_unique_labels = len(set(filtered_labels))
+            if n_unique_labels < 2:
+                # 只有 0 或 1 个聚类，无法计算质量指标
+                noise_ratio = (labels == -1).sum() / len(labels)
+                return {'silhouette': 0.0, 'davies_bouldin': None, 'noise_ratio': float(noise_ratio)}
 
             filtered_embeddings = embeddings[mask]
-            filtered_labels = labels[mask]
 
             # 轮廓系数 (-1 到 1，越接近 1 越好)
             silhouette = silhouette_score(filtered_embeddings, filtered_labels, metric='cosine')
 
             # Davies-Bouldin 指数 (越小越好)
             davies_bouldin = davies_bouldin_score(filtered_embeddings, filtered_labels)
+            
+            # 防止 Infinity 导致 JSON 序列化失败
+            if math.isinf(davies_bouldin) or math.isnan(davies_bouldin):
+                davies_bouldin = None
+            else:
+                davies_bouldin = float(davies_bouldin)
 
             # 噪声比例
             noise_ratio = (labels == -1).sum() / len(labels)
 
             return {
                 'silhouette': float(silhouette),
-                'davies_bouldin': float(davies_bouldin),
+                'davies_bouldin': davies_bouldin,
                 'noise_ratio': float(noise_ratio)
             }
 
         except Exception as e:
             log.error(f'Failed to calculate cluster quality: {e}')
-            return {'silhouette': 0.0, 'davies_bouldin': float('inf'), 'noise_ratio': 1.0}
+            return {'silhouette': 0.0, 'davies_bouldin': None, 'noise_ratio': 1.0}
 
 
 # 全局单例

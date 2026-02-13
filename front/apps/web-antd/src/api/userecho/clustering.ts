@@ -22,7 +22,7 @@ export interface ClusteringResult {
   }>;
   quality_metrics?: {
     silhouette: number;
-    davies_bouldin: number;
+    davies_bouldin: number | null;  // null 表示聚类质量太差无法计算
     noise_ratio: number;
   };
 }
@@ -61,11 +61,11 @@ export interface TriggerClusteringParams {
  */
 export async function triggerClustering(params: TriggerClusteringParams = {}) {
   return requestClient.post<ClusteringResult | ClusteringTaskAccepted>('/api/v1/app/clustering/trigger', null, {
-    params: { 
-      max_feedbacks: 100, 
-      force_recluster: false, 
+    params: {
+      max_feedbacks: 100,
+      force_recluster: false,
       async_mode: true,  // 默认使用异步模式，避免请求超时
-      ...params 
+      ...params
     },
   });
 }
@@ -87,4 +87,36 @@ export async function getClusteringSuggestions(feedbackId: string, topK = 5) {
       params: { top_k: topK },
     },
   );
+}
+
+/**
+ * 【调试】查看反馈相似度矩阵
+ */
+export interface SimilarityMatrixDebug {
+  feedbacks: Array<{
+    id: string;
+    content: string;
+    full_content: string;
+  }>;
+  similarity_matrix: number[][];
+  high_similarity_pairs: Array<{
+    feedback1_id: string;
+    feedback1_content: string;
+    feedback2_id: string;
+    feedback2_content: string;
+    similarity: number;
+  }>;
+  stats: {
+    total_feedbacks: number;
+    avg_similarity: number;
+    max_similarity: number;
+    min_similarity: number;
+    pairs_above_075: number;
+  };
+}
+
+export async function getSimilarityMatrix(limit = 20) {
+  return requestClient.get<SimilarityMatrixDebug>('/api/v1/app/clustering/debug/similarity-matrix', {
+    params: { limit },
+  });
 }

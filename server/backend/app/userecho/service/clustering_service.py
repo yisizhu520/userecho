@@ -98,7 +98,7 @@ class ClusteringService:
             cache_hit = 0
             for feedback in feedbacks:
                 cached_embedding = crud_feedback.get_cached_embedding(feedback)
-                if cached_embedding:
+                if cached_embedding is not None:  # 修复：numpy.ndarray 不能直接用 if 判断
                     embeddings.append(cached_embedding)
                     valid_feedbacks.append(feedback)
                     cache_hit += 1
@@ -117,7 +117,7 @@ class ClusteringService:
                 # 2.3 缓存新获取的 embedding
                 embeddings_to_cache = {}
                 for feedback, embedding in zip(feedbacks_need_embedding, embeddings_batch):
-                    if embedding:
+                    if embedding is not None:  # 明确检查 None，而不是依赖布尔转换
                         embeddings.append(embedding)
                         valid_feedbacks.append(feedback)
                         embeddings_to_cache[feedback.id] = embedding

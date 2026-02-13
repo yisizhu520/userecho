@@ -1,0 +1,2 @@
+curl --location 'http://localhost:5173/api/v1/app/clustering/debug/similarity-matrix' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXNzaW9uX3V1aWQiOiI0ZDY0MGQwMS03MjZhLTRiMjUtODg1YS1kZjIyZDAxODE2NTQiLCJleHAiOjE3NjY3MDYyMjMuODAzMjIzLCJzdWIiOiI2In0.N8VC1ZHFBQqGZaDtd-ocHsMHwJUwAZuOC8mlK0pv2dY'

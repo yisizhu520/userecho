@@ -21,12 +21,14 @@ def userecho_clustering_batch(
     UserEcho 聚类批处理任务
 
     说明：
-    - Celery 标准 Worker（非 gevent）不支持原生 async def，使用 asyncio.run() 包装
+    - Celery 标准 Worker（非 gevent）不支持原生 async def，需要手动管理 event loop
     - 任务结果会写入 Celery result_backend（DB），前端可通过 task_id 轮询状态
     - time_limit: 10分钟硬超时，防止任务卡死
     - soft_time_limit: 9分钟软超时，给予任务优雅退出的机会
     
-    注意：如果你的 Worker 使用 celery_aio_pool，可以改回 async def
+    Event Loop 管理：
+    - 不使用 asyncio.run()，因为它会关闭 loop 导致第二次任务失败
+    - 手动获取或创建 event loop，复用同一个 loop
     """
     async def _async_run():
         """异步执行聚类任务"""
@@ -38,7 +40,16 @@ def userecho_clustering_batch(
                 force_recluster=force_recluster,
             )
     
-    # 在同步上下文中运行异步代码
-    # asyncio.run() 会创建新的事件循环，避免与 Celery 冲突
-    return asyncio.run(_async_run())
+    # 手动管理 event loop，避免 asyncio.run() 关闭 loop 的问题
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    # 运行异步任务，但不关闭 loop（让 Celery 管理生命周期）
+    return loop.run_until_complete(_async_run())
 

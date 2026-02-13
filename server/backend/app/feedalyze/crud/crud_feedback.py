@@ -1,4 +1,5 @@
 """Feedback CRUD"""
+import numpy as np
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -225,7 +226,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         await db.commit()
         return updated_count
 
-    def get_cached_embedding(self, feedback: Feedback) -> list[float] | None:
+    def get_cached_embedding(self, feedback: Feedback) -> np.ndarray | None:
         """
         获取缓存的 embedding（从 VECTOR 字段）
 
@@ -233,9 +234,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             feedback: 反馈实例
 
         Returns:
-            embedding 向量，如果没有缓存则返回 None
+            embedding 向量（numpy.ndarray），如果没有缓存则返回 None
+        
+        Warning:
+            返回值是 numpy.ndarray，不能直接用 if 判断，应使用 `is not None`
         """
-        # SQLAlchemy + pgvector 自动转换为 list[float]
         return feedback.embedding
 
     async def find_similar_feedbacks(
@@ -371,11 +374,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         result = await db.execute(query)
         rows = result.all()
 
-        # 转换为字典列表
+        # 转换为字典列表（排除 embedding 向量字段，避免序列化失败）
         feedback_list = []
         for row in rows:
             feedback_dict = {
-                **{c.name: getattr(row[0], c.name) for c in row[0].__table__.columns},
+                **{c.name: getattr(row[0], c.name) for c in row[0].__table__.columns if c.name != 'embedding'},
                 'customer_name': row.customer_name,
                 'topic_title': row.topic_title
             }

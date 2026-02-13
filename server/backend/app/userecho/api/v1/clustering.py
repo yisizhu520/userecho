@@ -1,13 +1,17 @@
 """聚类 API 端点"""
 
+import numpy as np
 from fastapi import APIRouter
 
 from backend.app.userecho.service import clustering_service
+from backend.app.userecho.crud import crud_feedback
 from backend.app.task.celery import celery_app
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
+from backend.utils.ai_client import ai_client
+from sklearn.metrics.pairwise import cosine_similarity
 
 router = APIRouter(prefix='/clustering', tags=['UserEcho - AI聚类'])
 
@@ -109,3 +113,90 @@ async def get_clustering_suggestions(
     )
 
     return response_base.success(data=suggestions)
+
+
+@router.get('/debug/similarity-matrix', summary='【调试】查看反馈相似度矩阵')
+async def debug_similarity_matrix(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+    limit: int = 20,
+):
+    """
+    调试接口：查看待聚类反馈之间的相似度矩阵
+    
+    帮助调整聚类参数（CLUSTERING_SIMILARITY_THRESHOLD）
+    """
+    # 获取待聚类的反馈
+    feedbacks = await crud_feedback.get_pending_clustering(
+        db=db,
+        tenant_id=tenant_id,
+        limit=limit,
+        include_failed=False,
+        force_recluster=False,
+    )
+    
+    if len(feedbacks) < 2:
+        return response_base.fail(res=CustomResponse(code=400, msg=f'待聚类反馈不足（当前: {len(feedbacks)}）'))
+    
+    # 获取 embedding
+    embeddings = []
+    valid_feedbacks = []
+    
+    for feedback in feedbacks:
+        cached_embedding = crud_feedback.get_cached_embedding(feedback)
+        if cached_embedding is not None:
+            embeddings.append(cached_embedding)
+            valid_feedbacks.append(feedback)
+        else:
+            # 临时获取 embedding（不缓存）
+            embedding = await ai_client.get_embedding(feedback.content)
+            if embedding is not None:
+                embeddings.append(embedding)
+                valid_feedbacks.append(feedback)
+    
+    if len(embeddings) < 2:
+        return response_base.fail(res=CustomResponse(code=400, msg='无法获取足够的 embedding'))
+    
+    # 计算相似度矩阵
+    embeddings_array = np.array(embeddings)
+    similarity_matrix = cosine_similarity(embeddings_array)
+    
+    # 构造返回数据
+    feedbacks_info = [
+        {
+            'id': fb.id,
+            'content': fb.content[:50] + '...' if len(fb.content) > 50 else fb.content,
+            'full_content': fb.content,
+        }
+        for fb in valid_feedbacks
+    ]
+    
+    # 找出高相似度对（>= 0.75）
+    high_similarity_pairs = []
+    for i in range(len(similarity_matrix)):
+        for j in range(i + 1, len(similarity_matrix)):
+            sim = float(similarity_matrix[i][j])
+            if sim >= 0.75:
+                high_similarity_pairs.append({
+                    'feedback1_id': valid_feedbacks[i].id,
+                    'feedback1_content': feedbacks_info[i]['content'],
+                    'feedback2_id': valid_feedbacks[j].id,
+                    'feedback2_content': feedbacks_info[j]['content'],
+                    'similarity': round(sim, 4),
+                })
+    
+    # 按相似度降序排列
+    high_similarity_pairs.sort(key=lambda x: x['similarity'], reverse=True)
+    
+    return response_base.success(data={
+        'feedbacks': feedbacks_info,
+        'similarity_matrix': similarity_matrix.tolist(),
+        'high_similarity_pairs': high_similarity_pairs,
+        'stats': {
+            'total_feedbacks': len(valid_feedbacks),
+            'avg_similarity': float(np.mean(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
+            'max_similarity': float(np.max(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
+            'min_similarity': float(np.min(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
+            'pairs_above_075': len(high_similarity_pairs),
+        }
+    })
