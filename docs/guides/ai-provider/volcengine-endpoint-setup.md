@@ -116,7 +116,7 @@ ep-YYYYMMDDHHMMSS-xxxxx
 
 ---
 
-## ⚙️ 在 Feedalyze 中的配置
+## ⚙️ 在 UserEcho 中的配置
 
 ### 完整配置示例
 
@@ -214,7 +214,7 @@ python scripts/test_ai_providers.py
 - [火山引擎官网](https://www.volcengine.com/)
 - [火山引擎控制台](https://console.volcengine.com)
 - [豆包大模型文档](https://www.volcengine.com/docs/82379)
-- [Feedalyze AI Provider 配置指南](./ai-provider-configuration.md)
+- [UserEcho AI Provider 配置指南](./ai-provider-configuration.md)
 
 ---
 
@@ -232,4 +232,4 @@ python scripts/test_ai_providers.py
 ---
 
 **更新时间**: 2024-12-21  
-**适用版本**: Feedalyze v1.0.1+
+**适用版本**: UserEcho v1.0.1+

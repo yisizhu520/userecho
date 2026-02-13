@@ -164,7 +164,7 @@ async def verify_migration():
 def main():
     """主函数"""
     print('\n' + '=' * 70)
-    print('🚀 Feedalyze 路由隔离迁移脚本')
+    print('🚀 UserEcho 路由隔离迁移脚本')
     print('=' * 70)
     print('\n此脚本将执行以下操作：')
     print('1. 添加 role_type 字段到 sys_role 表')

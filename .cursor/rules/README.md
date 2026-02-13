@@ -1,6 +1,6 @@
-# Feedalyze Cursor 规则
+# UserEcho Cursor 规则
 
-本目录包含 Feedalyze 项目的 Cursor AI 辅助开发规则，采用模块化组织方式，便于维护和更新。
+本目录包含 UserEcho 项目的 Cursor AI 辅助开发规则，采用模块化组织方式，便于维护和更新。
 
 ## 规则文件列表
 

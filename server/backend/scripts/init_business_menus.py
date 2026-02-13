@@ -1,6 +1,6 @@
 """初始化业务菜单和角色
 
-此脚本用于创建 Feedalyze 业务功能的菜单和角色。
+此脚本用于创建 UserEcho 业务功能的菜单和角色。
 执行方式: python scripts/init_business_menus.py
 """
 import asyncio
@@ -25,22 +25,22 @@ async def init_business_menus():
         
         # ========== 1. 创建反馈管理目录 ==========
         print('\n1️⃣  检查反馈管理目录...')
-        feedalyze_menu = await db.scalar(
-            select(Menu).where(Menu.path == '/app/feedalyze')
+        userecho_menu = await db.scalar(
+            select(Menu).where(Menu.path == '/app/userecho')
         )
         
-        if not feedalyze_menu:
-            feedalyze_menu = Menu(
+        if not userecho_menu:
+            userecho_menu = Menu(
                 title='反馈管理',
-                name='Feedalyze',
-                path='/app/feedalyze',
+                name='UserEcho',
+                path='/app/userecho',
                 icon='lucide:messages-square',
                 type=0,  # 目录
                 sort=100,
                 status=1,
                 display=1,
             )
-            db.add(feedalyze_menu)
+            db.add(userecho_menu)
             await db.flush()
             print('   ✅ 创建反馈管理目录')
         else:
@@ -53,7 +53,7 @@ async def init_business_menus():
                 'title': '反馈列表',
                 'name': 'FeedbackList',
                 'path': '/app/feedback/list',
-                'component': '/feedalyze/feedback/list',
+                'component': '/userecho/feedback/list',
                 'icon': 'lucide:inbox',
                 'perms': 'app:feedback:view',
                 'sort': 1,
@@ -62,7 +62,7 @@ async def init_business_menus():
                 'title': '导入反馈',
                 'name': 'FeedbackImport',
                 'path': '/app/feedback/import',
-                'component': '/feedalyze/feedback/import',
+                'component': '/userecho/feedback/import',
                 'icon': 'lucide:upload',
                 'perms': 'app:feedback:import',
                 'sort': 2,
@@ -71,7 +71,7 @@ async def init_business_menus():
                 'title': '需求主题',
                 'name': 'TopicList',
                 'path': '/app/topic/list',
-                'component': '/feedalyze/topic/list',
+                'component': '/userecho/topic/list',
                 'icon': 'lucide:lightbulb',
                 'perms': 'app:topic:view',
                 'sort': 3,
@@ -80,7 +80,7 @@ async def init_business_menus():
                 'title': '客户管理',
                 'name': 'CustomerManage',
                 'path': '/app/customer',
-                'component': '/feedalyze/customer/index',
+                'component': '/userecho/customer/index',
                 'icon': 'lucide:users',
                 'perms': 'app:customer:view',
                 'sort': 4,
@@ -95,7 +95,7 @@ async def init_business_menus():
             if not existing:
                 menu = Menu(
                     **menu_data, 
-                    parent_id=feedalyze_menu.id, 
+                    parent_id=userecho_menu.id, 
                     type=1,  # 菜单
                     status=1, 
                     display=1
@@ -155,7 +155,7 @@ async def init_business_menus():
                     # 分配所有 /app/* 菜单
                     all_app_menus = await db.scalars(
                         select(Menu).where(
-                            (Menu.path.like('/app/%')) | (Menu.path == '/app/feedalyze')
+                            (Menu.path.like('/app/%')) | (Menu.path == '/app/userecho')
                         )
                     )
                     for menu in all_app_menus:
@@ -175,7 +175,7 @@ async def init_business_menus():
                     
                     # 同时分配父菜单（目录）
                     parent_menu = await db.scalar(
-                        select(Menu).where(Menu.path == '/app/feedalyze')
+                        select(Menu).where(Menu.path == '/app/userecho')
                     )
                     if parent_menu:
                         await db.execute(
@@ -223,7 +223,7 @@ async def verify_initialization():
 
 if __name__ == '__main__':
     print('=' * 60)
-    print('🚀 Feedalyze 业务菜单和角色初始化脚本')
+    print('🚀 UserEcho 业务菜单和角色初始化脚本')
     print('=' * 60)
     
     try:

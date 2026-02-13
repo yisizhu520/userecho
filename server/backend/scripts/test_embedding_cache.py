@@ -12,8 +12,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from backend.app.feedalyze.crud import crud_feedback
-from backend.app.feedalyze.model.feedback import Feedback
+from backend.app.userecho.crud import crud_feedback
+from backend.app.userecho.model.feedback import Feedback
 from backend.database.db_mysql import async_db_session
 from backend.utils.ai_client import ai_client
 
@@ -141,7 +141,7 @@ async def test_clustering_with_cache():
     print('【测试 3】聚类服务缓存使用')
     print('=' * 60)
 
-    from backend.app.feedalyze.service.clustering_service import clustering_service
+    from backend.app.userecho.service.clustering_service import clustering_service
 
     async with async_db_session() as db:
         # 触发聚类

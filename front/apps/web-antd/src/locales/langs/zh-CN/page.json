@@ -34,12 +34,29 @@
     "sysRole": "角色管理",
     "sysUser": "用户管理",
     "profile": "个人中心",
-    "feedalyze": "反馈分析",
+    "userecho": "回响",
+    "feedalyze": "回响",
     "feedbackList": "反馈列表",
     "feedbackImport": "导入反馈",
     "topicList": "需求主题",
     "topicDetail": "主题详情",
     "customerManage": "客户管理"
+  },
+  "page": {
+    "userecho": {
+      "title": "回响",
+      "feedback": {
+        "list": "反馈列表",
+        "import": "导入反馈"
+      },
+      "topic": {
+        "list": "需求主题",
+        "detail": "主题详情"
+      },
+      "customer": {
+        "title": "客户管理"
+      }
+    }
   },
   "monitor": {
     "redis": {

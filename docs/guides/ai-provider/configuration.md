@@ -2,7 +2,7 @@
 
 ## 概述
 
-Feedalyze 支持多个 AI 服务提供商，通过配置驱动的方式实现零硬编码的多模型支持。目前支持：
+UserEcho 支持多个 AI 服务提供商，通过配置驱动的方式实现零硬编码的多模型支持。目前支持：
 
 - **DeepSeek** (推荐：性价比高)
 - **OpenAI** (国际标准)
@@ -160,7 +160,7 @@ print(resp)
 ### 完整配置（.env 文件）
 
 ```bash
-# ==================== Feedalyze AI 配置 ====================
+# ==================== UserEcho AI 配置 ====================
 # DeepSeek (推荐：性价比高)
 DEEPSEEK_API_KEY=sk-your-deepseek-key-here
 

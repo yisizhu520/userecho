@@ -33,7 +33,29 @@
     "sysMenu": "User",
     "sysRole": "Role",
     "sysUser": "User",
-    "profile": "Profile"
+    "profile": "Profile",
+    "userecho": "UserEcho",
+    "feedbackList": "Feedback List",
+    "feedbackImport": "Import Feedback",
+    "topicList": "Topics",
+    "topicDetail": "Topic Detail",
+    "customerManage": "Customer Management"
+  },
+  "page": {
+    "userecho": {
+      "title": "UserEcho",
+      "feedback": {
+        "list": "Feedback List",
+        "import": "Import Feedback"
+      },
+      "topic": {
+        "list": "Topics",
+        "detail": "Topic Detail"
+      },
+      "customer": {
+        "title": "Customer Management"
+      }
+    }
   },
   "monitor": {
     "redis": {

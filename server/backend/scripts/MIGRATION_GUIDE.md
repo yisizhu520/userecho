@@ -130,24 +130,24 @@ WHERE path LIKE '/system/%'
 |------|---------|
 | `app/admin/model/role.py` | ✅ 添加 `role_type` 字段 |
 | `app/admin/service/menu_service.py` | ✅ 添加菜单过滤逻辑 |
-| `app/feedalyze/api/router.py` | ✅ 更新 API 路由前缀为 `/app` |
+| `app/userecho/api/router.py` | ✅ 更新 API 路由前缀为 `/app` |
 | `alembic/versions/2025-12-22-01_*.py` | ✅ 新增迁移脚本 |
 | `scripts/init_business_menus.py` | ✅ 新增初始化脚本 |
 | `scripts/run_route_migration.py` | ✅ 新增一键执行脚本 |
 
 ### 待修改的前端文件（需单独执行）
 
-前端 API 路径需要从 `/feedalyze/*` 更新为 `/app/*`：
+前端 API 路径需要从 `/userecho/*` 更新为 `/app/*`：
 
 ```bash
-cd front/apps/web-antd/src/api/feedalyze
+cd front/apps/web-antd/src/api/userecho
 
 # 批量替换（Linux/Mac）
-sed -i "s|'/feedalyze/|'/app/|g" *.ts
+sed -i "s|'/userecho/|'/app/|g" *.ts
 
 # 批量替换（Windows PowerShell）
 Get-ChildItem *.ts | ForEach-Object {
-    (Get-Content $_) -replace "'/feedalyze/", "'/app/" | Set-Content $_
+    (Get-Content $_) -replace "'/userecho/", "'/app/" | Set-Content $_
 }
 ```
 
@@ -184,7 +184,7 @@ alembic downgrade -1
 ### Q3: 旧的 API 路径无法访问
 
 **A:** 
-- 后端 API 已从 `/api/v1/feedalyze/*` 改为 `/api/v1/app/*`
+- 后端 API 已从 `/api/v1/userecho/*` 改为 `/api/v1/app/*`
 - 需要同步更新前端 API 调用路径
 
 ### Q4: 如何给现有用户分配业务角色？

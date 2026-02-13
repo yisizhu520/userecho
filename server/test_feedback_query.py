@@ -5,7 +5,7 @@ import asyncio
 from sqlalchemy import select, func
 
 from backend.database.db import async_db_session
-from backend.app.feedalyze.model.feedback import Feedback
+from backend.app.userecho.model.feedback import Feedback
 from backend.common.log import log
 
 

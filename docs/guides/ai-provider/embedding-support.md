@@ -234,7 +234,7 @@ AI_DEFAULT_PROVIDER=glm
 - [DeepSeek 官方文档](https://api-docs.deepseek.com/zh-cn/)
 - [OpenAI Embedding 文档](https://platform.openai.com/docs/guides/embeddings)
 - [智谱 GLM 文档](https://open.bigmodel.cn/dev/api)
-- [Feedalyze AI Provider 配置指南](./ai-provider-configuration.md)
+- [UserEcho AI Provider 配置指南](./ai-provider-configuration.md)
 
 ---
 

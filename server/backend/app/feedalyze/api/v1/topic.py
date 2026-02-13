@@ -2,20 +2,20 @@
 
 from fastapi import APIRouter, Depends
 
-from backend.app.feedalyze.schema.topic import (
+from backend.app.userecho.schema.topic import (
     TopicCreate,
     TopicListParams,
     TopicOut,
     TopicStatusUpdateParam,
     TopicUpdate,
 )
-from backend.app.feedalyze.service import topic_service
+from backend.app.userecho.service import topic_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/topics', tags=['Feedalyze - 需求主题'])
+router = APIRouter(prefix='/topics', tags=['userecho - 需求主题'])
 
 
 def get_current_user_id() -> int:

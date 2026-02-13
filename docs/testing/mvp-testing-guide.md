@@ -1,4 +1,4 @@
-# Feedalyze MVP 功能测试指南
+# UserEcho MVP 功能测试指南
 
 > **版本:** v1.0  
 > **创建日期:** 2025-12-21  
@@ -8,7 +8,7 @@
 
 ## 📋 文档概览
 
-本文档将指导你完成 Feedalyze MVP 的完整功能测试，包括：
+本文档将指导你完成 UserEcho MVP 的完整功能测试，包括：
 - 环境准备与检查
 - 核心业务流程测试
 - 异常场景测试
@@ -195,7 +195,7 @@ source .venv/Scripts/activate && python -m backend.run
 - ✅ 数据库连接成功
 - ✅ AI API 密钥已配置
 - ✅ 服务启动在 8000 端口
-- ✅ `/docs` 可以访问并显示 Feedalyze 相关接口
+- ✅ `/docs` 可以访问并显示 UserEcho 相关接口
 
 **常见启动问题：**
 
@@ -238,7 +238,7 @@ psql -U postgres -d fba
 
 执行检查 SQL：
 ```sql
--- 1. 检查 Feedalyze 表是否存在
+-- 1. 检查 UserEcho 表是否存在
 SHOW TABLES LIKE '%tenant%';
 SHOW TABLES LIKE '%feedback%';
 SHOW TABLES LIKE '%topic%';
@@ -251,7 +251,7 @@ SELECT id, username, tenant_id FROM sys_user LIMIT 5;
 ```
 
 **预期结果:**
-- ✅ 7 张 Feedalyze 表存在（tenants, customers, feedbacks, topics, priority_scores, status_history, manual_adjustments）
+- ✅ 7 张 UserEcho 表存在（tenants, customers, feedbacks, topics, priority_scores, status_history, manual_adjustments）
 - ✅ 默认租户存在且状态为 'active'
 - ✅ sys_user 表有 tenant_id 列
 
@@ -315,7 +315,7 @@ SELECT id, username, tenant_id FROM sys_user WHERE username = 'admin';
 
 #### 预期结果：
 - ✅ 登录成功，跳转到首页
-- ✅ 左侧菜单栏显示 "Feedalyze" 菜单组
+- ✅ 左侧菜单栏显示 "UserEcho" 菜单组
 - ✅ 子菜单包含：反馈管理、需求主题、客户管理
 
 #### 检查点：
@@ -337,7 +337,7 @@ SELECT id, username, tenant_id FROM sys_user WHERE username = 'admin';
 #### 2.1 创建客户
 
 **步骤：**
-1. 点击左侧菜单 "Feedalyze" → "客户管理"
+1. 点击左侧菜单 "UserEcho" → "客户管理"
 2. 点击工具栏 "新建客户" 按钮
 3. 填写表单：
    - 客户名称: 测试客户A
@@ -920,7 +920,7 @@ SELECT tenant_id, COUNT(*) FROM feedbacks GROUP BY tenant_id;
 ```
 
 **问题原因:**
-原始的 `ResponseBase` 类不支持直接传递 `msg` 参数，但 Feedalyze 代码中使用了 `response_base.fail(msg='...')`。
+原始的 `ResponseBase` 类不支持直接传递 `msg` 参数，但 UserEcho 代码中使用了 `response_base.fail(msg='...')`。
 
 **已修复:** ✅ v1.0.2 (2025-12-22)
 - 扩展了 `ResponseBase.success()` 方法，支持 `msg` 参数
@@ -955,7 +955,7 @@ source .venv/Scripts/activate && python -m backend.run
 前端 API 路径配置错误，缺少了 `/api/v1` 前缀。
 
 **已修复:** ✅ v1.0.1 (2025-12-22)
-- 修复了所有 Feedalyze API 的路径配置
+- 修复了所有 UserEcho API 的路径配置
 - 正确路径格式：`/api/v1/app/{resource}`
 - 受影响文件：
   * `feedback.ts` - 反馈管理 API
@@ -1100,7 +1100,7 @@ print(f"Cluster labels: {labels}")
 
 ### 问题 3: 前端页面空白
 
-**现象:** 访问 Feedalyze 页面显示空白或加载失败
+**现象:** 访问 UserEcho 页面显示空白或加载失败
 
 **排查步骤:**
 ```bash
@@ -1223,7 +1223,7 @@ ORDER BY created_time DESC;
 ## 附录：测试报告模板
 
 ```markdown
-# Feedalyze MVP 测试报告
+# UserEcho MVP 测试报告
 
 **测试人员:** ________  
 **测试日期:** 2025-12-21  

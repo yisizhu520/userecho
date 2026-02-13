@@ -361,7 +361,7 @@ tags: [security, performance, optimization]
    ```python
    from celery import Celery
    
-   celery_app = Celery('feedalyze', broker='redis://localhost:6379/0')
+   celery_app = Celery('userecho', broker='redis://localhost:6379/0')
    
    # ✅ 耗时操作使用异步任务
    @celery_app.task

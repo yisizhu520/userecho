@@ -14,7 +14,7 @@ if ! command -v psql &> /dev/null; then
     echo "❌ [错误] 未找到 psql 命令，请确保已安装 PostgreSQL 客户端"
     echo ""
     echo "如果使用 Docker，请运行以下命令："
-    echo "docker exec -i feedalyze-db psql -U postgres -d feedalyze < sql/postgresql/init_test_users.sql"
+    echo "docker exec -i userecho-db psql -U postgres -d userecho < sql/postgresql/init_test_users.sql"
     echo ""
     exit 1
 fi
@@ -29,8 +29,8 @@ DB_PORT=${DB_PORT:-5432}
 read -p "请输入数据库用户名 (默认: postgres): " DB_USER
 DB_USER=${DB_USER:-postgres}
 
-read -p "请输入数据库名称 (默认: feedalyze): " DB_NAME
-DB_NAME=${DB_NAME:-feedalyze}
+read -p "请输入数据库名称 (默认: userecho): " DB_NAME
+DB_NAME=${DB_NAME:-userecho}
 
 echo ""
 echo "================================================================================"

@@ -35,7 +35,7 @@ async def test_read_write():
     
     try:
         # 写入测试
-        test_key = "feedalyze:test:timestamp"
+        test_key = "userecho:test:timestamp"
         test_value = f"test_{int(time.time())}"
         
         await redis_client.set(test_key, test_value, ex=30)
@@ -72,7 +72,7 @@ async def test_batch_operations():
     
     try:
         # 批量写入
-        test_keys = {f"feedalyze:batch:key{i}": f"value{i}" for i in range(10)}
+        test_keys = {f"userecho:batch:key{i}": f"value{i}" for i in range(10)}
         
         pipe = redis_client.pipeline()
         for key, value in test_keys.items():

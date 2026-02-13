@@ -228,7 +228,7 @@ fba init-db
 
 ```bash
 # 应用标题
-VITE_APP_TITLE=Feedalyze
+VITE_APP_TITLE=UserEcho
 
 # API 地址
 VITE_API_URL=http://localhost:8000
@@ -264,7 +264,7 @@ const isProd = import.meta.env.PROD;
 
 ```bash
 # ========== 应用配置 ==========
-APP_NAME=Feedalyze
+APP_NAME=UserEcho
 APP_ENV=development
 APP_DEBUG=True
 APP_HOST=0.0.0.0
@@ -272,10 +272,10 @@ APP_PORT=8000
 
 # ========== 数据库配置 ==========
 # MySQL
-DATABASE_URL=mysql+asyncmy://root:password@localhost:3306/feedalyze?charset=utf8mb4
+DATABASE_URL=mysql+asyncmy://root:password@localhost:3306/userecho?charset=utf8mb4
 
 # PostgreSQL
-# DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/feedalyze
+# DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/userecho
 
 # 数据库连接池配置
 DB_POOL_SIZE=20
@@ -317,7 +317,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-password
-SMTP_FROM=noreply@feedalyze.com
+SMTP_FROM=noreply@userecho.com
 
 # ========== 第三方服务 ==========
 # AWS S3
@@ -337,7 +337,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    app_name: str = 'Feedalyze'
+    app_name: str = 'UserEcho'
     app_env: str = 'development'
     database_url: str
     redis_url: str
@@ -408,9 +408,9 @@ gunicorn backend.main:app \
   --bind 0.0.0.0:8000
 
 # 使用 systemd 管理服务
-sudo systemctl start feedalyze
-sudo systemctl enable feedalyze
-sudo systemctl status feedalyze
+sudo systemctl start userecho
+sudo systemctl enable userecho
+sudo systemctl status userecho
 ```
 
 ---

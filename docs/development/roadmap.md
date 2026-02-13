@@ -1,4 +1,4 @@
-# Feedalyze 产品路线图 (Future Roadmap)
+# UserEcho 产品路线图 (Future Roadmap)
 
 > **说明:** 本文档记录 MVP 阶段之后的功能规划，仅在核心假设验证成功后执行。
 
@@ -187,7 +187,7 @@
 #### 4.2 与 Jira/飞书集成
 **功能描述:**
 - 一键同步需求主题到 Jira/飞书多维表格
-- 双向同步状态（Feedalyze ↔️ Jira）
+- 双向同步状态（UserEcho ↔️ Jira）
 - 支持自定义字段映射
 
 **商业价值:**

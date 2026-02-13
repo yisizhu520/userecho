@@ -1,8 +1,8 @@
-"""修复所有 feedalyze 模型的 init=False 问题"""
+"""修复所有 userecho 模型的 init=False 问题"""
 import re
 from pathlib import Path
 
-models_dir = Path("app/feedalyze/model")
+models_dir = Path("app/userecho/model")
 
 # 需要修复的文件
 files_to_fix = [

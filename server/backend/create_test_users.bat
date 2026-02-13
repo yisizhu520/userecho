@@ -13,7 +13,7 @@ if %ERRORLEVEL% NEQ 0 (
     echo [错误] 未找到 psql 命令，请确保已安装 PostgreSQL 客户端
     echo.
     echo 如果使用 Docker，请运行以下命令：
-    echo docker exec -i feedalyze-db psql -U postgres -d feedalyze ^< sql/postgresql/init_test_users.sql
+    echo docker exec -i userecho-db psql -U postgres -d userecho ^< sql/postgresql/init_test_users.sql
     echo.
     pause
     exit /b 1
@@ -29,8 +29,8 @@ if "%DB_PORT%"=="" set DB_PORT=5432
 set /p DB_USER="请输入数据库用户名 (默认: postgres): "
 if "%DB_USER%"=="" set DB_USER=postgres
 
-set /p DB_NAME="请输入数据库名称 (默认: feedalyze): "
-if "%DB_NAME%"=="" set DB_NAME=feedalyze
+set /p DB_NAME="请输入数据库名称 (默认: userecho): "
+if "%DB_NAME%"=="" set DB_NAME=userecho
 
 echo.
 echo ================================================================================

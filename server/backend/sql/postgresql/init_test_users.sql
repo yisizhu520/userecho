@@ -95,7 +95,7 @@ BEGIN
             '系统管理员',
             '$2b$12$VEwQ5h9Z8jZ4YjEQNxJX8.RGPxLhNkL7YT2YfEqXqKvZxW7XvQYPy',
             decode('24326224313224564577513568395a386a5a344a6a45514e784a583865', 'hex'),
-            'sysadmin@feedalyze.com',
+            'sysadmin@userecho.com',
             1, false, true, true,
             v_dept_id, now(), now(), now(), now()
         )
@@ -126,7 +126,7 @@ BEGIN
             '产品经理',
             '$2b$12$VEwQ5h9Z8jZ4YjEQNxJX8.RGPxLhNkL7YT2YfEqXqKvZxW7XvQYPy',
             decode('24326224313224564577513568395a386a5a344a6a45514e784a583865', 'hex'),
-            'pm@feedalyze.com',
+            'pm@userecho.com',
             1, false, true, true,
             v_dept_id, now(), now(), now(), now()
         )
@@ -156,7 +156,7 @@ BEGIN
             '客户成功',
             '$2b$12$VEwQ5h9Z8jZ4YjEQNxJX8.RGPxLhNkL7YT2YfEqXqKvZxW7XvQYPy',
             decode('24326224313224564577513568395a386a5a344a6a45514e784a583865', 'hex'),
-            'cs@feedalyze.com',
+            'cs@userecho.com',
             1, false, true, true,
             v_dept_id, now(), now(), now(), now()
         )
@@ -186,7 +186,7 @@ BEGIN
             '开发人员',
             '$2b$12$VEwQ5h9Z8jZ4YjEQNxJX8.RGPxLhNkL7YT2YfEqXqKvZxW7XvQYPy',
             decode('24326224313224564577513568395a386a5a344a6a45514e784a583865', 'hex'),
-            'dev@feedalyze.com',
+            'dev@userecho.com',
             1, false, true, true,
             v_dept_id, now(), now(), now(), now()
         )
@@ -216,7 +216,7 @@ BEGIN
             '租户管理员',
             '$2b$12$VEwQ5h9Z8jZ4YjEQNxJX8.RGPxLhNkL7YT2YfEqXqKvZxW7XvQYPy',
             decode('24326224313224564577513568395a386a5a344a6a45514e784a583865', 'hex'),
-            'boss@feedalyze.com',
+            'boss@userecho.com',
             1, false, true, true,
             v_dept_id, now(), now(), now(), now()
         )
@@ -246,7 +246,7 @@ BEGIN
             '混合角色用户',
             '$2b$12$VEwQ5h9Z8jZ4YjEQNxJX8.RGPxLhNkL7YT2YfEqXqKvZxW7XvQYPy',
             decode('24326224313224564577513568395a386a5a344a6a45514e784a583865', 'hex'),
-            'hybrid@feedalyze.com',
+            'hybrid@userecho.com',
             1, false, true, true,
             v_dept_id, now(), now(), now(), now()
         )

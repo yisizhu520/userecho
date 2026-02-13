@@ -92,54 +92,6 @@ const coreRoutes: RouteRecordRaw[] = [
       },
     ],
   },
-  // 兼容旧的 /feedalyze/* 路径（历史标签页/旧链接）
-  {
-    meta: {
-      hideInBreadcrumb: true,
-      hideInMenu: true,
-      hideInTab: true,
-      title: 'LegacyRedirect',
-    },
-    name: 'LegacyFeedalyzeFeedbackList',
-    path: '/feedalyze/feedback/list',
-    redirect: '/app/feedback/list',
-  },
-  {
-    meta: {
-      hideInBreadcrumb: true,
-      hideInMenu: true,
-      hideInTab: true,
-      title: 'LegacyRedirect',
-    },
-    name: 'LegacyFeedalyzeFeedbackImport',
-    path: '/feedalyze/feedback/import',
-    redirect: '/app/feedback/import',
-  },
-  {
-    meta: {
-      hideInBreadcrumb: true,
-      hideInMenu: true,
-      hideInTab: true,
-      title: 'LegacyRedirect',
-    },
-    name: 'LegacyFeedalyzeTopicList',
-    path: '/feedalyze/topic/list',
-    redirect: '/app/topic/list',
-  },
-  {
-    meta: {
-      hideInBreadcrumb: true,
-      hideInMenu: true,
-      hideInTab: true,
-      title: 'LegacyRedirect',
-    },
-    name: 'LegacyFeedalyzeTopicDetail',
-    path: '/feedalyze/topic/detail/:id',
-    redirect: (to) => {
-      const id = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id;
-      return `/app/topic/detail/${id}`;
-    },
-  },
 ];
 
 export { coreRoutes, fallbackNotFoundRoute };

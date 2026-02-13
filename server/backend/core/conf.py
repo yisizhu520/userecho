@@ -225,7 +225,7 @@ class Settings(BaseSettings):
     GRAFANA_OTLP_GRPC_ENDPOINT: str = 'fba_alloy:4317'
 
     ##################################################
-    # [ App ] feedalyze
+    # [ App ] UserEcho
     ##################################################
     # .env AI 配置
     DEEPSEEK_API_KEY: str = ''

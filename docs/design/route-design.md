@@ -1,4 +1,4 @@
-# Feedalyze 路由设计规范
+# UserEcho 路由设计规范
 
 > **版本:** v1.0  
 > **更新日期:** 2025-12-22  
@@ -159,7 +159,7 @@ UPDATE sys_menu SET path = REPLACE(path, '/scheduler/', '/admin/scheduler/') WHE
 ```sql
 -- 1. 反馈管理目录
 INSERT INTO sys_menu (title, name, path, icon, type, sort, parent_id, status, display) 
-VALUES ('反馈管理', 'Feedalyze', '/app/userecho', 'lucide:messages-square', 0, 100, NULL, 1, 1);
+VALUES ('反馈管理', 'UserEcho', '/app/userecho', 'lucide:messages-square', 0, 100, NULL, 1, 1);
 
 SET @userecho_id = LAST_INSERT_ID();
 

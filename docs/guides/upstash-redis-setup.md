@@ -8,7 +8,7 @@
 
 ## 📋 概述
 
-Feedalyze 使用 **Upstash Redis** 作为云端 Redis 服务，无需本地安装 Redis 服务器。
+UserEcho 使用 **Upstash Redis** 作为云端 Redis 服务，无需本地安装 Redis 服务器。
 
 **优势：**
 - ✅ 零运维 - 无需本地安装和管理 Redis

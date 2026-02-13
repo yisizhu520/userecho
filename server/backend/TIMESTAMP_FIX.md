@@ -12,7 +12,7 @@ type object 'Topic' has no attribute 'created_time'
 **问题发生在第 137 行的 CRUD 排序代码：**
 
 ```python
-# server/backend/app/feedalyze/crud/crud_topic.py:137
+# server/backend/app/userecho/crud/crud_topic.py:137
 sort_column = getattr(self.model, sort_by, self.model.created_time)
 ```
 
@@ -46,17 +46,17 @@ class DateTimeMixin(MappedAsDataclass):
 
 ## 修复方案
 
-### 1. 修改所有 feedalyze 模型的导入
+### 1. 修改所有 userecho 模型的导入
 
 修复了 7 个模型文件：
 
-- ✅ `server/backend/app/feedalyze/model/topic.py`
-- ✅ `server/backend/app/feedalyze/model/feedback.py`
-- ✅ `server/backend/app/feedalyze/model/customer.py`
-- ✅ `server/backend/app/feedalyze/model/status_history.py`
-- ✅ `server/backend/app/feedalyze/model/manual_adjustment.py`
-- ✅ `server/backend/app/feedalyze/model/priority_score.py`
-- ✅ `server/backend/app/feedalyze/model/tenant.py`
+- ✅ `server/backend/app/userecho/model/topic.py`
+- ✅ `server/backend/app/userecho/model/feedback.py`
+- ✅ `server/backend/app/userecho/model/customer.py`
+- ✅ `server/backend/app/userecho/model/status_history.py`
+- ✅ `server/backend/app/userecho/model/manual_adjustment.py`
+- ✅ `server/backend/app/userecho/model/priority_score.py`
+- ✅ `server/backend/app/userecho/model/tenant.py`
 
 **修改内容：**
 
@@ -70,9 +70,9 @@ from backend.common.model import Base, TimeZone
 
 ### 2. 创建数据库迁移文件
 
-**文件：** `server/backend/alembic/versions/2025-12-22-18_50_00-add_timestamps_to_feedalyze_tables.py`
+**文件：** `server/backend/alembic/versions/2025-12-22-18_50_00-add_timestamps_to_userecho_tables.py`
 
-该迁移文件会为所有 feedalyze 表添加 `created_time` 和 `updated_time` 字段：
+该迁移文件会为所有 userecho 表添加 `created_time` 和 `updated_time` 字段：
 
 - topics
 - feedbacks
@@ -188,7 +188,7 @@ curl http://localhost:8000/api/v1/app/topics
 
 ```python
 # 在 Python 控制台
-from backend.app.feedalyze.model import Topic
+from backend.app.userecho.model import Topic
 assert hasattr(Topic, 'created_time')
 assert hasattr(Topic, 'updated_time')
 ```
@@ -204,7 +204,7 @@ assert hasattr(Topic, 'updated_time')
 
 **问题本质：** 别名滥用 + 类层次理解错误
 
-**影响范围：** 所有 feedalyze 模块的 7 个表
+**影响范围：** 所有 userecho 模块的 7 个表
 
 **修复难度：** 简单（但需要数据库迁移）
 
