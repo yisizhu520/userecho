@@ -88,6 +88,7 @@ async def init_business_menus():
         ]
         
         created_menus = []
+        updated_menus = []
         for menu_data in sub_menus:
             existing = await db.scalar(
                 select(Menu).where(Menu.path == menu_data['path'])
@@ -102,12 +103,22 @@ async def init_business_menus():
                 )
                 db.add(menu)
                 created_menus.append(menu_data['title'])
+            else:
+                # 更新已存在的菜单（修复旧的 component 路径）
+                existing.component = menu_data['component']
+                existing.icon = menu_data['icon']
+                existing.sort = menu_data['sort']
+                existing.perms = menu_data['perms']
+                updated_menus.append(menu_data['title'])
         
-        if created_menus:
+        if created_menus or updated_menus:
             await db.flush()
-            print(f'   ✅ 创建子菜单: {", ".join(created_menus)}')
+            if created_menus:
+                print(f'   ✅ 创建子菜单: {", ".join(created_menus)}')
+            if updated_menus:
+                print(f'   🔄 更新子菜单: {", ".join(updated_menus)}')
         else:
-            print('   ⏭️  所有子菜单已存在，跳过')
+            print('   ⏭️  所有子菜单已是最新，跳过')
         
         # ========== 3. 创建业务角色 ==========
         print('\n3️⃣  创建业务角色...')
