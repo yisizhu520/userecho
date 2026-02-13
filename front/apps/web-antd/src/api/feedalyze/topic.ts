@@ -15,6 +15,9 @@ export interface Topic {
   ai_generated: boolean;
   ai_confidence?: number;
   feedback_count: number;
+  centroid?: number[] | null;
+  cluster_quality?: Record<string, any> | null;
+  is_noise?: boolean;
   created_time: string;
   updated_time: string;
   deleted_at?: string;
@@ -36,6 +39,7 @@ export interface TopicDetail {
     dev_cost: number;
     urgency_factor: number;
     total_score: number;
+    updated_time?: string;
   };
   status_history: Array<{
     id: string;

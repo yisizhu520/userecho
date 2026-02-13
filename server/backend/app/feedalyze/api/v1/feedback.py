@@ -30,6 +30,7 @@ async def get_feedbacks(
     customer_id: str | None = None,
     is_urgent: bool | None = None,
     has_topic: bool | None = None,
+    clustering_status: str | None = None,
 ):
     """
     获取反馈列表（支持过滤）
@@ -38,6 +39,7 @@ async def get_feedbacks(
     - **customer_id**: 过滤客户ID
     - **is_urgent**: 过滤紧急程度
     - **has_topic**: 过滤是否已聚类 (true=已聚类, false=未聚类)
+    - **clustering_status**: 过滤聚类状态 (pending/processing/clustered/failed)
     """
     feedbacks = await feedback_service.get_list(
         db=db,
@@ -48,6 +50,7 @@ async def get_feedbacks(
         customer_id=customer_id,
         is_urgent=is_urgent,
         has_topic=has_topic,
+        clustering_status=clustering_status,
     )
     return response_base.success(data=feedbacks)
 

@@ -9,6 +9,54 @@ from backend.app.feedalyze.model.topic import Topic
 class CRUDTopic(TenantAwareCRUD[Topic]):
     """需求主题 CRUD"""
 
+    async def update_centroid(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        topic_id: str,
+        centroid: list[float] | None,
+    ) -> bool:
+        """更新主题中心向量（用于增量匹配/合并建议）"""
+        stmt = (
+            update(self.model)
+            .where(
+                self.model.id == topic_id,
+                self.model.tenant_id == tenant_id,
+                self.model.deleted_at.is_(None),
+            )
+            .values(centroid=centroid)
+        )
+        result = await db.execute(stmt)
+        await db.commit()
+        return result.rowcount > 0
+
+    async def update_cluster_quality(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        topic_id: str,
+        cluster_quality: dict | None,
+        *,
+        is_noise: bool | None = None,
+    ) -> bool:
+        """更新聚类质量指标（可选同时更新 is_noise）"""
+        values: dict = {'cluster_quality': cluster_quality}
+        if is_noise is not None:
+            values['is_noise'] = is_noise
+
+        stmt = (
+            update(self.model)
+            .where(
+                self.model.id == topic_id,
+                self.model.tenant_id == tenant_id,
+                self.model.deleted_at.is_(None),
+            )
+            .values(**values)
+        )
+        result = await db.execute(stmt)
+        await db.commit()
+        return result.rowcount > 0
+
     async def get_with_feedbacks(
         self,
         db: AsyncSession,

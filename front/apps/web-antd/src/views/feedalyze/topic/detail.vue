@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TopicDetail, UpdateTopicStatusParams, PriorityScoreParams } from '#/api';
+import type { TopicDetail, UpdateTopicStatusParams } from '#/api';
 
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
@@ -21,7 +21,6 @@ import {
   getTopicDetail,
   updateTopicStatus,
   createOrUpdatePriorityScore,
-  TOPIC_STATUSES,
 } from '#/api';
 import { getStatusConfig, getCategoryConfig, categoryIcons, statusFormSchema } from '#/views/feedalyze/topic/data';
 
@@ -54,13 +53,8 @@ const feedbacks = computed(() => topicDetail.value?.feedbacks || []);
 const priorityScore = computed(() => topicDetail.value?.priority_score);
 const statusHistory = computed(() => topicDetail.value?.status_history || []);
 
-const statusConfig = computed(() => 
-  topic.value ? getStatusConfig(topic.value.status) : null
-);
-
-const categoryConfig = computed(() =>
-  topic.value ? getCategoryConfig(topic.value.category) : null
-);
+const statusConfig = computed(() => getStatusConfig(topic.value?.status ?? 'pending'));
+const categoryConfig = computed(() => getCategoryConfig(topic.value?.category ?? 'other'));
 
 /**
  * 优先级评分表单

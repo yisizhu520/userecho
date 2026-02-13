@@ -74,3 +74,4 @@ def downgrade():
         op.drop_column(table, 'updated_time')
         op.drop_column(table, 'created_time')
 
+

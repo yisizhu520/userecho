@@ -19,6 +19,8 @@ export interface Feedback {
   ai_summary?: string;
   is_urgent: boolean;
   ai_metadata?: Record<string, any>;
+  clustering_status?: 'pending' | 'processing' | 'clustered' | 'failed';
+  clustering_metadata?: Record<string, any>;
   submitted_at: string;
   created_time: string;
   updated_time: string;
@@ -50,6 +52,7 @@ export interface FeedbackListParams {
   customer_id?: string;
   is_urgent?: boolean;
   has_topic?: boolean;
+  clustering_status?: 'pending' | 'processing' | 'clustered' | 'failed';
 }
 
 /** 导入结果 */

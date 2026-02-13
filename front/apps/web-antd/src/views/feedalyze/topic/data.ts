@@ -176,7 +176,6 @@ export const topicFormSchema: VbenFormSchema[] = [
     component: 'Textarea',
     fieldName: 'description',
     label: '主题描述',
-    helpMessage: '可选：对需求主题的详细描述',
     componentProps: {
       rows: 4,
       placeholder: '详细描述此需求主题...',
@@ -202,7 +201,6 @@ export const statusFormSchema: VbenFormSchema[] = [
     component: 'Textarea',
     fieldName: 'reason',
     label: '变更原因',
-    helpMessage: '可选：说明状态变更的原因',
     componentProps: {
       rows: 3,
       placeholder: '如：需求已完成开发并上线...',
@@ -213,12 +211,12 @@ export const statusFormSchema: VbenFormSchema[] = [
 
 /** 获取状态配置 */
 export function getStatusConfig(status: string) {
-  return TOPIC_STATUSES.find((s) => s.value === status) || TOPIC_STATUSES[0];
+  return TOPIC_STATUSES.find((s) => s.value === status) || TOPIC_STATUSES[0]!;
 }
 
 /** 获取分类配置 */
 export function getCategoryConfig(category: string) {
-  return TOPIC_CATEGORIES.find((c) => c.value === category) || TOPIC_CATEGORIES[4];
+  return TOPIC_CATEGORIES.find((c) => c.value === category) || TOPIC_CATEGORIES[4]!;
 }
 
 /** 分类图标映射 */

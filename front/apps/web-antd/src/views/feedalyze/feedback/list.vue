@@ -10,7 +10,7 @@ import type {
   UpdateFeedbackParams,
 } from '#/api';
 
-import { ref, onMounted } from 'vue';
+import { computed, onBeforeUnmount, ref, onMounted } from 'vue';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { MaterialSymbolsAdd } from '@vben/icons';
@@ -26,6 +26,7 @@ import {
   updateFeedback,
   deleteFeedback,
   triggerClustering,
+  getClusteringTaskStatus,
 } from '#/api';
 import {
   querySchema,
@@ -119,11 +120,116 @@ function onActionClick({ code, row }: OnActionClickParams<Feedback>) {
  * 触发 AI 聚类
  */
 const clusteringLoading = ref(false);
+const clusteringModalOpen = ref(false);
+const clusteringTaskId = ref<string>('');
+const clusteringTaskState = ref<'PENDING' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'RETRY'>('PENDING');
+const clusteringTaskError = ref<string>('');
+
+let clusteringPollTimer: number | null = null;
+
+const clusteringProgress = computed(() => {
+  switch (clusteringTaskState.value) {
+    case 'PENDING':
+      return 10;
+    case 'STARTED':
+      return 60;
+    case 'RETRY':
+      return 60;
+    case 'SUCCESS':
+      return 100;
+    case 'FAILURE':
+      return 100;
+    default:
+      return 0;
+  }
+});
+
+const clusteringStep = computed(() => {
+  switch (clusteringTaskState.value) {
+    case 'PENDING':
+      return 0;
+    case 'STARTED':
+    case 'RETRY':
+      return 1;
+    case 'SUCCESS':
+    case 'FAILURE':
+      return 2;
+    default:
+      return 0;
+  }
+});
+
+function stopClusteringPoll() {
+  if (clusteringPollTimer !== null) {
+    window.clearInterval(clusteringPollTimer);
+    clusteringPollTimer = null;
+  }
+}
+
+function onClusteringModalCancel() {
+  clusteringModalOpen.value = false;
+  stopClusteringPoll();
+}
+
+onBeforeUnmount(() => {
+  stopClusteringPoll();
+});
+
+async function pollClusteringTask(taskId: string) {
+  const status = await getClusteringTaskStatus(taskId);
+  clusteringTaskState.value = status.state;
+
+  if (status.state === 'FAILURE') {
+    stopClusteringPoll();
+    clusteringLoading.value = false;
+    clusteringTaskError.value = status.error || '任务执行失败';
+    message.error(clusteringTaskError.value);
+    return;
+  }
+
+  if (status.state === 'SUCCESS') {
+    stopClusteringPoll();
+    clusteringLoading.value = false;
+
+    const result: any = status.result;
+    if (!result) {
+      message.warning('聚类任务完成，但未返回结果');
+      return;
+    }
+
+    if (result.status === 'skipped') {
+      message.warning(result.message || '聚类已跳过');
+    } else {
+      message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个主题，噪声 ${result.noise_count ?? 0} 条`);
+    }
+    onRefresh();
+  }
+}
+
 const handleTriggerClustering = async () => {
   try {
     clusteringLoading.value = true;
-    const result = await triggerClustering();
-    message.success(`聚类完成！创建了 ${result.topics_created} 个需求主题`);
+    clusteringModalOpen.value = true;
+    clusteringTaskError.value = '';
+    clusteringTaskState.value = 'PENDING';
+
+    const resp: any = await triggerClustering({ async_mode: true });
+    if (resp?.status === 'accepted' && resp?.task_id) {
+      clusteringTaskId.value = resp.task_id;
+
+      // 先拉一次，避免用户看到空转
+      await pollClusteringTask(resp.task_id);
+      clusteringPollTimer = window.setInterval(() => pollClusteringTask(resp.task_id), 2000);
+      return;
+    }
+
+    // 兼容同步模式返回
+    const result: any = resp;
+    if (result?.status === 'skipped') {
+      message.warning(result.message || '聚类已跳过');
+    } else {
+      message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个主题，噪声 ${result.noise_count ?? 0} 条`);
+    }
     onRefresh();
   } catch (error: any) {
     message.error(error.message || '聚类失败，请稍后重试');
@@ -243,6 +349,19 @@ onMounted(() => {
       <span v-else class="text-gray-400">未聚类</span>
     </template>
 
+    <template #clustering_status="{ row }">
+      <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
+      <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
+      <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
+      <a-tag
+        v-else-if="row.clustering_status === 'clustered'"
+        :color="row.topic_id ? 'green' : 'default'"
+      >
+        {{ row.topic_id ? '已归类' : '待观察' }}
+      </a-tag>
+      <span v-else class="text-gray-400">-</span>
+    </template>
+
     <template #urgent="{ row }">
       <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
       <a-tag v-else color="default">📝 常规</a-tag>
@@ -258,6 +377,28 @@ onMounted(() => {
   <addModal>
     <AddForm />
   </addModal>
+
+  <a-modal
+    v-model:open="clusteringModalOpen"
+    title="AI 智能聚类"
+    :footer="null"
+    :maskClosable="false"
+    @cancel="onClusteringModalCancel"
+  >
+    <a-steps :current="clusteringStep" size="small">
+      <a-step title="任务提交" />
+      <a-step title="处理中" />
+      <a-step title="完成" />
+    </a-steps>
+
+    <div class="mt-4">
+      <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
+      <div class="text-gray-500 mt-2">
+        <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
+        <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
+      </div>
+    </div>
+  </a-modal>
 </template>
 
 <style scoped>

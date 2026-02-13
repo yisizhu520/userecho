@@ -5,9 +5,43 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.feedalyze.crud.base import TenantAwareCRUD
 from backend.app.feedalyze.model.feedback import Feedback
 
+_UNSET = object()
+
 
 class CRUDFeedback(TenantAwareCRUD[Feedback]):
     """反馈 CRUD"""
+
+    async def get_pending_clustering(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        limit: int = 100,
+        include_failed: bool = True,
+        force_recluster: bool = False,
+    ) -> list[Feedback]:
+        """
+        获取待聚类的反馈（避免 topic_id=NULL 的噪声点被反复聚类）
+
+        规则：
+        - 仅处理 topic_id IS NULL
+        - clustering_status in (pending, failed?)
+        """
+        statuses = ['pending']
+        if include_failed:
+            statuses.append('failed')
+        if force_recluster:
+            # 仅针对 topic_id IS NULL 的反馈，允许重新跑（包括已 clustered 的噪声点）
+            statuses.append('clustered')
+
+        query = select(self.model).where(
+            self.model.tenant_id == tenant_id,
+            self.model.topic_id.is_(None),
+            self.model.clustering_status.in_(statuses),
+            self.model.deleted_at.is_(None),
+        ).limit(limit)
+
+        result = await db.execute(query)
+        return list(result.scalars().all())
 
     async def get_unclustered(
         self,
@@ -26,14 +60,49 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         Returns:
             反馈列表
         """
-        query = select(self.model).where(
-            self.model.tenant_id == tenant_id,
-            self.model.topic_id.is_(None),
-            self.model.deleted_at.is_(None)
-        ).limit(limit)
+        # 向后兼容：历史调用方仍然用 get_unclustered，但底层应避免反复处理噪声点
+        return await self.get_pending_clustering(db=db, tenant_id=tenant_id, limit=limit, include_failed=True)
 
-        result = await db.execute(query)
-        return list(result.scalars().all())
+    async def batch_update_clustering(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        feedback_ids: list[str],
+        *,
+        clustering_status: str,
+        topic_id: str | None | object = _UNSET,
+        clustering_metadata: dict | None | object = _UNSET,
+    ) -> int:
+        """
+        批量更新聚类字段（支持同时更新 topic_id）
+
+        注意：
+        - topic_id / clustering_metadata 默认不更新（用 object 哨兵区分“传了 None”与“不传”）
+        """
+        from sqlalchemy import update
+
+        if not feedback_ids:
+            return 0
+
+        values: dict = {'clustering_status': clustering_status}
+        if topic_id is not _UNSET:
+            values['topic_id'] = topic_id
+        if clustering_metadata is not _UNSET:
+            values['clustering_metadata'] = clustering_metadata
+
+        stmt = (
+            update(self.model)
+            .where(
+                self.model.id.in_(feedback_ids),
+                self.model.tenant_id == tenant_id,
+                self.model.deleted_at.is_(None),
+            )
+            .values(**values)
+        )
+
+        result = await db.execute(stmt)
+        await db.commit()
+        return result.rowcount
 
     async def batch_update_topic(
         self,
@@ -236,6 +305,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         customer_id: str | None = None,
         is_urgent: bool | None = None,
         has_topic: bool | None = None,
+        clustering_status: str | None = None,
     ) -> list[dict]:
         """
         获取反馈列表（包含关联的客户名和主题标题）
@@ -249,6 +319,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             customer_id: 过滤客户ID
             is_urgent: 过滤紧急程度
             has_topic: 过滤是否已聚类
+            clustering_status: 过滤聚类状态（pending/processing/clustered/failed）
         
         Returns:
             反馈列表（包含 customer_name 和 topic_title）
@@ -287,6 +358,8 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 query = query.where(self.model.topic_id.is_not(None))
             else:
                 query = query.where(self.model.topic_id.is_(None))
+        if clustering_status is not None:
+            query = query.where(self.model.clustering_status == clustering_status)
 
         query = query.offset(skip).limit(limit)
 

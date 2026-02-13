@@ -66,3 +66,4 @@ class FeedbackListParams(SchemaBase):
     is_urgent: bool | None = Field(None, description='过滤：是否紧急')
     source: str | None = Field(None, description='过滤：来源')
     has_topic: bool | None = Field(None, description='过滤：是否已聚类 (True=已聚类, False=未聚类)')
+    clustering_status: str | None = Field(None, description='过滤：聚类状态 (pending/processing/clustered/failed)')

@@ -113,7 +113,7 @@ async def update_topic(
     return response_base.success(data=topic)
 
 
-@router.patch('/{topic_id}/status', summary='更新主题状态')
+@router.api_route('/{topic_id}/status', methods=['PUT', 'PATCH'], summary='更新主题状态')
 async def update_topic_status(
     topic_id: str,
     data: TopicStatusUpdateParam,

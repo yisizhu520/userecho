@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, Text
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.common.model import MappedBase, TimeZone
@@ -25,6 +26,22 @@ class Topic(MappedBase):
     ai_generated: Mapped[bool] = mapped_column(default=True, comment='是否AI生成')
     ai_confidence: Mapped[float | None] = mapped_column(default=None, comment='AI置信度 (0-1)')
     feedback_count: Mapped[int] = mapped_column(default=0, comment='关联反馈数量')
+
+    # 聚类增量匹配/合并建议的基础：中心向量 + 质量
+    centroid: Mapped[list[float] | None] = mapped_column(
+        Vector(768),
+        default=None,
+        comment='主题中心向量(所有反馈 embedding 的平均值)',
+    )
+    cluster_quality: Mapped[dict | None] = mapped_column(
+        JSON,
+        default=None,
+        comment='聚类质量: {silhouette: float, noise_ratio: float, confidence: float, avg_similarity: float}',
+    )
+    is_noise: Mapped[bool] = mapped_column(
+        default=False,
+        comment='是否为噪声主题（低质量 Topic，前端可默认隐藏）',
+    )
     deleted_at: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment='软删除时间')
     
     # 时间戳字段

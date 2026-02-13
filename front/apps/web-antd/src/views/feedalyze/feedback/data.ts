@@ -35,12 +35,27 @@ export const querySchema: VbenFormSchema[] = [
   {
     component: 'Select',
     fieldName: 'has_topic',
-    label: '聚类状态',
+    label: '是否已归类',
     componentProps: {
       allowClear: true,
       options: [
-        { label: '已聚类', value: true },
-        { label: '未聚类', value: false },
+        { label: '已归类到主题', value: true },
+        { label: '未归类（含噪声/待处理）', value: false },
+      ],
+      placeholder: '全部',
+    },
+  },
+  {
+    component: 'Select',
+    fieldName: 'clustering_status',
+    label: 'AI 状态',
+    componentProps: {
+      allowClear: true,
+      options: [
+        { label: '待处理', value: 'pending' },
+        { label: '处理中', value: 'processing' },
+        { label: '已处理', value: 'clustered' },
+        { label: '失败', value: 'failed' },
       ],
       placeholder: '全部',
     },
@@ -87,6 +102,12 @@ export function useColumns(
       title: '所属主题',
       width: 150,
       slots: { default: 'topic' },
+    },
+    {
+      field: 'clustering_status',
+      title: 'AI 状态',
+      width: 120,
+      slots: { default: 'clustering_status' },
     },
     {
       field: 'is_urgent',
@@ -157,7 +178,6 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Input',
     fieldName: 'customer_name',
     label: '客户名称',
-    helpMessage: '如果选择了客户，将关联到该客户；否则可以填写匿名作者',
     componentProps: {
       placeholder: '输入客户名称',
     },
@@ -166,7 +186,6 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Input',
     fieldName: 'anonymous_author',
     label: '匿名作者',
-    helpMessage: '用于记录非客户的反馈来源，如：小红书用户@xxx',
     componentProps: {
       placeholder: '如：小红书用户@xxx',
     },
@@ -184,6 +203,5 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     fieldName: 'is_urgent',
     label: '标记为紧急',
     defaultValue: false,
-    helpMessage: '紧急反馈将在列表中优先显示',
   },
 ];

@@ -243,6 +243,8 @@ class Settings(BaseSettings):
     # 聚类配置
     CLUSTERING_SIMILARITY_THRESHOLD: float = 0.75
     CLUSTERING_MIN_SAMPLES: int = 2
+    CLUSTERING_MIN_SILHOUETTE: float = 0.3  # 最低轮廓系数（越高越好）
+    CLUSTERING_MAX_NOISE_RATIO: float = 0.5  # 最高噪声率（越低越好）
     
     # 导入配置
     IMPORT_MAX_FILE_SIZE: int = 10485760  # 10MB

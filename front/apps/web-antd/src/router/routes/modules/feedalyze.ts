@@ -22,6 +22,15 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'AIDiscovery',
+        path: '/app/ai/discovery',
+        component: () => import('#/views/feedalyze/discovery/index.vue'),
+        meta: {
+          icon: 'lucide:sparkles',
+          title: 'AI 发现中心',
+        },
+      },
+      {
         name: 'FeedbackImport',
         path: '/app/feedback/import',
         component: () => import('#/views/feedalyze/feedback/import.vue'),

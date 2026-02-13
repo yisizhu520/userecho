@@ -46,6 +46,19 @@ class Feedback(MappedBase):
     embedding: Mapped[list[float] | None] = mapped_column(
         Vector(768), default=None, comment='Embedding向量(pgvector)'
     )
+
+    # 聚类状态与元数据（用于避免 topic_id=NULL 的噪声点被反复聚类）
+    clustering_status: Mapped[str] = mapped_column(
+        String(20),
+        default='pending',  # pending, processing, clustered, failed
+        index=True,
+        comment='聚类状态: pending(待处理), processing(处理中), clustered(已聚类), failed(失败)',
+    )
+    clustering_metadata: Mapped[dict | None] = mapped_column(
+        JSON,
+        default=None,
+        comment='聚类元数据: {cluster_label: int, clustered_at: datetime, quality: dict, reason: str}',
+    )
     submitted_at: Mapped[datetime] = mapped_column(
         TimeZone, default=timezone.now, comment='提交时间'
     )

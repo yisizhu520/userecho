@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { VbenFormProps } from '@vben/common-ui';
 import type {
   OnActionClickParams,
   VxeTableGridOptions,
@@ -286,7 +285,7 @@ const [addModal, addModalApi] = useVbenModal({
  * 获取客户类型配置
  */
 function getCustomerTypeConfig(type: string) {
-  return CUSTOMER_TYPES.find((t) => t.value === type) || CUSTOMER_TYPES[0];
+  return CUSTOMER_TYPES.find((t) => t.value === type) || CUSTOMER_TYPES[0]!;
 }
 </script>
 
