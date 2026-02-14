@@ -35,6 +35,7 @@ class DashboardService:
             urgent_topics = await DashboardService._get_urgent_topics(db, tenant_id)
             top_topics = await DashboardService._get_top_topics(db, tenant_id)
             weekly_trend = await DashboardService._get_weekly_trend(db, tenant_id, week_ago)
+            tag_distribution = await DashboardService._get_tag_distribution(db, tenant_id)
             
             return {
                 'feedback_stats': feedback_stats,
@@ -42,6 +43,7 @@ class DashboardService:
                 'urgent_topics': urgent_topics,
                 'top_topics': top_topics,
                 'weekly_trend': weekly_trend,
+                'tag_distribution': tag_distribution,
             }
         except Exception as e:
             log.error(f'Failed to get dashboard stats for tenant {tenant_id}: {e}')
@@ -241,6 +243,66 @@ class DashboardService:
                 'count': row.count,
             }
             for row in trend_data
+        ]
+
+    @staticmethod
+    async def _get_tag_distribution(
+        db: AsyncSession,
+        tenant_id: str,
+    ) -> list[dict]:
+        """
+        获取标签分布统计
+        
+        返回各标签的：
+        - Topic 数量
+        - 反馈数量总和
+        - 平均优先级分数（如果有评分）
+        """
+        from sqlalchemy import case
+        from backend.app.userecho.model.priority_score import PriorityScore
+        
+        # 按标签分组统计
+        query = (
+            select(
+                Topic.category,
+                func.count(Topic.id).label('topic_count'),
+                func.sum(Topic.feedback_count).label('feedback_count'),
+                func.avg(PriorityScore.total_score).label('avg_priority_score'),
+            )
+            .outerjoin(PriorityScore, Topic.id == PriorityScore.topic_id)
+            .where(
+                Topic.tenant_id == tenant_id,
+                Topic.deleted_at.is_(None),
+            )
+            .group_by(Topic.category)
+            .order_by(desc(func.count(Topic.id)))  # 按 Topic 数量降序
+        )
+        
+        result = await db.execute(query)
+        tag_data = result.all()
+        
+        # 标签名称映射
+        category_names = {
+            'bug': 'Bug',
+            'improvement': '体验优化',
+            'feature': '新功能',
+            'performance': '性能问题',
+            'other': '其他',
+        }
+        
+        return [
+            {
+                'category': row.category,
+                'name': category_names.get(row.category, row.category),
+                'topic_count': row.topic_count or 0,
+                'feedback_count': row.feedback_count or 0,
+                'avg_priority_score': (
+                    round(row.avg_priority_score, 2)
+                    if row.avg_priority_score
+                    else None
+                ),
+            }
+            for row in tag_data
         ]
 
 

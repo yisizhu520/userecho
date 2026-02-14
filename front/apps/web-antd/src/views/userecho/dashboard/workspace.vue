@@ -17,6 +17,7 @@ import { useUserStore } from '@vben/stores';
 
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
+import TagDistributionChart from './components/TagDistributionChart.vue';
 import TopTopicsCard from './components/TopTopicsCard.vue';
 import TrendChart from './components/TrendChart.vue';
 import UrgentTopicsCard from './components/UrgentTopicsCard.vue';
@@ -146,10 +147,15 @@ onMounted(() => {
     <!-- 主内容区 -->
     <div v-if="!loading && stats" class="mt-5 flex flex-col lg:flex-row">
       <!-- 左侧：紧急需求 + 趋势图 -->
-      <div class="mr-4 w-full lg:w-3/5">
+      <div class="mr-0 w-full lg:mr-4 lg:w-3/5">
         <UrgentTopicsCard :topics="stats.urgent_topics" />
         <AnalysisChartCard class="mt-5" title="7天反馈趋势">
           <TrendChart :data="stats.weekly_trend" />
+        </AnalysisChartCard>
+        
+        <!-- 标签分布统计 -->
+        <AnalysisChartCard class="mt-5" title="需求标签分布">
+          <TagDistributionChart :data="stats.tag_distribution" />
         </AnalysisChartCard>
       </div>
 

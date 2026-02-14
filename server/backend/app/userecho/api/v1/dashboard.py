@@ -24,6 +24,7 @@ async def get_dashboard_stats(
     - urgent_topics: 紧急需求列表 TOP 5（按优先级排序）
     - top_topics: TOP 需求主题 TOP 5（按反馈数量排序）
     - weekly_trend: 7天反馈趋势（每日新增数量）
+    - tag_distribution: 标签分布统计（各标签的需求数/反馈数/平均评分）
     """
     stats = await dashboard_service.get_stats(db, tenant_id)
     return response_base.success(data=stats)

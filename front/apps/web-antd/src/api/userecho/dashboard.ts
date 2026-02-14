@@ -38,6 +38,13 @@ export interface DashboardStats {
     date: string;
     count: number;
   }>;
+  tag_distribution: Array<{
+    category: string;
+    name: string;
+    topic_count: number;
+    feedback_count: number;
+    avg_priority_score: number | null;
+  }>;
 }
 
 /**
