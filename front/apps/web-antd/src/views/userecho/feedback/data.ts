@@ -16,7 +16,7 @@ export const querySchema: VbenFormSchema[] = [
     fieldName: 'search_query',
     label: '内容搜索',
     componentProps: {
-      placeholder: '搜索反馈内容或AI摘要',
+      placeholder: '搜索反馈内容或AI摘要（按 Enter 搜索）',
       allowClear: true,
     },
   },
@@ -38,8 +38,8 @@ export const querySchema: VbenFormSchema[] = [
       ],
       buttonStyle: 'solid',
       optionType: 'button',
+      class: 'search-mode-radio',
     },
-    help: '关键词：精确匹配（<50ms）｜ 语义理解：AI理解含义（~2s，更智能）',
   },
   {
     component: 'Select',
@@ -48,10 +48,10 @@ export const querySchema: VbenFormSchema[] = [
     componentProps: {
       allowClear: true,
       options: [
+        { label: '全部', value: '' },
         { label: '🔥 紧急', value: true },
         { label: '📝 常规', value: false },
       ],
-      placeholder: '全部',
     },
   },
   {
@@ -61,10 +61,10 @@ export const querySchema: VbenFormSchema[] = [
     componentProps: {
       allowClear: true,
       options: [
-        { label: '已归类到主题', value: true },
-        { label: '未归类（含噪声/待处理）', value: false },
+        { label: '全部', value: '' },
+        { label: '已归类', value: true },
+        { label: '未归类', value: false },
       ],
-      placeholder: '全部',
     },
   },
   {
@@ -74,12 +74,12 @@ export const querySchema: VbenFormSchema[] = [
     componentProps: {
       allowClear: true,
       options: [
+        { label: '全部', value: '' },
         { label: '待处理', value: 'pending' },
         { label: '处理中', value: 'processing' },
         { label: '已处理', value: 'clustered' },
         { label: '失败', value: 'failed' },
       ],
-      placeholder: '全部',
     },
   },
 ];
