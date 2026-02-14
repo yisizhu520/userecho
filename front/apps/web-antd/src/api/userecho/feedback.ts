@@ -53,6 +53,8 @@ export interface FeedbackListParams {
   is_urgent?: boolean;
   has_topic?: boolean;
   clustering_status?: 'pending' | 'processing' | 'clustered' | 'failed';
+  search_query?: string;
+  search_mode?: 'keyword' | 'semantic';
 }
 
 /** 导入结果 */

@@ -13,11 +13,33 @@ import { z } from '#/adapter/form';
 export const querySchema: VbenFormSchema[] = [
   {
     component: 'Input',
-    fieldName: 'content',
-    label: '反馈内容',
+    fieldName: 'search_query',
+    label: '内容搜索',
     componentProps: {
-      placeholder: '搜索反馈内容',
+      placeholder: '搜索反馈内容或AI摘要',
+      allowClear: true,
     },
+  },
+  {
+    component: 'RadioGroup',
+    fieldName: 'search_mode',
+    label: '搜索模式',
+    defaultValue: 'keyword',
+    componentProps: {
+      options: [
+        { 
+          label: '关键词 ⚡', 
+          value: 'keyword',
+        },
+        { 
+          label: '语义理解 🤖', 
+          value: 'semantic',
+        },
+      ],
+      buttonStyle: 'solid',
+      optionType: 'button',
+    },
+    help: '关键词：精确匹配（<50ms）｜ 语义理解：AI理解含义（~2s，更智能）',
   },
   {
     component: 'Select',

@@ -34,15 +34,26 @@ async def get_feedbacks(
     is_urgent: bool | None = None,
     has_topic: bool | None = None,
     clustering_status: str | None = None,
+    search_query: str | None = None,
+    search_mode: str = 'keyword',
 ):
     """
-    获取反馈列表（支持过滤）
+    获取反馈列表（支持过滤 + 双模式搜索）
 
+    过滤参数：
     - **topic_id**: 过滤主题ID
     - **customer_id**: 过滤客户ID
     - **is_urgent**: 过滤紧急程度
     - **has_topic**: 过滤是否已聚类 (true=已聚类, false=未聚类)
     - **clustering_status**: 过滤聚类状态 (pending/processing/clustered/failed)
+    
+    搜索参数：
+    - **search_query**: 搜索关键词（搜索反馈内容和AI摘要）
+    - **search_mode**: 搜索模式
+      - keyword: 关键词搜索（默认，快速，精确匹配）
+      - semantic: 语义搜索（智能，理解语义相似性，需要AI支持）
+    
+    注意：搜索与过滤条件同时生效（AND关系）
     """
     feedbacks = await feedback_service.get_list(
         db=db,
@@ -54,6 +65,8 @@ async def get_feedbacks(
         is_urgent=is_urgent,
         has_topic=has_topic,
         clustering_status=clustering_status,
+        search_query=search_query,
+        search_mode=search_mode,
     )
     # ✅ 关联查询返回字典（包含 customer_name, topic_title），已在 CRUD 层处理
     # 字典可以直接被 Pydantic 验证（FeedbackOut 支持 from_attributes）

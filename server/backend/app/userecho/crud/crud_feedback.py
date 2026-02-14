@@ -314,9 +314,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         is_urgent: bool | None = None,
         has_topic: bool | None = None,
         clustering_status: str | None = None,
+        search_query: str | None = None,
     ) -> list[dict]:
         """
-        获取反馈列表（包含关联的客户名和主题标题）
+        获取反馈列表（包含关联的客户名和主题标题，支持关键词搜索）
         
         Args:
             db: 数据库会话
@@ -328,6 +329,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             is_urgent: 过滤紧急程度
             has_topic: 过滤是否已聚类
             clustering_status: 过滤聚类状态（pending/processing/clustered/failed）
+            search_query: 搜索关键词（搜索 content 和 ai_summary）
         
         Returns:
             反馈列表（包含 customer_name 和 topic_title）
@@ -335,6 +337,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         from backend.app.userecho.model.customer import Customer
         from backend.app.userecho.model.topic import Topic
         from sqlalchemy.orm import aliased
+        from sqlalchemy import or_
 
         # 使用左连接查询
         CustomerAlias = aliased(Customer)
@@ -368,6 +371,16 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 query = query.where(self.model.topic_id.is_(None))
         if clustering_status is not None:
             query = query.where(self.model.clustering_status == clustering_status)
+        
+        # 关键词搜索（搜索 content + ai_summary）
+        if search_query:
+            search_pattern = f'%{search_query}%'
+            query = query.where(
+                or_(
+                    self.model.content.ilike(search_pattern),
+                    self.model.ai_summary.ilike(search_pattern)
+                )
+            )
 
         query = query.offset(skip).limit(limit)
 
@@ -384,6 +397,102 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             }
             feedback_list.append(feedback_dict)
 
+        return feedback_list
+
+    async def search_by_semantic(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        query_embedding: list[float],
+        skip: int = 0,
+        limit: int = 100,
+        topic_id: str | None = None,
+        customer_id: str | None = None,
+        is_urgent: bool | None = None,
+        has_topic: bool | None = None,
+        clustering_status: str | None = None,
+        min_similarity: float = 0.85,
+    ) -> list[dict]:
+        """
+        使用 pgvector 语义搜索反馈（包含关联查询）
+        
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            query_embedding: 查询向量
+            skip: 跳过数量
+            limit: 返回数量
+            min_similarity: 最小相似度阈值（0-1，默认 0.85，越高越精确）
+            topic_id: 过滤主题ID
+            customer_id: 过滤客户ID
+            is_urgent: 过滤紧急程度
+            has_topic: 过滤是否已聚类
+            clustering_status: 过滤聚类状态
+        
+        Returns:
+            反馈列表（包含 customer_name, topic_title, similarity_score）
+        """
+        from sqlalchemy import text
+        
+        # 将 embedding 向量转换为 PostgreSQL vector 格式字符串
+        embedding_str = str(query_embedding)
+        
+        # 构建过滤条件 SQL（使用 f-string 直接嵌入，避免参数绑定问题）
+        filter_conditions = [
+            f"f.tenant_id = '{tenant_id}'",
+            "f.embedding IS NOT NULL",
+            "f.deleted_at IS NULL",
+            f"(1 - (f.embedding <=> '{embedding_str}'::vector)) >= {min_similarity}"
+        ]
+        
+        # 添加过滤条件
+        if topic_id is not None:
+            filter_conditions.append(f"f.topic_id = '{topic_id}'")
+        if customer_id is not None:
+            filter_conditions.append(f"f.customer_id = '{customer_id}'")
+        if is_urgent is not None:
+            filter_conditions.append(f"f.is_urgent = {is_urgent}")
+        if has_topic is not None:
+            if has_topic:
+                filter_conditions.append("f.topic_id IS NOT NULL")
+            else:
+                filter_conditions.append("f.topic_id IS NULL")
+        if clustering_status is not None:
+            filter_conditions.append(f"f.clustering_status = '{clustering_status}'")
+        
+        where_clause = " AND ".join(filter_conditions)
+        
+        # pgvector 相似度搜索 + 关联查询
+        query_sql = f"""
+            SELECT 
+                f.id, f.tenant_id, f.customer_id, f.anonymous_author, f.anonymous_source,
+                f.topic_id, f.content, f.source, f.ai_summary, f.is_urgent, f.ai_metadata,
+                f.screenshot_url, f.source_platform, f.source_user_name, f.source_user_id,
+                f.ai_confidence, f.submitter_id, f.sentiment, f.sentiment_score, f.sentiment_reason,
+                f.clustering_status, f.clustering_metadata, f.submitted_at, f.deleted_at,
+                f.created_time, f.updated_time,
+                c.name as customer_name,
+                t.title as topic_title,
+                (1 - (f.embedding <=> '{embedding_str}'::vector)) as similarity_score
+            FROM feedbacks f
+            LEFT JOIN customers c ON f.customer_id = c.id
+            LEFT JOIN topics t ON f.topic_id = t.id
+            WHERE {where_clause}
+            ORDER BY f.embedding <=> '{embedding_str}'::vector
+            LIMIT {limit} OFFSET {skip}
+        """
+        
+        result = await db.execute(text(query_sql))
+        rows = result.all()
+        
+        # 转换为字典列表
+        feedback_list = []
+        for row in rows:
+            # 将 Row 对象转换为字典
+            row_dict = dict(row._mapping)
+            # 排除 embedding 字段（SQL 中未查询）
+            feedback_list.append(row_dict)
+        
         return feedback_list
 
 

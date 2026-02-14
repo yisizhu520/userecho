@@ -68,26 +68,51 @@ class FeedbackService:
         tenant_id: str,
         skip: int = 0,
         limit: int = 100,
+        search_query: str | None = None,
+        search_mode: str = 'keyword',
         **filters: Any,
     ) -> list[dict]:
         """
-        获取反馈列表（包含关联信息）
+        获取反馈列表（支持关键词搜索和语义搜索）
 
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             skip: 跳过数量
             limit: 返回数量
-            **filters: 过滤条件
+            search_query: 搜索关键词
+            search_mode: 搜索模式（'keyword' | 'semantic'）
+            **filters: 其他过滤条件
 
         Returns:
             反馈列表
         """
+        # 语义搜索模式
+        if search_query and search_mode == 'semantic':
+            # 1. 生成搜索词的 embedding
+            query_embedding = await ai_client.get_embedding(search_query)
+            if not query_embedding:
+                log.warning(f'Failed to generate embedding for search query: {search_query}, fallback to keyword search')
+                # Fallback 到关键词搜索
+                search_mode = 'keyword'
+            else:
+                # 2. 使用 pgvector 语义搜索
+                return await crud_feedback.search_by_semantic(
+                    db=db,
+                    tenant_id=tenant_id,
+                    query_embedding=query_embedding,
+                    skip=skip,
+                    limit=limit,
+                    **filters
+                )
+        
+        # 关键词搜索模式（默认）
         return await crud_feedback.get_list_with_relations(
             db=db,
             tenant_id=tenant_id,
             skip=skip,
             limit=limit,
+            search_query=search_query if search_mode == 'keyword' else None,
             **filters
         )
 

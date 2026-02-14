@@ -46,6 +46,12 @@ const formOptions: VbenFormProps = {
 };
 
 /**
+ * 语义搜索 loading 状态
+ */
+const semanticSearchLoading = ref(false);
+const currentSearchMode = ref<string>('keyword');
+
+/**
  * 表格配置
  */
 const gridOptions: VxeTableGridOptions<Feedback> = {
@@ -72,16 +78,56 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        const data = await getFeedbackList({
-          skip: (page.currentPage - 1) * page.pageSize,
-          limit: page.pageSize,
-          ...formValues,
-        });
-        // vxe-table 期望的返回格式（根据全局 response 配置）
-        return {
-          items: data,           // 数据数组
-          total: data.length,    // 当前查询到的记录数（临时方案，理想情况下应该由后端返回总数）
-        };
+        // 记录当前搜索模式
+        currentSearchMode.value = formValues.search_mode || 'keyword';
+
+        // 如果是语义搜索且有搜索词，显示 loading 提示
+        const isSemanticSearch = formValues.search_mode === 'semantic' && formValues.search_query;
+        if (isSemanticSearch) {
+          semanticSearchLoading.value = true;
+          message.loading({
+            content: '🤖 AI 正在理解搜索语义，请稍候...',
+            key: 'semantic-search',
+            duration: 0, // 不自动关闭
+          });
+        }
+
+        try {
+          const data = await getFeedbackList({
+            skip: (page.currentPage - 1) * page.pageSize,
+            limit: page.pageSize,
+            ...formValues,
+          });
+
+          // 语义搜索完成，显示成功提示
+          if (isSemanticSearch) {
+            message.success({
+              content: `找到 ${data.length} 条相关反馈`,
+              key: 'semantic-search',
+              duration: 2,
+            });
+          }
+
+          // vxe-table 期望的返回格式（根据全局 response 配置）
+          return {
+            items: data,           // 数据数组
+            total: data.length,    // 当前查询到的记录数（临时方案，理想情况下应该由后端返回总数）
+          };
+        } catch (error: any) {
+          // 语义搜索失败，显示错误提示
+          if (isSemanticSearch) {
+            message.error({
+              content: error.message || '搜索失败，请稍后重试',
+              key: 'semantic-search',
+              duration: 3,
+            });
+          }
+          throw error;
+        } finally {
+          if (isSemanticSearch) {
+            semanticSearchLoading.value = false;
+          }
+        }
       },
     },
   },
