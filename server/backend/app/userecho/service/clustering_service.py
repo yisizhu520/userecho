@@ -308,6 +308,33 @@ class ClusteringService:
                         is_noise=False,
                     )
 
+                    # ✅ 自动生成默认优先级评分
+                    try:
+                        from backend.app.userecho.service.priority_service import priority_service
+                        
+                        # 统计客户数量
+                        customer_ids = {f.customer_id for f in cluster_feedbacks if f.customer_id}
+                        customer_count = len(customer_ids)
+                        
+                        # 检测紧急程度（关键词匹配）
+                        is_urgent = any(f.is_urgent for f in cluster_feedbacks)
+                        
+                        await priority_service.create_default_priority_score(
+                            db=db,
+                            tenant_id=tenant_id,
+                            topic_id=topic.id,
+                            category=topic_data['category'],
+                            title=topic_data['title'],
+                            customer_count=customer_count,
+                            feedback_count=len(cluster_feedbacks),
+                            is_urgent=is_urgent,
+                        )
+                        
+                        log.debug(f'Generated default priority score for topic {topic.id}')
+                    except Exception as e:
+                        # 评分失败不影响聚类流程
+                        log.warning(f'Failed to generate default priority score for topic {topic.id}: {e}')
+
                     feedback_ids = [f.id for f in cluster_feedbacks]
                     await crud_feedback.batch_update_clustering(
                         db=db,

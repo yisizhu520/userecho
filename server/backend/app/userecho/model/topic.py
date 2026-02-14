@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import ForeignKey, JSON, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.common.model import MappedBase, TimeZone
 from backend.utils.timezone import timezone
@@ -47,3 +47,11 @@ class Topic(MappedBase):
     # 时间戳字段
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
     updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')
+    
+    # 关联关系
+    priority_score: Mapped['PriorityScore'] = relationship(
+        'PriorityScore',
+        back_populates='topic',
+        uselist=False,
+        lazy='joined',
+    )

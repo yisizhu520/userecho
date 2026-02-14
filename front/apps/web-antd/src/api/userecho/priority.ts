@@ -24,7 +24,23 @@ export interface PriorityScore {
   urgency_factor: number;
   total_score: number;
   created_time: string;
-  updated_time: string;
+  updated_time?: string;
+}
+
+/** AI 建议 */
+export interface AISuggestion {
+  scope?: number;
+  days?: number;
+  value?: number;
+  confidence: number;
+  reason: string;
+}
+
+/** AI 分析结果 */
+export interface AIAnalysisResult {
+  impact_scope: AISuggestion;
+  business_value: AISuggestion;
+  dev_cost: AISuggestion;
 }
 
 /** 优先级排行榜项 */
@@ -43,10 +59,41 @@ export interface PriorityRankingItem {
 }
 
 /**
- * 创建/更新优先级评分
+ * AI 分析优先级（详情页点击「AI 重新分析」）
  */
-export async function createOrUpdatePriorityScore(data: PriorityScoreParams) {
-  return requestClient.post<PriorityScore>('/api/v1/app/priority/score', data);
+export async function analyzePriority(topicId: string) {
+  return requestClient.post<AIAnalysisResult>(
+    `/api/v1/app/topics/${topicId}/priority/analyze`
+  );
+}
+
+/**
+ * 创建或更新优先级评分
+ */
+export async function createOrUpdatePriorityScore(
+  topicId: string,
+  data: Omit<PriorityScoreParams, 'topic_id'>
+) {
+  return requestClient.post<void>(
+    `/api/v1/app/topics/${topicId}/priority`,
+    { ...data, topic_id: topicId }
+  );
+}
+
+/**
+ * 获取优先级评分
+ */
+export async function getPriorityScore(topicId: string) {
+  return requestClient.get<PriorityScore | null>(
+    `/api/v1/app/topics/${topicId}/priority`
+  );
+}
+
+/**
+ * 删除优先级评分
+ */
+export async function deletePriorityScore(topicId: string) {
+  return requestClient.delete<void>(`/api/v1/app/topics/${topicId}/priority`);
 }
 
 /**
@@ -57,3 +104,4 @@ export async function getPriorityRanking(limit = 50) {
     params: { limit },
   });
 }
+

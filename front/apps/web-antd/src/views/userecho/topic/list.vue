@@ -38,6 +38,16 @@ import {
 const router = useRouter();
 
 /**
+ * 优先级颜色计算
+ */
+function getPriorityColor(score: number): string {
+  if (score >= 15) return 'red';
+  if (score >= 10) return 'orange';
+  if (score >= 5) return 'blue';
+  return 'gray';
+}
+
+/**
  * 查询表单配置
  */
 const formOptions: VbenFormProps = {
@@ -233,6 +243,25 @@ const [addModal, addModalApi] = useVbenModal({
         <a-tag :color="getStatusConfig(row.status).color">
           {{ getStatusConfig(row.status).label }}
         </a-tag>
+      </template>
+
+      <!-- 优先级评分 -->
+      <template #priority_score="{ row }">
+        <div class="priority-score-cell">
+          <!-- 已有评分：显示总分徽章 -->
+          <a-tag
+            v-if="row.priority_score"
+            :color="getPriorityColor(row.priority_score.total_score)"
+            style="font-size: 14px; font-weight: bold; cursor: pointer"
+            @click="router.push(`/app/topic/detail/${row.id}`)"
+          >
+            {{ row.priority_score.total_score.toFixed(1) }}
+          </a-tag>
+          <!-- 未评分：提示去评分 -->
+          <span v-else style="color: #999; font-size: 12px">
+            未评分
+          </span>
+        </div>
       </template>
 
       <!-- 反馈数量 -->

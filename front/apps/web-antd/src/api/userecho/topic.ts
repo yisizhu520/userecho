@@ -2,6 +2,8 @@
  * 需求主题 API
  */
 
+import type { PriorityScore } from './priority';
+
 import { requestClient } from '#/api/request';
 
 /** 主题对象 */
@@ -18,6 +20,18 @@ export interface Topic {
   centroid?: number[] | null;
   cluster_quality?: Record<string, any> | null;
   is_noise?: boolean;
+  priority_score?: {
+    id: string;
+    impact_scope: number;
+    business_value: number;
+    dev_cost: number;
+    urgency_factor: number;
+    total_score: number;
+    tenant_id: string;
+    topic_id: string;
+    created_time: string;
+    updated_time?: string;
+  } | null;
   created_time: string;
   updated_time: string;
   deleted_at?: string;
@@ -32,15 +46,7 @@ export interface TopicDetail {
     customer_name?: string;
     submitted_at: string;
   }>;
-  priority_score?: {
-    id: string;
-    impact_scope: number;
-    business_value: number;
-    dev_cost: number;
-    urgency_factor: number;
-    total_score: number;
-    updated_time?: string;
-  };
+  priority_score?: PriorityScore | null;
   status_history: Array<{
     id: string;
     from_status: string;

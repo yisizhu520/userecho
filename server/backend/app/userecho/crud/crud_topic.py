@@ -168,11 +168,18 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             sort_order: 排序方向（asc/desc）
         
         Returns:
-            主题列表
+            主题列表（包含 priority_score 关联）
         """
-        query = select(self.model).where(
-            self.model.tenant_id == tenant_id,
-            self.model.deleted_at.is_(None)
+        from sqlalchemy.orm import joinedload
+        from backend.app.userecho.model.priority_score import PriorityScore
+        
+        query = (
+            select(self.model)
+            .options(joinedload(self.model.priority_score))  # 加载关联的评分
+            .where(
+                self.model.tenant_id == tenant_id,
+                self.model.deleted_at.is_(None)
+            )
         )
 
         # 添加过滤条件
@@ -191,7 +198,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         query = query.offset(skip).limit(limit)
 
         result = await db.execute(query)
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())  # unique() 防止 joinedload 产生重复
 
 
 crud_topic = CRUDTopic(Topic)

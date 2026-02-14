@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.common.model import MappedBase, TimeZone
 from backend.utils.timezone import timezone
@@ -27,3 +27,9 @@ class PriorityScore(MappedBase):
     # 时间戳字段
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
     updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')
+    
+    # 关联关系
+    topic: Mapped['Topic'] = relationship(
+        'Topic',
+        back_populates='priority_score',
+    )

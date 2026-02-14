@@ -101,13 +101,23 @@ async def init_business_menus():
                 'sort': 5,
             },
             {
+                'title': '主题详情',
+                'name': 'TopicDetail',
+                'path': '/app/topic/detail/:id',
+                'component': '/userecho/topic/detail',
+                'icon': '',
+                'perms': 'app:topic:view',
+                'sort': 6,
+                'display': 0,  # hideInMenu
+            },
+            {
                 'title': '客户管理',
                 'name': 'CustomerManage',
                 'path': '/app/customer',
                 'component': '/userecho/customer/index',
                 'icon': 'lucide:users',
                 'perms': 'app:customer:view',
-                'sort': 6,
+                'sort': 7,
             },
         ]
         
@@ -117,13 +127,16 @@ async def init_business_menus():
             existing = await db.scalar(
                 select(Menu).where(Menu.path == menu_data['path'])
             )
+            # 获取 display 参数，默认为 1（显示）
+            display = menu_data.pop('display', 1)
+            
             if not existing:
                 menu = Menu(
                     **menu_data, 
                     parent_id=userecho_menu.id, 
                     type=1,  # 菜单
                     status=1, 
-                    display=1
+                    display=display
                 )
                 db.add(menu)
                 created_menus.append(menu_data['title'])
@@ -133,6 +146,7 @@ async def init_business_menus():
                 existing.icon = menu_data['icon']
                 existing.sort = menu_data['sort']
                 existing.perms = menu_data['perms']
+                existing.display = display
                 updated_menus.append(menu_data['title'])
         
         if created_menus or updated_menus:
@@ -295,11 +309,10 @@ async def init_business_menus():
         else:
             print('   ⏭️  所有业务角色已存在，跳过')
         
-        await db.commit()
         print('\n✅ 业务菜单和角色初始化完成！')
         print('\n📝 创建的资源：')
         print('   - 反馈管理目录')
-        print('   - 6 个功能菜单（反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、客户管理）')
+        print('   - 7 个功能菜单（反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、主题详情、客户管理）')
         print('   - 设置目录')
         print('   - 1 个设置子菜单（聚类策略）')
         print('   - 4 个业务角色（PM、CS、开发、老板）')

@@ -538,6 +538,209 @@ class AIClient:
             'confidence': 0.0
         }
 
+    async def suggest_impact_scope_ai(
+        self,
+        feedbacks: list[str],
+        customer_count: int,
+        title: str,
+        category: str,
+        max_retries: int = 2,
+    ) -> dict:
+        """
+        AI 完整分析影响范围（详情页点击「AI 重新分析」时调用）
+        
+        Args:
+            feedbacks: 反馈内容列表
+            customer_count: 涉及客户数量
+            title: 主题标题
+            category: 分类
+            max_retries: 最大重试次数
+        
+        Returns:
+            {
+                "scope": 1/3/5/10,
+                "confidence": 0.0-1.0,
+                "reason": "原因"
+            }
+        """
+        # 快速降级方案（基于规则）
+        def fallback_result():
+            if customer_count >= 10:
+                return {'scope': 10, 'confidence': 0.6, 'reason': f'基于 {customer_count} 个客户的规则判断'}
+            elif customer_count >= 5:
+                return {'scope': 5, 'confidence': 0.6, 'reason': f'基于 {customer_count} 个客户的规则判断'}
+            elif customer_count >= 2:
+                return {'scope': 3, 'confidence': 0.6, 'reason': f'基于 {customer_count} 个客户的规则判断'}
+            else:
+                return {'scope': 1, 'confidence': 0.6, 'reason': '仅 1 个客户反馈'}
+        
+        # 关键词匹配增强
+        keywords_high_impact = ['所有用户', '所有人', '每个人', '全部', 'all users', 'everyone']
+        keywords_medium_impact = ['大部分', '很多人', '多个用户', 'most users', 'many users']
+        keywords_low_impact = ['部分', '个别', '少数', 'some users', 'few users']
+        
+        title_lower = title.lower()
+        feedback_text = ' '.join(feedbacks[:5]).lower()  # 前5条
+        
+        # 关键词快速判断
+        if any(kw in title_lower or kw in feedback_text for kw in keywords_high_impact):
+            return {'scope': 10, 'confidence': 0.8, 'reason': '检测到"所有用户"等关键词'}
+        elif any(kw in title_lower or kw in feedback_text for kw in keywords_medium_impact):
+            return {'scope': 5, 'confidence': 0.7, 'reason': '检测到"大部分用户"等关键词'}
+        elif any(kw in title_lower or kw in feedback_text for kw in keywords_low_impact):
+            return {'scope': 3, 'confidence': 0.7, 'reason': '检测到"部分用户"等关键词'}
+        
+        # 只对重要需求调用 AI（客户数量 >= 5）
+        if customer_count < 5:
+            log.debug(f'Customer count {customer_count} < 5, using fallback for impact_scope')
+            return fallback_result()
+        
+        # AI 分析
+        prompt = f"""分析用户反馈的影响范围：
+
+标题：{title}
+分类：{category}
+反馈数量：{len(feedbacks)} 条
+涉及客户：{customer_count} 个
+
+反馈样本：
+{chr(10).join(feedbacks[:5])}
+
+请判断影响范围：
+1 - 个别用户（1-2个客户，小范围问题）
+3 - 部分用户（3-10个客户，局部影响）
+5 - 大多数用户（10+个客户，广泛影响）
+10 - 全部用户（核心功能崩溃或所有人都遇到）
+
+返回 JSON 格式：
+{{"scope": 1/3/5/10, "confidence": 0.8, "reason": "判断理由"}}"""
+
+        for attempt in range(max_retries):
+            try:
+                response = await self._chat(
+                    messages=[{'role': 'user', 'content': prompt}],
+                    temperature=0.3,
+                    max_tokens=200,
+                )
+                
+                # 解析 JSON 响应
+                result = self._parse_json_response(response)
+                
+                # 验证结果
+                scope = result.get('scope', 3)
+                if scope not in [1, 3, 5, 10]:
+                    scope = 3  # 默认值
+                
+                return {
+                    'scope': scope,
+                    'confidence': float(result.get('confidence', 0.7)),
+                    'reason': result.get('reason', 'AI 分析结果')
+                }
+            
+            except Exception as e:
+                log.warning(f'AI impact_scope analysis failed (attempt {attempt + 1}/{max_retries}): {e}')
+                self._fallback_to_next_provider()
+        
+        # 所有重试失败，返回降级结果
+        log.error('AI impact_scope analysis failed, using fallback')
+        return fallback_result()
+
+    async def suggest_dev_cost_ai(
+        self,
+        title: str,
+        category: str,
+        feedbacks: list[str],
+        max_retries: int = 2,
+    ) -> dict:
+        """
+        AI 建议开发成本（详情页点击「AI 重新分析」时调用）
+        
+        Args:
+            title: 主题标题
+            category: 分类
+            feedbacks: 反馈内容列表（前5条样本）
+            max_retries: 最大重试次数
+        
+        Returns:
+            {
+                "days": 1/3/5/10,
+                "confidence": 0.0-1.0,
+                "reason": "原因"
+            }
+        """
+        # 快速降级方案（基于规则）
+        def fallback_result():
+            category_costs = {
+                'bug': 1,
+                'improvement': 1,
+                'feature': 5,
+                'performance': 3,
+                'other': 3,
+            }
+            days = category_costs.get(category, 3)
+            return {
+                'days': days,
+                'confidence': 0.5,
+                'reason': f'基于分类 {category} 的经验值'
+            }
+        
+        # 关键词匹配
+        title_lower = title.lower()
+        urgent_keywords = ['崩溃', '闪退', '无法', '不能', 'crash', 'bug']
+        feature_keywords = ['新增', '增加', '添加', '支持', 'add', 'new']
+        
+        if any(kw in title_lower for kw in urgent_keywords):
+            return {'days': 1, 'confidence': 0.7, 'reason': '检测到紧急问题关键词'}
+        elif any(kw in title_lower for kw in feature_keywords):
+            return {'days': 5, 'confidence': 0.6, 'reason': '检测到新功能关键词'}
+        
+        # AI 分析（可选，成本高）
+        if len(feedbacks) >= 5:  # 只对重要需求调用 AI
+            prompt = f"""估算开发成本（工作日）：
+
+标题：{title}
+分类：{category}
+
+反馈样本：
+{chr(10).join(feedbacks[:3])}
+
+参考标准：
+1 天 - 简单 Bug 修复、界面微调
+3 天 - 中等功能、多处调整
+5 天 - 新功能开发、前后端联动
+10 天+ - 复杂架构调整、大功能
+
+返回 JSON 格式：
+{{"days": 1/3/5/10, "confidence": 0.7, "reason": "判断理由"}}"""
+
+            for attempt in range(max_retries):
+                try:
+                    response = await self._chat(
+                        messages=[{'role': 'user', 'content': prompt}],
+                        temperature=0.3,
+                        max_tokens=200,
+                    )
+                    
+                    result = self._parse_json_response(response)
+                    
+                    # 验证结果
+                    days = result.get('days', 3)
+                    if days not in [1, 3, 5, 10]:
+                        days = 3
+                    
+                    return {
+                        'days': days,
+                        'confidence': float(result.get('confidence', 0.6)),
+                        'reason': result.get('reason', 'AI 分析结果')
+                    }
+                
+                except Exception as e:
+                    log.warning(f'AI dev_cost analysis failed (attempt {attempt + 1}/{max_retries}): {e}')
+                    self._fallback_to_next_provider()
+        
+        # 降级结果
+        return fallback_result()
+
 
 # ============= Lazy Initialization Proxy =============
 # "Never initialize expensive resources at module import time!" - Linus

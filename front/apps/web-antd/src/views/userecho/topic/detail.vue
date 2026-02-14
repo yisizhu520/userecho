@@ -20,9 +20,9 @@ import { useVbenForm } from '#/adapter/form';
 import {
   getTopicDetail,
   updateTopicStatus,
-  createOrUpdatePriorityScore,
 } from '#/api';
 import { getStatusConfig, getCategoryConfig, categoryIcons, statusFormSchema } from '#/views/userecho/topic/data';
+import PriorityScoreCard from './components/PriorityScoreCard.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -56,41 +56,7 @@ const statusHistory = computed(() => topicDetail.value?.status_history || []);
 const statusConfig = computed(() => getStatusConfig(topic.value?.status ?? 'pending'));
 const categoryConfig = computed(() => getCategoryConfig(topic.value?.category ?? 'other'));
 
-/**
- * 优先级评分表单
- */
-const scoreForm = ref({
-  impact_scope: 1,
-  business_value: 1,
-  dev_cost: 1,
-});
-
-const calculatedScore = computed(() => {
-  const { impact_scope, business_value, dev_cost } = scoreForm.value;
-  const base = (impact_scope * business_value) / dev_cost;
-  // 如果反馈中有紧急的,系数 1.5
-  const urgencyFactor = feedbacks.value.some((f: any) => f.is_urgent) ? 1.5 : 1.0;
-  return (base * urgencyFactor).toFixed(2);
-});
-
-const scoringLoading = ref(false);
-const handleCalculateScore = async () => {
-  if (!topic.value) return;
-  
-  try {
-    scoringLoading.value = true;
-    await createOrUpdatePriorityScore({
-      topic_id: topic.value.id,
-      ...scoreForm.value,
-    });
-    message.success('评分成功！');
-    await loadTopicDetail(); // 重新加载数据
-  } catch (error: any) {
-    message.error(error.message || '评分失败');
-  } finally {
-    scoringLoading.value = false;
-  }
-};
+const hasUrgentFeedback = computed(() => feedbacks.value.some((f: any) => f.is_urgent));
 
 /**
  * 状态更新
@@ -174,16 +140,7 @@ const feedbackColumns = [
  * 初始化
  */
 onMounted(() => {
-  loadTopicDetail().then(() => {
-    // 如果已有评分,填充表单
-    if (priorityScore.value) {
-      scoreForm.value = {
-        impact_scope: priorityScore.value.impact_scope,
-        business_value: priorityScore.value.business_value,
-        dev_cost: priorityScore.value.dev_cost,
-      };
-    }
-  });
+  loadTopicDetail();
 });
 </script>
 
@@ -273,73 +230,13 @@ onMounted(() => {
     </a-card>
 
     <!-- 优先级评分卡片 -->
-    <a-card title="🎯 优先级评分" class="priority-card mb-4">
-      <div class="score-form">
-        <a-form layout="inline" :model="scoreForm">
-          <a-form-item label="影响范围">
-            <a-select v-model:value="scoreForm.impact_scope" style="width: 150px">
-              <a-select-option :value="1">个别用户 (1x)</a-select-option>
-              <a-select-option :value="3">部分用户 (3x)</a-select-option>
-              <a-select-option :value="5">大多数用户 (5x)</a-select-option>
-              <a-select-option :value="10">全部用户 (10x)</a-select-option>
-            </a-select>
-          </a-form-item>
-
-          <a-form-item label="商业价值">
-            <a-select v-model:value="scoreForm.business_value" style="width: 150px">
-              <a-select-option :value="1">普通客户 (1x)</a-select-option>
-              <a-select-option :value="3">付费客户 (3x)</a-select-option>
-              <a-select-option :value="5">大客户 (5x)</a-select-option>
-              <a-select-option :value="10">战略客户 (10x)</a-select-option>
-            </a-select>
-          </a-form-item>
-
-          <a-form-item label="开发成本">
-            <a-select v-model:value="scoreForm.dev_cost" style="width: 150px">
-              <a-select-option :value="1">1天 (1÷)</a-select-option>
-              <a-select-option :value="3">3天 (3÷)</a-select-option>
-              <a-select-option :value="5">1周 (5÷)</a-select-option>
-              <a-select-option :value="10">2周+ (10÷)</a-select-option>
-            </a-select>
-          </a-form-item>
-
-          <a-form-item>
-            <VbenButton 
-              type="primary" 
-              @click="handleCalculateScore"
-              :loading="scoringLoading"
-            >
-              计算评分
-            </VbenButton>
-          </a-form-item>
-        </a-form>
-
-        <a-alert v-if="calculatedScore" type="success" class="mt-4" show-icon>
-          <template #message>
-            <div class="score-result">
-              <span class="score-label">优先级总分:</span>
-              <span class="score-value">{{ calculatedScore }}</span>
-            </div>
-            <div class="score-formula">
-              公式: ({{ scoreForm.impact_scope }} × {{ scoreForm.business_value }}) ÷ {{ scoreForm.dev_cost }}
-              <span v-if="feedbacks.some((f: any) => f.is_urgent)"> × 1.5 (包含紧急反馈)</span>
-            </div>
-          </template>
-        </a-alert>
-
-        <a-alert
-          v-if="priorityScore"
-          message="已保存的评分"
-          type="info"
-          class="mt-2"
-          show-icon
-        >
-          <template #description>
-            上次评分时间: {{ priorityScore.updated_time }} | 总分: {{ priorityScore.total_score }}
-          </template>
-        </a-alert>
-      </div>
-    </a-card>
+    <PriorityScoreCard 
+      :topic-id="topicId"
+      :existing-score="priorityScore"
+      :feedback-count="feedbacks.length"
+      :has-urgent-feedback="hasUrgentFeedback"
+      @saved="loadTopicDetail"
+    />
 
     <!-- 关联反馈列表 -->
     <a-card :title="`📝 关联反馈 (${feedbacks.length})`" class="feedbacks-card mb-4">

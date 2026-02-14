@@ -42,6 +42,7 @@ class TopicOut(TopicBase):
     ai_generated: bool = Field(description='是否AI生成')
     ai_confidence: float | None = Field(None, description='AI置信度 (0-1)')
     feedback_count: int = Field(description='关联反馈数量')
+    priority_score: 'PriorityScoreOut | None' = Field(None, description='优先级评分')
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')
     deleted_at: datetime | None = Field(None, description='删除时间')

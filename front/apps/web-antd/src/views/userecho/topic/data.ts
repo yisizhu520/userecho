@@ -81,6 +81,13 @@ export function useColumns(
       slots: { default: 'status' },
     },
     {
+      field: 'priority_score',
+      title: '优先级',
+      width: 120,
+      sortable: true,
+      slots: { default: 'priority_score' },
+    },
+    {
       field: 'feedback_count',
       title: '反馈数量',
       width: 100,

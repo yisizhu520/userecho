@@ -35,7 +35,7 @@ async def update_role_menus():
         # 定义其他角色的特定菜单权限
         specific_access = {
             'CS': ['/app/feedback/list', '/app/customer', '/app/ai/discovery'],
-            '开发': ['/app/topic/list', '/app/ai/discovery'],
+            '开发': ['/app/topic/list', '/app/topic/detail/:id', '/app/ai/discovery'],
         }
         
         # 获取所有业务菜单
