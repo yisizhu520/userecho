@@ -9,8 +9,10 @@ import { VbenButton } from '@vben/common-ui';
 import { Modal, message } from 'ant-design-vue';
 
 import { getTopicList, updateTopicStatus } from '#/api';
+import { useTopicStore } from '#/store';
 
 const router = useRouter();
+const topicStore = useTopicStore();
 
 const loading = ref(false);
 const topics = ref<Topic[]>([]);
@@ -85,6 +87,8 @@ async function confirmTopic(t: Topic) {
       await updateTopicStatus(t.id, { status: 'planned', reason: 'AI发现中心确认' });
       message.success('已加入计划');
       await refresh();
+      // 更新 badge 数量
+      await topicStore.refreshPendingCount();
     },
   });
 }
@@ -100,6 +104,8 @@ async function ignoreTopic(t: Topic) {
       await updateTopicStatus(t.id, { status: 'ignored', reason: 'AI发现中心忽略' });
       message.success('已忽略');
       await refresh();
+      // 更新 badge 数量
+      await topicStore.refreshPendingCount();
     },
   });
 }

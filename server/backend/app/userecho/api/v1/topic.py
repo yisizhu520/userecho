@@ -58,6 +58,21 @@ async def get_topics(
     return response_base.success(data=topics_out)
 
 
+@router.get('/stats/pending-count', summary='获取待确认主题数量')
+async def get_pending_count(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    获取待确认主题数量（用于 badge 显示）
+    """
+    count = await topic_service.get_pending_count(
+        db=db,
+        tenant_id=tenant_id
+    )
+    return response_base.success(data={'count': count})
+
+
 @router.get('/{topic_id}', summary='获取主题详情')
 async def get_topic_detail(
     topic_id: str,

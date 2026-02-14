@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 import { $t } from '#/locales';
+import { useTopicStore } from '#/store';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -21,6 +22,14 @@ const routes: RouteRecordRaw[] = [
       icon: 'lucide:sparkles',
       order: 1,
       title: $t('page.userecho.discovery.title'),
+      // 显示具体数字（动态 badge）- 懒加载 store
+      get badge() {
+        const topicStore = useTopicStore();
+        const count = topicStore.pendingCount;
+        return count > 0 ? String(count) : undefined;
+      },
+      badgeType: 'normal',
+      badgeVariants: 'destructive',
     },
   },
   {

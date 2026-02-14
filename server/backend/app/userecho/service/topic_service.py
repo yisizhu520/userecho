@@ -202,5 +202,26 @@ class TopicService:
             sort_order=sort_order
         )
 
+    async def get_pending_count(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+    ) -> int:
+        """
+        获取待确认主题数量
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+
+        Returns:
+            待确认主题数量
+        """
+        return await crud_topic.count(
+            db=db,
+            tenant_id=tenant_id,
+            status='pending'
+        )
+
 
 topic_service = TopicService()

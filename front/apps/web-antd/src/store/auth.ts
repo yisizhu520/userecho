@@ -19,7 +19,7 @@ import {
   logoutApi,
 } from '#/api';
 import { $t } from '#/locales';
-import { useDictStore, useWebSocketStore } from '#/store';
+import { useDictStore, useTopicStore, useWebSocketStore } from '#/store';
 
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
@@ -82,6 +82,10 @@ export const useAuthStore = defineStore('auth', () => {
         // 初始化WebSocket连接
         const wsStore = useWebSocketStore();
         wsStore.connect();
+
+        // 初始化待确认主题数量
+        const topicStore = useTopicStore();
+        topicStore.refreshPendingCount();
 
         if (userInfo?.nickname) {
           notification.success({

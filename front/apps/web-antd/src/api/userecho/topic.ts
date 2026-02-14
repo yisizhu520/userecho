@@ -119,6 +119,13 @@ export async function updateTopicStatus(id: string, data: UpdateTopicStatusParam
   return requestClient.put<Topic>(`/api/v1/app/topics/${id}/status`, data);
 }
 
+/**
+ * 获取待确认主题数量
+ */
+export async function getPendingTopicCount() {
+  return requestClient.get<{ count: number }>('/api/v1/app/topics/stats/pending-count');
+}
+
 /** 主题分类选项 */
 export const TOPIC_CATEGORIES = [
   { value: 'bug', label: 'Bug' },
