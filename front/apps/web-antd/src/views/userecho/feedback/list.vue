@@ -13,7 +13,6 @@ import type {
 import { computed, onBeforeUnmount, ref, onMounted } from 'vue';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
-import { MaterialSymbolsAdd } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import { message } from 'ant-design-vue';
@@ -326,22 +325,30 @@ onMounted(() => {
   <div>
     <Grid>
       <template #toolbar-actions>
-        <VbenButton @click="() => addModalApi.open()">
-          <MaterialSymbolsAdd class="size-5" />
-          新建反馈
-        </VbenButton>
-        <VbenButton
-          variant="outline"
-          @click="handleTriggerClustering"
-          :loading="clusteringLoading"
-        >
-          <span class="iconify lucide--sparkles" />
-          AI 智能聚类
-        </VbenButton>
-      <VbenButton variant="outline" @click="() => $router.push('/app/feedback/import')">
-        <span class="iconify lucide--upload" />
-        导入 Excel
-      </VbenButton>
+        <div class="feedback-actions-group">
+          <div class="add-actions">
+            <VbenButton type="primary" @click="() => addModalApi.open()">
+              <span class="iconify lucide--pencil mr-2" />
+              手动录入
+            </VbenButton>
+            <VbenButton @click="() => $router.push('/app/feedback/screenshot')">
+              <span class="iconify lucide--camera mr-2" />
+              截图识别
+            </VbenButton>
+            <VbenButton @click="() => $router.push('/app/feedback/import')">
+              <span class="iconify lucide--upload mr-2" />
+              批量导入
+            </VbenButton>
+          </div>
+          <VbenButton
+            variant="outline"
+            @click="handleTriggerClustering"
+            :loading="clusteringLoading"
+          >
+            <span class="iconify lucide--sparkles mr-2" />
+            AI 智能聚类
+          </VbenButton>
+        </div>
     </template>
 
     <template #topic="{ row }">
@@ -407,5 +414,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 自定义样式 */
+.feedback-actions-group {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.add-actions {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.add-actions > button {
+  flex: 1;
+  min-width: 120px;
+}
 </style>

@@ -29,9 +29,17 @@ const routes: RouteRecordRaw[] = [
     path: '/app/feedback/screenshot',
     component: () => import('#/views/userecho/feedback/screenshot-upload.vue'),
     meta: {
-      icon: 'lucide:camera',
-      order: 1,
+      hideInMenu: true,
       title: '截图识别',
+    },
+  },
+  {
+    name: 'FeedbackImport',
+    path: '/app/feedback/import',
+    component: () => import('#/views/userecho/feedback/import.vue'),
+    meta: {
+      hideInMenu: true,
+      title: $t('page.userecho.feedback.import'),
     },
   },
   {
@@ -50,16 +58,6 @@ const routes: RouteRecordRaw[] = [
       },
       badgeType: 'normal',
       badgeVariants: 'destructive',
-    },
-  },
-  {
-    name: 'FeedbackImport',
-    path: '/app/feedback/import',
-    component: () => import('#/views/userecho/feedback/import.vue'),
-    meta: {
-      icon: 'lucide:upload',
-      order: 3,
-      title: $t('page.userecho.feedback.import'),
     },
   },
   {

@@ -80,7 +80,18 @@ async def init_business_menus():
                 'component': '/userecho/feedback/screenshot-upload',
                 'icon': 'lucide:camera',
                 'perms': 'app:feedback:screenshot',
-                'sort': 2,
+                'sort': 4,
+                'display': 0,  # 隐藏菜单
+            },
+            {
+                'title': '导入反馈',
+                'name': 'FeedbackImport',
+                'path': '/app/feedback/import',
+                'component': '/userecho/feedback/import',
+                'icon': 'lucide:upload',
+                'perms': 'app:feedback:import',
+                'sort': 5,
+                'display': 0,  # 隐藏菜单
             },
             {
                 'title': 'AI 发现中心',
@@ -92,22 +103,13 @@ async def init_business_menus():
                 'sort': 3,
             },
             {
-                'title': '导入反馈',
-                'name': 'FeedbackImport',
-                'path': '/app/feedback/import',
-                'component': '/userecho/feedback/import',
-                'icon': 'lucide:upload',
-                'perms': 'app:feedback:import',
-                'sort': 4,
-            },
-            {
                 'title': '需求主题',
                 'name': 'TopicList',
                 'path': '/app/topic/list',
                 'component': '/userecho/topic/list',
                 'icon': 'lucide:lightbulb',
                 'perms': 'app:topic:view',
-                'sort': 5,
+                'sort': 4,
             },
             {
                 'title': '主题详情',
@@ -116,7 +118,7 @@ async def init_business_menus():
                 'component': '/userecho/topic/detail',
                 'icon': '',
                 'perms': 'app:topic:view',
-                'sort': 6,
+                'sort': 5,
                 'display': 0,  # hideInMenu
             },
             {
@@ -126,7 +128,7 @@ async def init_business_menus():
                 'component': '/userecho/customer/index',
                 'icon': 'lucide:users',
                 'perms': 'app:customer:view',
-                'sort': 7,
+                'sort': 6,
             },
             {
                 'title': '洞察报告',
@@ -135,7 +137,7 @@ async def init_business_menus():
                 'component': '/userecho/insights/report',
                 'icon': 'lucide:file-bar-chart',
                 'perms': 'app:insights:view',
-                'sort': 8,
+                'sort': 7,
             },
         ]
         
@@ -260,7 +262,7 @@ async def init_business_menus():
                 'name': 'CS',
                 'role_type': 'business',
                 'remark': '客户成功，可查看反馈和客户',
-                'menus': ['/app/feedback/list', '/app/feedback/screenshot', '/app/customer', '/app/ai/discovery', '/app/dashboard/workspace', '/app/insights/report'],
+                'menus': ['/app/feedback/list', '/app/customer', '/app/ai/discovery', '/app/dashboard/workspace', '/app/insights/report'],
             },
             {
                 'name': '开发',
@@ -330,10 +332,18 @@ async def init_business_menus():
         print('\n✅ 业务菜单和角色初始化完成！')
         print('\n📝 创建的资源：')
         print('   - 反馈管理目录')
-        print('   - 9 个功能菜单（工作台、反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、主题详情、客户管理、洞察报告）')
+        print('   - 7 个功能菜单（工作台、反馈列表、AI发现、需求主题、客户管理、洞察报告、主题详情[隐藏]）')
         print('   - 设置目录')
         print('   - 1 个设置子菜单（聚类策略）')
         print('   - 4 个业务角色（PM、CS、开发、老板）')
+        print('\n💡 菜单结构：')
+        print('   - 📊 工作台')
+        print('   - 📋 反馈列表（3个录入按钮：手动录入、截图识别、批量导入）')
+        print('   - ✨ AI 发现中心')
+        print('   - 💡 需求主题')
+        print('   - 👥 客户管理')
+        print('   - 📊 洞察报告')
+        print('   - ⚙️ 设置')
 
 
 async def verify_initialization():

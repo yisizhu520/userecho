@@ -61,7 +61,7 @@ onMounted(() => {
         <span class="iconify lucide--brain-circuit" style="font-size: 24px; margin-right: 8px;"></span>
         AI 洞察
       </h2>
-      <VbenButton variant="outline" size="small" @click="loadInsights" :loading="loading">
+      <VbenButton variant="outline" @click="loadInsights" :loading="loading">
         <span class="iconify lucide--refresh-cw" />
         刷新
       </VbenButton>
@@ -75,7 +75,7 @@ onMounted(() => {
       <!-- 优先级建议 -->
       <Card title="🎯 本周优先级建议" class="insight-card" :bordered="false">
         <template #extra>
-          <VbenButton size="small" variant="link" @click="goToReport">
+          <VbenButton variant="link" @click="goToReport">
             查看完整报告
           </VbenButton>
         </template>

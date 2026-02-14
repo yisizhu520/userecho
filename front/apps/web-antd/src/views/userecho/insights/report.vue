@@ -144,17 +144,17 @@ onUnmounted(() => {
             <Select.Option value="this_month">本月</Select.Option>
           </Select>
 
-          <VbenButton variant="outline" size="small" @click="copyToClipboard" :disabled="loading">
+          <VbenButton variant="outline" @click="copyToClipboard" :disabled="loading">
             <span class="iconify lucide--copy" />
             复制
           </VbenButton>
 
-          <VbenButton variant="outline" size="small" class="ml-2" @click="exportAsFile" :disabled="loading">
+          <VbenButton variant="outline" class="ml-2" @click="exportAsFile" :disabled="loading">
             <span class="iconify lucide--download" />
             导出
           </VbenButton>
 
-          <VbenButton type="primary" size="small" class="ml-2" @click="loadReport" :loading="loading">
+          <VbenButton type="primary" class="ml-2" @click="loadReport" :loading="loading">
             <span class="iconify lucide--refresh-cw" />
             刷新
           </VbenButton>
