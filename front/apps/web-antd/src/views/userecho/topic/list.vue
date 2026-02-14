@@ -38,6 +38,12 @@ import {
 const router = useRouter();
 
 /**
+ * 语义搜索 loading 状态
+ */
+const semanticSearchLoading = ref(false);
+const currentSearchMode = ref<string>('keyword');
+
+/**
  * 优先级颜色计算
  */
 function getPriorityColor(score: number): string {
@@ -51,8 +57,9 @@ function getPriorityColor(score: number): string {
  * 查询表单配置
  */
 const formOptions: VbenFormProps = {
-  collapsed: true,
-  showCollapseButton: true,
+  collapsed: false,
+  showCollapseButton: false,
+  submitOnEnter: true,
   submitButtonOptions: {
     content: $t('common.form.query'),
   },
@@ -86,16 +93,56 @@ const gridOptions: VxeTableGridOptions<Topic> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        const data = await getTopicList({
-          skip: (page.currentPage - 1) * page.pageSize,
-          limit: page.pageSize,
-          ...formValues,
-        });
-        // vxe-table 期望的返回格式（根据全局 response 配置）
-        return {
-          items: data,           // 数据数组
-          total: data.length,    // 当前查询到的记录数
-        };
+        // 记录当前搜索模式
+        currentSearchMode.value = formValues.search_mode || 'keyword';
+
+        // 如果是语义搜索且有搜索词，显示 loading 提示
+        const isSemanticSearch = formValues.search_mode === 'semantic' && formValues.search_query;
+        if (isSemanticSearch) {
+          semanticSearchLoading.value = true;
+          message.loading({
+            content: '🤖 AI 正在理解搜索语义，请稍候...',
+            key: 'semantic-search',
+            duration: 0, // 不自动关闭
+          });
+        }
+
+        try {
+          const data = await getTopicList({
+            skip: (page.currentPage - 1) * page.pageSize,
+            limit: page.pageSize,
+            ...formValues,
+          });
+
+          // 语义搜索完成，显示成功提示
+          if (isSemanticSearch) {
+            message.success({
+              content: `找到 ${data.length} 个相关主题`,
+              key: 'semantic-search',
+              duration: 2,
+            });
+          }
+
+          // vxe-table 期望的返回格式（根据全局 response 配置）
+          return {
+            items: data,           // 数据数组
+            total: data.length,    // 当前查询到的记录数
+          };
+        } catch (error: any) {
+          // 语义搜索失败，显示错误提示
+          if (isSemanticSearch) {
+            message.error({
+              content: error.message || '搜索失败，请稍后重试',
+              key: 'semantic-search',
+              duration: 3,
+            });
+          }
+          throw error;
+        } finally {
+          if (isSemanticSearch) {
+            semanticSearchLoading.value = false;
+          }
+        }
       },
     },
   },
@@ -299,5 +346,54 @@ const [addModal, addModalApi] = useVbenModal({
 .topic-title {
   display: flex;
   align-items: center;
+}
+
+/* 搜索模式切换动画 */
+:deep(.search-mode-radio) {
+  .ant-radio-button-wrapper {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ant-radio-button-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ant-radio-button-wrapper:hover::before {
+    opacity: 0.08;
+  }
+
+  .ant-radio-button-wrapper-checked {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .ant-radio-button-wrapper-checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%) scale(0);
+    animation: ripple 0.6s ease-out;
+  }
+}
+
+@keyframes ripple {
+  to {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
 }
 </style>

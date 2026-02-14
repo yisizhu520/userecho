@@ -174,9 +174,11 @@ class TopicService:
         category: str | None = None,
         sort_by: str = 'created_time',
         sort_order: str = 'desc',
+        search_query: str | None = None,
+        search_mode: str = 'keyword',
     ):
         """
-        获取主题列表（支持排序和过滤）
+        获取主题列表（支持排序、过滤和搜索）
 
         Args:
             db: 数据库会话
@@ -187,10 +189,42 @@ class TopicService:
             category: 过滤分类
             sort_by: 排序字段
             sort_order: 排序方向
+            search_query: 搜索关键词
+            search_mode: 搜索模式（'keyword' | 'semantic'）
 
         Returns:
             主题列表
         """
+        from backend.utils.ai_client import ai_client
+        
+        # ✅ 使用 INFO 级别确保日志输出
+        log.info(f'[SEARCH_DEBUG] Service Layer - Received params: search_query={search_query!r}, search_mode={search_mode!r}')
+        
+        # 语义搜索模式
+        if search_query and search_mode == 'semantic':
+            log.info(f'[SEARCH_DEBUG] Service Layer - Using semantic search')
+            # 1. 生成搜索词的 embedding
+            query_embedding = await ai_client.get_embedding(search_query)
+            if not query_embedding:
+                log.warning(f'Failed to generate embedding for search query: {search_query}, fallback to keyword search')
+                # Fallback 到关键词搜索
+                search_mode = 'keyword'
+            else:
+                # 2. 使用 pgvector 语义搜索
+                return await crud_topic.search_by_semantic(
+                    db=db,
+                    tenant_id=tenant_id,
+                    query_embedding=query_embedding,
+                    skip=skip,
+                    limit=limit,
+                    status=status,
+                    category=category,
+                )
+        
+        # 关键词搜索模式（默认）
+        effective_search_query = search_query if (search_query and search_mode == 'keyword') else None
+        log.info(f'[SEARCH_DEBUG] Service Layer - Using keyword search: effective_search_query={effective_search_query!r}')
+        
         return await crud_topic.get_list_sorted(
             db=db,
             tenant_id=tenant_id,
@@ -199,7 +233,8 @@ class TopicService:
             status=status,
             category=category,
             sort_by=sort_by,
-            sort_order=sort_order
+            sort_order=sort_order,
+            search_query=effective_search_query,
         )
 
     async def get_pending_count(

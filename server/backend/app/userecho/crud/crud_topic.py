@@ -153,9 +153,10 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         category: str | None = None,
         sort_by: str = 'created_time',
         sort_order: str = 'desc',
+        search_query: str | None = None,
     ) -> list[Topic]:
         """
-        获取主题列表（支持排序和过滤）
+        获取主题列表（支持排序、过滤和关键词搜索）
         
         Args:
             db: 数据库会话
@@ -166,11 +167,13 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             category: 过滤分类
             sort_by: 排序字段
             sort_order: 排序方向（asc/desc）
+            search_query: 搜索关键词（搜索 title 和 description）
         
         Returns:
             主题列表（包含 priority_score 关联）
         """
         from sqlalchemy.orm import joinedload
+        from sqlalchemy import or_
         from backend.app.userecho.model.priority_score import PriorityScore
         
         query = (
@@ -187,6 +190,22 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             query = query.where(self.model.status == status)
         if category:
             query = query.where(self.model.category == category)
+        
+        # 关键词搜索（搜索 title + description）
+        if search_query:
+            from backend.common.log import log
+            log.info(f'[SEARCH_DEBUG] CRUD Layer - Applying keyword search filter: search_query={search_query!r}')
+            
+            search_pattern = f'%{search_query}%'
+            query = query.where(
+                or_(
+                    self.model.title.ilike(search_pattern),
+                    self.model.description.ilike(search_pattern)
+                )
+            )
+        else:
+            from backend.common.log import log
+            log.info(f'[SEARCH_DEBUG] CRUD Layer - No search_query, skipping filter')
 
         # 添加排序
         sort_column = getattr(self.model, sort_by, self.model.created_time)
@@ -199,6 +218,128 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
 
         result = await db.execute(query)
         return list(result.scalars().unique().all())  # unique() 防止 joinedload 产生重复
+    
+    async def search_by_semantic(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        query_embedding: list[float],
+        skip: int = 0,
+        limit: int = 100,
+        status: str | None = None,
+        category: str | None = None,
+        min_similarity: float = 0.70,
+    ) -> list[Topic]:
+        """
+        使用 pgvector 语义搜索主题（基于中心向量）
+        
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            query_embedding: 查询向量
+            skip: 跳过数量
+            limit: 返回数量
+            status: 过滤状态
+            category: 过滤分类
+            min_similarity: 最小相似度阈值（0-1，默认 0.70，主题搜索阈值较低）
+        
+        Returns:
+            主题列表（包含 priority_score 关联和相似度评分）
+        """
+        from sqlalchemy import text
+        from backend.common.log import log
+        
+        # 将 embedding 向量转换为 PostgreSQL vector 格式字符串
+        embedding_str = str(query_embedding)
+        
+        # 构建过滤条件 SQL
+        filter_conditions = [
+            f"t.tenant_id = '{tenant_id}'",
+            "t.centroid IS NOT NULL",
+            "t.deleted_at IS NULL",
+            f"(1 - (t.centroid <=> '{embedding_str}'::vector)) >= {min_similarity}"
+        ]
+        
+        # 添加过滤条件
+        if status is not None:
+            filter_conditions.append(f"t.status = '{status}'")
+        if category is not None:
+            filter_conditions.append(f"t.category = '{category}'")
+        
+        where_clause = " AND ".join(filter_conditions)
+        
+        # pgvector 相似度搜索 + 关联查询
+        query_sql = f"""
+            SELECT 
+                t.id, t.tenant_id, t.title, t.category, t.status, t.description,
+                t.ai_generated, t.ai_confidence, t.feedback_count, t.cluster_quality,
+                t.is_noise, t.deleted_at, t.created_time, t.updated_time,
+                ps.id as ps_id, ps.tenant_id as ps_tenant_id, ps.topic_id as ps_topic_id,
+                ps.reach_score, ps.frequency_score, ps.urgency_score, ps.revenue_score,
+                ps.strategy_score, ps.total_score, ps.created_time as ps_created_time,
+                ps.updated_time as ps_updated_time,
+                (1 - (t.centroid <=> '{embedding_str}'::vector)) as similarity_score
+            FROM topics t
+            LEFT JOIN priority_scores ps ON t.id = ps.topic_id
+            WHERE {where_clause}
+            ORDER BY t.centroid <=> '{embedding_str}'::vector
+            LIMIT {limit} OFFSET {skip}
+        """
+        
+        try:
+            result = await db.execute(text(query_sql))
+            rows = result.all()
+            
+            # 转换为 Topic 对象列表（包含关联的 priority_score）
+            topics = []
+            for row in rows:
+                from backend.app.userecho.model.priority_score import PriorityScore
+                
+                # 创建 Topic 对象
+                topic = Topic(
+                    id=row.id,
+                    tenant_id=row.tenant_id,
+                    title=row.title,
+                    category=row.category,
+                    status=row.status,
+                    description=row.description,
+                    ai_generated=row.ai_generated,
+                    ai_confidence=row.ai_confidence,
+                    feedback_count=row.feedback_count,
+                    cluster_quality=row.cluster_quality,
+                    is_noise=row.is_noise,
+                    deleted_at=row.deleted_at,
+                    created_time=row.created_time,
+                    updated_time=row.updated_time,
+                )
+                
+                # 如果有 priority_score，创建关联对象
+                if row.ps_id:
+                    topic.priority_score = PriorityScore(
+                        id=row.ps_id,
+                        tenant_id=row.ps_tenant_id,
+                        topic_id=row.ps_topic_id,
+                        reach_score=row.reach_score,
+                        frequency_score=row.frequency_score,
+                        urgency_score=row.urgency_score,
+                        revenue_score=row.revenue_score,
+                        strategy_score=row.strategy_score,
+                        total_score=row.total_score,
+                        created_time=row.ps_created_time,
+                        updated_time=row.ps_updated_time,
+                    )
+                
+                # 附加相似度评分（用于调试和展示）
+                topic.similarity_score = float(row.similarity_score)  # type: ignore
+                
+                topics.append(topic)
+            
+            return topics
+            
+        except Exception as e:
+            log.error(f'Semantic search failed for topics: {e}')
+            # Fallback: 返回空列表
+            return []
 
 
 crud_topic = CRUDTopic(Topic)

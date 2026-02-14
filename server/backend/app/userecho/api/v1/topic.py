@@ -14,6 +14,7 @@ from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
+from backend.common.log import log  # ✅ 添加日志导入
 
 router = APIRouter(prefix='/topics', tags=['UserEcho - 需求主题'])
 
@@ -34,15 +35,36 @@ async def get_topics(
     category: str | None = None,
     sort_by: str = 'created_time',
     sort_order: str = 'desc',
+    search_query: str | None = None,  # ✅ 添加搜索参数
+    search_mode: str = 'keyword',     # ✅ 添加搜索模式
 ):
     """
-    获取主题列表（支持排序和过滤）
+    获取主题列表（支持排序、过滤和双模式搜索）
 
+    过滤参数：
     - **status**: 过滤状态 (pending/planned/in_progress/completed/ignored)
     - **category**: 过滤分类 (bug/improvement/feature/performance/other)
     - **sort_by**: 排序字段 (created_time/feedback_count/total_score)
     - **sort_order**: 排序方向 (asc/desc)
+    
+    搜索参数：
+    - **search_query**: 搜索关键词（搜索主题标题和描述）
+    - **search_mode**: 搜索模式
+      - keyword: 关键词搜索（默认，快速，精确匹配）
+      - semantic: 语义搜索（智能，理解语义相似性，需要AI支持）
+    
+    注意：搜索与过滤条件同时生效（AND关系）
     """
+    # ✅ 第一时间打印原始参数
+    log.info(f'[SEARCH_DEBUG] API Layer - RAW params: search_query={search_query!r}, search_mode={search_mode!r}')
+    
+    # 清理空字符串：将空字符串转换为 None
+    if search_query is not None and search_query.strip() == '':
+        log.info(f'[SEARCH_DEBUG] API Layer - Cleaned empty search_query')
+        search_query = None
+    
+    log.info(f'[SEARCH_DEBUG] API Layer - After cleanup: search_query={search_query!r}')
+    
     topics = await topic_service.get_list_sorted(
         db=db,
         tenant_id=tenant_id,
@@ -52,6 +74,8 @@ async def get_topics(
         category=category,
         sort_by=sort_by,
         sort_order=sort_order,
+        search_query=search_query,  # ✅ 传递搜索参数
+        search_mode=search_mode,     # ✅ 传递搜索模式
     )
     # ✅ Pydantic 自动将 ORM 对象列表转换为 TopicOut 列表（排除 centroid）
     topics_out = [TopicOut.model_validate(topic) for topic in topics]

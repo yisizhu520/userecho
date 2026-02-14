@@ -14,10 +14,32 @@ import { TOPIC_CATEGORIES, TOPIC_STATUSES } from '#/api';
 export const querySchema: VbenFormSchema[] = [
   {
     component: 'Input',
-    fieldName: 'title',
-    label: '主题标题',
+    fieldName: 'search_query',
+    label: '主题搜索',
     componentProps: {
-      placeholder: '搜索主题标题',
+      placeholder: '搜索主题标题或描述（按 Enter 搜索）',
+      allowClear: true,
+    },
+  },
+  {
+    component: 'RadioGroup',
+    fieldName: 'search_mode',
+    label: '搜索模式',
+    defaultValue: 'keyword',
+    componentProps: {
+      options: [
+        { 
+          label: '关键词 ⚡', 
+          value: 'keyword',
+        },
+        { 
+          label: '语义理解 🤖', 
+          value: 'semantic',
+        },
+      ],
+      buttonStyle: 'solid',
+      optionType: 'button',
+      class: 'search-mode-radio',
     },
   },
   {
