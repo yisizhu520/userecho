@@ -34,7 +34,7 @@ class Feedback(MappedBase):
     )
     content: Mapped[str] = mapped_column(Text, comment='反馈内容')
     source: Mapped[str] = mapped_column(
-        String(20), default='manual', comment='来源: manual, import, api'
+        String(20), default='manual', comment='来源: manual, import, api, screenshot'
     )
     ai_summary: Mapped[str | None] = mapped_column(
         String(50), default=None, comment='AI生成的20字摘要'
@@ -42,6 +42,26 @@ class Feedback(MappedBase):
     is_urgent: Mapped[bool] = mapped_column(default=False, comment='是否紧急')
     ai_metadata: Mapped[dict | None] = mapped_column(
         JSON, default=None, comment='AI相关元数据(embedding等)'
+    )
+    
+    # 截图识别相关字段
+    screenshot_url: Mapped[str | None] = mapped_column(
+        Text, default=None, comment='截图 OSS 地址'
+    )
+    source_platform: Mapped[str | None] = mapped_column(
+        String(50), default=None, comment='来源平台: wechat, xiaohongshu, appstore, weibo, other'
+    )
+    source_user_name: Mapped[str | None] = mapped_column(
+        String(255), default=None, comment='来源平台用户昵称'
+    )
+    source_user_id: Mapped[str | None] = mapped_column(
+        String(255), default=None, comment='来源平台用户 ID'
+    )
+    ai_confidence: Mapped[float | None] = mapped_column(
+        default=None, comment='AI 识别置信度 (0.00-1.00)'
+    )
+    submitter_id: Mapped[int | None] = mapped_column(
+        ForeignKey('sys_user.id', ondelete='SET NULL'), default=None, comment='内部提交者（员工）ID'
     )
     embedding: Mapped[list[float] | None] = mapped_column(
         Vector(4096), default=None, comment='Embedding向量(pgvector, 火山引擎 4096维)'

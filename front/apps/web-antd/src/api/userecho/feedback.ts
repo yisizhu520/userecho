@@ -69,6 +69,47 @@ export interface ImportResult {
   has_more_errors?: boolean;
 }
 
+/** 截图识别提取的数据 */
+export interface ExtractedScreenshotData {
+  platform: 'wechat' | 'xiaohongshu' | 'appstore' | 'weibo' | 'other';
+  user_name: string;
+  user_id: string;
+  content: string;
+  feedback_type: 'bug' | 'feature' | 'complaint' | 'other';
+  sentiment: 'positive' | 'neutral' | 'negative';
+  confidence: number;
+}
+
+/** 截图识别响应（异步模式） */
+export interface ScreenshotAnalyzeResponse {
+  task_id: string;
+  status: 'processing';
+  status_url: string;
+}
+
+/** 任务状态响应 */
+export interface TaskStatusResponse {
+  state: 'PENDING' | 'STARTED' | 'RETRY' | 'SUCCESS' | 'FAILURE';
+  result?: {
+    screenshot_url: string;
+    extracted: ExtractedScreenshotData;
+  };
+  error?: string;
+  info?: any;
+}
+
+/** 从截图创建反馈参数 */
+export interface ScreenshotFeedbackCreateParams {
+  content: string;
+  screenshot_url: string;
+  source_type: 'screenshot';
+  source_platform: string;
+  source_user_name?: string;
+  source_user_id?: string;
+  ai_confidence?: number;
+  customer_id?: string | null;
+}
+
 /**
  * 获取反馈列表
  */
@@ -115,4 +156,29 @@ export async function importFeedbacks(file: File) {
  */
 export function downloadImportTemplate() {
   window.open('/api/v1/app/feedbacks/import/template', '_blank');
+}
+
+/**
+ * 截图智能识别（异步）
+ */
+export async function analyzeScreenshot(formData: FormData) {
+  return requestClient.post<ScreenshotAnalyzeResponse>('/api/v1/app/feedbacks/screenshot/analyze', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}
+
+/**
+ * 查询截图分析任务状态
+ */
+export async function getScreenshotTaskStatus(taskId: string) {
+  return requestClient.get<TaskStatusResponse>(`/api/v1/app/feedbacks/screenshot/task/${taskId}`);
+}
+
+/**
+ * 从截图创建反馈
+ */
+export async function createFeedbackFromScreenshot(data: ScreenshotFeedbackCreateParams) {
+  return requestClient.post<Feedback>('/api/v1/app/feedbacks/screenshot/create', data);
 }

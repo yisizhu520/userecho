@@ -269,6 +269,7 @@ class Settings(BaseSettings):
     # 火山引擎 Endpoint ID（必须配置）
     VOLCENGINE_EMBEDDING_ENDPOINT: str = ''  # embedding endpoint ID，如：ep-20241221xxx-xxxxx
     VOLCENGINE_CHAT_ENDPOINT: str = ''  # chat endpoint ID，如：ep-20241221xxx-xxxxx
+    VOLCENGINE_VISION_ENDPOINT: str = ''  # vision endpoint ID（可选，不配置则使用 CHAT_ENDPOINT）
     
     # 聚类配置
     CLUSTERING_SIMILARITY_THRESHOLD: float = 0.85  # 相似度阈值（0.75太宽松，改为0.85更严格）

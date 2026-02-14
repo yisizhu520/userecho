@@ -15,12 +15,22 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    name: 'ScreenshotUpload',
+    path: '/app/feedback/screenshot',
+    component: () => import('#/views/userecho/feedback/screenshot-upload.vue'),
+    meta: {
+      icon: 'lucide:camera',
+      order: 1,
+      title: '截图识别',
+    },
+  },
+  {
     name: 'AIDiscovery',
     path: '/app/ai/discovery',
     component: () => import('#/views/userecho/discovery/index.vue'),
     meta: {
       icon: 'lucide:sparkles',
-      order: 1,
+      order: 2,
       title: $t('page.userecho.discovery.title'),
       // 显示具体数字（动态 badge）- 懒加载 store
       get badge() {
@@ -38,7 +48,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('#/views/userecho/feedback/import.vue'),
     meta: {
       icon: 'lucide:upload',
-      order: 2,
+      order: 3,
       title: $t('page.userecho.feedback.import'),
     },
   },
@@ -48,7 +58,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('#/views/userecho/topic/list.vue'),
     meta: {
       icon: 'lucide:lightbulb',
-      order: 3,
+      order: 4,
       title: $t('page.userecho.topic.list'),
     },
   },

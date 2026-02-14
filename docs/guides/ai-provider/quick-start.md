@@ -4,23 +4,46 @@
 
 ### 1. 选择一个提供商
 
-| 提供商 | 推荐度 | 理由 | Embedding | Chat |
-|--------|-------|------|-----------|------|
-| **DeepSeek** | ⭐⭐⭐⭐⭐ | 性价比最高，国内访问快 | ❌ | ✅ |
-| **GLM (智谱)** | ⭐⭐⭐⭐ | 国内服务，中文优化 | ✅ | ✅ |
-| **OpenAI** | ⭐⭐⭐ | 质量最高，但需国际支付 | ✅ | ✅ |
-| **Volcengine** | ⭐⭐⭐ | 字节服务，配置复杂 | ✅ | ✅ |
+| 提供商 | 推荐度 | 理由 | Embedding | Chat | Vision |
+|--------|-------|------|-----------|------|--------|
+| **Volcengine (火山引擎)** | ⭐⭐⭐⭐⭐ | **截图识别首选**，国内服务稳定，性价比高 | ✅ | ✅ | ✅ |
+| **DeepSeek** | ⭐⭐⭐⭐ | 性价比高，但不支持图像识别 | ❌ | ✅ | ✅ |
+| **GLM (智谱)** | ⭐⭐⭐⭐ | 国内服务，中文优化 | ✅ | ✅ | ✅ |
+| **OpenAI** | ⭐⭐⭐ | 质量最高，但需国际支付 | ✅ | ✅ | ✅ |
 
-> **重要**：DeepSeek 不支持 Embedding API，只能用于 Chat。如需完整功能，请配合其他提供商使用。
+> **重要提示**：
+> - **截图识别功能必须选择支持 Vision 的 Provider**（火山引擎/OpenAI/GLM）
+> - DeepSeek 虽然性价比高，但不支持图像识别，无法用于截图分析
 
 ### 2. 配置环境变量
 
 编辑 `server/backend/.env` 文件：
 
-#### Option A: DeepSeek + OpenAI 组合（推荐）
+#### Option A: 火山引擎（推荐 - 支持截图识别）
 
 ```bash
-# DeepSeek 用于 Chat（便宜），OpenAI 用于 Embedding
+# 火山引擎（支持完整功能：截图识别 + Chat + Embedding）
+VOLCENGINE_API_KEY=your-volcengine-api-key-here
+VOLCENGINE_CHAT_ENDPOINT=ep-20241221xxx-xxxxx  # 支持视觉的模型
+AI_DEFAULT_PROVIDER=volcengine
+```
+
+**获取配置**: 
+- 访问 [火山引擎控制台](https://console.volcengine.com)
+- 详细步骤：[火山引擎配置指南](./volcengine-config-example.md)
+
+**优势**：
+- ✅ 支持截图识别（必需）
+- ✅ 国内访问速度快
+- ✅ 性价比高（约 ¥0.003/次）
+- ✅ 完整功能支持
+
+---
+
+#### Option B: DeepSeek + OpenAI 组合
+
+```bash
+# DeepSeek 用于 Chat（便宜），OpenAI 用于 Embedding 和截图识别
 DEEPSEEK_API_KEY=sk-your-deepseek-key-here
 OPENAI_API_KEY=sk-your-openai-key-here
 AI_DEFAULT_PROVIDER=deepseek
@@ -30,9 +53,11 @@ AI_DEFAULT_PROVIDER=deepseek
 - DeepSeek: [https://platform.deepseek.com](https://platform.deepseek.com)
 - OpenAI: [https://platform.openai.com](https://platform.openai.com)
 
-> **说明**：DeepSeek 只支持 Chat，不支持 Embedding。系统会自动使用 OpenAI 进行 Embedding。
+> **说明**：DeepSeek 只支持 Chat，不支持 Embedding 和图像识别。系统会自动使用 OpenAI 进行截图识别。
 
-#### Option B: 智谱 GLM
+---
+
+#### Option C: 智谱 GLM
 
 ```bash
 GLM_API_KEY=your-glm-api-key-here
@@ -41,7 +66,11 @@ AI_DEFAULT_PROVIDER=glm
 
 **获取 API Key**: [https://open.bigmodel.cn](https://open.bigmodel.cn)
 
-#### Option C: OpenAI
+**优势**：国内服务，支持完整功能（截图识别 + Chat + Embedding）
+
+---
+
+#### Option D: OpenAI
 
 ```bash
 OPENAI_API_KEY=sk-your-openai-key-here
@@ -50,7 +79,11 @@ AI_DEFAULT_PROVIDER=openai
 
 **获取 API Key**: [https://platform.openai.com](https://platform.openai.com)
 
-#### Option D: 火山引擎
+**注意**：需要国际支付方式
+
+---
+
+#### Option E: 火山引擎（旧版配置方式）
 
 ```bash
 VOLCENGINE_API_KEY=your-volcengine-api-key-here

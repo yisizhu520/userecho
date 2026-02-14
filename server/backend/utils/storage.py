@@ -226,16 +226,26 @@ class TencentCOSStorage(StorageBackend):
         cos_path = f'{self.base_path}/{path}'.lstrip('/')
 
         try:
+            # 读取文件内容
             if isinstance(file, UploadFile):
                 content = await file.read()
             else:
                 content = file.read()
 
+            # 确保 content 是 bytes 类型
+            if not isinstance(content, bytes):
+                log.error(f'Content type error: expected bytes, got {type(content)}')
+                raise errors.ServerError(msg='文件内容类型错误')
+
+            # 使用 BytesIO 包装以确保兼容性
+            from io import BytesIO
+            file_obj = BytesIO(content)
+
             kwargs = {}
             if content_type:
                 kwargs['ContentType'] = content_type
 
-            self.client.put_object(Bucket=self.bucket_name, Body=content, Key=cos_path, **kwargs)
+            self.client.put_object(Bucket=self.bucket_name, Body=file_obj, Key=cos_path, **kwargs)
 
             # 返回 CDN 域名或 COS 域名
             if hasattr(settings, 'TENCENT_COS_CDN_DOMAIN') and settings.TENCENT_COS_CDN_DOMAIN:
@@ -313,16 +323,26 @@ class AWSS3Storage(StorageBackend):
         s3_path = f'{self.base_path}/{path}'.lstrip('/')
 
         try:
+            # 读取文件内容
             if isinstance(file, UploadFile):
                 content = await file.read()
             else:
                 content = file.read()
 
+            # 确保 content 是 bytes 类型
+            if not isinstance(content, bytes):
+                log.error(f'Content type error: expected bytes, got {type(content)}')
+                raise errors.ServerError(msg='文件内容类型错误')
+
+            # 使用 BytesIO 包装以确保兼容性
+            from io import BytesIO
+            file_obj = BytesIO(content)
+
             extra_args = {}
             if content_type:
                 extra_args['ContentType'] = content_type
 
-            self.client.put_object(Bucket=self.bucket_name, Key=s3_path, Body=content, **extra_args)
+            self.client.put_object(Bucket=self.bucket_name, Key=s3_path, Body=file_obj, **extra_args)
 
             # 返回 CloudFront 域名或 S3 域名
             if hasattr(settings, 'AWS_S3_CDN_DOMAIN') and settings.AWS_S3_CDN_DOMAIN:

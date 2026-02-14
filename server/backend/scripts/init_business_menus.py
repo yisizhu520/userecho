@@ -65,13 +65,22 @@ async def init_business_menus():
                 'sort': 1,
             },
             {
+                'title': '截图识别',
+                'name': 'ScreenshotUpload',
+                'path': '/app/feedback/screenshot',
+                'component': '/userecho/feedback/screenshot-upload',
+                'icon': 'lucide:camera',
+                'perms': 'app:feedback:screenshot',
+                'sort': 2,
+            },
+            {
                 'title': 'AI 发现中心',
                 'name': 'AIDiscovery',
                 'path': '/app/ai/discovery',
                 'component': '/userecho/discovery/index',
                 'icon': 'lucide:sparkles',
                 'perms': 'app:ai:view',
-                'sort': 2,
+                'sort': 3,
             },
             {
                 'title': '导入反馈',
@@ -80,7 +89,7 @@ async def init_business_menus():
                 'component': '/userecho/feedback/import',
                 'icon': 'lucide:upload',
                 'perms': 'app:feedback:import',
-                'sort': 3,
+                'sort': 4,
             },
             {
                 'title': '需求主题',
@@ -89,7 +98,7 @@ async def init_business_menus():
                 'component': '/userecho/topic/list',
                 'icon': 'lucide:lightbulb',
                 'perms': 'app:topic:view',
-                'sort': 4,
+                'sort': 5,
             },
             {
                 'title': '客户管理',
@@ -98,7 +107,7 @@ async def init_business_menus():
                 'component': '/userecho/customer/index',
                 'icon': 'lucide:users',
                 'perms': 'app:customer:view',
-                'sort': 5,
+                'sort': 6,
             },
         ]
         
@@ -219,7 +228,7 @@ async def init_business_menus():
                 'name': 'CS',
                 'role_type': 'business',
                 'remark': '客户成功，可查看反馈和客户',
-                'menus': ['/app/feedback/list', '/app/customer', '/app/ai/discovery'],
+                'menus': ['/app/feedback/list', '/app/feedback/screenshot', '/app/customer', '/app/ai/discovery'],
             },
             {
                 'name': '开发',
@@ -290,7 +299,7 @@ async def init_business_menus():
         print('\n✅ 业务菜单和角色初始化完成！')
         print('\n📝 创建的资源：')
         print('   - 反馈管理目录')
-        print('   - 5 个功能菜单（反馈列表、AI 发现中心、导入反馈、需求主题、客户管理）')
+        print('   - 6 个功能菜单（反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、客户管理）')
         print('   - 设置目录')
         print('   - 1 个设置子菜单（聚类策略）')
         print('   - 4 个业务角色（PM、CS、开发、老板）')

@@ -108,9 +108,10 @@ PM 收集了 20 张 App Store 评论截图：
 - 其他（通用 OCR）
 
 **AI 调用：**
-- 模型：GPT-4o 或 DeepSeek-VL
+- 默认模型：火山引擎（豆包 Vision Pro）
+- 备用模型：GPT-4o / GLM-4V / DeepSeek
 - 超时时间：30 秒
-- 失败处理：返回通用 OCR 结果
+- 失败处理：自动降级到其他 Provider，最终返回空表单
 
 ---
 
@@ -320,14 +321,24 @@ async def analyze_screenshot(image_file: UploadFile) -> ExtractedData:
     返回 JSON 格式。
     """
     
-    result = await ai_service.analyze_image(
-        image_url=screenshot_url,
-        prompt=prompt,
-        model="gpt-4o"
+    # 使用配置的 AI Provider（默认火山引擎）
+    result = await ai_client.analyze_screenshot(
+        image_url=screenshot_url
     )
     
     return ExtractedData(**result)
 ```
+
+**配置说明（使用火山引擎）：**
+
+```bash
+# server/backend/.env
+VOLCENGINE_API_KEY=your-volcengine-api-key
+VOLCENGINE_CHAT_ENDPOINT=ep-20241221xxx-xxxxx  # 支持视觉的模型
+AI_DEFAULT_PROVIDER=volcengine
+```
+
+**详细配置指南**：参见 `docs/guides/ai-provider/volcengine-vision-setup.md`
 
 ---
 
@@ -482,7 +493,34 @@ async def analyze_screenshot(image_file: UploadFile) -> ExtractedData:
 
 ## 10. 附录
 
-### 10.1 AI Prompt 模板
+### 10.1 火山引擎配置（推荐）
+
+**快速配置（3 步）：**
+
+1. **获取火山引擎凭证**
+   - 访问：[https://console.volcengine.com](https://console.volcengine.com)
+   - 开通"豆包大模型"服务
+   - 创建推理服务，选择模型：`doubao-vision-pro-32k`（推荐）
+   - 记录 API Key 和 Endpoint ID
+
+2. **配置环境变量**（编辑 `server/backend/.env`）
+   ```bash
+   VOLCENGINE_API_KEY=your-api-key-here
+   VOLCENGINE_CHAT_ENDPOINT=ep-20241221xxx-xxxxx
+   AI_DEFAULT_PROVIDER=volcengine
+   ```
+
+3. **验证配置**
+   ```bash
+   cd server
+   python check_volcengine_config.py
+   ```
+
+**详细配置指南**：`docs/guides/ai-provider/volcengine-quickstart.md`
+
+---
+
+### 10.2 AI Prompt 模板
 
 ```text
 你是一个专业的反馈分析助手。分析这张社交媒体截图，提取以下信息：
@@ -528,7 +566,7 @@ async def analyze_screenshot(image_file: UploadFile) -> ExtractedData:
 }
 ```
 
-### 10.2 数据库 Migration
+### 10.3 数据库 Migration
 
 ```sql
 -- Migration: add_screenshot_fields_to_feedback

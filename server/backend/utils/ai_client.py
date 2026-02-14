@@ -399,6 +399,145 @@ class AIClient:
         # 降级方案：简单截断
         return content[:max_length] + ('...' if len(content) > max_length else '')
 
+    async def analyze_screenshot(
+        self,
+        image_url: str,
+        max_retries: int = 2
+    ) -> dict[str, Any]:
+        """
+        分析截图，提取反馈信息
+        
+        Args:
+            image_url: 截图 URL（需要公开可访问）
+            max_retries: 最大重试次数
+            
+        Returns:
+            包含 platform, user_name, content, feedback_type, sentiment, confidence 的字典
+        """
+        prompt = """你是一个专业的反馈分析助手。分析这张社交媒体截图，提取以下信息：
+
+1. **平台类型** (platform)
+   - 观察 UI 特征（气泡样式、导航栏、Logo）
+   - 可能值：wechat | xiaohongshu | appstore | weibo | other
+
+2. **用户昵称** (user_name)
+   - 提取发表反馈的用户昵称
+   - 如果无法识别，返回空字符串
+
+3. **用户 ID** (user_id)
+   - 如果截图中有用户 ID（如小红书的 @id），提取
+   - 如果没有，返回空字符串
+
+4. **反馈内容** (content)
+   - 提取核心反馈内容
+   - 去除寒暄语、表情符号
+   - 保留关键信息（版本号、设备型号、错误描述）
+
+5. **反馈类型** (feedback_type)
+   - bug: 功能异常、闪退、卡顿
+   - feature: 功能需求、建议
+   - complaint: 投诉、差评
+   - other: 其他
+
+6. **情感倾向** (sentiment)
+   - positive: 正面评价
+   - neutral: 中性反馈
+   - negative: 负面反馈
+
+7. **识别置信度** (confidence)
+   - 0.0-1.0 之间的浮点数
+   - 基于 UI 特征的清晰度和文字识别准确度
+
+返回 JSON 格式，不要包含任何其他文字。
+
+示例：
+{
+  "platform": "wechat",
+  "user_name": "小王",
+  "user_id": "",
+  "content": "产品闪退了，iOS 16.3，iPhone 14 Pro",
+  "feedback_type": "bug",
+  "sentiment": "negative",
+  "confidence": 0.95
+}"""
+
+        for attempt in range(max_retries):
+            # 确保当前 provider 可用
+            if self.current_provider not in self.clients:
+                break
+
+            try:
+                config = self.PROVIDERS_CONFIG[self.current_provider]
+                
+                # 获取 chat model (支持 vision 的模型)
+                chat_model = config['chat_model']
+                
+                # 针对不同提供商使用不同的 vision 模型
+                if self.current_provider == 'openai':
+                    chat_model = 'gpt-4o'
+                elif self.current_provider == 'deepseek':
+                    chat_model = 'deepseek-chat'  # DeepSeek 支持图像
+                elif self.current_provider == 'glm':
+                    chat_model = 'glm-4v-flash'  # GLM-4V 支持图像
+                elif self.current_provider == 'volcengine':
+                    # 火山引擎使用 endpoint（优先 VISION，回退 CHAT）
+                    chat_model = (
+                        getattr(settings, 'VOLCENGINE_VISION_ENDPOINT', None) or
+                        getattr(settings, 'VOLCENGINE_CHAT_ENDPOINT', None)
+                    )
+                    if not chat_model:
+                        log.warning('VOLCENGINE_VISION_ENDPOINT or VOLCENGINE_CHAT_ENDPOINT not configured, falling back')
+                        self._fallback_to_next_provider()
+                        continue
+
+                # 调用 vision API
+                response = await self.clients[self.current_provider].chat.completions.create(
+                    model=chat_model,
+                    messages=[
+                        {
+                            'role': 'user',
+                            'content': [
+                                {'type': 'text', 'text': prompt},
+                                {'type': 'image_url', 'image_url': {'url': image_url}}
+                            ]
+                        }
+                    ],
+                    response_format={'type': 'json_object'},
+                    max_tokens=500,
+                    temperature=0.3
+                )
+
+                result = json.loads(response.choices[0].message.content)
+                
+                # 验证和规范化结果
+                return {
+                    'platform': result.get('platform', 'other'),
+                    'user_name': result.get('user_name', ''),
+                    'user_id': result.get('user_id', ''),
+                    'content': result.get('content', ''),
+                    'feedback_type': result.get('feedback_type', 'other'),
+                    'sentiment': result.get('sentiment', 'neutral'),
+                    'confidence': float(result.get('confidence', 0.5))
+                }
+
+            except Exception as e:
+                log.warning(f'Screenshot analysis failed (attempt {attempt + 1}/{max_retries}, provider: {self.current_provider}): {e}')
+                
+                # 尝试降级到其他可用的 provider
+                self._fallback_to_next_provider()
+
+        # 所有重试都失败，返回降级结果
+        log.error(f'Failed to analyze screenshot after {max_retries} retries')
+        return {
+            'platform': 'other',
+            'user_name': '',
+            'user_id': '',
+            'content': '图像识别失败，请手动填写',
+            'feedback_type': 'other',
+            'sentiment': 'neutral',
+            'confidence': 0.0
+        }
+
 
 # ============= Lazy Initialization Proxy =============
 # "Never initialize expensive resources at module import time!" - Linus
