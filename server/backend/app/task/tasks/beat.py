@@ -26,4 +26,12 @@ LOCAL_BEAT_SCHEDULE = {
         'task': 'backend.app.task.tasks.db_log.tasks.delete_db_login_log',
         'schedule': TzAwareCrontab('0', '0', day_of_month='15'),
     },
+    '每周生成洞察': {
+        'task': 'userecho.generate_weekly_insights',
+        'schedule': TzAwareCrontab('0', '8', day_of_week='1'),  # 每周一早上 8:00
+    },
+    '每日生成洞察': {
+        'task': 'userecho.generate_daily_insights',
+        'schedule': TzAwareCrontab('0', '9'),  # 每天早上 9:00
+    },
 }

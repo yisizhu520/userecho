@@ -128,6 +128,15 @@ async def init_business_menus():
                 'perms': 'app:customer:view',
                 'sort': 7,
             },
+            {
+                'title': '洞察报告',
+                'name': 'InsightReport',
+                'path': '/app/insights/report',
+                'component': '/userecho/insights/report',
+                'icon': 'lucide:file-bar-chart',
+                'perms': 'app:insights:view',
+                'sort': 8,
+            },
         ]
         
         created_menus = []
@@ -251,13 +260,13 @@ async def init_business_menus():
                 'name': 'CS',
                 'role_type': 'business',
                 'remark': '客户成功，可查看反馈和客户',
-                'menus': ['/app/feedback/list', '/app/feedback/screenshot', '/app/customer', '/app/ai/discovery'],
+                'menus': ['/app/feedback/list', '/app/feedback/screenshot', '/app/customer', '/app/ai/discovery', '/app/dashboard/workspace', '/app/insights/report'],
             },
             {
                 'name': '开发',
                 'role_type': 'business',
                 'remark': '开发人员，只读需求主题',
-                'menus': ['/app/topic/list', '/app/ai/discovery'],
+                'menus': ['/app/topic/list', '/app/ai/discovery', '/app/dashboard/workspace', '/app/insights/report'],
             },
             {
                 'name': '老板',
@@ -321,7 +330,7 @@ async def init_business_menus():
         print('\n✅ 业务菜单和角色初始化完成！')
         print('\n📝 创建的资源：')
         print('   - 反馈管理目录')
-        print('   - 8 个功能菜单（工作台、反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、主题详情、客户管理）')
+        print('   - 9 个功能菜单（工作台、反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、主题详情、客户管理、洞察报告）')
         print('   - 设置目录')
         print('   - 1 个设置子菜单（聚类策略）')
         print('   - 4 个业务角色（PM、CS、开发、老板）')

@@ -399,6 +399,72 @@ class AIClient:
         # 降级方案：简单截断
         return content[:max_length] + ('...' if len(content) > max_length else '')
 
+    async def chat(
+        self,
+        prompt: str,
+        max_tokens: int = 100,
+        temperature: float = 0.7,
+        response_format: str | None = None,
+        max_retries: int = 2,
+    ) -> str:
+        """
+        通用 Chat 接口
+        
+        Args:
+            prompt: 用户输入提示词
+            max_tokens: 最大返回 token 数
+            temperature: 温度参数（0-1）
+            response_format: 返回格式，'json' 表示 JSON 格式
+            max_retries: 最大重试次数
+        
+        Returns:
+            AI 生成的文本
+        """
+        if not prompt:
+            return ''
+        
+        for attempt in range(max_retries):
+            try:
+                if self.current_provider not in self.clients:
+                    self._fallback_to_next_provider()
+                    continue
+                
+                config = self.PROVIDERS_CONFIG[self.current_provider]
+                
+                # 获取 chat model
+                chat_model = config['chat_model']
+                
+                # 火山引擎特殊处理
+                if self.current_provider == 'volcengine':
+                    chat_model = getattr(settings, 'VOLCENGINE_CHAT_ENDPOINT', None)
+                    if not chat_model:
+                        log.warning('VOLCENGINE_CHAT_ENDPOINT not configured')
+                        self._fallback_to_next_provider()
+                        continue
+                
+                # 构建请求参数
+                create_params = {
+                    'model': chat_model,
+                    'messages': [{'role': 'user', 'content': prompt}],
+                    'max_tokens': max_tokens,
+                    'temperature': temperature,
+                }
+                
+                # 添加 response_format（如果需要）
+                if response_format == 'json':
+                    create_params['response_format'] = {'type': 'json_object'}
+                
+                response = await self.clients[self.current_provider].chat.completions.create(**create_params)
+                return response.choices[0].message.content.strip()
+            
+            except Exception as e:
+                log.warning(f'Chat failed (attempt {attempt + 1}/{max_retries}, provider: {self.current_provider}): {e}')
+                self._fallback_to_next_provider()
+        
+        # 所有重试都失败
+        log.error(f'Failed to chat after {max_retries} retries')
+        return ''
+
     async def analyze_screenshot(
         self,
         image_url: str,

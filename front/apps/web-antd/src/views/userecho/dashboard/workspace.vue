@@ -17,6 +17,7 @@ import { useUserStore } from '@vben/stores';
 
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
+import InsightsCard from './components/InsightsCard.vue';
 import TagDistributionChart from './components/TagDistributionChart.vue';
 import TopTopicsCard from './components/TopTopicsCard.vue';
 import TrendChart from './components/TrendChart.vue';
@@ -170,5 +171,8 @@ onMounted(() => {
         <TopTopicsCard :topics="stats.top_topics" class="mt-5" />
       </div>
     </div>
+
+    <!-- AI 洞察区域 -->
+    <InsightsCard v-if="!loading" />
   </div>
 </template>

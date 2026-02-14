@@ -152,3 +152,74 @@ def analyze_screenshot_task(
         # 重试机制（Celery 会自动处理）
         raise self.retry(exc=e)
 
+
+@celery_app.task(
+    name='userecho.generate_insight_report',
+    bind=True,
+    time_limit=300,  # 5分钟硬超时
+    soft_time_limit=270,  # 4.5分钟软超时
+)
+def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week', format: str = 'markdown'):
+    """
+    按需生成洞察报告（用户触发）
+    
+    Args:
+        tenant_id: 租户ID
+        time_range: 时间范围
+        format: 导出格式
+    
+    Returns:
+        生成的报告内容
+    """
+    from backend.app.userecho.service.insight_service import insight_service
+    from backend.common.log import log
+    
+    async def _async_run():
+        """异步执行报告生成"""
+        try:
+            # 更新任务状态为进行中
+            self.update_state(
+                state='PROGRESS',
+                meta={'current': 0, 'total': 100, 'status': '正在生成报告...'}
+            )
+            
+            async with async_db_session() as db:
+                log.info(f'[Task {self.request.id}] Starting insight report generation for tenant: {tenant_id}')
+                
+                # 生成洞察
+                content = await insight_service.generate_insight(
+                    db=db,
+                    tenant_id=tenant_id,
+                    insight_type='weekly_report',
+                    time_range=time_range,
+                    force_refresh=True,  # 用户主动触发，强制刷新
+                )
+                
+                log.info(f'[Task {self.request.id}] Completed insight report generation for tenant: {tenant_id}')
+                
+                # 返回结果
+                if format == 'markdown':
+                    return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
+                elif format == 'html':
+                    # TODO: 使用 markdown2 转 HTML
+                    return {'content': content['markdown'], 'format': 'html', 'status': 'success'}
+                else:
+                    return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
+        
+        except Exception as e:
+            log.error(f'[Task {self.request.id}] Failed to generate insight report for tenant {tenant_id}: {e}')
+            raise
+    
+    # 手动管理 event loop（与其他任务相同模式）
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    # 运行异步任务
+    return loop.run_until_complete(_async_run())
+

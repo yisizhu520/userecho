@@ -92,6 +92,16 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    name: 'InsightReport',
+    path: '/app/insights/report',
+    component: () => import('#/views/userecho/insights/report.vue'),
+    meta: {
+      icon: 'lucide:file-bar-chart',
+      order: 4.5,
+      title: '洞察报告',
+    },
+  },
+  {
     name: 'Settings',
     path: '/app/settings',
     meta: {

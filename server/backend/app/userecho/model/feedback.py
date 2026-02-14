@@ -67,6 +67,17 @@ class Feedback(MappedBase):
         Vector(4096), default=None, comment='Embedding向量(pgvector, 火山引擎 4096维)'
     )
 
+    # 情感分析字段
+    sentiment: Mapped[str | None] = mapped_column(
+        String(20), default=None, index=True, comment='情感倾向: positive | neutral | negative'
+    )
+    sentiment_score: Mapped[float | None] = mapped_column(
+        default=None, comment='情感分数 (-1.0 to 1.0)'
+    )
+    sentiment_reason: Mapped[str | None] = mapped_column(
+        Text, default=None, comment='AI 情感分析理由'
+    )
+
     # 聚类状态与元数据（用于避免 topic_id=NULL 的噪声点被反复聚类）
     clustering_status: Mapped[str] = mapped_column(
         String(20),
