@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import ConfigDict, Field
 
@@ -70,3 +71,46 @@ class FeedbackListParams(SchemaBase):
     source: str | None = Field(None, description='过滤：来源')
     has_topic: bool | None = Field(None, description='过滤：是否已聚类 (True=已聚类, False=未聚类)')
     clustering_status: str | None = Field(None, description='过滤：聚类状态 (pending/processing/clustered/failed)')
+
+
+# ==================== 截图识别相关 Schema ====================
+
+
+class ExtractedScreenshotData(SchemaBase):
+    """AI 提取的截图数据"""
+
+    platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(
+        description='平台类型'
+    )
+    user_name: str = Field(default='', description='用户昵称')
+    user_id: str = Field(default='', description='平台用户 ID')
+    content: str = Field(description='提取的反馈内容')
+    feedback_type: Literal['bug', 'feature', 'complaint', 'other'] = Field(
+        default='other', description='反馈类型'
+    )
+    sentiment: Literal['positive', 'neutral', 'negative'] = Field(
+        default='neutral', description='情感倾向'
+    )
+    confidence: float = Field(ge=0.0, le=1.0, description='AI 识别置信度')
+
+
+class ScreenshotAnalyzeResponse(SchemaBase):
+    """截图识别响应"""
+
+    screenshot_url: str = Field(description='截图 URL')
+    extracted: ExtractedScreenshotData = Field(description='AI 提取的信息')
+
+
+class ScreenshotFeedbackCreate(SchemaBase):
+    """从截图创建反馈"""
+
+    content: str = Field(description='反馈内容')
+    screenshot_url: str = Field(description='截图 URL')
+    source_type: Literal['screenshot'] = Field(default='screenshot', description='来源类型')
+    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(
+        description='来源平台'
+    )
+    source_user_name: str = Field(default='', description='平台用户昵称')
+    source_user_id: str = Field(default='', description='平台用户 ID')
+    ai_confidence: float | None = Field(None, ge=0.0, le=1.0, description='AI 识别置信度')
+    customer_id: str | None = Field(None, description='关联的客户 ID（可选）')

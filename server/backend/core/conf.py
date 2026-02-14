@@ -153,6 +153,36 @@ class Settings(BaseSettings):
     UPLOAD_VIDEO_EXT_INCLUDE: list[str] = ['mp4', 'mov', 'avi', 'flv']
     UPLOAD_VIDEO_SIZE_MAX: int = 20 * 1024 * 1024  # 20 MB
 
+    # .env 对象存储配置
+    STORAGE_TYPE: Literal['local', 'aliyun_oss', 'tencent_cos', 'aws_s3'] = 'local'
+
+    # 本地存储（默认）
+    STORAGE_LOCAL_BASE_URL: str = '/static/upload'
+
+    # 阿里云 OSS
+    ALIYUN_OSS_ACCESS_KEY_ID: str = ''
+    ALIYUN_OSS_ACCESS_KEY_SECRET: str = ''
+    ALIYUN_OSS_ENDPOINT: str = ''  # 如：oss-cn-hangzhou.aliyuncs.com
+    ALIYUN_OSS_BUCKET_NAME: str = ''
+    ALIYUN_OSS_BASE_PATH: str = ''  # 存储根路径，如：userecho
+    ALIYUN_OSS_CDN_DOMAIN: str = ''  # CDN 加速域名（可选）
+
+    # 腾讯云 COS
+    TENCENT_COS_SECRET_ID: str = ''
+    TENCENT_COS_SECRET_KEY: str = ''
+    TENCENT_COS_REGION: str = ''  # 如：ap-guangzhou
+    TENCENT_COS_BUCKET_NAME: str = ''
+    TENCENT_COS_BASE_PATH: str = ''
+    TENCENT_COS_CDN_DOMAIN: str = ''
+
+    # AWS S3
+    AWS_S3_ACCESS_KEY_ID: str = ''
+    AWS_S3_SECRET_ACCESS_KEY: str = ''
+    AWS_S3_REGION: str = ''  # 如：us-east-1
+    AWS_S3_BUCKET_NAME: str = ''
+    AWS_S3_BASE_PATH: str = ''
+    AWS_S3_CDN_DOMAIN: str = ''  # CloudFront 域名（可选）
+
     # 演示模式配置
     DEMO_MODE: bool = False
     DEMO_MODE_EXCLUDE: set[tuple[str, str]] = {

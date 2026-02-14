@@ -166,9 +166,14 @@ function stopClusteringPoll() {
   }
 }
 
-function onClusteringModalCancel() {
-  clusteringModalOpen.value = false;
+function closeClusteringModal() {
   stopClusteringPoll();
+  clusteringLoading.value = false;
+  clusteringModalOpen.value = false;
+}
+
+function onClusteringModalCancel() {
+  closeClusteringModal();
 }
 
 onBeforeUnmount(() => {
@@ -180,20 +185,17 @@ async function pollClusteringTask(taskId: string) {
   clusteringTaskState.value = status.state;
 
   if (status.state === 'FAILURE') {
-    stopClusteringPoll();
-    clusteringLoading.value = false;
     clusteringTaskError.value = status.error || '任务执行失败';
     message.error(clusteringTaskError.value);
+    closeClusteringModal();
     return;
   }
 
   if (status.state === 'SUCCESS') {
-    stopClusteringPoll();
-    clusteringLoading.value = false;
-
     const result: any = status.result;
     if (!result) {
       message.warning('聚类任务完成，但未返回结果');
+      closeClusteringModal();
       return;
     }
 
@@ -203,6 +205,7 @@ async function pollClusteringTask(taskId: string) {
       message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个主题，噪声 ${result.noise_count ?? 0} 条`);
     }
     onRefresh();
+    closeClusteringModal();
   }
 }
 

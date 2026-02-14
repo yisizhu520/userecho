@@ -288,7 +288,8 @@ except Exception as e:
 
 # 主函数
 main() {
-    clear
+    # clear - Windows Git Bash 可能不支持，注释掉
+    # clear
     
     print_header "🚀 UserEcho 完整数据库初始化脚本"
     echo ""
