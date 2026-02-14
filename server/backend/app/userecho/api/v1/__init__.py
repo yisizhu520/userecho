@@ -1,6 +1,6 @@
 """API v1 模块"""
 
-from . import clustering, customer, feedback, priority, tenant_config, topic
+from . import clustering, customer, dashboard, feedback, priority, tenant_config, topic
 
 __all__ = [
     'feedback',
@@ -9,4 +9,5 @@ __all__ = [
     'clustering',
     'tenant_config',
     'priority',
+    'dashboard',
 ]

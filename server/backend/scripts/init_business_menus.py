@@ -56,6 +56,15 @@ async def init_business_menus():
         print('\n2️⃣  创建子菜单...')
         sub_menus = [
             {
+                'title': '工作台',
+                'name': 'UserEchoWorkspace',
+                'path': '/app/dashboard/workspace',
+                'component': '/userecho/dashboard/workspace',
+                'icon': 'lucide:layout-dashboard',
+                'perms': 'app:dashboard:view',
+                'sort': 0,  # 置顶显示
+            },
+            {
                 'title': '反馈列表',
                 'name': 'FeedbackList',
                 'path': '/app/feedback/list',
@@ -312,7 +321,7 @@ async def init_business_menus():
         print('\n✅ 业务菜单和角色初始化完成！')
         print('\n📝 创建的资源：')
         print('   - 反馈管理目录')
-        print('   - 7 个功能菜单（反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、主题详情、客户管理）')
+        print('   - 8 个功能菜单（工作台、反馈列表、截图识别、AI 发现中心、导入反馈、需求主题、主题详情、客户管理）')
         print('   - 设置目录')
         print('   - 1 个设置子菜单（聚类策略）')
         print('   - 4 个业务角色（PM、CS、开发、老板）')

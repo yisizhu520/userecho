@@ -5,6 +5,16 @@ import { useTopicStore } from '#/store';
 
 const routes: RouteRecordRaw[] = [
   {
+    name: 'UserEchoWorkspace',
+    path: '/app/dashboard/workspace',
+    component: () => import('#/views/userecho/dashboard/workspace.vue'),
+    meta: {
+      icon: 'lucide:layout-dashboard',
+      order: -1,
+      title: '工作台',
+    },
+  },
+  {
     name: 'FeedbackList',
     path: '/app/feedback/list',
     component: () => import('#/views/userecho/feedback/list.vue'),
