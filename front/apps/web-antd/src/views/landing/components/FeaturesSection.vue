@@ -184,8 +184,8 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: hsla(220, 20%, 15%, 0.8);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  background: hsla(220, 14%, 96%, 0.8);
+  border: 1px solid hsla(220, 14%, 90%, 1);
   border-radius: 100px;
   margin-bottom: 1.5rem;
 }
@@ -197,7 +197,7 @@ onMounted(() => {
 .badge-text {
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--lp-text-secondary);
+  color: hsla(220, 20%, 20%, 1);
 }
 
 .section-title {
@@ -397,7 +397,7 @@ onMounted(() => {
   font-family: var(--lp-font-display);
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--lp-text-primary);
+  color: #ffffff;
 }
 
 .banner-icon {
@@ -419,15 +419,12 @@ onMounted(() => {
   font-family: var(--lp-font-display);
   font-size: 1.75rem;
   font-weight: 800;
-  background: var(--lp-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
 }
 
 .banner-stat-label {
   font-size: 0.75rem;
-  color: var(--lp-text-muted);
+  color: rgba(255, 255, 255, 0.8);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -435,7 +432,7 @@ onMounted(() => {
 .banner-stat-divider {
   width: 1px;
   height: 32px;
-  background: var(--lp-border-default);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Responsive */
