@@ -105,9 +105,9 @@ check_dependencies() {
     fi
 }
 
-# 检查数据库连接
-check_database() {
-    print_info "检查数据库连接..."
+# 准备数据库环境
+setup_database_environment() {
+    print_info "准备数据库环境..."
     
     # 检查 .env 文件是否存在
     if [ ! -f ".env" ]; then
@@ -117,21 +117,14 @@ check_database() {
         exit 1
     fi
     
-    # 尝试连接数据库
-    db_check_output=$(python test_db_connection_simple.py 2>&1)
-    db_check_exit_code=$?
+    # 运行数据库环境准备脚本
+    python scripts/setup_database_environment.py
     
-    if [ $db_check_exit_code -eq 0 ]; then
-        print_success "数据库连接成功"
+    if [ $? -eq 0 ]; then
+        echo ""
+        print_success "数据库环境准备完成"
     else
-        print_error "数据库连接失败"
-        echo ""
-        print_warning "错误详情："
-        echo "$db_check_output" | grep -E "❌|ERROR" | head -5
-        echo ""
-        print_info "运行详细测试获取更多信息："
-        echo "  python test_db_connection_simple.py"
-        echo ""
+        print_error "数据库环境准备失败"
         exit 1
     fi
 }
@@ -151,6 +144,7 @@ step1_fba_init() {
     
     # 自动确认 fba init（非交互模式）
     print_info "执行 fba init..."
+    export PYTHONIOENCODING=utf-8
     echo "y" | fba init
     
     if [ $? -eq 0 ]; then
@@ -221,7 +215,13 @@ step5_verify() {
     
     python -c "
 import sys
+import io
 import asyncio
+
+# Windows 平台 UTF-8 输出支持
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 sys.path.insert(0, '.')
 from sqlalchemy import select, func
 from backend.database.db import async_db_session
@@ -291,11 +291,18 @@ main() {
     # clear - Windows Git Bash 可能不支持，注释掉
     # clear
     
-    print_header "🚀 UserEcho 完整数据库初始化脚本"
+    print_header "🚀 UserEcho 一键完整数据库初始化脚本"
     echo ""
     print_warning "⚠️  此脚本将清空数据库所有数据并重建 ⚠️"
     echo ""
-    print_info "此脚本将执行以下操作："
+    print_info "此脚本将自动完成以下操作："
+    echo ""
+    echo "  【环境准备】（自动）"
+    echo "  • 检查并创建数据库（如果不存在）"
+    echo "  • 安装 pgvector 扩展"
+    echo "  • 配置 Redis 连接"
+    echo ""
+    echo "  【数据初始化】"
     echo "  1. 使用 fba init 初始化系统基础数据（部门、系统菜单、admin）"
     echo "  2. 创建默认租户（default-tenant）"
     echo "  3. 初始化业务菜单和角色（/app/* 菜单）"
@@ -313,7 +320,7 @@ main() {
     check_venv
     activate_venv
     check_dependencies
-    check_database
+    setup_database_environment
     
     echo ""
     

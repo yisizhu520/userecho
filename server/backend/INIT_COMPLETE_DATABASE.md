@@ -145,7 +145,12 @@ echo "✅ 完整数据库初始化完成！"
 
 ### 🎯 一键完整初始化（推荐）
 
-使用新的统一脚本，一条命令搞定：
+**✨ 新特性：自动化环境准备**
+- 自动检查并创建数据库（如果不存在）
+- 自动安装 pgvector 扩展
+- 自动配置 Redis 连接（本地不可用时切换到 Upstash）
+
+使用优化后的统一脚本，一条命令搞定：
 
 ```bash
 cd server/backend
@@ -160,6 +165,16 @@ init_complete_database.bat
 # Windows PowerShell
 .\init_complete_database.bat
 ```
+
+**脚本将自动完成：**
+1. ✅ 检查并创建数据库（如果不存在）
+2. ✅ 安装 pgvector 扩展（如果未安装）
+3. ✅ 配置 Redis（本地或 Upstash）
+4. ✅ 初始化系统基础数据（fba init）
+5. ✅ 创建默认租户
+6. ✅ 创建业务菜单和角色
+7. ✅ 创建测试用户
+8. ✅ 验证初始化结果
 
 ### 📝 手动分步执行
 

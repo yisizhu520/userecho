@@ -98,8 +98,8 @@ if errorlevel 1 (
 )
 goto :eof
 
-:check_database
-call :print_info "检查数据库连接..."
+:setup_database_environment
+call :print_info "准备数据库环境..."
 
 if not exist ".env" (
     call :print_error ".env 文件不存在"
@@ -108,16 +108,14 @@ if not exist ".env" (
     exit /b 1
 )
 
-python test_db_connection_simple.py >nul 2>&1
+REM 运行数据库环境准备脚本
+python scripts\setup_database_environment.py
 if errorlevel 1 (
-    call :print_error "数据库连接失败"
-    echo.
-    call :print_info "运行详细测试获取更多信息："
-    echo   python test_db_connection_simple.py
-    echo.
+    call :print_error "数据库环境准备失败"
     exit /b 1
 ) else (
-    call :print_success "数据库连接成功"
+    echo.
+    call :print_success "数据库环境准备完成"
 )
 goto :eof
 
@@ -134,6 +132,7 @@ echo   • 创建测试部门和测试角色
 echo.
 
 call :print_info "执行 fba init..."
+set PYTHONIOENCODING=utf-8
 echo y | fba init
 if errorlevel 1 (
     call :print_error "fba init 执行失败"
@@ -187,7 +186,7 @@ call :print_header "步骤 5/5: 验证初始化结果"
 echo.
 call :print_info "验证数据库初始化状态..."
 
-python -c "import sys; import asyncio; sys.path.insert(0, '.'); from sqlalchemy import select, func; from backend.database.db import async_db_session; from backend.app.admin.model import Menu, Role, User, Dept; from backend.app.userecho.model import Tenant; async def verify(): async with async_db_session() as db: tenant = await db.scalar(select(Tenant).where(Tenant.id == 'default-tenant')); tenant and print(f'  🏢 默认租户: {tenant.name} ({tenant.id})'); dept_count = await db.scalar(select(func.count(Dept.id))); print(f'  🏢 部门数量: {dept_count}'); sys_menu_count = await db.scalar(select(func.count(Menu.id)).where(Menu.path.like('/system/%%'))); print(f'  📋 系统菜单数量: {sys_menu_count}'); app_menu_count = await db.scalar(select(func.count(Menu.id)).where(Menu.path.like('/app/%%'))); print(f'  📱 业务菜单数量: {app_menu_count}'); role_count = await db.scalar(select(func.count(Role.id))); print(f'  👥 角色数量: {role_count}'); user_count = await db.scalar(select(func.count(User.id))); print(f'  🧑 用户数量: {user_count}'); admin = await db.scalar(select(User).where(User.username == 'admin')); admin and print(f'  ✅ admin 超级管理员已创建'); return tenant and dept_count > 0 and sys_menu_count > 0 and app_menu_count > 0; try: sys.exit(0 if asyncio.run(verify()) else 1); except Exception as e: print(f'  ❌ 验证失败: {e}'); sys.exit(1)"
+python -c "import sys; import io; import asyncio; if sys.platform == 'win32': sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8'); sys.path.insert(0, '.'); from sqlalchemy import select, func; from backend.database.db import async_db_session; from backend.app.admin.model import Menu, Role, User, Dept; from backend.app.userecho.model import Tenant; async def verify(): async with async_db_session() as db: tenant = await db.scalar(select(Tenant).where(Tenant.id == 'default-tenant')); tenant and print(f'  🏢 默认租户: {tenant.name} ({tenant.id})'); dept_count = await db.scalar(select(func.count(Dept.id))); print(f'  🏢 部门数量: {dept_count}'); sys_menu_count = await db.scalar(select(func.count(Menu.id)).where(Menu.path.like('/system/%%'))); print(f'  📋 系统菜单数量: {sys_menu_count}'); app_menu_count = await db.scalar(select(func.count(Menu.id)).where(Menu.path.like('/app/%%'))); print(f'  📱 业务菜单数量: {app_menu_count}'); role_count = await db.scalar(select(func.count(Role.id))); print(f'  👥 角色数量: {role_count}'); user_count = await db.scalar(select(func.count(User.id))); print(f'  🧑 用户数量: {user_count}'); admin = await db.scalar(select(User).where(User.username == 'admin')); admin and print(f'  ✅ admin 超级管理员已创建'); return tenant and dept_count > 0 and sys_menu_count > 0 and app_menu_count > 0; try: sys.exit(0 if asyncio.run(verify()) else 1); except Exception as e: print(f'  ❌ 验证失败: {e}'); sys.exit(1)"
 
 if errorlevel 1 (
     call :print_warning "验证未完全通过，请检查上述输出"
@@ -199,11 +198,18 @@ goto :eof
 
 :main
 cls
-call :print_header "🚀 UserEcho 完整数据库初始化脚本"
+call :print_header "🚀 UserEcho 一键完整数据库初始化脚本"
 echo.
 call :print_warning "⚠️  此脚本将清空数据库所有数据并重建 ⚠️"
 echo.
-call :print_info "此脚本将执行以下操作："
+call :print_info "此脚本将自动完成以下操作："
+echo.
+echo   【环境准备】（自动）
+echo   • 检查并创建数据库（如果不存在）
+echo   • 安装 pgvector 扩展
+echo   • 配置 Redis 连接
+echo.
+echo   【数据初始化】
 echo   1. 使用 fba init 初始化系统基础数据（部门、系统菜单、admin）
 echo   2. 创建默认租户（default-tenant）
 echo   3. 初始化业务菜单和角色（/app/* 菜单）
@@ -229,7 +235,7 @@ if errorlevel 1 exit /b 1
 call :check_dependencies
 if errorlevel 1 exit /b 1
 
-call :check_database
+call :setup_database_environment
 if errorlevel 1 exit /b 1
 
 echo.
