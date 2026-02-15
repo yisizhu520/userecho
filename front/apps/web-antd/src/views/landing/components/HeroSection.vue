@@ -81,10 +81,10 @@ type UserData = {
 
 const USER_DATA: UserData[] = [
   { name: '张经理', avatar: '👨‍💼', x: 80, y: 100, notified: false, notificationTime: 0 },
-  { name: '李产品', avatar: '👩‍💻', x: 480, y: 80, notified: false, notificationTime: 0 },
-  { name: '王开发', avatar: '👨‍🔧', x: 500, y: 350, notified: false, notificationTime: 0 },
-  { name: '赵运营', avatar: '👩‍🎨', x: 60, y: 380, notified: false, notificationTime: 0 },
-  { name: '刘测试', avatar: '👨‍🔬', x: 280, y: 420, notified: false, notificationTime: 0 },
+  { name: '李老板', avatar: '👩‍💻', x: 480, y: 80, notified: false, notificationTime: 0 },
+  { name: '王先生', avatar: '👨‍🔧', x: 500, y: 350, notified: false, notificationTime: 0 },
+  { name: '赵女士', avatar: '👩‍🎨', x: 60, y: 370, notified: false, notificationTime: 0 },
+  // { name: '刘测试', avatar: '👨‍🔬', x: 280, y: 420, notified: false, notificationTime: 0 },
 ];
 
 // Real feedback text samples for INGEST stage (grouped by cluster)
@@ -1317,10 +1317,17 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 4px;
   padding: 10px 16px;
-  background: var(--lp-bg-elevated, rgba(15, 23, 42, 0.5));
+  background: var(--lp-bg-elevated, rgba(15, 23, 42, 0.25));
   backdrop-filter: blur(16px);
-  border: 1px solid var(--lp-border-subtle, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--lp-border-subtle, rgba(255, 255, 255, 0.04));
   border-radius: 16px;
+  opacity: 0.35;
+  transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+.stage-dots:hover {
+  opacity: 1;
+  background: var(--lp-bg-elevated, rgba(15, 23, 42, 0.5));
 }
 
 .stage-dot {
