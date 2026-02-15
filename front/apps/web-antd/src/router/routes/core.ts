@@ -23,6 +23,21 @@ const fallbackNotFoundRoute: RouteRecordRaw = {
 /** 基本路由，这些路由是必须存在的 */
 const coreRoutes: RouteRecordRaw[] = [
   /**
+   * Landing Page
+   * 产品落地页，无需登录即可访问
+   */
+  {
+    component: () => import('#/views/landing/index.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: 'Feedalyze - AI 驱动的用户反馈智能分析平台',
+    },
+    name: 'Landing',
+    path: '/landing',
+  },
+  /**
    * 根路由
    * 使用基础布局，作为所有页面的父级容器，子级就不必配置BasicLayout。
    * 此路由必须存在，且不应修改
