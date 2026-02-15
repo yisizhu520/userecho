@@ -178,13 +178,14 @@ const cardClass = computed(() => ({
 /* 卡片头部 */
 .card-header {
   text-align: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--lp-border-subtle);
-  height: 140px;
+  height: 160px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 0.5rem;
 }
 
 .tier-name {
@@ -193,7 +194,7 @@ const cardClass = computed(() => ({
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--lp-text-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
   letter-spacing: -0.01em;
   line-height: 1.3;
 }
