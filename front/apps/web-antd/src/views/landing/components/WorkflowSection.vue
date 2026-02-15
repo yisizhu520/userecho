@@ -149,7 +149,7 @@ const setStep = (index: number) => {
 .workflow-section {
   position: relative;
   padding: 6rem 2rem;
-  background: hsla(220, 20%, 6%, 0.5);
+  background: var(--lp-bg-secondary);
 }
 
 .workflow-section::before {
@@ -173,15 +173,15 @@ const setStep = (index: number) => {
 }
 
 .section-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: clamp(2rem, 4vw, 2.75rem);
   font-weight: 800;
   margin-bottom: 1rem;
-  color: hsl(0, 0%, 100%);
+  color: var(--lp-text-primary);
 }
 
 .title-accent {
-  background: linear-gradient(135deg, hsl(38, 92%, 60%), hsl(144, 70%, 50%));
+  background: var(--lp-gradient-warm);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -189,7 +189,7 @@ const setStep = (index: number) => {
 
 .section-subtitle {
   font-size: 1.1rem;
-  color: hsl(220, 10%, 70%);
+  color: var(--lp-text-tertiary);
 }
 
 /* Workflow */
@@ -236,10 +236,10 @@ const setStep = (index: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: hsl(0, 0%, 100%);
+  color: #ffffff;
   background: var(--step-color);
   border-radius: 16px;
   box-shadow: 0 4px 20px var(--step-color);
@@ -262,15 +262,15 @@ const setStep = (index: number) => {
 }
 
 .step-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 0.9rem;
   font-weight: 600;
-  color: hsl(220, 10%, 70%);
+  color: var(--lp-text-tertiary);
   transition: color 0.3s ease;
 }
 
 .step-item.is-active .step-title {
-  color: hsl(0, 0%, 100%);
+  color: var(--lp-text-primary);
 }
 
 /* Connection line */
@@ -280,7 +280,7 @@ const setStep = (index: number) => {
   left: 10%;
   right: 10%;
   height: 4px;
-  background: hsla(220, 20%, 15%, 0.8);
+  background: var(--lp-bg-card);
   border-radius: 2px;
   overflow: hidden;
   z-index: 1;
@@ -288,7 +288,7 @@ const setStep = (index: number) => {
 
 .connection-progress {
   height: 100%;
-  background: linear-gradient(90deg, hsl(212, 100%, 45%), hsl(189, 94%, 43%), hsl(38, 92%, 60%), hsl(144, 70%, 50%));
+  background: var(--lp-gradient-primary);
   border-radius: 2px;
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -333,7 +333,7 @@ const setStep = (index: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsla(220, 20%, 12%, 0.9);
+  background: var(--lp-bg-card);
   border: 2px solid var(--step-color);
   border-radius: 50%;
   z-index: 2;
@@ -387,16 +387,16 @@ const setStep = (index: number) => {
 }
 
 .step-content-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 2rem;
   font-weight: 700;
-  color: hsl(0, 0%, 100%);
+  color: var(--lp-text-primary);
   margin-bottom: 1rem;
 }
 
 .step-content-description {
   font-size: 1.1rem;
-  color: hsl(220, 10%, 70%);
+  color: var(--lp-text-tertiary);
   line-height: 1.7;
   margin-bottom: 2rem;
 }
@@ -411,11 +411,11 @@ const setStep = (index: number) => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: hsl(220, 10%, 70%);
+  color: var(--lp-text-tertiary);
 }
 
 .step-feature svg {
-  color: hsl(144, 70%, 50%);
+  color: #10b981;
 }
 
 /* Responsive */

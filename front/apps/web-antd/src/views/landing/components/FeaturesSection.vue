@@ -197,7 +197,7 @@ onMounted(() => {
 .badge-text {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
 }
 
 .section-title {
@@ -205,11 +205,11 @@ onMounted(() => {
   font-size: clamp(2rem, 4vw, 2.75rem);
   font-weight: 800;
   margin-bottom: 1rem;
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .title-gradient {
-  background: linear-gradient(135deg, #00e5ff 0%, #06b6d4 50%, #10b981 100%);
+  background: var(--lp-gradient-hero);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -217,7 +217,7 @@ onMounted(() => {
 
 .section-subtitle {
   font-size: 1.15rem;
-  color: #cbd5e1;
+  color: var(--lp-text-secondary);
 }
 
 /* Features Grid */
@@ -249,7 +249,7 @@ onMounted(() => {
 }
 
 .feature-card:hover .feature-card-inner {
-  background: rgba(26, 32, 66, 0.95);
+  background: var(--lp-bg-card-hover);
 }
 
 .feature-card-inner {
@@ -257,8 +257,8 @@ onMounted(() => {
   z-index: 1;
   height: 100%;
   padding: 2rem;
-  background: rgba(15, 20, 41, 0.9);
-  border: 1px solid rgba(0, 229, 255, 0.15);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-subtle);
   border-radius: 20px;
   transition: all 0.3s ease;
   backdrop-filter: blur(12px);
@@ -282,9 +282,9 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   font-size: 2rem;
-  background: rgba(26, 32, 66, 0.9);
+  background: var(--lp-bg-card);
   border-radius: 16px;
-  border: 1px solid rgba(0, 229, 255, 0.25);
+  border: 1px solid var(--lp-border-default);
 }
 
 .feature-icon-glow {
@@ -304,13 +304,13 @@ onMounted(() => {
   font-family: var(--lp-font-display);
   font-size: 1.35rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--lp-text-primary);
   margin-bottom: 0.75rem;
 }
 
 .feature-description {
   font-size: 0.95rem;
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
   line-height: 1.6;
   margin-bottom: 1.5rem;
   flex-grow: 1;
@@ -334,7 +334,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
 }
 
 .feature-list-item svg {
@@ -359,8 +359,8 @@ onMounted(() => {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+    linear-gradient(var(--lp-border-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--lp-border-subtle) 1px, transparent 1px);
   background-size: 20px 20px;
   opacity: 0.5;
 }
@@ -378,8 +378,8 @@ onMounted(() => {
 }
 
 .banner-content {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  background: var(--lp-gradient-cool);
+  border: 1px solid var(--lp-border-default);
   border-radius: 20px;
   padding: 2rem;
   display: flex;
@@ -394,10 +394,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 1.25rem;
   font-weight: 600;
-  color: hsl(0, 0%, 100%);
+  color: var(--lp-text-primary);
 }
 
 .banner-icon {
@@ -416,10 +416,10 @@ onMounted(() => {
 
 .banner-stat-value {
   display: block;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 1.75rem;
   font-weight: 800;
-  background: linear-gradient(135deg, hsl(212, 100%, 55%), hsl(144, 70%, 50%));
+  background: var(--lp-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -427,7 +427,7 @@ onMounted(() => {
 
 .banner-stat-label {
   font-size: 0.75rem;
-  color: hsl(220, 10%, 60%);
+  color: var(--lp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -435,7 +435,7 @@ onMounted(() => {
 .banner-stat-divider {
   width: 1px;
   height: 32px;
-  background: hsla(220, 20%, 25%, 0.5);
+  background: var(--lp-border-default);
 }
 
 /* Responsive */

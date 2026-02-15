@@ -135,8 +135,8 @@ const emit = defineEmits<{
   max-width: 900px;
   margin: 0 auto;
   position: relative;
-  background: hsla(220, 20%, 10%, 0.8);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-default);
   border-radius: 32px;
   overflow: hidden;
   backdrop-filter: blur(12px);
@@ -146,15 +146,16 @@ const emit = defineEmits<{
 .cta-bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, hsla(212, 100%, 45%, 0.15) 0%, hsla(144, 70%, 50%, 0.1) 100%);
+  background: var(--lp-gradient-primary);
+  opacity: 0.15;
 }
 
 .cta-bg-grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(hsla(220, 20%, 20%, 0.2) 1px, transparent 1px),
-    linear-gradient(90deg, hsla(220, 20%, 20%, 0.2) 1px, transparent 1px);
+    linear-gradient(var(--lp-border-subtle) 1px, transparent 1px),
+    linear-gradient(90deg, var(--lp-border-subtle) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -170,13 +171,13 @@ const emit = defineEmits<{
 .cta-glow-1 {
   top: -200px;
   left: -100px;
-  background: hsl(212, 100%, 45%);
+  background: var(--lp-glow-cyan);
 }
 
 .cta-glow-2 {
   bottom: -200px;
   right: -100px;
-  background: hsl(144, 70%, 50%);
+  background: var(--lp-glow-emerald);
 }
 
 .cta-content {
@@ -191,8 +192,8 @@ const emit = defineEmits<{
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: hsla(220, 20%, 15%, 0.8);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  background: var(--lp-bg-elevated);
+  border: 1px solid var(--lp-border-default);
   border-radius: 100px;
   margin-bottom: 2rem;
 }
@@ -200,7 +201,7 @@ const emit = defineEmits<{
 .cta-badge-dot {
   width: 6px;
   height: 6px;
-  background: hsl(144, 70%, 50%);
+  background: var(--lp-glow-emerald);
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -213,20 +214,20 @@ const emit = defineEmits<{
 .cta-badge-text {
   font-size: 0.85rem;
   font-weight: 500;
-  color: hsl(220, 10%, 70%);
+  color: var(--lp-text-tertiary);
 }
 
 .cta-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 800;
   margin-bottom: 1rem;
-  color: hsl(0, 0%, 100%);
+  color: var(--lp-text-primary);
 }
 
 .cta-subtitle {
   font-size: 1.1rem;
-  color: hsl(220, 10%, 70%);
+  color: var(--lp-text-tertiary);
   max-width: 600px;
   margin: 0 auto 2.5rem;
   line-height: 1.6;
@@ -245,21 +246,21 @@ const emit = defineEmits<{
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, hsl(212, 100%, 45%) 0%, hsl(212, 100%, 35%) 100%);
+  background: var(--lp-gradient-primary);
   border: none;
   border-radius: 12px;
-  color: hsl(0, 0%, 100%);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--lp-text-primary);
+  font-family: var(--lp-font-body);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px hsla(212, 100%, 45%, 0.4);
+  box-shadow: 0 4px 20px var(--lp-glow-cyan);
 }
 
 .cta-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px hsla(212, 100%, 45%, 0.5);
+  box-shadow: 0 8px 30px var(--lp-glow-primary);
 }
 
 .cta-secondary {
@@ -267,11 +268,11 @@ const emit = defineEmits<{
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 1.75rem;
-  background: hsla(220, 20%, 15%, 0.8);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  background: var(--lp-bg-elevated);
+  border: 1px solid var(--lp-border-default);
   border-radius: 12px;
-  color: hsl(0, 0%, 100%);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--lp-text-primary);
+  font-family: var(--lp-font-body);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -279,8 +280,8 @@ const emit = defineEmits<{
 }
 
 .cta-secondary:hover {
-  background: hsla(220, 20%, 18%, 0.9);
-  border-color: hsla(212, 100%, 45%, 0.5);
+  background: var(--lp-bg-card-hover);
+  border-color: var(--lp-border-strong);
 }
 
 .cta-features {
@@ -295,11 +296,11 @@ const emit = defineEmits<{
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: hsl(220, 10%, 65%);
+  color: var(--lp-text-tertiary);
 }
 
 .cta-feature svg {
-  color: hsl(144, 70%, 50%);
+  color: var(--lp-glow-emerald);
 }
 
 /* Floating elements */
@@ -326,8 +327,8 @@ const emit = defineEmits<{
 
 .float-card {
   padding: 0.75rem 1rem;
-  background: hsla(220, 20%, 15%, 0.9);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  background: var(--lp-bg-elevated);
+  border: 1px solid var(--lp-border-default);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -336,10 +337,10 @@ const emit = defineEmits<{
 }
 
 .float-value {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, hsl(212, 100%, 55%), hsl(144, 70%, 50%));
+  background: var(--lp-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -347,7 +348,7 @@ const emit = defineEmits<{
 
 .float-label {
   font-size: 0.75rem;
-  color: hsl(220, 10%, 60%);
+  color: var(--lp-text-muted);
 }
 
 /* Responsive */

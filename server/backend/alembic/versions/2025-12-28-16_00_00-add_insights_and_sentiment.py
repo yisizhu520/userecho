@@ -35,7 +35,6 @@ def upgrade():
         sa.Column('dismissed_reason', sa.Text(), nullable=True),
         sa.Column('created_time', sa.DateTime(timezone=True), nullable=False),
         sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
     )
     

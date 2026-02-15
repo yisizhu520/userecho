@@ -24,6 +24,7 @@ export const overridesPreferences = defineOverridesPreferences({
     enable: false,
   },
   theme: {
-    mode: 'auto',
+   "builtinType": "deep-green",
+   "colorPrimary": "hsl(181 84% 32%)"
   },
 });

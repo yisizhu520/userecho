@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useLandingTheme } from '#/composables/useLandingTheme';
 
 interface Props {
   showOnScroll?: number;
@@ -15,7 +16,10 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const { theme, toggleTheme } = useLandingTheme();
 const isScrolled = ref(false);
+
+const isDark = computed(() => theme.value === 'dark');
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > props.showOnScroll;
@@ -49,11 +53,25 @@ onUnmounted(() => {
       <div class="navbar-links">
         <a href="#features" class="nav-link">功能</a>
         <a href="#workflow" class="nav-link">工作流程</a>
-        <a href="#" class="nav-link">定价</a>
+        <a href="#pricing" class="nav-link">定价</a>
         <a href="#" class="nav-link">文档</a>
       </div>
 
       <div class="navbar-actions">
+        <button
+          class="theme-toggle-btn"
+          :class="{ 'is-dark': isDark, 'is-light': !isDark }"
+          @click="toggleTheme"
+          :title="isDark ? '切换到浅色主题' : '切换到深色主题'"
+        >
+          <svg v-if="isDark" class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg v-else class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
         <button class="btn-login" @click="router.push('/auth/login')">
           登录
         </button>
@@ -77,9 +95,9 @@ onUnmounted(() => {
 }
 
 .navbar-scrolled {
-  background: rgba(10, 14, 39, 0.9);
+  background: var(--lp-bg-elevated);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid var(--lp-border-subtle);
   padding: 0.75rem 0;
 }
 
@@ -127,7 +145,7 @@ onUnmounted(() => {
 }
 
 .nav-link {
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 500;
@@ -147,7 +165,7 @@ onUnmounted(() => {
 }
 
 .nav-link:hover {
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .nav-link:hover::after {
@@ -160,12 +178,37 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-default);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--lp-text-secondary);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--lp-bg-card-hover);
+  border-color: var(--lp-primary-400);
+  color: var(--lp-text-primary);
+}
+
+.theme-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 .btn-login {
   padding: 0.6rem 1.25rem;
   background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid var(--lp-border-default);
   border-radius: 8px;
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -173,8 +216,8 @@ onUnmounted(() => {
 }
 
 .btn-login:hover {
-  border-color: #60a5fa;
-  color: #ffffff;
+  border-color: var(--lp-primary-400);
+  color: var(--lp-text-primary);
 }
 
 .btn-primary {
@@ -187,12 +230,12 @@ onUnmounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px var(--lp-glow-cyan);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 16px var(--lp-glow-primary);
 }
 
 @media (max-width: 768px) {

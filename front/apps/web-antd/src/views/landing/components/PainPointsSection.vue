@@ -164,7 +164,7 @@ onMounted(() => {
 .pain-points-section {
   position: relative;
   padding: 6rem 2rem;
-  background: linear-gradient(180deg, rgba(10, 14, 39, 0.5) 0%, rgba(15, 20, 41, 0.8) 100%);
+  background: var(--lp-bg-secondary);
 }
 
 .pain-points-section::before {
@@ -174,7 +174,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, var(--lp-glow-cyan), transparent);
 }
 
 .section-container {
@@ -192,7 +192,7 @@ onMounted(() => {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800;
   margin-bottom: 1rem;
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .title-text-wrong {
@@ -212,7 +212,7 @@ onMounted(() => {
 }
 
 .title-text-right {
-  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  background: var(--lp-gradient-cool);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -220,7 +220,7 @@ onMounted(() => {
 
 .section-subtitle {
   font-size: 1.15rem;
-  color: #cbd5e1;
+  color: var(--lp-text-secondary);
 }
 
 /* Comparison */
@@ -240,8 +240,8 @@ onMounted(() => {
 }
 
 .comparison-panel {
-  background: rgba(15, 20, 41, 0.8);
-  border: 1px solid rgba(0, 229, 255, 0.15);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-default);
   border-radius: 20px;
   overflow: hidden;
   backdrop-filter: blur(12px);
@@ -257,7 +257,7 @@ onMounted(() => {
 }
 
 .panel-after:hover {
-  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 10px 40px var(--lp-glow-emerald);
 }
 
 .panel-header {
@@ -265,7 +265,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid var(--lp-border-subtle);
 }
 
 .panel-icon {
@@ -285,7 +285,7 @@ onMounted(() => {
 }
 
 .panel-icon-right {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--lp-glow-emerald);
   color: #10b981;
 }
 
@@ -293,7 +293,7 @@ onMounted(() => {
   font-family: var(--lp-font-display);
   font-size: 1.1rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .panel-content {
@@ -305,7 +305,7 @@ onMounted(() => {
 .feedback-scatter {
   position: relative;
   height: 200px;
-  background: rgba(10, 14, 39, 0.8);
+  background: var(--lp-bg-tertiary);
   border-radius: 12px;
   margin-bottom: 1.5rem;
 }
@@ -313,11 +313,11 @@ onMounted(() => {
 .scatter-item {
   position: absolute;
   padding: 0.35rem 0.65rem;
-  background: rgba(26, 32, 66, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: var(--lp-bg-elevated);
+  border: 1px solid var(--lp-border-default);
   border-radius: 6px;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
   white-space: nowrap;
   animation: float-scatter 4s ease-in-out infinite;
 }
@@ -370,7 +370,7 @@ onMounted(() => {
 .cluster-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .cluster-dots {
@@ -396,7 +396,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-around;
   padding-top: 1rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  border-top: 1px solid var(--lp-border-subtle);
 }
 
 .stat-item {
@@ -415,7 +415,7 @@ onMounted(() => {
 }
 
 .stat-right {
-  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  background: var(--lp-gradient-cool);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -423,7 +423,7 @@ onMounted(() => {
 
 .stat-label {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--lp-text-tertiary);
 }
 
 /* Footer */
@@ -432,8 +432,8 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.25rem 1.5rem;
-  background: rgba(10, 14, 39, 0.5);
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  background: var(--lp-bg-tertiary);
+  border-top: 1px solid var(--lp-border-subtle);
 }
 
 .footer-item {
@@ -441,7 +441,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.6rem;
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
 }
 
 .footer-icon {
@@ -465,13 +465,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #00e5ff 0%, #10b981 100%);
+  background: var(--lp-gradient-cool);
   border-radius: 50%;
   font-family: var(--lp-font-display);
   font-weight: 800;
   font-size: 1.1rem;
-  color: #0a0e27;
-  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.4);
+  color: #ffffff;
+  box-shadow: 0 4px 20px var(--lp-glow-cyan);
 }
 
 /* Responsive */

@@ -6,10 +6,13 @@ import HeroSection from './components/HeroSection.vue';
 import PainPointsSection from './components/PainPointsSection.vue';
 import FeaturesSection from './components/FeaturesSection.vue';
 import WorkflowSection from './components/WorkflowSection.vue';
+import PricingSection from './components/pricing/index.vue';
 import CTASection from './components/CTASection.vue';
 import LandingNavbar from './components/LandingNavbar.vue';
+import { useLandingTheme } from '#/composables/useLandingTheme';
 
 const router = useRouter();
+const { theme, initTheme } = useLandingTheme();
 
 const handleGetStarted = () => {
   // 简单的处理：直接跳转到工作台，未登录会被重定向到登录页
@@ -19,11 +22,13 @@ const handleGetStarted = () => {
 onMounted(() => {
   // Add smooth scroll behavior
   document.documentElement.style.scrollBehavior = 'smooth';
+  // Initialize theme
+  initTheme();
 });
 </script>
 
 <template>
-  <div class="landing-page" style="background: linear-gradient(180deg, #0a0e27 0%, #0f1429 50%, #0a0e27 100%);">
+  <div class="landing-page" :class="`theme-${theme}`">
     <LandingNavbar @get-started="handleGetStarted" />
 
     <main class="landing-main">
@@ -31,6 +36,7 @@ onMounted(() => {
       <PainPointsSection />
       <FeaturesSection />
       <WorkflowSection />
+      <PricingSection />
       <CTASection @get-started="handleGetStarted" />
     </main>
 
@@ -72,8 +78,11 @@ onMounted(() => {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-/* Landing page theme - applied to landing-page container */
-.landing-page {
+/* ============================================
+   DARK THEME (default)
+   ============================================ */
+.landing-page.theme-dark {
+  /* Fonts */
   --lp-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --lp-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
@@ -91,6 +100,7 @@ onMounted(() => {
 
   /* Accent colors */
   --lp-accent-cyan: #06b6d4;
+  --lp-accent-cyan-bright: #00e5ff;
   --lp-accent-emerald: #10b981;
   --lp-accent-amber: #f59e0b;
   --lp-accent-purple: #8b5cf6;
@@ -99,10 +109,11 @@ onMounted(() => {
 
   /* Background colors - Deep dark theme */
   --lp-bg-primary: #0a0e27;
-  --lp-bg-secondary: #111836;
+  --lp-bg-secondary: #0f1429;
   --lp-bg-tertiary: #1a2042;
   --lp-bg-card: rgba(26, 32, 66, 0.8);
   --lp-bg-card-hover: rgba(37, 48, 90, 0.9);
+  --lp-bg-elevated: rgba(15, 20, 41, 0.95);
 
   /* Text colors - High contrast */
   --lp-text-primary: #ffffff;
@@ -117,21 +128,110 @@ onMounted(() => {
 
   /* Gradients */
   --lp-gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #10b981 100%);
+  --lp-gradient-hero: linear-gradient(135deg, #00e5ff 0%, #00b7ff 50%, #ff9800 100%);
   --lp-gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  --lp-gradient-cool: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --lp-gradient-cool: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
   --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+  --lp-gradient-bg: linear-gradient(180deg, #0a0e27 0%, #0f1429 50%, #0a0e27 100%);
+
+  /* Canvas background */
+  --lp-canvas-bg: rgba(15, 20, 41, 0.9);
+
+  /* Special effects */
+  --lp-glow-primary: rgba(0, 229, 255, 0.5);
+  --lp-glow-cyan: rgba(6, 182, 212, 0.4);
+  --lp-glow-emerald: rgba(16, 185, 129, 0.4);
+  --lp-glow-amber: rgba(245, 158, 11, 0.4);
+
+  /* Circuit board pattern */
+  --lp-circuit-color: rgba(59, 130, 246, 0.03);
+  --lp-circuit-line: rgba(59, 130, 246, 0.05);
 }
 
+/* ============================================
+   LIGHT THEME - Matches backend admin
+   ============================================ */
+.landing-page.theme-light {
+  /* Fonts */
+  --lp-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --lp-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Primary colors - Blue (matching backend) */
+  --lp-primary-50: #eff6ff;
+  --lp-primary-100: #dbeafe;
+  --lp-primary-200: #bfdbfe;
+  --lp-primary-300: #93c5fd;
+  --lp-primary-400: #60a5fa;
+  --lp-primary-500: #3b82f6;
+  --lp-primary-600: #2563eb;
+  --lp-primary-700: #1d4ed8;
+  --lp-primary-800: #1e40af;
+  --lp-primary-900: #1e3a8a;
+
+  /* Accent colors */
+  --lp-accent-cyan: #06b6d4;
+  --lp-accent-cyan-bright: #00b7ff;
+  --lp-accent-emerald: #10b981;
+  --lp-accent-amber: #f59e0b;
+  --lp-accent-purple: #8b5cf6;
+  --lp-accent-pink: #ec4899;
+  --lp-accent-red: #ef4444;
+
+  /* Background colors - Light theme (matching backend) */
+  --lp-bg-primary: #ffffff;
+  --lp-bg-secondary: #f8fafc;
+  --lp-bg-tertiary: #f1f5f9;
+  --lp-bg-card: #ffffff;
+  --lp-bg-card-hover: #f8fafc;
+  --lp-bg-elevated: #ffffff;
+
+  /* Text colors - Dark for light theme */
+  --lp-text-primary: #0f172a;
+  --lp-text-secondary: #475569;
+  --lp-text-tertiary: #64748b;
+  --lp-text-muted: #94a3b8;
+
+  /* Border colors */
+  --lp-border-subtle: #e2e8f0;
+  --lp-border-default: #cbd5e1;
+  --lp-border-strong: #94a3b8;
+
+  /* Gradients */
+  --lp-gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #10b981 100%);
+  --lp-gradient-hero: linear-gradient(135deg, #00b7ff 0%, #0099ff 50%, #f59e0b 100%);
+  --lp-gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  --lp-gradient-cool: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+  --lp-gradient-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
+
+  /* Canvas background */
+  --lp-canvas-bg: #ffffff;
+
+  /* Special effects - lighter for light theme */
+  --lp-glow-primary: rgba(59, 130, 246, 0.25);
+  --lp-glow-cyan: rgba(6, 182, 212, 0.15);
+  --lp-glow-emerald: rgba(16, 185, 129, 0.15);
+  --lp-glow-amber: rgba(245, 158, 11, 0.15);
+
+  /* Circuit board pattern - subtle */
+  --lp-circuit-color: rgba(59, 130, 246, 0.02);
+  --lp-circuit-line: rgba(59, 130, 246, 0.03);
+}
+
+/* ============================================
+   Base styles (theme-aware)
+   ============================================ */
 .landing-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #0a0e27 0%, #0f1429 50%, #0a0e27 100%);
+  background: var(--lp-gradient-bg);
   font-family: var(--lp-font-body);
   color: var(--lp-text-primary);
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Animated background mesh */
-.landing-page::before {
+/* Animated background mesh - dark theme only */
+.landing-page.theme-dark::before {
   content: '';
   position: fixed;
   top: 0;
@@ -148,6 +248,23 @@ onMounted(() => {
   animation: mesh-move 30s ease-in-out infinite;
 }
 
+/* Light theme subtle background */
+.landing-page.theme-light::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(59, 130, 246, 0.04), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(6, 182, 212, 0.03), transparent 50%),
+    radial-gradient(ellipse 50% 30% at 40% 80%, rgba(16, 185, 129, 0.02), transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: mesh-move 30s ease-in-out infinite;
+}
+
 @keyframes mesh-move {
   0%, 100% { opacity: 1; transform: scale(1) translate(0, 0); }
   50% { opacity: 0.8; transform: scale(1.05) translate(-10px, 10px); }
@@ -158,14 +275,17 @@ onMounted(() => {
   z-index: 1;
 }
 
-/* Footer styles */
+/* ============================================
+   Footer styles (theme-aware)
+   ============================================ */
 .landing-footer {
   position: relative;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(10, 14, 39, 0.8) 0%, #0a0e27 100%);
+  background: var(--lp-bg-secondary);
   border-top: 1px solid var(--lp-border-subtle);
   padding: 4rem 0 2rem;
   backdrop-filter: blur(10px);
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .footer-content {
@@ -227,7 +347,7 @@ onMounted(() => {
 }
 
 .footer-section a:hover {
-  color: var(--lp-primary-400);
+  color: var(--lp-primary-500);
 }
 
 .footer-bottom {
@@ -238,6 +358,7 @@ onMounted(() => {
   text-align: center;
   color: var(--lp-text-tertiary);
   font-size: 0.85rem;
+  transition: border-color 0.3s ease;
 }
 
 @media (max-width: 768px) {

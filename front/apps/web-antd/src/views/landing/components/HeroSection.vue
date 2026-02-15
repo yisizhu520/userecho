@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch, computed } from 'vue';
+import { useLandingTheme } from '#/composables/useLandingTheme';
 
 interface Props {
   title?: string;
@@ -17,14 +18,39 @@ const emit = defineEmits<{
   (e: 'getStarted'): void;
 }>();
 
+const { theme } = useLandingTheme();
 const canvasRef = ref<HTMLCanvasElement>();
 const animationId = ref<number>();
+
+const isDark = computed(() => theme.value === 'dark');
 
 // Split description for better styling
 const descriptionParts = [
   '10倍速度洞察需求',
   '产品经理的决策外脑'
 ];
+
+// Particle colors for each theme
+const getParticleColors = (dark: boolean) => {
+  if (dark) {
+    return [
+      'rgba(0, 229, 255, 0.9)',
+      'rgba(245, 158, 11, 0.9)',
+      'rgba(6, 182, 212, 0.9)',
+      'rgba(16, 185, 129, 0.9)',
+      'rgba(59, 130, 246, 0.9)',
+    ];
+  } else {
+    // Light theme - slightly darker for visibility
+    return [
+      'rgba(37, 99, 235, 0.85)',
+      'rgba(245, 158, 11, 0.85)',
+      'rgba(6, 182, 212, 0.85)',
+      'rgba(16, 185, 129, 0.85)',
+      'rgba(59, 130, 246, 0.85)',
+    ];
+  }
+};
 
 // Particle class for cluster animation
 class Particle {
@@ -37,8 +63,9 @@ class Particle {
   clusterId: number;
   size: number;
   color: string;
+  particleColors: string[];
 
-  constructor(x: number, y: number, clusterId: number) {
+  constructor(x: number, y: number, clusterId: number, colors: string[]) {
     this.x = x;
     this.y = y;
     this.vx = (Math.random() - 0.5) * 2;
@@ -47,19 +74,17 @@ class Particle {
     this.targetY = y;
     this.clusterId = clusterId;
     this.size = Math.random() * 4 + 3;
+    this.particleColors = colors;
     this.color = this.getClusterColor(clusterId);
   }
 
   getClusterColor(id: number): string {
-    // Brand colors only: blue, cyan, green, amber
-    const colors = [
-      'rgba(0, 229, 255, 0.9)',
-      'rgba(245, 158, 11, 0.9)',
-      'rgba(6, 182, 212, 0.9)',
-      'rgba(16, 185, 129, 0.9)',
-      'rgba(59, 130, 246, 0.9)',
-    ];
-    return colors[id % colors.length];
+    return this.particleColors[id % this.particleColors.length];
+  }
+
+  updateColors(colors: string[]) {
+    this.particleColors = colors;
+    this.color = this.getClusterColor(this.clusterId);
   }
 
   update(clustering: boolean, progress: number) {
@@ -102,7 +127,7 @@ class Particle {
       this.y,
       this.size * 2
     );
-    gradient.addColorStop(0, this.color.replace('0.8', '0.3'));
+    gradient.addColorStop(0, this.color.replace('0.9', '0.3').replace('0.85', '0.25'));
     gradient.addColorStop(1, 'transparent');
     ctx.fillStyle = gradient;
     ctx.fill();
@@ -116,6 +141,8 @@ let clusterProgress = 0;
 let animationTime = 0;
 
 const initParticles = () => {
+  const colors = getParticleColors(isDark.value);
+
   particles = [];
   clusters = [
     { x: 100, y: 120 },
@@ -132,7 +159,7 @@ const initParticles = () => {
       const radius = Math.random() * 40;
       const x = cluster.x + Math.cos(angle) * radius;
       const y = cluster.y + Math.sin(angle) * radius;
-      const particle = new Particle(x, y, clusterId);
+      const particle = new Particle(x, y, clusterId, colors);
       particle.targetX = cluster.x + (Math.random() - 0.5) * 30;
       particle.targetY = cluster.y + (Math.random() - 0.5) * 30;
       particles.push(particle);
@@ -142,10 +169,16 @@ const initParticles = () => {
   for (let i = 0; i < 12; i++) {
     const x = Math.random() * 360 + 20;
     const y = Math.random() * 360 + 20;
-    const particle = new Particle(x, y, Math.floor(Math.random() * clusters.length));
+    const particle = new Particle(x, y, Math.floor(Math.random() * clusters.length), colors);
     particles.push(particle);
   }
 };
+
+// Update particle colors when theme changes
+watch(theme, () => {
+  const colors = getParticleColors(isDark.value);
+  particles.forEach(p => p.updateColors(colors));
+});
 
 const animate = () => {
   const canvas = canvasRef.value;
@@ -154,7 +187,10 @@ const animate = () => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  ctx.fillStyle = 'rgba(15, 20, 41, 0.15)';
+  const dark = isDark.value;
+
+  // Clear canvas with theme-aware background
+  ctx.fillStyle = dark ? 'rgba(15, 20, 41, 0.15)' : 'rgba(255, 255, 255, 0.5)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   animationTime += 0.016;
@@ -180,7 +216,7 @@ const animate = () => {
           ctx.moveTo(p1.x, p1.y);
           ctx.lineTo(p2.x, p2.y);
           const alpha = (1 - dist / 60) * 0.3 * clusterProgress;
-          ctx.strokeStyle = p1.color.replace('0.8', String(alpha));
+          ctx.strokeStyle = p1.color.replace('0.9', String(alpha)).replace('0.85', String(alpha));
           ctx.lineWidth = 1;
           ctx.stroke();
         }
@@ -198,7 +234,9 @@ const animate = () => {
     const labelAlpha = (clusterProgress - 0.5) * 2;
     clusters.forEach((cluster, i) => {
       ctx.font = '600 12px "Outfit", sans-serif';
-      ctx.fillStyle = `rgba(255, 255, 255, ${labelAlpha * 0.7})`;
+      ctx.fillStyle = dark
+        ? `rgba(255, 255, 255, ${labelAlpha * 0.7})`
+        : `rgba(15, 23, 42, ${labelAlpha * 0.7})`;
       ctx.textAlign = 'center';
       ctx.fillText(labels[i], cluster.x, cluster.y + 5);
     });
@@ -374,10 +412,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 6rem 2rem 4rem;
   overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(10, 14, 39, 0.9) 0%, rgba(15, 20, 41, 0.95) 100%),
-    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(59, 130, 246, 0.03) 2px, rgba(59, 130, 246, 0.03) 4px),
-    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(59, 130, 246, 0.03) 2px, rgba(59, 130, 246, 0.03) 4px);
+  background: transparent;
 }
 
 /* Circuit board pattern */
@@ -386,8 +421,8 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+    linear-gradient(var(--lp-circuit-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--lp-circuit-line) 1px, transparent 1px);
   background-size: 50px 50px;
   opacity: 0.5;
 }
@@ -399,7 +434,7 @@ onUnmounted(() => {
   right: -10%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(0, 229, 255, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--lp-glow-cyan) 0%, transparent 70%);
   border-radius: 50%;
   filter: blur(100px);
   animation: float-glow 20s ease-in-out infinite;
@@ -432,8 +467,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-default);
   border-radius: 100px;
   width: fit-content;
 }
@@ -454,7 +489,7 @@ onUnmounted(() => {
 .badge-text {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #93c5fd;
+  color: var(--lp-text-secondary);
 }
 
 .hero-title {
@@ -467,37 +502,36 @@ onUnmounted(() => {
 
 .title-line {
   display: block;
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .title-highlight {
   display: block;
-  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 50%, #ff9800 100%);
+  background: var(--lp-gradient-hero);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.5));
+  filter: drop-shadow(0 0 20px var(--lp-glow-cyan));
 }
 
 .hero-description {
   font-size: 1.25rem;
   line-height: 1.6;
   max-width: 480px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .desc-main {
-  color: #e2e8f0;
+  color: var(--lp-text-primary);
   font-weight: 500;
 }
 
 .desc-divider {
-  color: #64748b;
+  color: var(--lp-text-tertiary);
   margin: 0 0.3rem;
 }
 
 .desc-sub {
-  color: #94a3b8;
+  color: var(--lp-text-secondary);
 }
 
 .hero-actions {
@@ -511,15 +545,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.6rem;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 100%);
+  background: var(--lp-gradient-cool);
   border: none;
   border-radius: 12px;
-  color: #0a0e27;
+  color: #ffffff;
   font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.4), 0 0 40px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 4px 20px var(--lp-glow-cyan);
 }
 
 .btn-primary svg {
@@ -528,7 +562,7 @@ onUnmounted(() => {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 229, 255, 0.5), 0 0 60px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 8px 30px var(--lp-glow-primary);
 }
 
 .btn-secondary {
@@ -536,10 +570,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.6rem;
   padding: 1rem 1.75rem;
-  background: rgba(26, 32, 66, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-default);
   border-radius: 12px;
-  color: #e2e8f0;
+  color: var(--lp-text-primary);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -548,9 +582,8 @@ onUnmounted(() => {
 }
 
 .btn-secondary:hover {
-  background: rgba(37, 48, 90, 0.9);
-  border-color: rgba(0, 229, 255, 0.5);
-  color: #ffffff;
+  background: var(--lp-bg-card-hover);
+  border-color: var(--lp-accent-cyan);
 }
 
 .hero-features {
@@ -565,16 +598,16 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  background: rgba(26, 32, 66, 0.7);
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-default);
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #cbd5e1;
+  color: var(--lp-text-secondary);
 }
 
 .feature-tag svg {
-  color: #00e5ff;
+  color: var(--lp-accent-cyan-bright);
 }
 
 .hero-visual {
@@ -588,14 +621,15 @@ onUnmounted(() => {
   position: relative;
   width: 400px;
   height: 400px;
-  background: linear-gradient(135deg, rgba(15, 20, 41, 0.9) 0%, rgba(10, 14, 39, 0.95) 100%);
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  background: var(--lp-canvas-bg);
+  border: 1px solid var(--lp-border-default);
   border-radius: 24px;
   backdrop-filter: blur(12px);
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 0 80px rgba(0, 229, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    0 0 80px var(--lp-glow-cyan),
+    inset 0 1px 0 var(--lp-border-subtle);
+  transition: all 0.3s ease;
 }
 
 .cluster-canvas {
@@ -622,17 +656,17 @@ onUnmounted(() => {
   font-family: var(--lp-font-display);
   font-size: 4rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 50%, #ff9800 100%);
+  background: var(--lp-gradient-hero);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+  text-shadow: 0 0 30px var(--lp-glow-cyan);
   letter-spacing: -0.02em;
 }
 
 .stat-label {
   font-size: 0.9rem;
-  color: #94a3b8;
+  color: var(--lp-text-tertiary);
   font-weight: 500;
   letter-spacing: 0.05em;
 }
@@ -644,10 +678,10 @@ onUnmounted(() => {
   transform: translate(-50%, -50%);
   width: 180px;
   height: 180px;
-  border: 2px solid rgba(0, 229, 255, 0.3);
+  border: 2px solid var(--lp-border-default);
   border-radius: 50%;
   animation: ring-pulse 3s ease-in-out infinite;
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 30px var(--lp-glow-cyan);
 }
 
 @keyframes ring-pulse {
@@ -661,13 +695,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  background: rgba(15, 20, 41, 0.95);
-  border: 1px solid rgba(0, 229, 255, 0.25);
+  background: var(--lp-bg-elevated);
+  border: 1px solid var(--lp-border-default);
   border-radius: 12px;
   backdrop-filter: blur(12px);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(0, 229, 255, 0.1);
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 0 20px var(--lp-glow-cyan);
   animation: float-card 6s ease-in-out infinite;
 }
 
@@ -693,12 +727,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 100%);
+  background: var(--lp-gradient-cool);
   border-radius: 10px;
   font-size: 1.1rem;
-  color: #0a0e27;
+  color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 4px 12px var(--lp-glow-cyan);
 }
 
 .card-content {
@@ -708,7 +742,7 @@ onUnmounted(() => {
 
 .card-title {
   font-size: 0.75rem;
-  color: #fefefe;
+  color: var(--lp-text-tertiary);
   font-weight: 500;
 }
 
@@ -716,7 +750,7 @@ onUnmounted(() => {
   font-family: var(--lp-font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--lp-text-primary);
 }
 
 .scroll-indicator {
@@ -744,7 +778,7 @@ onUnmounted(() => {
 
 .scroll-text {
   font-size: 0.75rem;
-  color: #475569;
+  color: var(--lp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
