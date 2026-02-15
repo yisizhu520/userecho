@@ -24,39 +24,76 @@ const animationId = ref<number>();
 
 const isDark = computed(() => theme.value === 'dark');
 
+// Make STAGE_CONFIG available to template
+const stageConfig = {
+  INGEST: { label: '收集反馈', icon: '📥', color: '#60a5fa' },
+  PROCESS: { label: '智能聚类', icon: '🧠', color: '#a78bfa' },
+  INSIGHT: { label: '发现洞察', icon: '⚡', color: '#fbbf24' },
+  SYNC: { label: '同步进度', icon: '✓', color: '#34d399' },
+};
+const STAGE_CONFIG = Object.values(stageConfig);
+
 // Animation State Machine
-type AnimationPhase = 'SCATTERED' | 'SCANNING' | 'CLUSTERING' | 'HOLD';
-let currentPhase: AnimationPhase = 'SCATTERED';
-let phaseTimer = 0;
+type AnimationStage = 'INGEST' | 'PROCESS' | 'INSIGHT' | 'SYNC';
+let currentStage: AnimationStage = 'INGEST';
+let previousStage: AnimationStage | null = null;
+let frameCount = 0;
+let stageTransition: number = 0; // 0-1 for smooth transitions
 
 // Constants
-const CANVAS_SIZE = 400;
-const CLUSTER_LABELS = ['性能问题', '新功能', 'UI优化', 'Bug修复', '体验改进'];
-const NEUTRAL_COLOR_LIGHT = 'rgba(148, 163, 184, 0.4)'; // Slate 400
-const NEUTRAL_COLOR_DARK = 'rgba(148, 163, 184, 0.2)';  // Slate 400 dimmed
-const SCAN_LINE_COLOR = 'rgba(56, 189, 248, 0.6)';      // Light Blue
+const CANVAS_WIDTH = 560;
+const CANVAS_HEIGHT = 480;
 
-// Particle colors for each theme - Professional Blue Palette
-const getParticleColors = (dark: boolean) => {
-  if (dark) {
-    return [
-      'rgba(59, 130, 246, 1)',   // Blue 500
-      'rgba(37, 99, 235, 1)',    // Blue 600
-      'rgba(96, 165, 250, 1)',   // Blue 400
-      'rgba(147, 197, 253, 1)',  // Blue 300
-      'rgba(255, 255, 255, 0.9)', // White accent
-    ];
-  } else {
-    return [
-      'rgba(29, 78, 216, 1)',    // Blue 700
-      'rgba(37, 99, 235, 1)',    // Blue 600
-      'rgba(59, 130, 246, 1)',   // Blue 500
-      'rgba(96, 165, 250, 1)',   // Blue 400
-      'rgba(15, 23, 42, 0.8)',   // Slate accent
-    ];
-  }
+// Cluster labels - AI-parsed requirement themes from feedback
+const CLUSTER_LABELS = ['数据导出需求', '首屏加载优化', '暗色主题适配', '批量操作支持', '移动端体验'];
+
+// Real feedback text samples for INGEST stage (grouped by cluster)
+const FEEDBACK_SAMPLES = [
+  // Cluster 1: 数据导出需求
+  '希望能导出Excel报表',
+  '需要PDF导出功能',
+  '数据能导出就好了',
+  '支持CSV导出吗',
+  '想下载历史数据',
+
+  // Cluster 2: 首屏加载优化
+  '页面加载有点慢',
+  '首屏等待时间太长',
+  '希望能快点加载',
+  '初始化太慢了',
+  '打开页面要等好久',
+
+  // Cluster 3: 暗色主题适配
+  '想要暗色模式',
+  '晚上用太刺眼了',
+  '支持深色主题就好了',
+  '有没有夜间模式',
+  '暗色模式更护眼',
+
+  // Cluster 4: 批量操作支持
+  '需要一个批量删除',
+  '批量编辑功能',
+  '不支持批量操作吗',
+  '一条条处理太慢',
+  '希望能批量导入',
+
+  // Cluster 5: 移动端体验
+  '手机上不太好操作',
+  '移动端适配问题',
+  '响应式布局有bug',
+  '手机字体太小',
+  '触屏操作不便',
+];
+
+// Colors
+const COLOR_PALETTE = {
+  neutral: (dark: boolean) => dark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(148, 163, 184, 0.5)',
+  highlight: '#F59E0B', // Amber 500 for "Insight"
+  sync: '#10B981',      // Emerald 500 for "Sync"
+  scanLine: 'rgba(56, 189, 248, 0.5)',
 };
 
+// Particle Class
 class Particle {
   x: number;
   y: number;
@@ -65,292 +102,497 @@ class Particle {
   targetX: number;
   targetY: number;
   clusterId: number;
-  size: number;
   baseColor: string;
-  activeColor: string;
-  isActive: boolean;
+  clusterColor: string;
+  currentColor: string;
+  size: number;
   
-  constructor(x: number, y: number, clusterId: number, activeColors: string[], isDark: boolean) {
-    this.x = x;
-    this.y = y;
-    this.vx = (Math.random() - 0.5) * 1.5;
-    this.vy = (Math.random() - 0.5) * 1.5;
-    this.targetX = x;
-    this.targetY = y;
+  // State flags
+  isIngested: boolean = false;
+  isHighValue: boolean = false;
+  isSynced: boolean = false;
+
+  constructor(clusterId: number, clusterColor: string, isDark: boolean) {
+    // Start from random edge
+    const edge = Math.floor(Math.random() * 4);
+    if (edge === 0) { this.x = Math.random() * CANVAS_WIDTH; this.y = -20; } // Top
+    else if (edge === 1) { this.x = CANVAS_WIDTH + 20; this.y = Math.random() * CANVAS_HEIGHT; } // Right
+    else if (edge === 2) { this.x = Math.random() * CANVAS_WIDTH; this.y = CANVAS_HEIGHT + 20; } // Bottom
+    else { this.x = -20; this.y = Math.random() * CANVAS_HEIGHT; } // Left
+
+    this.vx = (Math.random() - 0.5) * 2;
+    this.vy = (Math.random() - 0.5) * 2;
+    
     this.clusterId = clusterId;
-    this.size = Math.random() * 3 + 2.5; // Slightly smaller for elegance
-    this.activeColor = activeColors[clusterId % activeColors.length];
-    this.baseColor = isDark ? NEUTRAL_COLOR_DARK : NEUTRAL_COLOR_LIGHT;
-    this.isActive = false;
+    this.clusterColor = clusterColor;
+    this.baseColor = COLOR_PALETTE.neutral(isDark);
+    this.currentColor = this.baseColor;
+    this.size = Math.random() * 3 + 2;
+    
+    // Target position set later
+    this.targetX = CANVAS_WIDTH / 2;
+    this.targetY = CANVAS_HEIGHT / 2;
   }
 
-  update(phase: AnimationPhase, progress: number, scanX: number) {
-    // Phase 1: Scattered - random drift
-    if (phase === 'SCATTERED') {
-      this.x += this.vx;
-      this.y += this.vy;
-      this.isActive = false;
+  update(stage: AnimationStage, progress: number) {
+    const centerX = CANVAS_WIDTH / 2;
+    const centerY = CANVAS_HEIGHT / 2;
 
-      // Bounce off walls
-      if (this.x < 0 || this.x > CANVAS_SIZE) this.vx *= -1;
-      if (this.y < 0 || this.y > CANVAS_SIZE) this.vy *= -1;
+    // Smooth easing function
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    // 1. INGEST: Particles orbit slowly in background (texts take focus)
+    if (stage === 'INGEST') {
+      // Slow orbital motion around center - subtle background effect
+      const angle = Math.atan2(this.y - centerY, this.x - centerX);
+      const dist = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
+      const targetDist = 150 + this.clusterId * 30;
+
+      // Gentle drift towards orbital position
+      const targetX = centerX + Math.cos(angle + 0.002) * targetDist;
+      const targetY = centerY + Math.sin(angle + 0.002) * targetDist;
+
+      this.x += (targetX - this.x) * 0.02;
+      this.y += (targetY - this.y) * 0.02;
+
+      // Subtle opacity - particles are background during INGEST
+      this.currentColor = this.baseColor;
     }
-    
-    // Phase 2: Scanning - activate when scan line passes
-    else if (phase === 'SCANNING') {
-       this.x += this.vx * 0.5; // Slow down drift
-       this.y += this.vy * 0.5;
-       
-       if (this.x < scanX + 20) {
-         this.isActive = true;
-       }
-    }
-    
-    // Phase 3: Clustering - move to target
-    else if (phase === 'CLUSTERING') {
+
+    // 2. PROCESS: Smooth move to Cluster Target
+    else if (stage === 'PROCESS') {
       const dx = this.targetX - this.x;
       const dy = this.targetY - this.y;
-      // Easing function for smooth arrival
-      this.x += dx * 0.08;
-      this.y += dy * 0.08;
-      this.isActive = true;
+      const easedProgress = easeOutCubic(progress);
+
+      this.x += dx * 0.08 * (1 + easedProgress);
+      this.y += dy * 0.08 * (1 + easedProgress);
     }
-    
-    // Phase 4: Hold - slight vibration around target
-    else if (phase === 'HOLD') {
-      this.x += (Math.random() - 0.5) * 0.2;
-      this.y += (Math.random() - 0.5) * 0.2;
-      this.isActive = true;
+
+    // 3. INSIGHT: Gentle drift, High Value pulse
+    else if (stage === 'INSIGHT') {
+      const time = frameCount * 0.03;
+      this.x += Math.sin(time + this.clusterId) * 0.2;
+      this.y += Math.cos(time + this.clusterId * 0.7) * 0.2;
+
+      if (this.isHighValue) {
+        this.currentColor = COLOR_PALETTE.highlight;
+        // Smooth pulse
+        const pulse = Math.sin(frameCount * 0.08) * 0.5 + 0.5;
+        this.size = 4 + pulse * 2;
+      } else {
+        // Subtle dim for others
+        const dimFactor = 0.2 + Math.sin(frameCount * 0.02 + this.clusterId) * 0.1;
+        this.currentColor = this.clusterColor.replace('1)', `${dimFactor})`).replace('0.9)', `${dimFactor})`);
+      }
+    }
+
+    // 4. SYNC: Smooth flyout for High Value
+    else if (stage === 'SYNC') {
+      if (this.isHighValue && !this.isSynced) {
+        const flyoutProgress = Math.min(1, progress * 2);
+        const easedFlyout = easeInOutQuad(flyoutProgress);
+
+        this.x += easedFlyout * 6;
+        this.y -= easedFlyout * 1.5;
+        this.currentColor = COLOR_PALETTE.sync;
+
+        if (flyoutProgress >= 1) {
+          this.isSynced = true;
+        }
+      }
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, scanX: number) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     
-    // Color transition
-    ctx.fillStyle = this.isActive ? this.activeColor : this.baseColor;
+    // Special coloring for PROCESS stage
+    if (currentStage === 'PROCESS') {
+      // If scanline passed, show cluster color
+      if (this.x < scanX) {
+        ctx.fillStyle = this.clusterColor;
+      } else {
+        ctx.fillStyle = this.baseColor;
+      }
+    } else {
+      ctx.fillStyle = this.currentColor;
+    }
+    
     ctx.fill();
-
-    // Glow effect if active
-    if (this.isActive) {
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = this.activeColor;
+    
+    // Glue glow for high value
+    if (this.isHighValue && (currentStage === 'INSIGHT' || currentStage === 'SYNC')) {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = this.currentColor;
     } else {
       ctx.shadowBlur = 0;
     }
   }
 }
 
-let particles: Particle[] = [];
-let clusters: { x: number; y: number }[] = [];
+// Flying Feedback Text Class for INGEST stage
+class FeedbackText {
+  text: string;
+  x: number;
+  y: number;
+  z: number; // Depth: 0 (far) to 1 (near)
+  vx: number;
+  vy: number;
+  vz: number;
+  opacity: number;
+  scale: number;
+  collected: boolean = false;
+  spawnDelay: number;
 
-const initParticles = () => {
-  const activeColors = getParticleColors(isDark.value);
-  particles = [];
-  
-  // Define cluster centers
-  clusters = [
-    { x: 100, y: 120 },
-    { x: 280, y: 100 },
-    { x: 180, y: 250 },
-    { x: 320, y: 280 },
-    { x: 80, y: 300 },
-  ];
+  constructor(text: string, isDark: boolean) {
+    this.text = text;
 
-  clusters.forEach((cluster, clusterId) => {
-    const particleCount = 10 + Math.floor(Math.random() * 8);
-    for (let i = 0; i < particleCount; i++) {
-      // Random starting position (scattered)
-      const startX = Math.random() * CANVAS_SIZE;
-      const startY = Math.random() * CANVAS_SIZE;
-      
-      const particle = new Particle(startX, startY, clusterId, activeColors, isDark.value);
-      
-      // Calculate target position (clustered around center)
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 35; // Tightness of cluster
-      particle.targetX = cluster.x + Math.cos(angle) * radius;
-      particle.targetY = cluster.y + Math.sin(angle) * radius;
-      
-      particles.push(particle);
+    // Start from random position outside canvas
+    const edge = Math.floor(Math.random() * 4);
+    const margin = 200; // Start further away for depth effect
+
+    if (edge === 0) {
+      this.x = Math.random() * CANVAS_WIDTH;
+      this.y = -margin;
+    } else if (edge === 1) {
+      this.x = CANVAS_WIDTH + margin;
+      this.y = Math.random() * CANVAS_HEIGHT;
+    } else if (edge === 2) {
+      this.x = Math.random() * CANVAS_WIDTH;
+      this.y = CANVAS_HEIGHT + margin;
+    } else {
+      this.x = -margin;
+      this.y = Math.random() * CANVAS_HEIGHT;
     }
-  });
 
-  // Add some noise particles (belong to random clusters)
-  for (let i = 0; i < 15; i++) {
-     const startX = Math.random() * CANVAS_SIZE;
-     const startY = Math.random() * CANVAS_SIZE;
-     const clusterId = Math.floor(Math.random() * clusters.length);
-     const particle = new Particle(startX, startY, clusterId, activeColors, isDark.value);
-     // Target is also random-ish for these, but loosely pulled to center
-     particle.targetX = clusters[clusterId].x + (Math.random() - 0.5) * 80;
-     particle.targetY = clusters[clusterId].y + (Math.random() - 0.5) * 80;
-     particles.push(particle);
+    // Depth (z) creates perspective - farther objects move slower
+    this.z = Math.random() * 0.5 + 0.5;
+    this.vx = (CANVAS_WIDTH / 2 - this.x) * 0.003 * this.z;
+    this.vy = (CANVAS_HEIGHT / 2 - this.y) * 0.003 * this.z;
+    this.vz = 0.002;
+
+    this.opacity = 0;
+    this.scale = 0.3 + this.z * 0.4;
+    this.spawnDelay = Math.floor(Math.random() * 60);
+  }
+
+  update(centerX: number, centerY: number) {
+    if (this.spawnDelay > 0) {
+      this.spawnDelay--;
+      return;
+    }
+
+    // Move towards center
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Accelerate as they get closer (gravity effect)
+    this.vx *= 1.02;
+    this.vy *= 1.02;
+
+    // Fade in then fade out near center
+    const dist = Math.sqrt((centerX - this.x) ** 2 + (centerY - this.y) ** 2);
+    if (dist > 300) {
+      this.opacity = Math.min(1, this.opacity + 0.05);
+    } else if (dist < 80) {
+      this.opacity = Math.max(0, this.opacity - 0.08);
+    }
+
+    // Scale up as approaching (perspective)
+    this.scale = Math.min(1, this.scale + 0.005);
+
+    // Mark as collected when very close to center
+    if (dist < 30) {
+      this.collected = true;
+    }
+  }
+
+  draw(ctx: CanvasRenderingContext2D, isDark: boolean) {
+    if (this.spawnDelay > 0 || this.opacity <= 0.01) return;
+
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.translate(this.x, this.y);
+    ctx.scale(this.scale, this.scale);
+
+    // Text with subtle glow
+    ctx.font = '500 14px "Outfit", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Subtle shadow for depth
+    ctx.shadowColor = isDark ? 'rgba(96, 165, 250, 0.3)' : 'rgba(59, 130, 246, 0.2)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 2;
+
+    // Background pill
+    const metrics = ctx.measureText(this.text);
+    const padding = 12;
+    const pillWidth = metrics.width + padding * 2;
+    const pillHeight = 26;
+
+    ctx.fillStyle = isDark
+      ? `rgba(30, 41, 59, ${0.6 * this.opacity})`
+      : `rgba(255, 255, 255, ${0.8 * this.opacity})`;
+    ctx.beginPath();
+    ctx.roundRect(-pillWidth / 2, -pillHeight / 2, pillWidth, pillHeight, 8);
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = isDark
+      ? `rgba(96, 165, 250, ${0.3 * this.opacity})`
+      : `rgba(59, 130, 246, ${0.2 * this.opacity})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Text
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = isDark
+      ? `rgba(226, 232, 240, ${this.opacity})`
+      : `rgba(30, 41, 59, ${this.opacity})`;
+    ctx.fillText(this.text, 0, 0);
+
+    ctx.restore();
+  }
+}
+
+// Variables
+let particles: Particle[] = [];
+let feedbackTexts: FeedbackText[] = [];
+let clusters: { x: number; y: number }[] = [];
+const activeStageIndex = ref(0);
+const stageProgress = ref(0);
+
+// Stage progress bars
+const stageProgressBars = ref([0, 0, 0, 0]);
+
+const getClusterColors = (dark: boolean) => {
+  if (dark) {
+    return ['#3b82f6', '#2563eb', '#60a5fa', '#93c5fd', '#ffffff'];
+  } else {
+    return ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#0f172a'];
   }
 };
 
-// Update particle colors when theme changes
-watch(theme, () => {
-  initParticles(); // Re-init to catch new colors easiest way
-});
+const initParticles = () => {
+  const colors = getClusterColors(isDark.value);
+  particles = [];
+  feedbackTexts = [];
+
+  // Define 5 clusters spread out more due to larger canvas
+  const cx = CANVAS_WIDTH / 2;
+  const cy = CANVAS_HEIGHT / 2;
+
+  clusters = [
+    { x: cx, y: cy - 80 },      // Top Center
+    { x: cx + 100, y: cy },     // Right
+    { x: cx + 60, y: cy + 100 }, // Bottom Right
+    { x: cx - 60, y: cy + 100 }, // Bottom Left
+    { x: cx - 100, y: cy },     // Left
+  ];
+
+  clusters.forEach((cluster, id) => {
+    // High value cluster? Let's say id 0 (Top Center) is high value "Critical"
+    const isHighValueCluster = id === 0;
+
+    for (let i = 0; i < 15; i++) {
+      const p = new Particle(id, colors[id % colors.length], isDark.value);
+
+      // Target position
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 30;
+      p.targetX = cluster.x + Math.cos(angle) * radius;
+      p.targetY = cluster.y + Math.sin(angle) * radius;
+
+      // Mark high value particles
+      if (isHighValueCluster && i < 5) { // Only kernel is high value
+        p.isHighValue = true;
+      }
+
+      particles.push(p);
+    }
+  });
+
+  // Create flying feedback texts (use all samples, staggered)
+  FEEDBACK_SAMPLES.forEach((text) => {
+    feedbackTexts.push(new FeedbackText(text, isDark.value));
+  });
+};
+
+watch(theme, initParticles);
 
 const animate = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-
   const dark = isDark.value;
-  
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Use clearRect for transparent bg
-  
-  // Phase Logic
-  phaseTimer += 1; // 60fps approx
-  
+
+  // Clear with subtle fade trail for motion blur effect
+  ctx.fillStyle = dark ? 'rgba(15, 23, 42, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  frameCount++;
+
+  // Cycle Logic (Total Cycle ~ 12s = 720 frames at 60fps)
   let scanX = 0;
-  
-  // 1. Scattered (0-120 frames / 2s)
-  if (phaseTimer < 120) {
-    currentPhase = 'SCATTERED';
-  } 
-  // 2. Scanning (120-240 frames / 2s)
-  else if (phaseTimer < 240) {
-    currentPhase = 'SCANNING';
-    const progress = (phaseTimer - 120) / 120; // 0 to 1
-    scanX = progress * CANVAS_SIZE;
-    
-    // Draw Scan Line
-    const gradient = ctx.createLinearGradient(scanX, 0, scanX, CANVAS_SIZE);
-    gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
-    gradient.addColorStop(0.5, SCAN_LINE_COLOR);
-    gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 2;
+  const cycleTime = frameCount % 720;
+  const stages: AnimationStage[] = ['INGEST', 'PROCESS', 'INSIGHT', 'SYNC'];
+  const stageDurations = [180, 140, 200, 200]; // frames per stage
+  const stageBreaks = [0, 180, 320, 520, 720];
+
+  // Determine current stage
+  let newStage: AnimationStage = 'INGEST';
+  let stageIdx = 0;
+  let localProgress = 0;
+
+  for (let i = 0; i < stages.length; i++) {
+    if (cycleTime >= stageBreaks[i] && cycleTime < stageBreaks[i + 1]) {
+      newStage = stages[i];
+      stageIdx = i;
+      localProgress = (cycleTime - stageBreaks[i]) / stageDurations[i];
+      break;
+    }
+  }
+
+  // Handle stage transition
+  if (newStage !== currentStage) {
+    previousStage = currentStage;
+    currentStage = newStage;
+    stageTransition = 0;
+  }
+  stageTransition = Math.min(1, stageTransition + 0.03);
+
+  // Update reactive state
+  activeStageIndex.value = stageIdx;
+  stageProgress.value = localProgress;
+
+  // Update progress bars
+  const newProgressBars = [0, 0, 0, 0];
+  for (let i = 0; i < stageIdx; i++) newProgressBars[i] = 1;
+  newProgressBars[stageIdx] = localProgress;
+  stageProgressBars.value = newProgressBars;
+
+  // Stage-specific rendering
+  if (currentStage === 'INGEST') {
+    // Draw flying feedback texts
+    const centerX = CANVAS_WIDTH / 2;
+    const centerY = CANVAS_HEIGHT / 2;
+
+    // Update and draw feedback texts
+    feedbackTexts.forEach(ft => {
+      ft.update(centerX, centerY);
+      ft.draw(ctx, dark);
+    });
+
+    // Remove collected texts
+    feedbackTexts = feedbackTexts.filter(ft => !ft.collected);
+  } else if (currentStage === 'PROCESS') {
+    // Scanline progress
+    scanX = localProgress * CANVAS_WIDTH;
+
+    // Draw elegant scanline
+    const gradient = ctx.createLinearGradient(scanX - 80, 0, scanX + 20, 0);
+    gradient.addColorStop(0, 'rgba(96, 165, 250, 0)');
+    gradient.addColorStop(0.8, 'rgba(96, 165, 250, 0.3)');
+    gradient.addColorStop(1, 'rgba(96, 165, 250, 0.6)');
+
     ctx.beginPath();
     ctx.moveTo(scanX, 0);
-    ctx.lineTo(scanX, CANVAS_SIZE);
+    ctx.lineTo(scanX, CANVAS_HEIGHT);
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
     ctx.stroke();
-    
-    // Draw scan glow area
-    const glowGrad = ctx.createLinearGradient(scanX - 50, 0, scanX, 0);
-    glowGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
-    glowGrad.addColorStop(1, 'rgba(56, 189, 248, 0.1)');
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(scanX - 50, 0, 50, CANVAS_SIZE);
+
+    // Glow effect
+    ctx.fillStyle = gradient;
+    ctx.fillRect(scanX - 80, 0, 100, CANVAS_HEIGHT);
+  } else if (currentStage === 'INSIGHT') {
+    // Pulsing highlight effect
+    const pulseIntensity = Math.sin(frameCount * 0.05) * 0.2 + 0.8;
+  } else if (currentStage === 'SYNC') {
+    // Sync flyout
   }
-  // 3. Clustering (240-300 frames / 1s)
-  else if (phaseTimer < 300) {
-    currentPhase = 'CLUSTERING';
-  }
-  // 4. Hold (300-600 frames / 5s)
-  else if (phaseTimer < 600) {
-    currentPhase = 'HOLD';
-  }
-  // Reset
-  else {
-    phaseTimer = 0;
-    // Re-randomize positions for restart effect to start 'SCATTERED' fresh? 
-    // Actually better to let them explode out.
-    // Let's reset phaseTimer but maybe force particles to 'explode' logic if needed.
-    // For simplicity, just reset loop, their position is at target, so scattered phase will drift them.
-    // To make it look 'new', let's re-randomize velocities slightly
+
+  // Reset particles and feedback texts at cycle end
+  if (cycleTime === 0 && frameCount > 10) {
     particles.forEach(p => {
-       p.vx = (Math.random() - 0.5) * 4; // Faster explosion
-       p.vy = (Math.random() - 0.5) * 4;
+      const edge = Math.floor(Math.random() * 4);
+      if (edge === 0) { p.x = Math.random() * CANVAS_WIDTH; p.y = -20; }
+      else if (edge === 1) { p.x = CANVAS_WIDTH + 20; p.y = Math.random() * CANVAS_HEIGHT; }
+      else if (edge === 2) { p.x = Math.random() * CANVAS_WIDTH; p.y = CANVAS_HEIGHT + 20; }
+      else { p.x = -20; p.y = Math.random() * CANVAS_HEIGHT; }
+      p.vx = (Math.random() - 0.5) * 2;
+      p.vy = (Math.random() - 0.5) * 2;
+      p.isSynced = false;
+    });
+
+    // Reset feedback texts
+    feedbackTexts = [];
+    FEEDBACK_SAMPLES.forEach((text) => {
+      feedbackTexts.push(new FeedbackText(text, dark));
     });
   }
 
-  // Update & Draw Particles
+  // Update and draw particles with smooth easing
   particles.forEach(p => {
-    p.update(currentPhase, 0, scanX);
-    p.draw(ctx);
+    p.update(currentStage, localProgress);
+    p.draw(ctx, scanX);
   });
-  
-  // Draw Connections (Only in Clustering/Hold & Active)
-  if (currentPhase === 'CLUSTERING' || currentPhase === 'HOLD') {
-    ctx.globalAlpha = currentPhase === 'CLUSTERING' ? 0.2 : 0.3;
-    particles.forEach((p1, i) => {
-        // Optimization: check only close neighbors or same cluster
-        if (!p1.isActive) return;
-        
-        // Only connect same cluster
-        particles.slice(i + 1).forEach(p2 => {
-            if (p1.clusterId === p2.clusterId && p2.isActive) {
-                 const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                 if (dist < 50) {
-                     ctx.beginPath();
-                     ctx.moveTo(p1.x, p1.y);
-                     ctx.lineTo(p2.x, p2.y);
-                     ctx.strokeStyle = p1.activeColor;
-                     ctx.lineWidth = 0.5;
-                     ctx.stroke();
-                 }
-            }
-        });
-    });
-    ctx.globalAlpha = 1;
-  }
 
-  // Draw Labels (Only in Hold Phase)
-  if (currentPhase === 'HOLD') {
-      const opacity = Math.min(1, (phaseTimer - 300) / 30); // Fade in
-      
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      clusters.forEach((cluster, i) => {
-        const text = CLUSTER_LABELS[i];
-        
-        // Pill Background
-        ctx.font = '600 13px "Outfit", sans-serif';
-        const metrics = ctx.measureText(text);
-        const padX = 12;
-        const padY = 6;
-        const w = metrics.width + padX * 2;
-        const h = 28;
-        
-        // Draw Shadow
-        ctx.shadowColor = 'rgba(0,0,0,0.1)';
-        ctx.shadowBlur = 10;
-        
-        // Background Pill
-        ctx.fillStyle = dark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)';
-        // Draw rounded rect manually-ish or use standard if available (standard in modern browsers)
-        if (ctx.roundRect) {
-            ctx.beginPath();
-            ctx.roundRect(cluster.x - w/2, cluster.y - h/2 - 40, w, h, 14); // -40 offset to float above
-            ctx.fill();
-        } else {
-            ctx.fillRect(cluster.x - w/2, cluster.y - h/2 - 40, w, h);
-        }
-        
-        ctx.shadowBlur = 0;
-        
-        // Border
-        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
-        ctx.lineWidth = 1;
+  // Draw cluster labels with smooth fade
+  if (currentStage === 'PROCESS' || currentStage === 'INSIGHT') {
+    const fadeInProgress = currentStage === 'PROCESS'
+      ? Math.min(1, (cycleTime - stageBreaks[1]) / 40)
+      : 1;
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '500 12px "Outfit", sans-serif';
+
+    clusters.forEach((c, i) => {
+      const isHighValue = i === 0;
+      let alpha = fadeInProgress;
+
+      if (currentStage === 'INSIGHT' && !isHighValue) {
+        alpha = 0.25;
+      }
+
+      ctx.globalAlpha = alpha;
+      const text = CLUSTER_LABELS[i];
+
+      // Minimal label design
+      const metrics = ctx.measureText(text);
+      const w = metrics.width + 16;
+      const h = 24;
+
+      // Subtle background
+      ctx.fillStyle = dark
+        ? `rgba(30, 41, 59, ${isHighValue && currentStage === 'INSIGHT' ? 0.95 : 0.7})`
+        : `rgba(255, 255, 255, ${isHighValue && currentStage === 'INSIGHT' ? 0.95 : 0.8})`;
+      ctx.beginPath();
+      ctx.roundRect(c.x - w/2, c.y - h/2 - 38, w, h, 6);
+      ctx.fill();
+
+      // Accent border for high value
+      if (isHighValue && currentStage === 'INSIGHT') {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
-        
-        // Text
-        ctx.fillStyle = dark ? '#e2e8f0' : '#0f172a';
-        ctx.fillText(text, cluster.x, cluster.y - 40);
-        
-        // Little connector line
-        ctx.beginPath();
-        ctx.moveTo(cluster.x, cluster.y - 40 + h/2);
-        ctx.lineTo(cluster.x, cluster.y - 10);
-        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
-        ctx.stroke();
-        
-        // Little dot at bottom
-        ctx.beginPath();
-        ctx.arc(cluster.x, cluster.y - 10, 2, 0, Math.PI*2);
-        ctx.fillStyle = dark ? '#fff' : '#000';
-        ctx.fill();
-        
-      });
+      }
+
+      // Text
+      ctx.fillStyle = dark
+        ? (isHighValue && currentStage === 'INSIGHT' ? '#fbbf24' : '#cbd5e1')
+        : (isHighValue && currentStage === 'INSIGHT' ? '#d97706' : '#475569');
+      ctx.fillText(text, c.x, c.y - 38);
+
+      ctx.globalAlpha = 1;
+    });
   }
 
   animationId.value = requestAnimationFrame(animate);
@@ -359,8 +601,8 @@ const animate = () => {
 onMounted(() => {
   const canvas = canvasRef.value;
   if (canvas) {
-    canvas.width = 400;
-    canvas.height = 400;
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
     initParticles();
     animate();
   }
@@ -481,27 +723,23 @@ onUnmounted(() => {
       <div class="hero-visual">
         <div class="canvas-container">
           <canvas ref="canvasRef" class="cluster-canvas"></canvas>
-          <div class="canvas-overlay">
-            <div class="overlay-stat">
-              <span class="stat-value">10x</span>
-              <span class="stat-label">处理速度</span>
+          <div class="canvas-stage-indicator">
+            <div class="stage-dots">
+              <div
+                v-for="(stage, idx) in STAGE_CONFIG"
+                :key="idx"
+                class="stage-dot"
+                :class="{ active: activeStageIndex === idx, completed: activeStageIndex > idx }"
+              >
+                <span class="dot-icon">{{ stage.icon }}</span>
+                <span class="dot-label">{{ stage.label }}</span>
+                <div
+                  v-if="activeStageIndex === idx"
+                  class="dot-progress"
+                  :style="{ width: `${stageProgress * 100}%` }"
+                ></div>
+              </div>
             </div>
-            <div class="overlay-ring"></div>
-          </div>
-        </div>
-
-        <div class="floating-card card-1">
-          <div class="card-icon">✓</div>
-          <div class="card-content">
-            <div class="card-title">已聚类</div>
-            <div class="card-value">127 条反馈</div>
-          </div>
-        </div>
-        <div class="floating-card card-2">
-          <div class="card-icon">⚡</div>
-          <div class="card-content">
-            <div class="card-title">高优先级</div>
-            <div class="card-value">8 个主题</div>
           </div>
         </div>
       </div>
@@ -730,8 +968,8 @@ onUnmounted(() => {
 
 .canvas-container {
   position: relative;
-  width: 400px;
-  height: 400px;
+  width: 560px;
+  height: 480px;
   background: var(--lp-canvas-bg);
   border: 1px solid var(--lp-border-default);
   border-radius: 24px;
@@ -757,114 +995,79 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.overlay-stat {
-  text-align: center;
-  z-index: 1;
-}
-
-.stat-value {
-  display: block;
-  font-family: var(--lp-font-display);
-  font-size: 4rem;
-  font-weight: 900;
-  background: var(--lp-gradient-hero);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  background-clip: text;
-  /* Removed text-shadow for professional clean look */
-  letter-spacing: -0.02em;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: var(--lp-text-tertiary);
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-
-.overlay-ring {
+.canvas-stage-indicator {
   position: absolute;
-  top: 50%;
+  bottom: 24px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 180px;
-  height: 180px;
-  border: 2px solid var(--lp-border-default);
-  border-radius: 50%;
-  animation: ring-pulse 3s ease-in-out infinite;
-  box-shadow: 0 0 30px var(--lp-glow-cyan);
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
-@keyframes ring-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.3; }
-}
-
-.floating-card {
-  position: absolute;
+.stage-dots {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1.25rem;
-  background: var(--lp-bg-elevated);
-  border: 1px solid var(--lp-border-default);
-  border-radius: 12px;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--lp-bg-elevated, rgba(15, 23, 42, 0.6));
   backdrop-filter: blur(12px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    0 0 20px var(--lp-glow-cyan);
-  animation: float-card 6s ease-in-out infinite;
+  border: 1px solid var(--lp-border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 20px;
 }
 
-.card-1 {
-  top: 10%;
-  right: -20px;
-}
-
-.card-2 {
-  bottom: 15%;
-  left: -30px;
-  animation-delay: -3s;
-}
-
-@keyframes float-card {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-}
-
-.card-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--lp-gradient-cool);
-  border-radius: 10px;
-  font-size: 1.1rem;
-  color: #ffffff;
-  font-weight: 800;
-  color: #ffffff;
-  font-weight: 800;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
-}
-
-.card-content {
+.stage-dot {
+  position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-title {
-  font-size: 0.75rem;
-  color: var(--lp-text-tertiary);
+.stage-dot .dot-icon {
+  font-size: 14px;
+  opacity: 0.5;
+  filter: grayscale(0.3);
+  transition: all 0.4s ease;
+}
+
+.stage-dot .dot-label {
+  font-size: 10px;
   font-weight: 500;
+  color: var(--lp-text-muted, rgba(255, 255, 255, 0.4));
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transition: all 0.4s ease;
 }
 
-.card-value {
-  font-family: var(--lp-font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--lp-text-primary);
+.stage-dot.active .dot-icon {
+  opacity: 1;
+  filter: grayscale(0);
+  transform: scale(1.15);
+}
+
+.stage-dot.active .dot-label {
+  color: var(--lp-text-primary, rgba(255, 255, 255, 0.95));
+}
+
+.stage-dot.completed .dot-icon {
+  opacity: 0.65;
+  filter: grayscale(0);
+}
+
+.stage-dot.completed .dot-label {
+  color: var(--lp-text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.dot-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  border-radius: 1px;
+  transition: width 0.1s linear;
 }
 
 .scroll-indicator {
@@ -912,8 +1115,21 @@ onUnmounted(() => {
     height: 320px;
   }
 
-  .floating-card {
-    display: none;
+  .stage-dots {
+    padding: 6px 12px;
+    gap: 6px;
+  }
+
+  .stage-dot {
+    padding: 4px 8px;
+  }
+
+  .stage-dot .dot-icon {
+    font-size: 12px;
+  }
+
+  .stage-dot .dot-label {
+    font-size: 9px;
   }
 }
 
