@@ -132,10 +132,11 @@ onUnmounted(() => {
   font-family: var(--lp-font-display);
   font-size: 1.35rem;
   font-weight: 700;
-  background: var(--lp-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: transparent;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: var(--lp-text-primary);
+  background-clip: unset;
+  color: var(--lp-text-primary);
 }
 
 .navbar-links {
@@ -160,7 +161,7 @@ onUnmounted(() => {
   left: 0;
   width: 0;
   height: 2px;
-  background: var(--lp-gradient-primary);
+  background: var(--lp-primary-500);
   transition: width 0.2s ease;
 }
 
@@ -230,7 +231,7 @@ onUnmounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px var(--lp-glow-cyan);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
 .btn-primary:hover {

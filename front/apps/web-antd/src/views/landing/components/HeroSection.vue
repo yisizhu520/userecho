@@ -31,26 +31,27 @@ const descriptionParts = [
 ];
 
 // Particle colors for each theme
-const getParticleColors = (dark: boolean) => {
-  if (dark) {
-    return [
-      'rgba(0, 229, 255, 0.9)',
-      'rgba(245, 158, 11, 0.9)',
-      'rgba(6, 182, 212, 0.9)',
-      'rgba(16, 185, 129, 0.9)',
-      'rgba(59, 130, 246, 0.9)',
-    ];
-  } else {
-    // Light theme - slightly darker for visibility
-    return [
-      'rgba(37, 99, 235, 0.85)',
-      'rgba(245, 158, 11, 0.85)',
-      'rgba(6, 182, 212, 0.85)',
-      'rgba(16, 185, 129, 0.85)',
-      'rgba(59, 130, 246, 0.85)',
-    ];
-  }
-};
+// Particle colors for each theme - Professional Blue Palette
+  const getParticleColors = (dark: boolean) => {
+    if (dark) {
+      return [
+        'rgba(59, 130, 246, 0.8)',   // Blue 500
+        'rgba(37, 99, 235, 0.8)',    // Blue 600
+        'rgba(96, 165, 250, 0.8)',   // Blue 400
+        'rgba(147, 197, 253, 0.6)',  // Blue 300
+        'rgba(255, 255, 255, 0.4)',  // White accent
+      ];
+    } else {
+      // Light theme
+      return [
+        'rgba(29, 78, 216, 0.8)',    // Blue 700
+        'rgba(37, 99, 235, 0.8)',    // Blue 600
+        'rgba(59, 130, 246, 0.8)',   // Blue 500
+        'rgba(96, 165, 250, 0.6)',   // Blue 400
+        'rgba(15, 23, 42, 0.3)',     // Slate accent
+      ];
+    }
+  };
 
 // Particle class for cluster animation
 class Particle {
@@ -441,8 +442,8 @@ onUnmounted(() => {
 }
 
 @keyframes float-glow {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(40px, -20px) scale(1.1); }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  50% { transform: translate(20px, -10px) scale(1.05); opacity: 0.2; }
 }
 
 .hero-container {
@@ -511,7 +512,7 @@ onUnmounted(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 20px var(--lp-glow-cyan));
+  /* Removed strong drop-shadow for cleaner look */
 }
 
 .hero-description {
@@ -660,7 +661,8 @@ onUnmounted(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 30px var(--lp-glow-cyan);
+  background-clip: text;
+  /* Removed text-shadow for professional clean look */
   letter-spacing: -0.02em;
 }
 
@@ -732,7 +734,9 @@ onUnmounted(() => {
   font-size: 1.1rem;
   color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 4px 12px var(--lp-glow-cyan);
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
 }
 
 .card-content {

@@ -146,8 +146,8 @@ const emit = defineEmits<{
 .cta-bg-gradient {
   position: absolute;
   inset: 0;
-  background: var(--lp-gradient-primary);
-  opacity: 0.15;
+  background: var(--lp-bg-tertiary);
+  opacity: 0.5;
 }
 
 .cta-bg-grid {
@@ -171,13 +171,13 @@ const emit = defineEmits<{
 .cta-glow-1 {
   top: -200px;
   left: -100px;
-  background: var(--lp-glow-cyan);
+  background: rgba(59, 130, 246, 0.2);
 }
 
 .cta-glow-2 {
   bottom: -200px;
   right: -100px;
-  background: var(--lp-glow-emerald);
+  background: rgba(37, 99, 235, 0.2);
 }
 
 .cta-content {
@@ -201,7 +201,7 @@ const emit = defineEmits<{
 .cta-badge-dot {
   width: 6px;
   height: 6px;
-  background: var(--lp-glow-emerald);
+  background: #10b981;
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -255,7 +255,7 @@ const emit = defineEmits<{
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px var(--lp-glow-cyan);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .cta-primary:hover {
@@ -300,7 +300,7 @@ const emit = defineEmits<{
 }
 
 .cta-feature svg {
-  color: var(--lp-glow-emerald);
+  color: #10b981;
 }
 
 /* Floating elements */
@@ -340,10 +340,11 @@ const emit = defineEmits<{
   font-family: var(--lp-font-display);
   font-size: 1.5rem;
   font-weight: 700;
-  background: var(--lp-gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: transparent;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: var(--lp-primary-500);
+  background-clip: unset;
+  color: var(--lp-primary-500);
 }
 
 .float-label {

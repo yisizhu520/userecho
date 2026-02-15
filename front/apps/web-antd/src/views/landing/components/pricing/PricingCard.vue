@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { PricingTier, BillingPeriod } from './pricing-data';
+import { useLandingTheme } from '#/composables/useLandingTheme';
 
 interface Props {
   tier: PricingTier;
@@ -8,6 +9,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const { theme } = useLandingTheme();
+const isDark = computed(() => theme.value === 'dark');
 
 const displayPrice = computed(() => {
   if (props.tier.isFree) return '免费';
@@ -42,6 +46,7 @@ const cardClass = computed(() => ({
   'pricing-card': true,
   'recommended': props.tier.isRecommended,
   'enterprise': props.tier.id === 'enterprise',
+  'is-dark': isDark.value,
 }));
 </script>
 
@@ -109,6 +114,27 @@ const cardClass = computed(() => ({
   display: flex;
   flex-direction: column;
   min-height: 700px;
+}
+
+.pricing-card.is-dark {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.pricing-card.is-dark .tier-name {
+  color: #f8fafc;
+}
+
+.pricing-card.is-dark .tier-tagline {
+  color: #94a3b8;
+}
+
+.pricing-card.is-dark .price-value {
+  color: #f8fafc;
+}
+
+.pricing-card.is-dark .feature-item.highlight {
+  color: #f8fafc;
 }
 
 .pricing-card:hover {

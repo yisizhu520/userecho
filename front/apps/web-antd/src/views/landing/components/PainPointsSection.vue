@@ -212,10 +212,8 @@ onMounted(() => {
 }
 
 .title-text-right {
-  background: var(--lp-gradient-cool);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #10b981;
+  /* Removed gradient text clip */
 }
 
 .section-subtitle {
@@ -257,7 +255,7 @@ onMounted(() => {
 }
 
 .panel-after:hover {
-  box-shadow: 0 10px 40px var(--lp-glow-emerald);
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
 }
 
 .panel-header {
@@ -347,24 +345,25 @@ onMounted(() => {
   gap: 0.5rem;
 }
 
+/* Using professional blue tones and keeping semantic colors subtle */
 .cluster-1 {
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .cluster-2 {
-  background: rgba(6, 182, 212, 0.1);
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .cluster-3 {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.2);
 }
 
 .cluster-4 {
   background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .cluster-label {
@@ -386,9 +385,9 @@ onMounted(() => {
   opacity: 0.6;
 }
 
-.cluster-1 .cluster-dot { background: #00e5ff; }
-.cluster-2 .cluster-dot { background: #06b6d4; }
-.cluster-3 .cluster-dot { background: #f59e0b; }
+.cluster-1 .cluster-dot { background: #3b82f6; }
+.cluster-2 .cluster-dot { background: #6366f1; }
+.cluster-3 .cluster-dot { background: #0ea5e9; }
 .cluster-4 .cluster-dot { background: #10b981; }
 
 /* Stats */
@@ -415,10 +414,8 @@ onMounted(() => {
 }
 
 .stat-right {
-  background: var(--lp-gradient-cool);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--lp-primary-500);
+  /* Removed gradient text */
 }
 
 .stat-label {
@@ -465,13 +462,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--lp-gradient-cool);
+  background: var(--lp-primary-600);
   border-radius: 50%;
   font-family: var(--lp-font-display);
   font-weight: 800;
   font-size: 1.1rem;
   color: #ffffff;
-  box-shadow: 0 4px 20px var(--lp-glow-cyan);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
 }
 
 /* Responsive */

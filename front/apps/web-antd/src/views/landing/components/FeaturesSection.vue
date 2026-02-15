@@ -5,12 +5,12 @@ const sectionRef = ref<HTMLElement>();
 const isVisible = ref(false);
 const features = ref([
   {
+    // Simplified features data without rainbow gradients
     icon: 'lucide:sparkles',
     iconEmoji: '✨',
     title: 'AI 智能聚类',
     description: '使用语义相似度自动将反馈分组，无需手动分类，准确率高达95%',
-    gradient: 'from-blue-500 to-cyan-500',
-    color: 'hsl(212, 100%, 45%)',
+    color: 'var(--lp-primary-500)',
     delay: 0,
   },
   {
@@ -18,8 +18,7 @@ const features = ref([
     iconEmoji: '📊',
     title: '优先级评分',
     description: '基于影响范围、商业价值和开发成本，自动计算需求优先级分数',
-    gradient: 'from-amber-500 to-orange-500',
-    color: 'hsl(38, 92%, 60%)',
+    color: 'var(--lp-primary-600)',
     delay: 100,
   },
   {
@@ -27,8 +26,7 @@ const features = ref([
     iconEmoji: '📸',
     title: '截图智能识别',
     description: '支持微信、小红书、App Store等平台的截图OCR识别',
-    gradient: 'from-emerald-500 to-teal-500',
-    color: 'hsl(144, 70%, 50%)',
+    color: 'var(--lp-primary-500)',
     delay: 200,
   },
   {
@@ -36,8 +34,7 @@ const features = ref([
     iconEmoji: '🔍',
     title: '语义搜索',
     description: '自然语言搜索反馈，"用户说登录有问题"即可找到所有相关反馈',
-    gradient: 'from-purple-500 to-pink-500',
-    color: 'hsl(280, 70%, 55%)',
+    color: 'var(--lp-primary-400)',
     delay: 300,
   },
 ]);
@@ -209,10 +206,8 @@ onMounted(() => {
 }
 
 .title-gradient {
-  background: var(--lp-gradient-hero);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--lp-primary-500);
+  /* Removed gradient text clip */
 }
 
 .section-subtitle {
@@ -297,7 +292,7 @@ onMounted(() => {
 }
 
 .feature-card:hover .feature-icon-glow {
-  opacity: 0.5;
+  opacity: 0.15;
 }
 
 .feature-title {
@@ -347,7 +342,7 @@ onMounted(() => {
   position: absolute;
   inset: 0;
   background: radial-gradient(circle at 50% 0%, var(--feature-color), transparent 70%);
-  opacity: 0.05;
+  opacity: 0.02;
   transition: opacity 0.3s ease;
 }
 

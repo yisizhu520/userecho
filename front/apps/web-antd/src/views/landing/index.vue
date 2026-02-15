@@ -86,77 +86,77 @@ onMounted(() => {
   --lp-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --lp-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Primary colors - Vibrant blue */
-  --lp-primary-50: #eff6ff;
-  --lp-primary-100: #dbeafe;
-  --lp-primary-200: #bfdbfe;
-  --lp-primary-300: #93c5fd;
-  --lp-primary-400: #60a5fa;
+  /* Primary colors - Professional Blue */
+  --lp-primary-50: #f0f5ff;
+  --lp-primary-100: #e0ebff;
+  --lp-primary-200: #c2dbff;
+  --lp-primary-300: #94c2ff;
+  --lp-primary-400: #5c9eff;
   --lp-primary-500: #3b82f6;
   --lp-primary-600: #2563eb;
   --lp-primary-700: #1d4ed8;
   --lp-primary-800: #1e40af;
   --lp-primary-900: #1e3a8a;
 
-  /* Accent colors */
-  --lp-accent-cyan: #06b6d4;
-  --lp-accent-cyan-bright: #00e5ff;
+  /* Accent colors - Reserved for status/highlights only */
+  --lp-accent-cyan: #0ea5e9;
+  --lp-accent-cyan-bright: #38bdf8;
   --lp-accent-emerald: #10b981;
   --lp-accent-amber: #f59e0b;
-  --lp-accent-purple: #8b5cf6;
+  --lp-accent-purple: #6366f1; /* More corporate indigo than purple */
   --lp-accent-pink: #ec4899;
   --lp-accent-red: #ef4444;
 
-  /* Background colors - Deep dark theme */
-  --lp-bg-primary: #0a0e27;
-  --lp-bg-secondary: #0f1429;
-  --lp-bg-tertiary: #1a2042;
-  --lp-bg-card: rgba(26, 32, 66, 0.8);
-  --lp-bg-card-hover: rgba(37, 48, 90, 0.9);
-  --lp-bg-elevated: rgba(15, 20, 41, 0.95);
+  /* Background colors - Deep Blue Professional */
+  --lp-bg-primary: #020617; /* Very dark slate blue */
+  --lp-bg-secondary: #0f172a;
+  --lp-bg-tertiary: #1e293b;
+  --lp-bg-card: rgba(15, 23, 42, 0.8);
+  --lp-bg-card-hover: rgba(30, 41, 59, 0.9);
+  --lp-bg-elevated: rgba(30, 41, 59, 0.95);
 
   /* Text colors - High contrast */
-  --lp-text-primary: #ffffff;
-  --lp-text-secondary: #94a3b8;
-  --lp-text-tertiary: #64748b;
-  --lp-text-muted: #475569;
+  --lp-text-primary: #f8fafc;
+  --lp-text-secondary: #cbd5e1;
+  --lp-text-tertiary: #94a3b8;
+  --lp-text-muted: #64748b;
 
   /* Border colors */
   --lp-border-subtle: rgba(148, 163, 184, 0.1);
-  --lp-border-default: rgba(148, 163, 184, 0.2);
-  --lp-border-strong: rgba(148, 163, 184, 0.3);
+  --lp-border-default: rgba(148, 163, 184, 0.15);
+  --lp-border-strong: rgba(148, 163, 184, 0.25);
 
-  /* Gradients */
-  --lp-gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #10b981 100%);
-  --lp-gradient-hero: linear-gradient(135deg, #00e5ff 0%, #00b7ff 50%, #ff9800 100%);
-  --lp-gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  --lp-gradient-cool: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
-  --lp-gradient-bg: linear-gradient(180deg, #0a0e27 0%, #0f1429 50%, #0a0e27 100%);
+  /* Gradients - Subtle and Professional */
+  --lp-gradient-primary: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  --lp-gradient-hero: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%); /* White/Blue for text */
+  --lp-gradient-warm: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --lp-gradient-cool: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+  --lp-gradient-bg: linear-gradient(180deg, #020617 0%, #0f172a 100%);
 
   /* Canvas background */
-  --lp-canvas-bg: rgba(15, 20, 41, 0.9);
+  --lp-canvas-bg: rgba(15, 23, 42, 0.6);
 
-  /* Special effects */
-  --lp-glow-primary: rgba(0, 229, 255, 0.5);
-  --lp-glow-cyan: rgba(6, 182, 212, 0.4);
-  --lp-glow-emerald: rgba(16, 185, 129, 0.4);
-  --lp-glow-amber: rgba(245, 158, 11, 0.4);
+  /* Special effects - Reduced intensity */
+  --lp-glow-primary: rgba(59, 130, 246, 0.3);
+  --lp-glow-cyan: rgba(14, 165, 233, 0.2);
+  --lp-glow-emerald: rgba(16, 185, 129, 0.2);
+  --lp-glow-amber: rgba(245, 158, 11, 0.2);
 
   /* Circuit board pattern */
   --lp-circuit-color: rgba(59, 130, 246, 0.03);
-  --lp-circuit-line: rgba(59, 130, 246, 0.05);
+  --lp-circuit-line: rgba(59, 130, 246, 0.04);
 }
 
 /* ============================================
-   LIGHT THEME - Matches backend admin
+   LIGHT THEME - Clean Enterprise
    ============================================ */
 .landing-page.theme-light {
   /* Fonts */
   --lp-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --lp-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Primary colors - Blue (matching backend) */
+  /* Primary colors - Corporate Blue */
   --lp-primary-50: #eff6ff;
   --lp-primary-100: #dbeafe;
   --lp-primary-200: #bfdbfe;
@@ -169,15 +169,15 @@ onMounted(() => {
   --lp-primary-900: #1e3a8a;
 
   /* Accent colors */
-  --lp-accent-cyan: #06b6d4;
-  --lp-accent-cyan-bright: #00b7ff;
-  --lp-accent-emerald: #10b981;
-  --lp-accent-amber: #f59e0b;
-  --lp-accent-purple: #8b5cf6;
-  --lp-accent-pink: #ec4899;
-  --lp-accent-red: #ef4444;
+  --lp-accent-cyan: #0ea5e9;
+  --lp-accent-cyan-bright: #0284c7;
+  --lp-accent-emerald: #059669;
+  --lp-accent-amber: #d97706;
+  --lp-accent-purple: #4f46e5;
+  --lp-accent-pink: #db2777;
+  --lp-accent-red: #dc2626;
 
-  /* Background colors - Light theme (matching backend) */
+  /* Background colors - Crisp Light */
   --lp-bg-primary: #ffffff;
   --lp-bg-secondary: #f8fafc;
   --lp-bg-tertiary: #f1f5f9;
@@ -185,9 +185,9 @@ onMounted(() => {
   --lp-bg-card-hover: #f8fafc;
   --lp-bg-elevated: #ffffff;
 
-  /* Text colors - Dark for light theme */
+  /* Text colors - Strong contrast */
   --lp-text-primary: #0f172a;
-  --lp-text-secondary: #475569;
+  --lp-text-secondary: #334155;
   --lp-text-tertiary: #64748b;
   --lp-text-muted: #94a3b8;
 
@@ -196,26 +196,26 @@ onMounted(() => {
   --lp-border-default: #cbd5e1;
   --lp-border-strong: #94a3b8;
 
-  /* Gradients */
-  --lp-gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #10b981 100%);
-  --lp-gradient-hero: linear-gradient(135deg, #00b7ff 0%, #0099ff 50%, #f59e0b 100%);
-  --lp-gradient-warm: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-  --lp-gradient-cool: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
-  --lp-gradient-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
+  /* Gradients - Minimalist */
+  --lp-gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  --lp-gradient-hero: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); /* Dark Blue for text */
+  --lp-gradient-warm: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  --lp-gradient-cool: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
+  --lp-gradient-bg: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
 
   /* Canvas background */
   --lp-canvas-bg: #ffffff;
 
-  /* Special effects - lighter for light theme */
-  --lp-glow-primary: rgba(59, 130, 246, 0.25);
-  --lp-glow-cyan: rgba(6, 182, 212, 0.15);
-  --lp-glow-emerald: rgba(16, 185, 129, 0.15);
-  --lp-glow-amber: rgba(245, 158, 11, 0.15);
+  /* Special effects - Subtle */
+  --lp-glow-primary: rgba(37, 99, 235, 0.15);
+  --lp-glow-cyan: rgba(14, 165, 233, 0.1);
+  --lp-glow-emerald: rgba(5, 150, 105, 0.1);
+  --lp-glow-amber: rgba(217, 119, 6, 0.1);
 
-  /* Circuit board pattern - subtle */
-  --lp-circuit-color: rgba(59, 130, 246, 0.02);
-  --lp-circuit-line: rgba(59, 130, 246, 0.03);
+  /* Circuit board pattern - Very subtle */
+  --lp-circuit-color: rgba(30, 58, 138, 0.03);
+  --lp-circuit-line: rgba(30, 58, 138, 0.04);
 }
 
 /* ============================================

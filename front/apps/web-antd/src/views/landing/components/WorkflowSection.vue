@@ -7,32 +7,33 @@ const activeStep = ref(0);
 
 const steps = ref([
   {
+    // Professional blue/slate palette
     number: '01',
     title: '导入反馈',
     description: '支持 Excel/CSV 批量导入，或使用截图识别功能从社交媒体直接采集',
     icon: '📥',
-    color: 'hsl(212, 100%, 45%)',
+    color: 'var(--lp-primary-500)',
   },
   {
     number: '02',
     title: 'AI 处理',
     description: '自动语义聚类、智能标签分类、优先级评分，全方位分析反馈',
     icon: '🤖',
-    color: 'hsl(189, 94%, 43%)',
+    color: 'var(--lp-primary-600)',
   },
   {
     number: '03',
     title: '获得洞察',
     description: '可视化展示反馈趋势、主题分布、客户分层，一目了然',
     icon: '💡',
-    color: 'hsl(38, 92%, 60%)',
+    color: 'var(--lp-primary-500)',
   },
   {
     number: '04',
     title: '智能决策',
     description: '基于数据驱动做出产品决策，优先处理高价值需求',
     icon: '🎯',
-    color: 'hsl(144, 70%, 50%)',
+    color: 'var(--lp-primary-700)',
   },
 ]);
 
@@ -181,10 +182,8 @@ const setStep = (index: number) => {
 }
 
 .title-accent {
-  background: var(--lp-gradient-warm);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--lp-primary-500);
+  /* Removed gradient text */
 }
 
 .section-subtitle {
@@ -242,7 +241,7 @@ const setStep = (index: number) => {
   color: #ffffff;
   background: var(--step-color);
   border-radius: 16px;
-  box-shadow: 0 4px 20px var(--step-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
@@ -348,7 +347,7 @@ const setStep = (index: number) => {
   inset: -20px;
   background: var(--step-color);
   border-radius: 50%;
-  opacity: 0.3;
+  opacity: 0.1;
   filter: blur(24px);
   animation: glow-pulse 2s ease-in-out infinite;
 }
