@@ -36,16 +36,56 @@ const STAGE_CONFIG = Object.values(stageConfig);
 // Animation State Machine
 type AnimationStage = 'INGEST' | 'PROCESS' | 'INSIGHT' | 'SYNC';
 let currentStage: AnimationStage = 'INGEST';
+let nextStage: AnimationStage = 'PROCESS';
 let previousStage: AnimationStage | null = null;
 let frameCount = 0;
-let stageTransition: number = 0; // 0-1 for smooth transitions
+let stageTransition: number = 0; // 0-1 during transition
+let isTransitioning: boolean = false;
+const TRANSITION_FRAMES = 36; // ~0.6s smooth transition
+
+// Stage blend weights for crossfade [current, next]
+let stageWeights = [1, 0];
 
 // Constants
 const CANVAS_WIDTH = 560;
 const CANVAS_HEIGHT = 480;
 
-// Cluster labels - AI-parsed requirement themes from feedback
-const CLUSTER_LABELS = ['数据导出需求', '首屏加载优化', '暗色主题适配', '批量操作支持', '移动端体验'];
+// Cluster data - AI-parsed requirement themes with priority and value
+type ClusterData = {
+  label: string;
+  priority: string;  // P0/P1/P2
+  value: string;     // 高/中/低
+  count: number;     // 反馈数量
+  color: string;     // Display color
+};
+
+const CLUSTER_DATA: ClusterData[] = [
+  { label: '数据导出需求', priority: 'P0', value: '高', count: 18, color: '#ef4444' },    // Red - Critical
+  { label: '首屏加载优化', priority: 'P1', value: '高', count: 12, color: '#f97316' },    // Orange - High
+  { label: '暗色主题适配', priority: 'P1', value: '中', count: 9,  color: '#eab308' },    // Yellow - Medium
+  { label: '批量操作支持', priority: 'P2', value: '中', count: 7,  color: '#3b82f6' },    // Blue - Normal
+  { label: '移动端体验',   priority: 'P2', value: '低', count: 5,  color: '#6b7280' },    // Gray - Low
+];
+
+const CLUSTER_LABELS = CLUSTER_DATA.map(c => c.label);
+
+// User data for SYNC stage - users who will receive updates
+type UserData = {
+  name: string;
+  avatar: string;     // Emoji or initial
+  x: number;
+  y: number;
+  notified: boolean;
+  notificationTime: number;
+};
+
+const USER_DATA: UserData[] = [
+  { name: '张经理', avatar: '👨‍💼', x: 80, y: 100, notified: false, notificationTime: 0 },
+  { name: '李产品', avatar: '👩‍💻', x: 480, y: 80, notified: false, notificationTime: 0 },
+  { name: '王开发', avatar: '👨‍🔧', x: 500, y: 350, notified: false, notificationTime: 0 },
+  { name: '赵运营', avatar: '👩‍🎨', x: 60, y: 380, notified: false, notificationTime: 0 },
+  { name: '刘测试', avatar: '👨‍🔬', x: 280, y: 420, notified: false, notificationTime: 0 },
+];
 
 // Real feedback text samples for INGEST stage (grouped by cluster)
 const FEEDBACK_SAMPLES = [
@@ -106,11 +146,13 @@ class Particle {
   clusterColor: string;
   currentColor: string;
   size: number;
-  
+
   // State flags
   isIngested: boolean = false;
   isHighValue: boolean = false;
   isSynced: boolean = false;
+  targetUserIndex: number = -1;  // Which user this particle flies to in SYNC
+  syncedUserIndex: number = -1;  // Which user has received this particle
 
   constructor(clusterId: number, clusterColor: string, isDark: boolean) {
     // Start from random edge
@@ -122,13 +164,13 @@ class Particle {
 
     this.vx = (Math.random() - 0.5) * 2;
     this.vy = (Math.random() - 0.5) * 2;
-    
+
     this.clusterId = clusterId;
     this.clusterColor = clusterColor;
     this.baseColor = COLOR_PALETTE.neutral(isDark);
     this.currentColor = this.baseColor;
     this.size = Math.random() * 3 + 2;
-    
+
     // Target position set later
     this.targetX = CANVAS_WIDTH / 2;
     this.targetY = CANVAS_HEIGHT / 2;
@@ -160,45 +202,80 @@ class Particle {
       this.currentColor = this.baseColor;
     }
 
-    // 2. PROCESS: Smooth move to Cluster Target
+    // 2. PROCESS: Smooth move to Cluster Target - slower and gentler
     else if (stage === 'PROCESS') {
       const dx = this.targetX - this.x;
       const dy = this.targetY - this.y;
-      const easedProgress = easeOutCubic(progress);
 
-      this.x += dx * 0.08 * (1 + easedProgress);
-      this.y += dy * 0.08 * (1 + easedProgress);
+      // Use a gentler easing curve - slow start, smooth middle, gentle end
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+      const easedProgress = easeOut(Math.min(1, progress * 1.5)); // Spread over more time
+
+      // Much slower movement for smooth gathering
+      const speed = 0.015 + easedProgress * 0.015; // 0.025 to 0.06 range
+      this.x += dx * speed;
+      this.y += dy * speed;
     }
 
-    // 3. INSIGHT: Gentle drift, High Value pulse
+    // 3. INSIGHT: Gentle drift, High Value pulse based on cluster priority
     else if (stage === 'INSIGHT') {
       const time = frameCount * 0.03;
       this.x += Math.sin(time + this.clusterId) * 0.2;
       this.y += Math.cos(time + this.clusterId * 0.7) * 0.2;
 
-      if (this.isHighValue) {
-        this.currentColor = COLOR_PALETTE.highlight;
-        // Smooth pulse
+      // Get cluster priority for visual treatment
+      const clusterPriority = CLUSTER_DATA[this.clusterId]?.priority || 'P2';
+      const isHighPriority = clusterPriority === 'P0';
+      const isMediumPriority = clusterPriority === 'P1';
+
+      if (this.isHighValue || isHighPriority) {
+        // Use cluster color for P0 particles
+        this.currentColor = CLUSTER_DATA[this.clusterId]?.color || COLOR_PALETTE.highlight;
         const pulse = Math.sin(frameCount * 0.08) * 0.5 + 0.5;
-        this.size = 4 + pulse * 2;
+        this.size = 4 + pulse * 2.5;
+      } else if (isMediumPriority) {
+        // Medium priority gets moderate treatment
+        this.currentColor = this.clusterColor;
+        this.size = 3.5 + Math.sin(frameCount * 0.05) * 0.5;
       } else {
-        // Subtle dim for others
-        const dimFactor = 0.2 + Math.sin(frameCount * 0.02 + this.clusterId) * 0.1;
+        // Low priority gets dimmed
+        const dimFactor = 0.15 + Math.sin(frameCount * 0.02 + this.clusterId) * 0.08;
         this.currentColor = this.clusterColor.replace('1)', `${dimFactor})`).replace('0.9)', `${dimFactor})`);
       }
     }
 
-    // 4. SYNC: Smooth flyout for High Value
+    // 4. SYNC: Fly to assigned users - slower and gentler
     else if (stage === 'SYNC') {
-      if (this.isHighValue && !this.isSynced) {
-        const flyoutProgress = Math.min(1, progress * 2);
-        const easedFlyout = easeInOutQuad(flyoutProgress);
+      // Assign target user if not yet assigned (only for particles that should sync)
+      if (this.targetUserIndex === -1) {
+        const clusterPriority = CLUSTER_DATA[this.clusterId]?.priority || 'P2';
+        const isHighPriority = clusterPriority === 'P0';
+        const isMediumPriority = clusterPriority === 'P1';
 
-        this.x += easedFlyout * 6;
-        this.y -= easedFlyout * 1.5;
-        this.currentColor = COLOR_PALETTE.sync;
+        // High and medium priority particles sync to users
+        if ((isHighPriority || isMediumPriority) && Math.random() > 0.3) {
+          this.targetUserIndex = Math.floor(Math.random() * USER_DATA.length);
+        }
+      }
 
-        if (flyoutProgress >= 1) {
+      // Fly towards target user with gentle, smooth motion
+      if (this.targetUserIndex >= 0 && this.syncedUserIndex === -1) {
+        const targetUser = USER_DATA[this.targetUserIndex];
+        const dx = targetUser.x - this.x;
+        const dy = targetUser.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > 15) {
+          // Gentle easing - slower overall, subtle deceleration at end
+          const easeOut = 1 - Math.min(1, (dist - 15) / 300);
+          const speed = 1.5 + easeOut * 2; // Speed range: 1.5 to 3.5 (much slower than before)
+
+          this.x += (dx / dist) * speed;
+          this.y += (dy / dist) * speed;
+          this.currentColor = COLOR_PALETTE.sync;
+        } else {
+          // Reached user - gentle arrival
+          this.syncedUserIndex = this.targetUserIndex;
           this.isSynced = true;
         }
       }
@@ -208,7 +285,7 @@ class Particle {
   draw(ctx: CanvasRenderingContext2D, scanX: number) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    
+
     // Special coloring for PROCESS stage
     if (currentStage === 'PROCESS') {
       // If scanline passed, show cluster color
@@ -220,9 +297,9 @@ class Particle {
     } else {
       ctx.fillStyle = this.currentColor;
     }
-    
+
     ctx.fill();
-    
+
     // Glue glow for high value
     if (this.isHighValue && (currentStage === 'INSIGHT' || currentStage === 'SYNC')) {
       ctx.shadowBlur = 10;
@@ -270,13 +347,13 @@ class FeedbackText {
 
     // Depth (z) creates perspective - farther objects move slower
     this.z = Math.random() * 0.5 + 0.5;
-    this.vx = (CANVAS_WIDTH / 2 - this.x) * 0.003 * this.z;
-    this.vy = (CANVAS_HEIGHT / 2 - this.y) * 0.003 * this.z;
+    this.vx = (CANVAS_WIDTH / 2 - this.x) * 0.0015 * this.z;
+    this.vy = (CANVAS_HEIGHT / 2 - this.y) * 0.0015 * this.z;
     this.vz = 0.002;
 
     this.opacity = 0;
     this.scale = 0.3 + this.z * 0.4;
-    this.spawnDelay = Math.floor(Math.random() * 60);
+    this.spawnDelay = Math.floor(Math.random() * 80);
   }
 
   update(centerX: number, centerY: number) {
@@ -285,24 +362,24 @@ class FeedbackText {
       return;
     }
 
-    // Move towards center
+    // Move towards center - slower speed for better readability
     this.x += this.vx;
     this.y += this.vy;
 
-    // Accelerate as they get closer (gravity effect)
-    this.vx *= 1.02;
-    this.vy *= 1.02;
+    // Gentler acceleration as they get closer
+    this.vx *= 1.008;
+    this.vy *= 1.008;
 
     // Fade in then fade out near center
     const dist = Math.sqrt((centerX - this.x) ** 2 + (centerY - this.y) ** 2);
     if (dist > 300) {
-      this.opacity = Math.min(1, this.opacity + 0.05);
+      this.opacity = Math.min(1, this.opacity + 0.03);
     } else if (dist < 80) {
-      this.opacity = Math.max(0, this.opacity - 0.08);
+      this.opacity = Math.max(0, this.opacity - 0.05);
     }
 
-    // Scale up as approaching (perspective)
-    this.scale = Math.min(1, this.scale + 0.005);
+    // Scale up as approaching (perspective) - slower
+    this.scale = Math.min(1, this.scale + 0.003);
 
     // Mark as collected when very close to center
     if (dist < 30) {
@@ -383,16 +460,16 @@ const initParticles = () => {
   particles = [];
   feedbackTexts = [];
 
-  // Define 5 clusters spread out more due to larger canvas
+  // Define 5 clusters spread out to accommodate insight cards
   const cx = CANVAS_WIDTH / 2;
   const cy = CANVAS_HEIGHT / 2;
 
   clusters = [
-    { x: cx, y: cy - 80 },      // Top Center
-    { x: cx + 100, y: cy },     // Right
-    { x: cx + 60, y: cy + 100 }, // Bottom Right
-    { x: cx - 60, y: cy + 100 }, // Bottom Left
-    { x: cx - 100, y: cy },     // Left
+    { x: cx, y: cy - 70 },       // Top Center (P0 - main focus)
+    { x: cx + 110, y: cy - 10 }, // Right Upper
+    { x: cx + 70, y: cy + 90 },  // Right Lower
+    { x: cx - 70, y: cy + 90 },  // Left Lower
+    { x: cx - 110, y: cy - 10 }, // Left Upper
   ];
 
   clusters.forEach((cluster, id) => {
@@ -438,12 +515,12 @@ const animate = () => {
 
   frameCount++;
 
-  // Cycle Logic (Total Cycle ~ 12s = 720 frames at 60fps)
+  // Cycle Logic (Total Cycle ~ 15s = 900 frames at 60fps)
   let scanX = 0;
-  const cycleTime = frameCount % 720;
+  const cycleTime = frameCount % 900;
   const stages: AnimationStage[] = ['INGEST', 'PROCESS', 'INSIGHT', 'SYNC'];
-  const stageDurations = [180, 140, 200, 200]; // frames per stage
-  const stageBreaks = [0, 180, 320, 520, 720];
+  const stageDurations = [300, 150, 220, 230]; // Extended PROCESS for smoother clustering
+  const stageBreaks = [0, 300, 450, 670, 900];
 
   // Determine current stage
   let newStage: AnimationStage = 'INGEST';
@@ -459,13 +536,31 @@ const animate = () => {
     }
   }
 
-  // Handle stage transition
-  if (newStage !== currentStage) {
-    previousStage = currentStage;
-    currentStage = newStage;
+  // Handle smooth stage transition
+  if (newStage !== nextStage && !isTransitioning) {
+    // Start transition to next stage
+    nextStage = newStage;
+    isTransitioning = true;
     stageTransition = 0;
   }
-  stageTransition = Math.min(1, stageTransition + 0.03);
+
+  // Update transition progress with easing
+  if (isTransitioning) {
+    stageTransition += 1 / TRANSITION_FRAMES;
+    if (stageTransition >= 1) {
+      // Transition complete
+      stageTransition = 0;
+      isTransitioning = false;
+      previousStage = currentStage;
+      currentStage = nextStage;
+      stageWeights = [1, 0];
+    } else {
+      // Calculate smooth blend weights using easeInOut
+      const t = stageTransition;
+      const easeT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      stageWeights = [1 - easeT, easeT];
+    }
+  }
 
   // Update reactive state
   activeStageIndex.value = stageIdx;
@@ -477,49 +572,63 @@ const animate = () => {
   newProgressBars[stageIdx] = localProgress;
   stageProgressBars.value = newProgressBars;
 
-  // Stage-specific rendering
-  if (currentStage === 'INGEST') {
-    // Draw flying feedback texts
-    const centerX = CANVAS_WIDTH / 2;
-    const centerY = CANVAS_HEIGHT / 2;
+  // Stage-specific rendering with smooth transition blend
+  const renderStageElements = (stage: AnimationStage, blendWeight: number) => {
+    if (blendWeight <= 0.01) return;
 
-    // Update and draw feedback texts
-    feedbackTexts.forEach(ft => {
-      ft.update(centerX, centerY);
-      ft.draw(ctx, dark);
-    });
+    ctx.globalAlpha = blendWeight;
 
-    // Remove collected texts
-    feedbackTexts = feedbackTexts.filter(ft => !ft.collected);
-  } else if (currentStage === 'PROCESS') {
-    // Scanline progress
-    scanX = localProgress * CANVAS_WIDTH;
+    if (stage === 'INGEST') {
+      const centerX = CANVAS_WIDTH / 2;
+      const centerY = CANVAS_HEIGHT / 2;
 
-    // Draw elegant scanline
-    const gradient = ctx.createLinearGradient(scanX - 80, 0, scanX + 20, 0);
-    gradient.addColorStop(0, 'rgba(96, 165, 250, 0)');
-    gradient.addColorStop(0.8, 'rgba(96, 165, 250, 0.3)');
-    gradient.addColorStop(1, 'rgba(96, 165, 250, 0.6)');
+      feedbackTexts.forEach(ft => {
+        ft.update(centerX, centerY);
+        ft.draw(ctx, dark);
+      });
 
-    ctx.beginPath();
-    ctx.moveTo(scanX, 0);
-    ctx.lineTo(scanX, CANVAS_HEIGHT);
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      feedbackTexts = feedbackTexts.filter(ft => !ft.collected);
+    } else if (stage === 'PROCESS') {
+      // Slower scanline with easing
+      const scanEase = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      scanX = scanEase(localProgress) * CANVAS_WIDTH;
 
-    // Glow effect
-    ctx.fillStyle = gradient;
-    ctx.fillRect(scanX - 80, 0, 100, CANVAS_HEIGHT);
-  } else if (currentStage === 'INSIGHT') {
-    // Pulsing highlight effect
-    const pulseIntensity = Math.sin(frameCount * 0.05) * 0.2 + 0.8;
-  } else if (currentStage === 'SYNC') {
-    // Sync flyout
+      const gradient = ctx.createLinearGradient(scanX - 100, 0, scanX + 20, 0);
+      gradient.addColorStop(0, 'rgba(96, 165, 250, 0)');
+      gradient.addColorStop(0.75, 'rgba(96, 165, 250, 0.25)');
+      gradient.addColorStop(1, 'rgba(96, 165, 250, 0.5)');
+
+      ctx.beginPath();
+      ctx.moveTo(scanX, 0);
+      ctx.lineTo(scanX, CANVAS_HEIGHT);
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(scanX - 100, 0, 120, CANVAS_HEIGHT);
+    }
+  };
+
+  // Render with transition blend
+  if (isTransitioning) {
+    renderStageElements(currentStage, stageWeights[0]);
+    renderStageElements(nextStage, stageWeights[1]);
+  } else {
+    renderStageElements(currentStage, 1);
   }
+
+  ctx.globalAlpha = 1;
 
   // Reset particles and feedback texts at cycle end
   if (cycleTime === 0 && frameCount > 10) {
+    // Reset transition state
+    currentStage = 'INGEST';
+    nextStage = 'PROCESS';
+    isTransitioning = false;
+    stageTransition = 0;
+    stageWeights = [1, 0];
+
     particles.forEach(p => {
       const edge = Math.floor(Math.random() * 4);
       if (edge === 0) { p.x = Math.random() * CANVAS_WIDTH; p.y = -20; }
@@ -529,70 +638,267 @@ const animate = () => {
       p.vx = (Math.random() - 0.5) * 2;
       p.vy = (Math.random() - 0.5) * 2;
       p.isSynced = false;
+      p.targetUserIndex = -1;
+      p.syncedUserIndex = -1;
     });
 
-    // Reset feedback texts
     feedbackTexts = [];
     FEEDBACK_SAMPLES.forEach((text) => {
       feedbackTexts.push(new FeedbackText(text, dark));
     });
+
+    USER_DATA.forEach(user => {
+      user.notified = false;
+      user.notificationTime = 0;
+    });
   }
 
-  // Update and draw particles with smooth easing
+  // Update and draw particles - use current stage during transition for continuity
+  const particleStage = isTransitioning ? currentStage : currentStage;
   particles.forEach(p => {
-    p.update(currentStage, localProgress);
+    p.update(particleStage, localProgress);
     p.draw(ctx, scanX);
   });
 
-  // Draw cluster labels with smooth fade
-  if (currentStage === 'PROCESS' || currentStage === 'INSIGHT') {
-    const fadeInProgress = currentStage === 'PROCESS'
-      ? Math.min(1, (cycleTime - stageBreaks[1]) / 40)
-      : 1;
+  // Draw cluster labels with smooth fade and transition
+  const showLabels = currentStage === 'PROCESS' || currentStage === 'INSIGHT' ||
+                     (isTransitioning && (nextStage === 'PROCESS' || nextStage === 'INSIGHT'));
+
+  if (showLabels) {
+    const processStartTime = stageBreaks[1];
+    // Slower, smoother fade in over 80 frames instead of 50
+    const fadeTime = Math.max(0, cycleTime - processStartTime);
+    const fadeInProgress = Math.min(1, fadeTime / 80);
+    // Apply easing for even smoother appearance
+    const easedFade = fadeInProgress < 0.5
+      ? 2 * fadeInProgress * fadeInProgress
+      : 1 - Math.pow(-2 * fadeInProgress + 2, 2) / 2;
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '500 12px "Outfit", sans-serif';
 
     clusters.forEach((c, i) => {
-      const isHighValue = i === 0;
-      let alpha = fadeInProgress;
+      const cluster = CLUSTER_DATA[i];
+      const isP0 = cluster.priority === 'P0';
+      const isP1 = cluster.priority === 'P1';
 
-      if (currentStage === 'INSIGHT' && !isHighValue) {
-        alpha = 0.25;
+      let alpha = easedFade;
+      let showInsightCard = false;
+
+      // Determine display mode and alpha based on stage
+      if (isTransitioning) {
+        if (nextStage === 'INSIGHT') {
+          // Transitioning TO insight - blend alpha towards target values
+          const targetAlpha = isP0 ? 1 : (isP1 ? 0.7 : 0.4);
+          alpha = alpha * (1 - stageWeights[1]) + targetAlpha * stageWeights[1];
+          showInsightCard = stageWeights[1] > 0.5;
+        } else if (currentStage === 'INSIGHT') {
+          // Transitioning FROM insight
+          const baseAlpha = isP0 ? 1 : (isP1 ? 0.7 : 0.4);
+          alpha = baseAlpha * stageWeights[0];
+          showInsightCard = stageWeights[0] > 0.5;
+        }
+      } else if (currentStage === 'INSIGHT') {
+        alpha = isP0 ? 1 : (isP1 ? 0.7 : 0.4);
+        showInsightCard = true;
       }
 
       ctx.globalAlpha = alpha;
-      const text = CLUSTER_LABELS[i];
 
-      // Minimal label design
-      const metrics = ctx.measureText(text);
-      const w = metrics.width + 16;
-      const h = 24;
+      // Determine if showing insight card or simple label
+      const displayInsightCard = showInsightCard || currentStage === 'INSIGHT';
 
-      // Subtle background
-      ctx.fillStyle = dark
-        ? `rgba(30, 41, 59, ${isHighValue && currentStage === 'INSIGHT' ? 0.95 : 0.7})`
-        : `rgba(255, 255, 255, ${isHighValue && currentStage === 'INSIGHT' ? 0.95 : 0.8})`;
-      ctx.beginPath();
-      ctx.roundRect(c.x - w/2, c.y - h/2 - 38, w, h, 6);
-      ctx.fill();
+      if (!displayInsightCard) {
+        // Simple label during PROCESS
+        ctx.font = '500 12px "Outfit", sans-serif';
+        const text = cluster.label;
+        const metrics = ctx.measureText(text);
+        const w = metrics.width + 16;
+        const h = 24;
 
-      // Accent border for high value
-      if (isHighValue && currentStage === 'INSIGHT') {
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 1.5;
+        ctx.fillStyle = dark
+          ? `rgba(30, 41, 59, 0.7)`
+          : `rgba(255, 255, 255, 0.8)`;
+        ctx.beginPath();
+        ctx.roundRect(c.x - w/2, c.y - h/2 - 38, w, h, 6);
+        ctx.fill();
+
+        ctx.fillStyle = dark ? '#cbd5e1' : '#475569';
+        ctx.fillText(text, c.x, c.y - 38);
+      } else {
+        // Enhanced insight card
+        const cardWidth = 120;
+        const cardHeight = 54;
+        const cardX = c.x - cardWidth / 2;
+        const cardY = c.y - cardHeight / 2 - 38;
+
+        ctx.fillStyle = dark
+          ? `rgba(30, 41, 59, ${isP0 ? 0.95 : 0.8})`
+          : `rgba(255, 255, 255, ${isP0 ? 0.98 : 0.9})`;
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 10);
+        ctx.fill();
+
+        if (isP0) {
+          ctx.shadowColor = cluster.color;
+          ctx.shadowBlur = 20;
+        }
+
+        ctx.strokeStyle = cluster.color;
+        ctx.lineWidth = isP0 ? 2 : 1.5;
         ctx.stroke();
-      }
+        ctx.shadowBlur = 0;
 
-      // Text
-      ctx.fillStyle = dark
-        ? (isHighValue && currentStage === 'INSIGHT' ? '#fbbf24' : '#cbd5e1')
-        : (isHighValue && currentStage === 'INSIGHT' ? '#d97706' : '#475569');
-      ctx.fillText(text, c.x, c.y - 38);
+        const badgeSize = 20;
+        const badgeX = cardX + cardWidth - badgeSize - 6;
+        const badgeY = cardY + 6;
+
+        ctx.fillStyle = cluster.color;
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeSize, badgeSize, 6);
+        ctx.fill();
+
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(cluster.priority, badgeX + badgeSize/2, badgeY + badgeSize/2);
+
+        ctx.font = '600 13px "Outfit", system-ui, sans-serif';
+        ctx.fillStyle = dark ? '#e2e8f0' : '#0f172a';
+        ctx.fillText(cluster.label, c.x, cardY + 18);
+
+        ctx.font = '500 10px system-ui, sans-serif';
+        const valueColor = cluster.value === '高' ? '#ef4444' : (cluster.value === '中' ? '#f97316' : '#6b7280');
+        ctx.fillStyle = valueColor;
+        ctx.fillText(`价值:${cluster.value}`, c.x - 25, cardY + 40);
+
+        ctx.fillStyle = dark ? '#94a3b8' : '#64748b';
+        ctx.fillText(`${cluster.count}条`, c.x + 30, cardY + 40);
+      }
 
       ctx.globalAlpha = 1;
     });
+  }
+
+  // Draw users and notifications during SYNC stage
+  const showUsers = currentStage === 'SYNC' || currentStage === 'INSIGHT' ||
+                     (isTransitioning && (nextStage === 'SYNC' || nextStage === 'INSIGHT'));
+
+  if (showUsers) {
+    const syncProgress = currentStage === 'SYNC' ? localProgress : 0;
+
+    // Calculate fade in with transition support
+    let fadeIn = 0;
+    if (currentStage === 'SYNC' || (isTransitioning && nextStage === 'SYNC')) {
+      fadeIn = Math.min(1, localProgress * 2 + 0.3);
+    } else if (currentStage === 'INSIGHT') {
+      fadeIn = Math.max(0, (localProgress - 0.7) / 0.3);
+    }
+
+    ctx.globalAlpha = fadeIn;
+
+    const centerX = CANVAS_WIDTH / 2;
+    const centerY = CANVAS_HEIGHT / 2;
+
+    USER_DATA.forEach((user, idx) => {
+      // Check if any particle has reached this user
+      const hasNotification = particles.some(p => p.syncedUserIndex === idx);
+
+      // Update notification state
+      if (hasNotification && !user.notified) {
+        user.notified = true;
+        user.notificationTime = frameCount;
+      }
+
+      // Draw connection line from center to user (subtle)
+      if (currentStage === 'SYNC' || (isTransitioning && nextStage === 'SYNC')) {
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(user.x, user.y);
+        ctx.strokeStyle = dark
+          ? `rgba(96, 165, 250, ${0.1 * (1 - syncProgress)})`
+          : `rgba(59, 130, 246, ${0.08 * (1 - syncProgress)})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Draw user avatar circle
+      const avatarSize = 36;
+      ctx.beginPath();
+      ctx.arc(user.x, user.y, avatarSize / 2, 0, Math.PI * 2);
+
+      // Avatar background gradient
+      const avatarGrad = ctx.createRadialGradient(user.x, user.y, 0, user.x, user.y, avatarSize / 2);
+      if (dark) {
+        avatarGrad.addColorStop(0, 'rgba(96, 165, 250, 0.4)');
+        avatarGrad.addColorStop(1, 'rgba(59, 130, 246, 0.15)');
+      } else {
+        avatarGrad.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
+        avatarGrad.addColorStop(1, 'rgba(59, 130, 246, 0.08)');
+      }
+      ctx.fillStyle = avatarGrad;
+      ctx.fill();
+
+      // Avatar border - green when notified
+      ctx.strokeStyle = user.notified
+        ? '#10b981'
+        : (dark ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.4)');
+      ctx.lineWidth = user.notified ? 2.5 : 2;
+      ctx.stroke();
+
+      // Avatar emoji
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(user.avatar, user.x, user.y);
+
+      // User name below avatar
+      ctx.font = '500 11px "Outfit", system-ui, sans-serif';
+      ctx.fillStyle = dark ? 'rgba(226, 232, 240, 0.9)' : 'rgba(30, 41, 59, 0.9)';
+      ctx.fillText(user.name, user.x, user.y + avatarSize / 2 + 16);
+
+      // Notification indicator
+      if (user.notified) {
+        const timeSinceNotify = frameCount - user.notificationTime;
+        const notifProgress = Math.min(1, timeSinceNotify / 30);
+
+        // Expanding ring animation
+        if (notifProgress < 1) {
+          ctx.beginPath();
+          ctx.arc(user.x, user.y, avatarSize / 2 + 5 + notifProgress * 25, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(52, 211, 153, ${1 - notifProgress})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // Notification badge with pulse
+        const pulse = Math.sin(frameCount * 0.1) * 0.2 + 0.8;
+        const badgeX = user.x + avatarSize / 2 - 4;
+        const badgeY = user.y - avatarSize / 2 + 4;
+        const badgeSize = 18;
+
+        // Badge glow
+        ctx.shadowColor = '#10b981';
+        ctx.shadowBlur = 10 * pulse;
+
+        ctx.beginPath();
+        ctx.arc(badgeX, badgeY, badgeSize / 2 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = '#10b981';
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        ctx.strokeStyle = dark ? '#1e293b' : '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Checkmark
+        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('✓', badgeX, badgeY);
+      }
+    });
+
+    ctx.globalAlpha = 1;
   }
 
   animationId.value = requestAnimationFrame(animate);
@@ -997,54 +1303,58 @@ onUnmounted(() => {
 
 .canvas-stage-indicator {
   position: absolute;
-  bottom: 24px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
+  width: calc(100% - 32px);
+  max-width: 480px;
 }
 
 .stage-dots {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--lp-bg-elevated, rgba(15, 23, 42, 0.6));
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--lp-border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: 20px;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 16px;
+  background: var(--lp-bg-elevated, rgba(15, 23, 42, 0.5));
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--lp-border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: 16px;
 }
 
 .stage-dot {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: 12px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
 }
 
 .stage-dot .dot-icon {
-  font-size: 14px;
-  opacity: 0.5;
-  filter: grayscale(0.3);
+  font-size: 13px;
+  opacity: 0.4;
+  filter: grayscale(0.4);
   transition: all 0.4s ease;
 }
 
 .stage-dot .dot-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--lp-text-muted, rgba(255, 255, 255, 0.4));
   letter-spacing: 0.02em;
-  text-transform: uppercase;
   transition: all 0.4s ease;
+  white-space: nowrap;
 }
 
 .stage-dot.active .dot-icon {
   opacity: 1;
   filter: grayscale(0);
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 .stage-dot.active .dot-label {
@@ -1052,12 +1362,12 @@ onUnmounted(() => {
 }
 
 .stage-dot.completed .dot-icon {
-  opacity: 0.65;
+  opacity: 0.6;
   filter: grayscale(0);
 }
 
 .stage-dot.completed .dot-label {
-  color: var(--lp-text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--lp-text-secondary, rgba(255, 255, 255, 0.5));
 }
 
 .dot-progress {
@@ -1115,13 +1425,22 @@ onUnmounted(() => {
     height: 320px;
   }
 
+  .canvas-stage-indicator {
+    bottom: 12px;
+    width: calc(100% - 16px);
+    max-width: 320px;
+  }
+
   .stage-dots {
-    padding: 6px 12px;
-    gap: 6px;
+    padding: 8px 10px;
+    gap: 2px;
   }
 
   .stage-dot {
-    padding: 4px 8px;
+    padding: 5px 8px;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
   }
 
   .stage-dot .dot-icon {
@@ -1129,7 +1448,7 @@ onUnmounted(() => {
   }
 
   .stage-dot .dot-label {
-    font-size: 9px;
+    font-size: 10px;
   }
 }
 
