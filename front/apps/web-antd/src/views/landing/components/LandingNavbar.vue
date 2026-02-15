@@ -37,13 +37,13 @@ onUnmounted(() => {
 <template>
   <nav class="navbar" :class="{ 'navbar-scrolled': isScrolled }">
     <div class="navbar-container">
-      <div class="navbar-brand" @click="router.push('/')">
+      <div class="navbar-brand" @click="router.push('/landing')">
         <img
           src="https://wu-clan.github.io/picx-images-hosting/logo/fba.png"
-          alt="Feedalyze"
+          alt="回响"
           class="navbar-logo"
         />
-        <span class="navbar-name">Feedalyze</span>
+        <span class="navbar-name">回响</span>
       </div>
 
       <div class="navbar-links">
@@ -77,9 +77,9 @@ onUnmounted(() => {
 }
 
 .navbar-scrolled {
-  background: hsla(220, 25%, 6%, 0.9);
+  background: rgba(10, 14, 39, 0.9);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid hsla(220, 20%, 20%, 0.5);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   padding: 0.75rem 0;
 }
 
@@ -111,10 +111,10 @@ onUnmounted(() => {
 }
 
 .navbar-name {
-  font-family: 'Outfit', -apple-system, sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 1.35rem;
   font-weight: 700;
-  background: linear-gradient(135deg, hsl(212, 100%, 55%) 0%, hsl(188, 78%, 55%) 100%);
+  background: var(--lp-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -127,7 +127,7 @@ onUnmounted(() => {
 }
 
 .nav-link {
-  color: hsl(220, 10%, 75%);
+  color: #94a3b8;
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 500;
@@ -142,12 +142,12 @@ onUnmounted(() => {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, hsl(212, 100%, 55%), hsl(188, 78%, 55%));
+  background: var(--lp-gradient-primary);
   transition: width 0.2s ease;
 }
 
 .nav-link:hover {
-  color: hsl(0, 0%, 100%);
+  color: #ffffff;
 }
 
 .nav-link:hover::after {
@@ -163,9 +163,9 @@ onUnmounted(() => {
 .btn-login {
   padding: 0.6rem 1.25rem;
   background: transparent;
-  border: 1px solid hsla(220, 20%, 30%, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 8px;
-  color: hsl(220, 10%, 75%);
+  color: #94a3b8;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -173,26 +173,26 @@ onUnmounted(() => {
 }
 
 .btn-login:hover {
-  border-color: hsl(212, 100%, 45%);
-  color: hsl(0, 0%, 100%);
+  border-color: #60a5fa;
+  color: #ffffff;
 }
 
 .btn-primary {
   padding: 0.6rem 1.5rem;
-  background: linear-gradient(135deg, hsl(212, 100%, 45%) 0%, hsl(212, 100%, 35%) 100%);
+  background: var(--lp-gradient-primary);
   border: none;
   border-radius: 8px;
-  color: hsl(0, 0%, 100%);
+  color: #ffffff;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px hsla(212, 100%, 45%, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px hsla(212, 100%, 45%, 0.4);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
 }
 
 @media (max-width: 768px) {

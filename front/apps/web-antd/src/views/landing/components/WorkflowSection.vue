@@ -18,7 +18,7 @@ const steps = ref([
     title: 'AI 处理',
     description: '自动语义聚类、智能标签分类、优先级评分，全方位分析反馈',
     icon: '🤖',
-    color: 'hsl(280, 70%, 55%)',
+    color: 'hsl(189, 94%, 43%)',
   },
   {
     number: '03',
@@ -288,7 +288,7 @@ const setStep = (index: number) => {
 
 .connection-progress {
   height: 100%;
-  background: linear-gradient(90deg, hsl(212, 100%, 45%), hsl(280, 70%, 55%), hsl(38, 92%, 60%), hsl(144, 70%, 50%));
+  background: linear-gradient(90deg, hsl(212, 100%, 45%), hsl(189, 94%, 43%), hsl(38, 92%, 60%), hsl(144, 70%, 50%));
   border-radius: 2px;
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }

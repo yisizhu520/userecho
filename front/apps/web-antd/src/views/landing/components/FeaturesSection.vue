@@ -197,27 +197,27 @@ onMounted(() => {
 .badge-text {
   font-size: 0.85rem;
   font-weight: 500;
-  color: hsl(220, 10%, 70%);
+  color: #94a3b8;
 }
 
 .section-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: clamp(2rem, 4vw, 2.75rem);
   font-weight: 800;
   margin-bottom: 1rem;
-  color: hsl(0, 0%, 100%);
+  color: #ffffff;
 }
 
 .title-gradient {
-  background: linear-gradient(135deg, hsl(212, 100%, 55%) 0%, hsl(188, 78%, 55%) 50%, hsl(144, 70%, 50%) 100%);
+  background: linear-gradient(135deg, #00e5ff 0%, #06b6d4 50%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .section-subtitle {
-  font-size: 1.1rem;
-  color: hsl(220, 10%, 70%);
+  font-size: 1.15rem;
+  color: #cbd5e1;
 }
 
 /* Features Grid */
@@ -249,7 +249,7 @@ onMounted(() => {
 }
 
 .feature-card:hover .feature-card-inner {
-  background: hsla(220, 20%, 14%, 0.95);
+  background: rgba(26, 32, 66, 0.95);
 }
 
 .feature-card-inner {
@@ -257,8 +257,8 @@ onMounted(() => {
   z-index: 1;
   height: 100%;
   padding: 2rem;
-  background: hsla(220, 20%, 12%, 0.9);
-  border: 1px solid hsla(220, 20%, 20%, 0.5);
+  background: rgba(15, 20, 41, 0.9);
+  border: 1px solid rgba(0, 229, 255, 0.15);
   border-radius: 20px;
   transition: all 0.3s ease;
   backdrop-filter: blur(12px);
@@ -282,9 +282,9 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   font-size: 2rem;
-  background: hsla(220, 20%, 15%, 0.9);
+  background: rgba(26, 32, 66, 0.9);
   border-radius: 16px;
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  border: 1px solid rgba(0, 229, 255, 0.25);
 }
 
 .feature-icon-glow {
@@ -301,16 +301,16 @@ onMounted(() => {
 }
 
 .feature-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--lp-font-display);
   font-size: 1.35rem;
   font-weight: 700;
-  color: hsl(0, 0%, 100%);
+  color: #ffffff;
   margin-bottom: 0.75rem;
 }
 
 .feature-description {
   font-size: 0.95rem;
-  color: hsl(220, 10%, 65%);
+  color: #94a3b8;
   line-height: 1.6;
   margin-bottom: 1.5rem;
   flex-grow: 1;
@@ -334,7 +334,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: hsl(220, 10%, 70%);
+  color: #94a3b8;
 }
 
 .feature-list-item svg {
@@ -359,8 +359,8 @@ onMounted(() => {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(hsla(220, 20%, 20%, 0.3) 1px, transparent 1px),
-    linear-gradient(90deg, hsla(220, 20%, 20%, 0.3) 1px, transparent 1px);
+    linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
   opacity: 0.5;
 }
@@ -378,8 +378,8 @@ onMounted(() => {
 }
 
 .banner-content {
-  background: linear-gradient(135deg, hsla(212, 100%, 45%, 0.15) 0%, hsla(144, 70%, 50%, 0.15) 100%);
-  border: 1px solid hsla(212, 100%, 45%, 0.3);
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.3);
   border-radius: 20px;
   padding: 2rem;
   display: flex;

@@ -20,6 +20,12 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement>();
 const animationId = ref<number>();
 
+// Split description for better styling
+const descriptionParts = [
+  '10倍速度洞察需求',
+  '产品经理的决策外脑'
+];
+
 // Particle class for cluster animation
 class Particle {
   x: number;
@@ -45,19 +51,19 @@ class Particle {
   }
 
   getClusterColor(id: number): string {
+    // Brand colors only: blue, cyan, green, amber
     const colors = [
-      'hsla(212, 100%, 55%, 0.8)',
-      'hsla(38, 92%, 60%, 0.8)',
-      'hsla(188, 78%, 55%, 0.8)',
-      'hsla(144, 70%, 50%, 0.8)',
-      'hsla(280, 70%, 55%, 0.8)',
+      'rgba(0, 229, 255, 0.9)',
+      'rgba(245, 158, 11, 0.9)',
+      'rgba(6, 182, 212, 0.9)',
+      'rgba(16, 185, 129, 0.9)',
+      'rgba(59, 130, 246, 0.9)',
     ];
     return colors[id % colors.length];
   }
 
   update(clustering: boolean, progress: number) {
     if (clustering) {
-      // Move towards cluster center
       const dx = this.targetX - this.x;
       const dy = this.targetY - this.y;
       this.vx += dx * 0.02 * progress;
@@ -65,7 +71,6 @@ class Particle {
       this.vx *= 0.92;
       this.vy *= 0.92;
     } else {
-      // Random movement
       this.vx += (Math.random() - 0.5) * 0.3;
       this.vy += (Math.random() - 0.5) * 0.3;
       this.vx *= 0.98;
@@ -75,7 +80,6 @@ class Particle {
     this.x += this.vx;
     this.y += this.vy;
 
-    // Boundary check
     if (this.x < 20) this.vx = Math.abs(this.vx);
     if (this.x > 380) this.vx = -Math.abs(this.vx);
     if (this.y < 20) this.vy = Math.abs(this.vy);
@@ -88,7 +92,6 @@ class Particle {
     ctx.fillStyle = this.color;
     ctx.fill();
 
-    // Glow effect
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
     const gradient = ctx.createRadialGradient(
@@ -122,7 +125,6 @@ const initParticles = () => {
     { x: 80, y: 300 },
   ];
 
-  // Create particles for each cluster
   clusters.forEach((cluster, clusterId) => {
     const particleCount = 8 + Math.floor(Math.random() * 6);
     for (let i = 0; i < particleCount; i++) {
@@ -137,7 +139,6 @@ const initParticles = () => {
     }
   });
 
-  // Add some outlier particles
   for (let i = 0; i < 12; i++) {
     const x = Math.random() * 360 + 20;
     const y = Math.random() * 360 + 20;
@@ -153,11 +154,9 @@ const animate = () => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // Clear canvas
-  ctx.fillStyle = 'hsla(220, 20%, 8%, 0.1)';
+  ctx.fillStyle = 'rgba(15, 20, 41, 0.15)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Animation cycle
   animationTime += 0.016;
   if (animationTime > 5) {
     animationTime = 0;
@@ -165,7 +164,6 @@ const animate = () => {
     clusterProgress = 0;
   }
 
-  // Progress
   if (isClustering && clusterProgress < 1) {
     clusterProgress += 0.008;
   } else if (!isClustering && clusterProgress > 0) {
@@ -173,7 +171,6 @@ const animate = () => {
   }
   clusterProgress = Math.max(0, Math.min(1, clusterProgress));
 
-  // Draw connections between particles in same cluster
   particles.forEach((p1, i) => {
     particles.slice(i + 1).forEach((p2) => {
       if (p1.clusterId === p2.clusterId) {
@@ -191,19 +188,17 @@ const animate = () => {
     });
   });
 
-  // Update and draw particles
   particles.forEach((particle) => {
     particle.update(isClustering, clusterProgress);
     particle.draw(ctx);
   });
 
-  // Draw cluster labels when clustered
   if (clusterProgress > 0.5) {
     const labels = ['性能问题', '新功能', 'UI优化', 'Bug修复', '体验改进'];
     const labelAlpha = (clusterProgress - 0.5) * 2;
     clusters.forEach((cluster, i) => {
       ctx.font = '600 12px "Outfit", sans-serif';
-      ctx.fillStyle = `hsla(0, 0%, 100%, ${labelAlpha * 0.7})`;
+      ctx.fillStyle = `rgba(255, 255, 255, ${labelAlpha * 0.7})`;
       ctx.textAlign = 'center';
       ctx.fillText(labels[i], cluster.x, cluster.y + 5);
     });
@@ -244,7 +239,9 @@ onUnmounted(() => {
         </h1>
 
         <p class="hero-description">
-          {{ description }}
+          <span class="desc-main">10倍速度洞察需求</span>
+          <span class="desc-divider"> — </span>
+          <span class="desc-sub">产品经理的决策外脑</span>
         </p>
 
         <div class="hero-actions">
@@ -256,7 +253,9 @@ onUnmounted(() => {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             >
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
@@ -282,7 +281,7 @@ onUnmounted(() => {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -295,7 +294,7 @@ onUnmounted(() => {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -308,7 +307,7 @@ onUnmounted(() => {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -321,7 +320,7 @@ onUnmounted(() => {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -342,7 +341,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Floating elements -->
         <div class="floating-card card-1">
           <div class="card-icon">✓</div>
           <div class="card-content">
@@ -360,7 +358,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Scroll indicator -->
     <div class="scroll-indicator">
       <div class="scroll-line"></div>
       <div class="scroll-text">向下滚动</div>
@@ -377,37 +374,40 @@ onUnmounted(() => {
   justify-content: center;
   padding: 6rem 2rem 4rem;
   overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(10, 14, 39, 0.9) 0%, rgba(15, 20, 41, 0.95) 100%),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(59, 130, 246, 0.03) 2px, rgba(59, 130, 246, 0.03) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(59, 130, 246, 0.03) 2px, rgba(59, 130, 246, 0.03) 4px);
 }
 
+/* Circuit board pattern */
 .hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.5;
+}
+
+.hero-section::after {
   content: '';
   position: absolute;
   top: -20%;
   right: -10%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, hsla(212, 100%, 45%, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.12) 0%, transparent 70%);
   border-radius: 50%;
-  filter: blur(60px);
-  animation: float 20s ease-in-out infinite;
+  filter: blur(100px);
+  animation: float-glow 20s ease-in-out infinite;
 }
 
-.hero-section::after {
-  content: '';
-  position: absolute;
-  bottom: -10%;
-  left: -5%;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, hsla(188, 78%, 55%, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
-  filter: blur(40px);
-  animation: float 15s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(30px, -30px); }
+@keyframes float-glow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -20px) scale(1.1); }
 }
 
 .hero-container {
@@ -432,8 +432,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: hsla(212, 100%, 45%, 0.15);
-  border: 1px solid hsla(212, 100%, 45%, 0.3);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 100px;
   width: fit-content;
 }
@@ -441,7 +441,7 @@ onUnmounted(() => {
 .badge-dot {
   width: 6px;
   height: 6px;
-  background: hsl(212, 100%, 55%);
+  background: #60a5fa;
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -454,11 +454,11 @@ onUnmounted(() => {
 .badge-text {
   font-size: 0.85rem;
   font-weight: 500;
-  color: hsl(212, 100%, 65%);
+  color: #93c5fd;
 }
 
 .hero-title {
-  font-family: 'Outfit', -apple-system, sans-serif;
+  font-family: var(--lp-font-display);
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
   line-height: 1.1;
@@ -467,22 +467,37 @@ onUnmounted(() => {
 
 .title-line {
   display: block;
-  color: hsl(0, 0%, 100%);
+  color: #ffffff;
 }
 
 .title-highlight {
   display: block;
-  background: linear-gradient(135deg, hsl(212, 100%, 55%) 0%, hsl(188, 78%, 55%) 100%);
+  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 50%, #ff9800 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.5));
 }
 
 .hero-description {
-  font-size: 1.1rem;
-  color: hsl(220, 10%, 70%);
+  font-size: 1.25rem;
   line-height: 1.6;
   max-width: 480px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.desc-main {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.desc-divider {
+  color: #64748b;
+  margin: 0 0.3rem;
+}
+
+.desc-sub {
+  color: #94a3b8;
 }
 
 .hero-actions {
@@ -494,35 +509,37 @@ onUnmounted(() => {
 .btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.75rem;
-  background: linear-gradient(135deg, hsl(212, 100%, 45%) 0%, hsl(212, 100%, 35%) 100%);
+  gap: 0.6rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 100%);
   border: none;
-  border-radius: 10px;
-  color: hsl(0, 0%, 100%);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 12px;
+  color: #0a0e27;
+  font-size: 1.05rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px hsla(212, 100%, 45%, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 229, 255, 0.4), 0 0 40px rgba(0, 229, 255, 0.2);
+}
+
+.btn-primary svg {
+  color: #ffffff;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px hsla(212, 100%, 45%, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 229, 255, 0.5), 0 0 60px rgba(0, 229, 255, 0.3);
 }
 
 .btn-secondary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  background: hsla(220, 20%, 15%, 0.8);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
-  border-radius: 10px;
-  color: hsl(0, 0%, 100%);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  gap: 0.6rem;
+  padding: 1rem 1.75rem;
+  background: rgba(26, 32, 66, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  color: #e2e8f0;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -531,8 +548,9 @@ onUnmounted(() => {
 }
 
 .btn-secondary:hover {
-  background: hsla(220, 20%, 18%, 0.9);
-  border-color: hsla(212, 100%, 45%, 0.5);
+  background: rgba(37, 48, 90, 0.9);
+  border-color: rgba(0, 229, 255, 0.5);
+  color: #ffffff;
 }
 
 .hero-features {
@@ -546,19 +564,19 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: hsla(220, 20%, 12%, 0.8);
-  border: 1px solid hsla(220, 20%, 20%, 0.5);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: hsl(220, 10%, 70%);
+  padding: 0.6rem 1rem;
+  background: rgba(26, 32, 66, 0.7);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #cbd5e1;
 }
 
 .feature-tag svg {
-  color: hsl(144, 70%, 50%);
+  color: #00e5ff;
 }
 
-/* Visual */
 .hero-visual {
   position: relative;
   display: flex;
@@ -570,11 +588,14 @@ onUnmounted(() => {
   position: relative;
   width: 400px;
   height: 400px;
-  background: hsla(220, 20%, 10%, 0.8);
-  border: 1px solid hsla(220, 20%, 20%, 0.5);
+  background: linear-gradient(135deg, rgba(15, 20, 41, 0.9) 0%, rgba(10, 14, 39, 0.95) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.2);
   border-radius: 24px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 20px 60px hsla(0, 0%, 0%, 0.3);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 80px rgba(0, 229, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cluster-canvas {
@@ -598,18 +619,22 @@ onUnmounted(() => {
 
 .stat-value {
   display: block;
-  font-family: 'Outfit', sans-serif;
-  font-size: 3rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, hsl(212, 100%, 55%) 0%, hsl(188, 78%, 55%) 100%);
+  font-family: var(--lp-font-display);
+  font-size: 4rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 50%, #ff9800 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+  letter-spacing: -0.02em;
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: hsl(220, 10%, 60%);
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: 0.05em;
 }
 
 .overlay-ring {
@@ -617,30 +642,32 @@ onUnmounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 150px;
-  height: 150px;
-  border: 2px solid hsla(212, 100%, 45%, 0.2);
+  width: 180px;
+  height: 180px;
+  border: 2px solid rgba(0, 229, 255, 0.3);
   border-radius: 50%;
   animation: ring-pulse 3s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
 }
 
 @keyframes ring-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.2; }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.3; }
 }
 
-/* Floating cards */
 .floating-card {
   position: absolute;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: hsla(220, 20%, 12%, 0.95);
-  border: 1px solid hsla(220, 20%, 25%, 0.5);
+  padding: 0.875rem 1.25rem;
+  background: rgba(15, 20, 41, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.25);
   border-radius: 12px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.3);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(0, 229, 255, 0.1);
   animation: float-card 6s ease-in-out infinite;
 }
 
@@ -657,20 +684,21 @@ onUnmounted(() => {
 
 @keyframes float-card {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-12px); }
 }
 
 .card-icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, hsl(212, 100%, 45%), hsl(144, 70%, 50%));
-  border-radius: 8px;
-  font-size: 1rem;
-  color: white;
-  font-weight: 700;
+  background: linear-gradient(135deg, #00e5ff 0%, #00b7ff 100%);
+  border-radius: 10px;
+  font-size: 1.1rem;
+  color: #0a0e27;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.3);
 }
 
 .card-content {
@@ -680,17 +708,17 @@ onUnmounted(() => {
 
 .card-title {
   font-size: 0.75rem;
-  color: hsl(220, 10%, 60%);
+  color: #fefefe;
+  font-weight: 500;
 }
 
 .card-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: hsl(0, 0%, 100%);
+  font-family: var(--lp-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-/* Scroll indicator */
 .scroll-indicator {
   position: absolute;
   bottom: 2rem;
@@ -711,17 +739,16 @@ onUnmounted(() => {
 .scroll-line {
   width: 1px;
   height: 32px;
-  background: linear-gradient(to bottom, hsl(212, 100%, 45%), transparent);
+  background: linear-gradient(to bottom, #3b82f6, transparent);
 }
 
 .scroll-text {
   font-size: 0.75rem;
-  color: hsl(220, 10%, 50%);
+  color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
-/* Responsive */
 @media (max-width: 968px) {
   .hero-container {
     grid-template-columns: 1fr;

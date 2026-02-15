@@ -32,7 +32,7 @@ const coreRoutes: RouteRecordRaw[] = [
       hideInBreadcrumb: true,
       hideInMenu: true,
       hideInTab: true,
-      title: 'Feedalyze - AI 驱动的用户反馈智能分析平台',
+      title: '回响 - AI 驱动的用户反馈智能分析平台',
     },
     name: 'Landing',
     path: '/landing',
