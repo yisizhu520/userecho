@@ -24,36 +24,39 @@ const animationId = ref<number>();
 
 const isDark = computed(() => theme.value === 'dark');
 
-// Split description for better styling
-const descriptionParts = [
-  '10倍速度洞察需求',
-  '产品经理的决策外脑'
-];
+// Animation State Machine
+type AnimationPhase = 'SCATTERED' | 'SCANNING' | 'CLUSTERING' | 'HOLD';
+let currentPhase: AnimationPhase = 'SCATTERED';
+let phaseTimer = 0;
 
-// Particle colors for each theme
+// Constants
+const CANVAS_SIZE = 400;
+const CLUSTER_LABELS = ['性能问题', '新功能', 'UI优化', 'Bug修复', '体验改进'];
+const NEUTRAL_COLOR_LIGHT = 'rgba(148, 163, 184, 0.4)'; // Slate 400
+const NEUTRAL_COLOR_DARK = 'rgba(148, 163, 184, 0.2)';  // Slate 400 dimmed
+const SCAN_LINE_COLOR = 'rgba(56, 189, 248, 0.6)';      // Light Blue
+
 // Particle colors for each theme - Professional Blue Palette
-  const getParticleColors = (dark: boolean) => {
-    if (dark) {
-      return [
-        'rgba(59, 130, 246, 0.8)',   // Blue 500
-        'rgba(37, 99, 235, 0.8)',    // Blue 600
-        'rgba(96, 165, 250, 0.8)',   // Blue 400
-        'rgba(147, 197, 253, 0.6)',  // Blue 300
-        'rgba(255, 255, 255, 0.4)',  // White accent
-      ];
-    } else {
-      // Light theme
-      return [
-        'rgba(29, 78, 216, 0.8)',    // Blue 700
-        'rgba(37, 99, 235, 0.8)',    // Blue 600
-        'rgba(59, 130, 246, 0.8)',   // Blue 500
-        'rgba(96, 165, 250, 0.6)',   // Blue 400
-        'rgba(15, 23, 42, 0.3)',     // Slate accent
-      ];
-    }
-  };
+const getParticleColors = (dark: boolean) => {
+  if (dark) {
+    return [
+      'rgba(59, 130, 246, 1)',   // Blue 500
+      'rgba(37, 99, 235, 1)',    // Blue 600
+      'rgba(96, 165, 250, 1)',   // Blue 400
+      'rgba(147, 197, 253, 1)',  // Blue 300
+      'rgba(255, 255, 255, 0.9)', // White accent
+    ];
+  } else {
+    return [
+      'rgba(29, 78, 216, 1)',    // Blue 700
+      'rgba(37, 99, 235, 1)',    // Blue 600
+      'rgba(59, 130, 246, 1)',   // Blue 500
+      'rgba(96, 165, 250, 1)',   // Blue 400
+      'rgba(15, 23, 42, 0.8)',   // Slate accent
+    ];
+  }
+};
 
-// Particle class for cluster animation
 class Particle {
   x: number;
   y: number;
@@ -63,88 +66,90 @@ class Particle {
   targetY: number;
   clusterId: number;
   size: number;
-  color: string;
-  particleColors: string[];
-
-  constructor(x: number, y: number, clusterId: number, colors: string[]) {
+  baseColor: string;
+  activeColor: string;
+  isActive: boolean;
+  
+  constructor(x: number, y: number, clusterId: number, activeColors: string[], isDark: boolean) {
     this.x = x;
     this.y = y;
-    this.vx = (Math.random() - 0.5) * 2;
-    this.vy = (Math.random() - 0.5) * 2;
+    this.vx = (Math.random() - 0.5) * 1.5;
+    this.vy = (Math.random() - 0.5) * 1.5;
     this.targetX = x;
     this.targetY = y;
     this.clusterId = clusterId;
-    this.size = Math.random() * 4 + 3;
-    this.particleColors = colors;
-    this.color = this.getClusterColor(clusterId);
+    this.size = Math.random() * 3 + 2.5; // Slightly smaller for elegance
+    this.activeColor = activeColors[clusterId % activeColors.length];
+    this.baseColor = isDark ? NEUTRAL_COLOR_DARK : NEUTRAL_COLOR_LIGHT;
+    this.isActive = false;
   }
 
-  getClusterColor(id: number): string {
-    return this.particleColors[id % this.particleColors.length];
-  }
+  update(phase: AnimationPhase, progress: number, scanX: number) {
+    // Phase 1: Scattered - random drift
+    if (phase === 'SCATTERED') {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.isActive = false;
 
-  updateColors(colors: string[]) {
-    this.particleColors = colors;
-    this.color = this.getClusterColor(this.clusterId);
-  }
-
-  update(clustering: boolean, progress: number) {
-    if (clustering) {
+      // Bounce off walls
+      if (this.x < 0 || this.x > CANVAS_SIZE) this.vx *= -1;
+      if (this.y < 0 || this.y > CANVAS_SIZE) this.vy *= -1;
+    }
+    
+    // Phase 2: Scanning - activate when scan line passes
+    else if (phase === 'SCANNING') {
+       this.x += this.vx * 0.5; // Slow down drift
+       this.y += this.vy * 0.5;
+       
+       if (this.x < scanX + 20) {
+         this.isActive = true;
+       }
+    }
+    
+    // Phase 3: Clustering - move to target
+    else if (phase === 'CLUSTERING') {
       const dx = this.targetX - this.x;
       const dy = this.targetY - this.y;
-      this.vx += dx * 0.02 * progress;
-      this.vy += dy * 0.02 * progress;
-      this.vx *= 0.92;
-      this.vy *= 0.92;
-    } else {
-      this.vx += (Math.random() - 0.5) * 0.3;
-      this.vy += (Math.random() - 0.5) * 0.3;
-      this.vx *= 0.98;
-      this.vy *= 0.98;
+      // Easing function for smooth arrival
+      this.x += dx * 0.08;
+      this.y += dy * 0.08;
+      this.isActive = true;
     }
-
-    this.x += this.vx;
-    this.y += this.vy;
-
-    if (this.x < 20) this.vx = Math.abs(this.vx);
-    if (this.x > 380) this.vx = -Math.abs(this.vx);
-    if (this.y < 20) this.vy = Math.abs(this.vy);
-    if (this.y > 380) this.vy = -Math.abs(this.vy);
+    
+    // Phase 4: Hold - slight vibration around target
+    else if (phase === 'HOLD') {
+      this.x += (Math.random() - 0.5) * 0.2;
+      this.y += (Math.random() - 0.5) * 0.2;
+      this.isActive = true;
+    }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = this.color;
+    
+    // Color transition
+    ctx.fillStyle = this.isActive ? this.activeColor : this.baseColor;
     ctx.fill();
 
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
-    const gradient = ctx.createRadialGradient(
-      this.x,
-      this.y,
-      0,
-      this.x,
-      this.y,
-      this.size * 2
-    );
-    gradient.addColorStop(0, this.color.replace('0.9', '0.3').replace('0.85', '0.25'));
-    gradient.addColorStop(1, 'transparent');
-    ctx.fillStyle = gradient;
-    ctx.fill();
+    // Glow effect if active
+    if (this.isActive) {
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = this.activeColor;
+    } else {
+      ctx.shadowBlur = 0;
+    }
   }
 }
 
 let particles: Particle[] = [];
 let clusters: { x: number; y: number }[] = [];
-let isClustering = true;
-let clusterProgress = 0;
-let animationTime = 0;
 
 const initParticles = () => {
-  const colors = getParticleColors(isDark.value);
-
+  const activeColors = getParticleColors(isDark.value);
   particles = [];
+  
+  // Define cluster centers
   clusters = [
     { x: 100, y: 120 },
     { x: 280, y: 100 },
@@ -154,93 +159,198 @@ const initParticles = () => {
   ];
 
   clusters.forEach((cluster, clusterId) => {
-    const particleCount = 8 + Math.floor(Math.random() * 6);
+    const particleCount = 10 + Math.floor(Math.random() * 8);
     for (let i = 0; i < particleCount; i++) {
+      // Random starting position (scattered)
+      const startX = Math.random() * CANVAS_SIZE;
+      const startY = Math.random() * CANVAS_SIZE;
+      
+      const particle = new Particle(startX, startY, clusterId, activeColors, isDark.value);
+      
+      // Calculate target position (clustered around center)
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 40;
-      const x = cluster.x + Math.cos(angle) * radius;
-      const y = cluster.y + Math.sin(angle) * radius;
-      const particle = new Particle(x, y, clusterId, colors);
-      particle.targetX = cluster.x + (Math.random() - 0.5) * 30;
-      particle.targetY = cluster.y + (Math.random() - 0.5) * 30;
+      const radius = Math.random() * 35; // Tightness of cluster
+      particle.targetX = cluster.x + Math.cos(angle) * radius;
+      particle.targetY = cluster.y + Math.sin(angle) * radius;
+      
       particles.push(particle);
     }
   });
 
-  for (let i = 0; i < 12; i++) {
-    const x = Math.random() * 360 + 20;
-    const y = Math.random() * 360 + 20;
-    const particle = new Particle(x, y, Math.floor(Math.random() * clusters.length), colors);
-    particles.push(particle);
+  // Add some noise particles (belong to random clusters)
+  for (let i = 0; i < 15; i++) {
+     const startX = Math.random() * CANVAS_SIZE;
+     const startY = Math.random() * CANVAS_SIZE;
+     const clusterId = Math.floor(Math.random() * clusters.length);
+     const particle = new Particle(startX, startY, clusterId, activeColors, isDark.value);
+     // Target is also random-ish for these, but loosely pulled to center
+     particle.targetX = clusters[clusterId].x + (Math.random() - 0.5) * 80;
+     particle.targetY = clusters[clusterId].y + (Math.random() - 0.5) * 80;
+     particles.push(particle);
   }
 };
 
 // Update particle colors when theme changes
 watch(theme, () => {
-  const colors = getParticleColors(isDark.value);
-  particles.forEach(p => p.updateColors(colors));
+  initParticles(); // Re-init to catch new colors easiest way
 });
 
 const animate = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
-
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   const dark = isDark.value;
-
-  // Clear canvas with theme-aware background
-  ctx.fillStyle = dark ? 'rgba(15, 20, 41, 0.15)' : 'rgba(255, 255, 255, 0.5)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  animationTime += 0.016;
-  if (animationTime > 5) {
-    animationTime = 0;
-    isClustering = !isClustering;
-    clusterProgress = 0;
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Use clearRect for transparent bg
+  
+  // Phase Logic
+  phaseTimer += 1; // 60fps approx
+  
+  let scanX = 0;
+  
+  // 1. Scattered (0-120 frames / 2s)
+  if (phaseTimer < 120) {
+    currentPhase = 'SCATTERED';
+  } 
+  // 2. Scanning (120-240 frames / 2s)
+  else if (phaseTimer < 240) {
+    currentPhase = 'SCANNING';
+    const progress = (phaseTimer - 120) / 120; // 0 to 1
+    scanX = progress * CANVAS_SIZE;
+    
+    // Draw Scan Line
+    const gradient = ctx.createLinearGradient(scanX, 0, scanX, CANVAS_SIZE);
+    gradient.addColorStop(0, 'rgba(56, 189, 248, 0)');
+    gradient.addColorStop(0.5, SCAN_LINE_COLOR);
+    gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(scanX, 0);
+    ctx.lineTo(scanX, CANVAS_SIZE);
+    ctx.stroke();
+    
+    // Draw scan glow area
+    const glowGrad = ctx.createLinearGradient(scanX - 50, 0, scanX, 0);
+    glowGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+    glowGrad.addColorStop(1, 'rgba(56, 189, 248, 0.1)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(scanX - 50, 0, 50, CANVAS_SIZE);
   }
-
-  if (isClustering && clusterProgress < 1) {
-    clusterProgress += 0.008;
-  } else if (!isClustering && clusterProgress > 0) {
-    clusterProgress -= 0.008;
+  // 3. Clustering (240-300 frames / 1s)
+  else if (phaseTimer < 300) {
+    currentPhase = 'CLUSTERING';
   }
-  clusterProgress = Math.max(0, Math.min(1, clusterProgress));
-
-  particles.forEach((p1, i) => {
-    particles.slice(i + 1).forEach((p2) => {
-      if (p1.clusterId === p2.clusterId) {
-        const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-        if (dist < 60) {
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          const alpha = (1 - dist / 60) * 0.3 * clusterProgress;
-          ctx.strokeStyle = p1.color.replace('0.9', String(alpha)).replace('0.85', String(alpha));
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
+  // 4. Hold (300-600 frames / 5s)
+  else if (phaseTimer < 600) {
+    currentPhase = 'HOLD';
+  }
+  // Reset
+  else {
+    phaseTimer = 0;
+    // Re-randomize positions for restart effect to start 'SCATTERED' fresh? 
+    // Actually better to let them explode out.
+    // Let's reset phaseTimer but maybe force particles to 'explode' logic if needed.
+    // For simplicity, just reset loop, their position is at target, so scattered phase will drift them.
+    // To make it look 'new', let's re-randomize velocities slightly
+    particles.forEach(p => {
+       p.vx = (Math.random() - 0.5) * 4; // Faster explosion
+       p.vy = (Math.random() - 0.5) * 4;
     });
-  });
+  }
 
-  particles.forEach((particle) => {
-    particle.update(isClustering, clusterProgress);
-    particle.draw(ctx);
+  // Update & Draw Particles
+  particles.forEach(p => {
+    p.update(currentPhase, 0, scanX);
+    p.draw(ctx);
   });
+  
+  // Draw Connections (Only in Clustering/Hold & Active)
+  if (currentPhase === 'CLUSTERING' || currentPhase === 'HOLD') {
+    ctx.globalAlpha = currentPhase === 'CLUSTERING' ? 0.2 : 0.3;
+    particles.forEach((p1, i) => {
+        // Optimization: check only close neighbors or same cluster
+        if (!p1.isActive) return;
+        
+        // Only connect same cluster
+        particles.slice(i + 1).forEach(p2 => {
+            if (p1.clusterId === p2.clusterId && p2.isActive) {
+                 const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                 if (dist < 50) {
+                     ctx.beginPath();
+                     ctx.moveTo(p1.x, p1.y);
+                     ctx.lineTo(p2.x, p2.y);
+                     ctx.strokeStyle = p1.activeColor;
+                     ctx.lineWidth = 0.5;
+                     ctx.stroke();
+                 }
+            }
+        });
+    });
+    ctx.globalAlpha = 1;
+  }
 
-  if (clusterProgress > 0.5) {
-    const labels = ['性能问题', '新功能', 'UI优化', 'Bug修复', '体验改进'];
-    const labelAlpha = (clusterProgress - 0.5) * 2;
-    clusters.forEach((cluster, i) => {
-      ctx.font = '600 12px "Outfit", sans-serif';
-      ctx.fillStyle = dark
-        ? `rgba(255, 255, 255, ${labelAlpha * 0.7})`
-        : `rgba(15, 23, 42, ${labelAlpha * 0.7})`;
+  // Draw Labels (Only in Hold Phase)
+  if (currentPhase === 'HOLD') {
+      const opacity = Math.min(1, (phaseTimer - 300) / 30); // Fade in
+      
       ctx.textAlign = 'center';
-      ctx.fillText(labels[i], cluster.x, cluster.y + 5);
-    });
+      ctx.textBaseline = 'middle';
+      
+      clusters.forEach((cluster, i) => {
+        const text = CLUSTER_LABELS[i];
+        
+        // Pill Background
+        ctx.font = '600 13px "Outfit", sans-serif';
+        const metrics = ctx.measureText(text);
+        const padX = 12;
+        const padY = 6;
+        const w = metrics.width + padX * 2;
+        const h = 28;
+        
+        // Draw Shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 10;
+        
+        // Background Pill
+        ctx.fillStyle = dark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)';
+        // Draw rounded rect manually-ish or use standard if available (standard in modern browsers)
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(cluster.x - w/2, cluster.y - h/2 - 40, w, h, 14); // -40 offset to float above
+            ctx.fill();
+        } else {
+            ctx.fillRect(cluster.x - w/2, cluster.y - h/2 - 40, w, h);
+        }
+        
+        ctx.shadowBlur = 0;
+        
+        // Border
+        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Text
+        ctx.fillStyle = dark ? '#e2e8f0' : '#0f172a';
+        ctx.fillText(text, cluster.x, cluster.y - 40);
+        
+        // Little connector line
+        ctx.beginPath();
+        ctx.moveTo(cluster.x, cluster.y - 40 + h/2);
+        ctx.lineTo(cluster.x, cluster.y - 10);
+        ctx.strokeStyle = dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
+        ctx.stroke();
+        
+        // Little dot at bottom
+        ctx.beginPath();
+        ctx.arc(cluster.x, cluster.y - 10, 2, 0, Math.PI*2);
+        ctx.fillStyle = dark ? '#fff' : '#000';
+        ctx.fill();
+        
+      });
   }
 
   animationId.value = requestAnimationFrame(animate);
