@@ -32,7 +32,7 @@ import {
   useColumns,
   feedbackFormSchema,
 } from '#/views/userecho/feedback/data';
-import CustomSidebar from '#/layouts/components/sidebar/CustomSidebar.vue';
+import FeedbackFilterSidebar from '#/layouts/components/sidebar/FeedbackFilterSidebar.vue';
 
 /**
  * 响应式布局检测
@@ -48,17 +48,16 @@ const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
 };
 
 /**
- * 查询表单配置
+ * 筛选条件状态
  */
-const formOptions: VbenFormProps = {
-  collapsed: false,
-  showCollapseButton: false,
-  submitOnEnter: true,
-  submitButtonOptions: {
-    content: $t('common.form.query'),
-  },
-  schema: querySchema,
-};
+const filterValues = ref({
+  search_query: '',
+  search_mode: 'keyword' as 'keyword' | 'semantic',
+  is_urgent: '' as boolean | '',
+  has_topic: '' as boolean | '',
+  clustering_status: '',
+  board_ids: [] as string[],
+});
 
 /**
  * 语义搜索 loading 状态
@@ -92,12 +91,12 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
   columns: useColumns(onActionClick),
   proxyConfig: {
     ajax: {
-      query: async ({ page }, formValues) => {
+      query: async ({ page }) => {
         // 记录当前搜索模式
-        currentSearchMode.value = formValues.search_mode || 'keyword';
+        currentSearchMode.value = filterValues.value.search_mode || 'keyword';
 
         // 如果是语义搜索且有搜索词，显示 loading 提示
-        const isSemanticSearch = formValues.search_mode === 'semantic' && formValues.search_query;
+        const isSemanticSearch = filterValues.value.search_mode === 'semantic' && filterValues.value.search_query;
         if (isSemanticSearch) {
           semanticSearchLoading.value = true;
           message.loading({
@@ -108,11 +107,33 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
         }
 
         try {
-          const data = await getFeedbackList({
+          // 过滤掉空字符串值，只传递有效的筛选参数
+          const queryParams: any = {
             skip: (page.currentPage - 1) * page.pageSize,
             limit: page.pageSize,
-            ...formValues,
-          });
+          };
+          
+          // 只添加非空值
+          if (filterValues.value.search_query) {
+            queryParams.search_query = filterValues.value.search_query;
+          }
+          if (filterValues.value.search_mode) {
+            queryParams.search_mode = filterValues.value.search_mode;
+          }
+          if (filterValues.value.is_urgent !== '') {
+            queryParams.is_urgent = filterValues.value.is_urgent;
+          }
+          if (filterValues.value.has_topic !== '') {
+            queryParams.has_topic = filterValues.value.has_topic;
+          }
+          if (filterValues.value.clustering_status) {
+            queryParams.clustering_status = filterValues.value.clustering_status;
+          }
+          if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
+            queryParams.board_ids = filterValues.value.board_ids;
+          }
+          
+          const data = await getFeedbackList(queryParams);
 
           // 语义搜索完成，显示成功提示
           if (isSemanticSearch) {
@@ -148,7 +169,14 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
+
+/**
+ * 触发搜索
+ */
+function handleSearch() {
+  gridApi.query();
+}
 
 function onRefresh() {
   gridApi.query();
@@ -400,124 +428,142 @@ onBeforeUnmount(() => {
 });</script>
 
 <template>
-  <div class="flex h-full w-full">
-    <!-- 左侧栏 - 仅桌面端显示 -->
-    <div v-if="!isMobile" class="h-full w-[240px] flex-shrink-0 border-r border-border bg-sidebar">
-      <CustomSidebar />
-    </div>
-    
-    <!-- 右侧内容区域 -->
-    <div class="flex-1 h-full overflow-hidden bg-background" :class="isMobile ? 'p-2' : 'p-4'">
-      <!-- 移动端汉堡菜单按钮 -->
-      <VbenButton 
-        v-if="isMobile" 
-        class="mb-3"
-        variant="outline"
-        @click="drawerVisible = true"
-      >
-        <span class="iconify lucide--menu mr-2" />
-        筛选条件
-      </VbenButton>
+  <div class="feedback-list-container">
+    <div class="flex h-full w-full">
+      <!-- 左侧栏 - 仅桌面端显示 -->
+      <div v-if="!isMobile" class="h-full w-[240px] flex-shrink-0 border-r border-border bg-sidebar">
+        <FeedbackFilterSidebar
+          v-model:search-query="filterValues.search_query"
+          v-model:search-mode="filterValues.search_mode"
+          v-model:is-urgent="filterValues.is_urgent"
+          v-model:has-topic="filterValues.has_topic"
+          v-model:clustering-status="filterValues.clustering_status"
+          v-model:board-ids="filterValues.board_ids"
+          @search="handleSearch"
+        />
+      </div>
       
-      <Grid>
-        <template #toolbar-actions>
-          <div class="feedback-actions-group">
-            <div class="add-actions">
-              <VbenButton type="primary" @click="() => addModalApi.open()">
-                <span class="iconify lucide--pencil mr-2" />
-                手动录入
-              </VbenButton>
-              <VbenButton @click="() => $router.push('/app/feedback/screenshot')">
-                <span class="iconify lucide--camera mr-2" />
-                截图识别
-              </VbenButton>
-              <VbenButton @click="() => $router.push('/app/feedback/import')">
-                <span class="iconify lucide--upload mr-2" />
-                批量导入
+      <!-- 右侧内容区域 -->
+      <div class="flex-1 h-full overflow-hidden bg-background" :class="isMobile ? 'p-2' : 'p-4'">
+        <!-- 移动端汉堡菜单按钮 -->
+        <VbenButton 
+          v-if="isMobile" 
+          class="mb-3"
+          variant="outline"
+          @click="drawerVisible = true"
+        >
+          <span class="iconify lucide--menu mr-2" />
+          筛选条件
+        </VbenButton>
+        
+        <Grid>
+          <template #toolbar-actions>
+            <div class="feedback-actions-group">
+              <div class="add-actions">
+                <VbenButton type="primary" @click="() => addModalApi.open()">
+                  <span class="iconify lucide--pencil mr-2" />
+                  手动录入
+                </VbenButton>
+                <VbenButton @click="() => $router.push('/app/feedback/screenshot')">
+                  <span class="iconify lucide--camera mr-2" />
+                  截图识别
+                </VbenButton>
+                <VbenButton @click="() => $router.push('/app/feedback/import')">
+                  <span class="iconify lucide--upload mr-2" />
+                  批量导入
+                </VbenButton>
+              </div>
+              <VbenButton
+                variant="outline"
+                @click="handleTriggerClustering"
+                :loading="clusteringLoading"
+              >
+                <span class="iconify lucide--sparkles mr-2" />
+                AI 智能聚类
               </VbenButton>
             </div>
-            <VbenButton
-              variant="outline"
-              @click="handleTriggerClustering"
-              :loading="clusteringLoading"
+          </template>
+
+          <template #topic="{ row }">
+            <span v-if="row.topic_id && row.topic_title">
+              <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/app/topic/detail/${row.topic_id}`)">
+                {{ row.topic_title }}
+              </a-tag>
+            </span>
+            <span v-else class="text-gray-400">未聚类</span>
+          </template>
+
+          <template #clustering_status="{ row }">
+            <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
+            <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
+            <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
+            <a-tag
+              v-else-if="row.clustering_status === 'clustered'"
+              :color="row.topic_id ? 'green' : 'default'"
             >
-              <span class="iconify lucide--sparkles mr-2" />
-              AI 智能聚类
-            </VbenButton>
-          </div>
-        </template>
-
-        <template #topic="{ row }">
-          <span v-if="row.topic_id && row.topic_title">
-            <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/app/topic/detail/${row.topic_id}`)">
-              {{ row.topic_title }}
+              {{ row.topic_id ? '已归类' : '待观察' }}
             </a-tag>
-          </span>
-          <span v-else class="text-gray-400">未聚类</span>
-        </template>
+            <span v-else class="text-gray-400">-</span>
+          </template>
 
-        <template #clustering_status="{ row }">
-          <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
-          <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
-          <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
-          <a-tag
-            v-else-if="row.clustering_status === 'clustered'"
-            :color="row.topic_id ? 'green' : 'default'"
-          >
-            {{ row.topic_id ? '已归类' : '待观察' }}
-          </a-tag>
-          <span v-else class="text-gray-400">-</span>
-        </template>
+          <template #urgent="{ row }">
+            <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
+            <a-tag v-else color="default">📝 常规</a-tag>
+          </template>
+        </Grid>
 
-        <template #urgent="{ row }">
-          <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
-          <a-tag v-else color="default">📝 常规</a-tag>
-        </template>
-      </Grid>
+        <!-- 编辑弹窗 -->
+        <editModal>
+          <EditForm />
+        </editModal>
 
-      <!-- 编辑弹窗 -->
-      <editModal>
-        <EditForm />
-      </editModal>
+        <!-- 新建弹窗 -->
+        <addModal>
+          <AddForm />
+        </addModal>
 
-      <!-- 新建弹窗 -->
-      <addModal>
-        <AddForm />
-      </addModal>
+        <a-modal
+          v-model:open="clusteringModalOpen"
+          title="AI 智能聚类"
+          :footer="null"
+          :maskClosable="false"
+          @cancel="onClusteringModalCancel"
+        >
+          <a-steps :current="clusteringStep" size="small">
+            <a-step title="任务提交" />
+            <a-step title="处理中" />
+            <a-step title="完成" />
+          </a-steps>
 
-      <a-modal
-        v-model:open="clusteringModalOpen"
-        title="AI 智能聚类"
-        :footer="null"
-        :maskClosable="false"
-        @cancel="onClusteringModalCancel"
-      >
-        <a-steps :current="clusteringStep" size="small">
-          <a-step title="任务提交" />
-          <a-step title="处理中" />
-          <a-step title="完成" />
-        </a-steps>
-
-        <div class="mt-4">
-          <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
-          <div class="text-gray-500 mt-2">
-            <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
-            <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
+          <div class="mt-4">
+            <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
+            <div class="text-gray-500 mt-2">
+              <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
+              <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
+            </div>
           </div>
-        </div>
-      </a-modal>
+        </a-modal>
+      </div>
+      
+      <!-- 移动端抽屉 -->
+      <a-drawer
+        v-model:open="drawerVisible"
+        title="筛选条件"
+        placement="left"
+        :width="280"
+        :body-style="{ padding: 0 }"
+      >
+        <FeedbackFilterSidebar
+          v-model:search-query="filterValues.search_query"
+          v-model:search-mode="filterValues.search_mode"
+          v-model:is-urgent="filterValues.is_urgent"
+          v-model:has-topic="filterValues.has_topic"
+          v-model:clustering-status="filterValues.clustering_status"
+          v-model:board-ids="filterValues.board_ids"
+          @search="() => { handleSearch(); drawerVisible = false; }"
+        />
+      </a-drawer>
     </div>
-    
-    <!-- 移动端抽屉 -->
-    <a-drawer
-      v-model:open="drawerVisible"
-      title="筛选条件"
-      placement="left"
-      :width="280"
-      :body-style="{ padding: 0 }"
-    >
-      <CustomSidebar />
-    </a-drawer>
   </div>
 </template>
 

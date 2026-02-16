@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from backend.app.userecho.api.v1 import (
+    board,
     clustering,
     customer,
     dashboard,
@@ -28,4 +29,5 @@ v1.include_router(priority.router)
 v1.include_router(dashboard.router)
 v1.include_router(insight.router)
 v1.include_router(onboarding.router)
+v1.include_router(board.router)
 

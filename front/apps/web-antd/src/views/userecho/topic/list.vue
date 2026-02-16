@@ -10,14 +10,14 @@ import type {
   UpdateTopicParams,
 } from '#/api';
 
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { MaterialSymbolsAdd } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { message } from 'ant-design-vue';
+import { message, Drawer } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -34,8 +34,33 @@ import {
   getCategoryConfig,
   categoryIcons,
 } from '#/views/userecho/topic/data';
+import TopicFilterSidebar from '#/layouts/components/sidebar/TopicFilterSidebar.vue';
 
 const router = useRouter();
+
+/**
+ * 响应式布局检测
+ */
+const isMobile = ref(false);
+const drawerVisible = ref(false);
+
+const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
+  isMobile.value = e.matches;
+  if (!e.matches) {
+    drawerVisible.value = false; // 切换到桌面端时关闭抽屉
+  }
+};
+
+/**
+ * 筛选条件状态
+ */
+const filterValues = ref({
+  search_query: '',
+  search_mode: 'keyword' as 'keyword' | 'semantic',
+  status: '',
+  category: '',
+  board_ids: [] as string[],
+});
 
 /**
  * 语义搜索 loading 状态
@@ -53,18 +78,7 @@ function getPriorityColor(score: number): string {
   return 'gray';
 }
 
-/**
- * 查询表单配置
- */
-const formOptions: VbenFormProps = {
-  collapsed: false,
-  showCollapseButton: false,
-  submitOnEnter: true,
-  submitButtonOptions: {
-    content: $t('common.form.query'),
-  },
-  schema: querySchema,
-};
+
 
 /**
  * 表格配置
@@ -92,12 +106,12 @@ const gridOptions: VxeTableGridOptions<Topic> = {
   columns: useColumns(onActionClick),
   proxyConfig: {
     ajax: {
-      query: async ({ page }, formValues) => {
+      query: async ({ page }) => {
         // 记录当前搜索模式
-        currentSearchMode.value = formValues.search_mode || 'keyword';
+        currentSearchMode.value = filterValues.value.search_mode || 'keyword';
 
         // 如果是语义搜索且有搜索词，显示 loading 提示
-        const isSemanticSearch = formValues.search_mode === 'semantic' && formValues.search_query;
+        const isSemanticSearch = filterValues.value.search_mode === 'semantic' && filterValues.value.search_query;
         if (isSemanticSearch) {
           semanticSearchLoading.value = true;
           message.loading({
@@ -108,11 +122,29 @@ const gridOptions: VxeTableGridOptions<Topic> = {
         }
 
         try {
-          const data = await getTopicList({
+          // 过滤掉空字符串值，只传递有效的筛选参数
+          const queryParams: any = {
             skip: (page.currentPage - 1) * page.pageSize,
             limit: page.pageSize,
-            ...formValues,
-          });
+          };
+          
+          if (filterValues.value.search_query) {
+            queryParams.search_query = filterValues.value.search_query;
+          }
+          if (filterValues.value.search_mode) {
+            queryParams.search_mode = filterValues.value.search_mode;
+          }
+          if (filterValues.value.status) {
+            queryParams.status = filterValues.value.status;
+          }
+          if (filterValues.value.category) {
+            queryParams.category = filterValues.value.category;
+          }
+          if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
+            queryParams.board_ids = filterValues.value.board_ids;
+          }
+          
+          const data = await getTopicList(queryParams);
 
           // 语义搜索完成，显示成功提示
           if (isSemanticSearch) {
@@ -148,7 +180,14 @@ const gridOptions: VxeTableGridOptions<Topic> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
+
+/**
+ * 触发搜索
+ */
+function handleSearch() {
+  gridApi.query();
+}
 
 function onRefresh() {
   gridApi.query();
@@ -251,84 +290,149 @@ const [addModal, addModalApi] = useVbenModal({
     }
   },
 });
+
+onMounted(() => {
+  // 初始化响应式检测
+  const mediaQuery = window.matchMedia('(max-width: 767px)');
+  handleMediaChange(mediaQuery);
+  mediaQuery.addEventListener('change', handleMediaChange);
+  
+  // 保存 mediaQuery 引用以便清理
+  (window as any).__topicMediaQuery = mediaQuery;
+});
+
+onBeforeUnmount(() => {
+  // 清理响应式检测监听器
+  const mediaQuery = (window as any).__topicMediaQuery;
+  if (mediaQuery) {
+    mediaQuery.removeEventListener('change', handleMediaChange);
+    delete (window as any).__topicMediaQuery;
+  }
+});
 </script>
 
 <template>
-  <div>
-    <Grid>
-      <template #toolbar-actions>
-        <VbenButton @click="() => addModalApi.open()">
-          <MaterialSymbolsAdd class="size-5" />
-          手动创建主题
+  <div class="topic-list-container">
+    <div class="flex h-full w-full">
+      <!-- 左侧栏 - 仅桌面端显示 -->
+      <div v-if="!isMobile" class="h-full w-[240px] flex-shrink-0 border-r border-border bg-sidebar">
+        <TopicFilterSidebar
+          v-model:search-query="filterValues.search_query"
+          v-model:search-mode="filterValues.search_mode"
+          v-model:status="filterValues.status"
+          v-model:category="filterValues.category"
+          v-model:board-ids="filterValues.board_ids"
+          @search="handleSearch"
+        />
+      </div>
+      
+      <!-- 右侧内容区域 -->
+      <div class="flex-1 h-full overflow-hidden bg-background" :class="isMobile ? 'p-2' : 'p-4'">
+        <!-- 移动端汉堡菜单按钮 -->
+        <VbenButton 
+          v-if="isMobile" 
+          class="mb-3"
+          variant="outline"
+          @click="drawerVisible = true"
+        >
+          <span class="iconify lucide--menu mr-2" />
+          筛选条件
         </VbenButton>
-      <VbenButton variant="outline" @click="() => router.push('/app/feedback/list')">
-        <span class="iconify lucide--inbox" />
-        查看反馈列表
-      </VbenButton>
-      </template>
+        
+        <Grid>
+          <template #toolbar-actions>
+            <VbenButton @click="() => addModalApi.open()">
+              <MaterialSymbolsAdd class="size-5" />
+              手动创建主题
+            </VbenButton>
+          <VbenButton variant="outline" @click="() => router.push('/app/feedback/list')">
+            <span class="iconify lucide--inbox" />
+            查看反馈列表
+          </VbenButton>
+          </template>
 
-      <!-- 主题标题（带 AI 标识） -->
-      <template #title="{ row }">
-        <div class="topic-title">
-          <span>{{ row.title }}</span>
-          <a-tag v-if="row.ai_generated" color="purple" size="small" class="ml-2">
-            <span class="iconify lucide--sparkles" /> AI
-          </a-tag>
-        </div>
-      </template>
+          <!-- 主题标题（带 AI 标识） -->
+          <template #title="{ row }">
+            <div class="topic-title">
+              <span>{{ row.title }}</span>
+              <a-tag v-if="row.ai_generated" color="purple" size="small" class="ml-2">
+                <span class="iconify lucide--sparkles" /> AI
+              </a-tag>
+            </div>
+          </template>
 
-      <!-- 分类 -->
-      <template #category="{ row }">
-        <a-tag :color="getCategoryConfig(row.category).value === 'bug' ? 'red' : 'blue'">
-          {{ categoryIcons[row.category] || '' }}
-          {{ getCategoryConfig(row.category).label }}
-        </a-tag>
-      </template>
+          <!-- 分类 -->
+          <template #category="{ row }">
+            <a-tag :color="getCategoryConfig(row.category).value === 'bug' ? 'red' : 'blue'">
+              {{ categoryIcons[row.category] || '' }}
+              {{ getCategoryConfig(row.category).label }}
+            </a-tag>
+          </template>
 
-      <!-- 状态 -->
-      <template #status="{ row }">
-        <a-tag :color="getStatusConfig(row.status).color">
-          {{ getStatusConfig(row.status).label }}
-        </a-tag>
-      </template>
+          <!-- 状态 -->
+          <template #status="{ row }">
+            <a-tag :color="getStatusConfig(row.status).color">
+              {{ getStatusConfig(row.status).label }}
+            </a-tag>
+          </template>
 
-      <!-- 优先级评分 -->
-      <template #priority_score="{ row }">
-        <div class="priority-score-cell">
-          <!-- 已有评分：显示总分徽章 -->
-          <a-tag
-            v-if="row.priority_score"
-            :color="getPriorityColor(row.priority_score.total_score)"
-            style="font-size: 14px; font-weight: bold; cursor: pointer"
+          <!-- 优先级评分 -->
+          <template #priority_score="{ row }">
+            <div class="priority-score-cell">
+              <!-- 已有评分：显示总分徽章 -->
+              <a-tag
+                v-if="row.priority_score"
+                :color="getPriorityColor(row.priority_score.total_score)"
+                style="font-size: 14px; font-weight: bold; cursor: pointer"
+                @click="router.push(`/app/topic/detail/${row.id}`)"
+              >
+                {{ row.priority_score.total_score.toFixed(1) }}
+              </a-tag>
+              <!-- 未评分：提示去评分 -->
+              <span v-else style="color: #999; font-size: 12px">
+                未评分
+              </span>
+            </div>
+          </template>
+
+          <!-- 反馈数量 -->
+          <template #feedback_count="{ row }">
+          <a-badge
+            :count="row.feedback_count"
+            :number-style="{ backgroundColor: '#52c41a' }"
+            style="cursor: pointer"
             @click="router.push(`/app/topic/detail/${row.id}`)"
-          >
-            {{ row.priority_score.total_score.toFixed(1) }}
-          </a-tag>
-          <!-- 未评分：提示去评分 -->
-          <span v-else style="color: #999; font-size: 12px">
-            未评分
-          </span>
-        </div>
-      </template>
+          />
+          </template>
 
-      <!-- 反馈数量 -->
-      <template #feedback_count="{ row }">
-      <a-badge
-        :count="row.feedback_count"
-        :number-style="{ backgroundColor: '#52c41a' }"
-        style="cursor: pointer"
-        @click="router.push(`/app/topic/detail/${row.id}`)"
-      />
-      </template>
-
-      <!-- AI 生成标识 -->
-      <template #ai_generated="{ row }">
-        <a-tag v-if="row.ai_generated" color="purple">
-          <span class="iconify lucide--sparkles" /> AI
-        </a-tag>
-        <a-tag v-else color="default">手动</a-tag>
-      </template>
-    </Grid>
+          <!-- AI 生成标识 -->
+          <template #ai_generated="{ row }">
+            <a-tag v-if="row.ai_generated" color="purple">
+              <span class="iconify lucide--sparkles" /> AI
+            </a-tag>
+            <a-tag v-else color="default">手动</a-tag>
+          </template>
+        </Grid>
+      </div>
+      
+      <!-- 移动端抽屉 -->
+      <a-drawer
+        v-model:open="drawerVisible"
+        title="筛选条件"
+        placement="left"
+        :width="280"
+        :body-style="{ padding: 0 }"
+      >
+        <TopicFilterSidebar
+          v-model:search-query="filterValues.search_query"
+          v-model:search-mode="filterValues.search_mode"
+          v-model:status="filterValues.status"
+          v-model:category="filterValues.category"
+          v-model:board-ids="filterValues.board_ids"
+          @search="() => { handleSearch(); drawerVisible = false; }"
+        />
+      </a-drawer>
+    </div>
 
     <!-- 编辑弹窗 -->
     <editModal>

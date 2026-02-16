@@ -99,7 +99,6 @@ watch(
     immediate: true,
   },
 );
-import CustomSidebar from './components/sidebar/CustomSidebar.vue';
 </script>
 
 <template>
