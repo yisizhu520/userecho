@@ -311,9 +311,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         limit: int = 100,
         topic_id: str | None = None,
         customer_id: str | None = None,
-        is_urgent: bool | None = None,
-        has_topic: bool | None = None,
-        clustering_status: str | None = None,
+        is_urgent: list[str] | None = None,
+        has_topic: list[str] | None = None,
+        clustering_status: list[str] | None = None,
+        board_ids: list[str] | None = None,
         search_query: str | None = None,
     ) -> list[dict]:
         """
@@ -326,9 +327,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             limit: 返回数量
             topic_id: 过滤主题ID
             customer_id: 过滤客户ID
-            is_urgent: 过滤紧急程度
-            has_topic: 过滤是否已聚类
-            clustering_status: 过滤聚类状态（pending/processing/clustered/failed）
+            is_urgent: 过滤紧急程度（多选，值: ['true', 'false']）
+            has_topic: 过滤是否已聚类（多选，值: ['true', 'false']）
+            clustering_status: 过滤聚类状态（多选）
+            board_ids: 过滤看板ID（多选）
             search_query: 搜索关键词（搜索 content 和 ai_summary）
         
         Returns:
@@ -362,15 +364,33 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             query = query.where(self.model.topic_id == topic_id)
         if customer_id is not None:
             query = query.where(self.model.customer_id == customer_id)
-        if is_urgent is not None:
-            query = query.where(self.model.is_urgent == is_urgent)
-        if has_topic is not None:
-            if has_topic:
-                query = query.where(self.model.topic_id.is_not(None))
+        
+        # 多选过滤：is_urgent
+        if is_urgent is not None and len(is_urgent) > 0:
+            # 将字符串 'true'/'false' 转换为布尔值
+            bool_values = [v.lower() == 'true' for v in is_urgent]
+            query = query.where(self.model.is_urgent.in_(bool_values))
+        
+        # 多选过滤：has_topic
+        if has_topic is not None and len(has_topic) > 0:
+            conditions = []
+            for val in has_topic:
+                if val.lower() == 'true':
+                    conditions.append(self.model.topic_id.is_not(None))
+                else:
+                    conditions.append(self.model.topic_id.is_(None))
+            if len(conditions) == 1:
+                query = query.where(conditions[0])
             else:
-                query = query.where(self.model.topic_id.is_(None))
-        if clustering_status is not None:
-            query = query.where(self.model.clustering_status == clustering_status)
+                query = query.where(or_(*conditions))
+        
+        # 多选过滤：clustering_status
+        if clustering_status is not None and len(clustering_status) > 0:
+            query = query.where(self.model.clustering_status.in_(clustering_status))
+        
+        # 多选过滤：board_ids
+        if board_ids is not None and len(board_ids) > 0:
+            query = query.where(self.model.board_id.in_(board_ids))
         
         # 关键词搜索（搜索 content + ai_summary）
         if search_query:

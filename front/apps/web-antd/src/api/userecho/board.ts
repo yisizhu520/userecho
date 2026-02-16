@@ -30,5 +30,5 @@ export namespace BoardApi {
  * 获取看板列表
  */
 export async function getBoardList() {
-    return requestClient.get<BoardApi.BoardListResponse>('/app/boards');
+    return requestClient.get<BoardApi.BoardListResponse>('/api/v1/app/boards');
 }

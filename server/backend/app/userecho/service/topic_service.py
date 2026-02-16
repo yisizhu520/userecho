@@ -170,8 +170,9 @@ class TopicService:
         tenant_id: str,
         skip: int = 0,
         limit: int = 100,
-        status: str | None = None,
-        category: str | None = None,
+        status: list[str] | None = None,
+        category: list[str] | None = None,
+        board_ids: list[str] | None = None,
         sort_by: str = 'created_time',
         sort_order: str = 'desc',
         search_query: str | None = None,
@@ -185,8 +186,9 @@ class TopicService:
             tenant_id: 租户ID
             skip: 跳过数量
             limit: 返回数量
-            status: 过滤状态
-            category: 过滤分类
+            status: 过滤状态（多选）
+            category: 过滤分类（多选）
+            board_ids: 过滤看板ID（多选）
             sort_by: 排序字段
             sort_order: 排序方向
             search_query: 搜索关键词
@@ -219,6 +221,7 @@ class TopicService:
                     limit=limit,
                     status=status,
                     category=category,
+                    board_ids=board_ids,
                 )
         
         # 关键词搜索模式（默认）
@@ -232,6 +235,7 @@ class TopicService:
             limit=limit,
             status=status,
             category=category,
+            board_ids=board_ids,
             sort_by=sort_by,
             sort_order=sort_order,
             search_query=effective_search_query,

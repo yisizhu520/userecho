@@ -22,7 +22,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <div class="h-full flex flex-col bg-transparent">
     <div class="flex-1 overflow-y-auto custom-scrollbar">
       <!-- BoardSelector 暂时注释，未来多看板功能时启用 -->
       <!-- <BoardSelector /> -->

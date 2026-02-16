@@ -2,7 +2,7 @@
 
 from io import BytesIO
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 import pandas as pd
 
 from backend.app.userecho.schema.feedback import (
@@ -31,9 +31,10 @@ async def get_feedbacks(
     limit: int = 100,
     topic_id: str | None = None,
     customer_id: str | None = None,
-    is_urgent: bool | None = None,
-    has_topic: bool | None = None,
-    clustering_status: str | None = None,
+    is_urgent: list[str] | None = Query(None),
+    has_topic: list[str] | None = Query(None),
+    clustering_status: list[str] | None = Query(None),
+    board_ids: list[str] | None = Query(None),
     search_query: str | None = None,
     search_mode: str = 'keyword',
 ):
@@ -43,9 +44,10 @@ async def get_feedbacks(
     过滤参数：
     - **topic_id**: 过滤主题ID
     - **customer_id**: 过滤客户ID
-    - **is_urgent**: 过滤紧急程度
-    - **has_topic**: 过滤是否已聚类 (true=已聚类, false=未聚类)
-    - **clustering_status**: 过滤聚类状态 (pending/processing/clustered/failed)
+    - **is_urgent**: 过滤紧急程度（多选，值: ['true', 'false']）
+    - **has_topic**: 过滤是否已聚类（多选，值: ['true', 'false']）
+    - **clustering_status**: 过滤聚类状态（多选，值: ['pending', 'processing', 'clustered', 'failed']）
+    - **board_ids**: 过滤看板ID（多选）
     
     搜索参数：
     - **search_query**: 搜索关键词（搜索反馈内容和AI摘要）
@@ -65,6 +67,7 @@ async def get_feedbacks(
         is_urgent=is_urgent,
         has_topic=has_topic,
         clustering_status=clustering_status,
+        board_ids=board_ids,
         search_query=search_query,
         search_mode=search_mode,
     )

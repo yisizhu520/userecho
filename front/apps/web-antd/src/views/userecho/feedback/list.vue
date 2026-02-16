@@ -10,7 +10,7 @@ import type {
   UpdateFeedbackParams,
 } from '#/api';
 
-import { computed, onBeforeUnmount, ref, onMounted } from 'vue';
+import { computed, onBeforeUnmount, ref, onMounted, watch } from 'vue';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { $t } from '@vben/locales';
@@ -52,18 +52,11 @@ const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
  */
 const filterValues = ref({
   search_query: '',
-  search_mode: 'keyword' as 'keyword' | 'semantic',
-  is_urgent: '' as boolean | '',
-  has_topic: '' as boolean | '',
-  clustering_status: '',
+  is_urgent: [] as string[],
+  has_topic: [] as string[],
+  clustering_status: [] as string[],
   board_ids: [] as string[],
 });
-
-/**
- * 语义搜索 loading 状态
- */
-const semanticSearchLoading = ref(false);
-const currentSearchMode = ref<string>('keyword');
 
 /**
  * 表格配置
@@ -75,7 +68,7 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
   checkboxConfig: {
     highlight: true,
   },
-  height: 'auto',
+  height: '100%',
   exportConfig: {},
   printConfig: {},
   toolbarConfig: {
@@ -92,20 +85,6 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
-        // 记录当前搜索模式
-        currentSearchMode.value = filterValues.value.search_mode || 'keyword';
-
-        // 如果是语义搜索且有搜索词，显示 loading 提示
-        const isSemanticSearch = filterValues.value.search_mode === 'semantic' && filterValues.value.search_query;
-        if (isSemanticSearch) {
-          semanticSearchLoading.value = true;
-          message.loading({
-            content: '🤖 AI 正在理解搜索语义，请稍候...',
-            key: 'semantic-search',
-            duration: 0, // 不自动关闭
-          });
-        }
-
         try {
           // 过滤掉空字符串值，只传递有效的筛选参数
           const queryParams: any = {
@@ -116,17 +95,15 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
           // 只添加非空值
           if (filterValues.value.search_query) {
             queryParams.search_query = filterValues.value.search_query;
+            queryParams.search_mode = 'keyword'; // MVP阶段只用关键词搜索
           }
-          if (filterValues.value.search_mode) {
-            queryParams.search_mode = filterValues.value.search_mode;
-          }
-          if (filterValues.value.is_urgent !== '') {
+          if (filterValues.value.is_urgent && filterValues.value.is_urgent.length > 0) {
             queryParams.is_urgent = filterValues.value.is_urgent;
           }
-          if (filterValues.value.has_topic !== '') {
+          if (filterValues.value.has_topic && filterValues.value.has_topic.length > 0) {
             queryParams.has_topic = filterValues.value.has_topic;
           }
-          if (filterValues.value.clustering_status) {
+          if (filterValues.value.clustering_status && filterValues.value.clustering_status.length > 0) {
             queryParams.clustering_status = filterValues.value.clustering_status;
           }
           if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
@@ -135,34 +112,14 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
           
           const data = await getFeedbackList(queryParams);
 
-          // 语义搜索完成，显示成功提示
-          if (isSemanticSearch) {
-            message.success({
-              content: `找到 ${data.length} 条相关反馈`,
-              key: 'semantic-search',
-              duration: 2,
-            });
-          }
-
           // vxe-table 期望的返回格式（根据全局 response 配置）
           return {
             items: data,           // 数据数组
             total: data.length,    // 当前查询到的记录数（临时方案，理想情况下应该由后端返回总数）
           };
         } catch (error: any) {
-          // 语义搜索失败，显示错误提示
-          if (isSemanticSearch) {
-            message.error({
-              content: error.message || '搜索失败，请稍后重试',
-              key: 'semantic-search',
-              duration: 3,
-            });
-          }
+          message.error(error.message || '查询失败，请稍后重试');
           throw error;
-        } finally {
-          if (isSemanticSearch) {
-            semanticSearchLoading.value = false;
-          }
         }
       },
     },
@@ -178,6 +135,25 @@ function handleSearch() {
   gridApi.query();
 }
 
+/**
+ * 监听筛选条件变化，自动触发查询
+ */
+watch(
+  () => [
+    filterValues.value.is_urgent,
+    filterValues.value.has_topic,
+    filterValues.value.clustering_status,
+    filterValues.value.board_ids,
+  ],
+  () => {
+    handleSearch();
+  },
+  { deep: true }
+);
+
+/**
+ * 操作按钮点击处理
+ */
 function onRefresh() {
   gridApi.query();
 }
@@ -429,22 +405,19 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="feedback-list-container">
-    <div class="flex h-full w-full">
+    <div class="feedback-content-wrapper">
       <!-- 左侧栏 - 仅桌面端显示 -->
-      <div v-if="!isMobile" class="h-full w-[240px] flex-shrink-0 border-r border-border bg-sidebar">
+      <div v-if="!isMobile" class="feedback-sidebar">
         <FeedbackFilterSidebar
-          v-model:search-query="filterValues.search_query"
-          v-model:search-mode="filterValues.search_mode"
           v-model:is-urgent="filterValues.is_urgent"
           v-model:has-topic="filterValues.has_topic"
           v-model:clustering-status="filterValues.clustering_status"
           v-model:board-ids="filterValues.board_ids"
-          @search="handleSearch"
         />
       </div>
       
       <!-- 右侧内容区域 -->
-      <div class="flex-1 h-full overflow-hidden bg-background" :class="isMobile ? 'p-2' : 'p-4'">
+      <div class="feedback-main-content" :class="isMobile ? 'p-2' : 'p-2'">
         <!-- 移动端汉堡菜单按钮 -->
         <VbenButton 
           v-if="isMobile" 
@@ -456,9 +429,24 @@ onBeforeUnmount(() => {
           筛选条件
         </VbenButton>
         
-        <Grid>
+        <div class="feedback-grid-wrapper">
+          <Grid>
           <template #toolbar-actions>
             <div class="feedback-actions-group">
+              <!-- 搜索框 -->
+              <a-input
+                v-model:value="filterValues.search_query"
+                placeholder="搜索反馈内容..."
+                allow-clear
+                @pressEnter="handleSearch"
+                style="width: 300px;"
+                class="mr-3"
+              >
+                <template #prefix>
+                  <span class="iconify lucide--search" />
+                </template>
+              </a-input>
+              
               <div class="add-actions">
                 <VbenButton type="primary" @click="() => addModalApi.open()">
                   <span class="iconify lucide--pencil mr-2" />
@@ -507,10 +495,11 @@ onBeforeUnmount(() => {
           </template>
 
           <template #urgent="{ row }">
-            <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
-            <a-tag v-else color="default">📝 常规</a-tag>
+            <a-tag v-if="row.is_urgent" color="red">紧急</a-tag>
+            <a-tag v-else color="default">常规</a-tag>
           </template>
         </Grid>
+        </div>
 
         <!-- 编辑弹窗 -->
         <editModal>
@@ -554,13 +543,10 @@ onBeforeUnmount(() => {
         :body-style="{ padding: 0 }"
       >
         <FeedbackFilterSidebar
-          v-model:search-query="filterValues.search_query"
-          v-model:search-mode="filterValues.search_mode"
           v-model:is-urgent="filterValues.is_urgent"
           v-model:has-topic="filterValues.has_topic"
           v-model:clustering-status="filterValues.clustering_status"
           v-model:board-ids="filterValues.board_ids"
-          @search="() => { handleSearch(); drawerVisible = false; }"
         />
       </a-drawer>
     </div>
@@ -568,6 +554,44 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* 整体容器高度控制 */
+.feedback-list-container {
+  height: calc(100vh - 64px); /* 减去顶部导航栏高度 */
+  overflow: hidden;
+  background: hsl(var(--background));
+}
+
+.feedback-content-wrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background: hsl(var(--background));
+}
+
+.feedback-sidebar {
+  height: 100%;
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid hsl(var(--border) / 0.3);
+  overflow-y: auto;
+  background: hsl(var(--background));
+}
+
+.feedback-main-content {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--background));
+}
+
+.feedback-grid-wrapper {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* 重要：允许 flex 子元素收缩 */
+}
+
 .feedback-actions-group {
   display: flex;
   gap: 16px;

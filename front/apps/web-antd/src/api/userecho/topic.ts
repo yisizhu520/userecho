@@ -78,10 +78,13 @@ export interface UpdateTopicParams {
 export interface TopicListParams {
   skip?: number;
   limit?: number;
-  status?: string;
-  category?: string;
+  status?: string[];
+  category?: string[];
+  board_ids?: string[];
   sort_by?: string;
   sort_order?: string;
+  search_query?: string;
+  search_mode?: 'keyword' | 'semantic';
 }
 
 /** 更新主题状态参数 */

@@ -10,7 +10,7 @@ import type {
   UpdateTopicParams,
 } from '#/api';
 
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
@@ -56,17 +56,10 @@ const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
  */
 const filterValues = ref({
   search_query: '',
-  search_mode: 'keyword' as 'keyword' | 'semantic',
-  status: '',
-  category: '',
+  status: [] as string[],
+  category: [] as string[],
   board_ids: [] as string[],
 });
-
-/**
- * 语义搜索 loading 状态
- */
-const semanticSearchLoading = ref(false);
-const currentSearchMode = ref<string>('keyword');
 
 /**
  * 优先级颜色计算
@@ -90,7 +83,7 @@ const gridOptions: VxeTableGridOptions<Topic> = {
   checkboxConfig: {
     highlight: true,
   },
-  height: 'auto',
+  height: '100%',
   exportConfig: {},
   printConfig: {},
   toolbarConfig: {
@@ -107,20 +100,6 @@ const gridOptions: VxeTableGridOptions<Topic> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }) => {
-        // 记录当前搜索模式
-        currentSearchMode.value = filterValues.value.search_mode || 'keyword';
-
-        // 如果是语义搜索且有搜索词，显示 loading 提示
-        const isSemanticSearch = filterValues.value.search_mode === 'semantic' && filterValues.value.search_query;
-        if (isSemanticSearch) {
-          semanticSearchLoading.value = true;
-          message.loading({
-            content: '🤖 AI 正在理解搜索语义，请稍候...',
-            key: 'semantic-search',
-            duration: 0, // 不自动关闭
-          });
-        }
-
         try {
           // 过滤掉空字符串值，只传递有效的筛选参数
           const queryParams: any = {
@@ -130,14 +109,12 @@ const gridOptions: VxeTableGridOptions<Topic> = {
           
           if (filterValues.value.search_query) {
             queryParams.search_query = filterValues.value.search_query;
+            queryParams.search_mode = 'keyword'; // MVP阶段只用关键词搜索
           }
-          if (filterValues.value.search_mode) {
-            queryParams.search_mode = filterValues.value.search_mode;
-          }
-          if (filterValues.value.status) {
+          if (filterValues.value.status && filterValues.value.status.length > 0) {
             queryParams.status = filterValues.value.status;
           }
-          if (filterValues.value.category) {
+          if (filterValues.value.category && filterValues.value.category.length > 0) {
             queryParams.category = filterValues.value.category;
           }
           if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
@@ -146,34 +123,14 @@ const gridOptions: VxeTableGridOptions<Topic> = {
           
           const data = await getTopicList(queryParams);
 
-          // 语义搜索完成，显示成功提示
-          if (isSemanticSearch) {
-            message.success({
-              content: `找到 ${data.length} 个相关主题`,
-              key: 'semantic-search',
-              duration: 2,
-            });
-          }
-
           // vxe-table 期望的返回格式（根据全局 response 配置）
           return {
             items: data,           // 数据数组
             total: data.length,    // 当前查询到的记录数
           };
         } catch (error: any) {
-          // 语义搜索失败，显示错误提示
-          if (isSemanticSearch) {
-            message.error({
-              content: error.message || '搜索失败，请稍后重试',
-              key: 'semantic-search',
-              duration: 3,
-            });
-          }
+          message.error(error.message || '查询失败，请稍后重试');
           throw error;
-        } finally {
-          if (isSemanticSearch) {
-            semanticSearchLoading.value = false;
-          }
         }
       },
     },
@@ -188,6 +145,21 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 function handleSearch() {
   gridApi.query();
 }
+
+/**
+ * 监听筛选条件变化，自动触发查询
+ */
+watch(
+  () => [
+    filterValues.value.status,
+    filterValues.value.category,
+    filterValues.value.board_ids,
+  ],
+  () => {
+    handleSearch();
+  },
+  { deep: true }
+);
 
 function onRefresh() {
   gridApi.query();
@@ -313,21 +285,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="topic-list-container">
-    <div class="flex h-full w-full">
+    <div class="topic-content-wrapper">
       <!-- 左侧栏 - 仅桌面端显示 -->
-      <div v-if="!isMobile" class="h-full w-[240px] flex-shrink-0 border-r border-border bg-sidebar">
+      <div v-if="!isMobile" class="topic-sidebar">
         <TopicFilterSidebar
-          v-model:search-query="filterValues.search_query"
-          v-model:search-mode="filterValues.search_mode"
           v-model:status="filterValues.status"
           v-model:category="filterValues.category"
           v-model:board-ids="filterValues.board_ids"
-          @search="handleSearch"
         />
       </div>
       
       <!-- 右侧内容区域 -->
-      <div class="flex-1 h-full overflow-hidden bg-background" :class="isMobile ? 'p-2' : 'p-4'">
+      <div class="topic-main-content" :class="isMobile ? 'p-2' : 'p-2'">
         <!-- 移动端汉堡菜单按钮 -->
         <VbenButton 
           v-if="isMobile" 
@@ -339,8 +308,23 @@ onBeforeUnmount(() => {
           筛选条件
         </VbenButton>
         
-        <Grid>
+        <div class="topic-grid-wrapper">
+          <Grid>
           <template #toolbar-actions>
+            <!-- 搜索框 -->
+            <a-input
+              v-model:value="filterValues.search_query"
+              placeholder="搜索主题标题..."
+              allow-clear
+              @pressEnter="handleSearch"
+              style="width: 300px;"
+              class="mr-3"
+            >
+              <template #prefix>
+                <span class="iconify lucide--search" />
+              </template>
+            </a-input>
+            
             <VbenButton @click="() => addModalApi.open()">
               <MaterialSymbolsAdd class="size-5" />
               手动创建主题
@@ -412,7 +396,8 @@ onBeforeUnmount(() => {
             </a-tag>
             <a-tag v-else color="default">手动</a-tag>
           </template>
-        </Grid>
+          </Grid>
+        </div>
       </div>
       
       <!-- 移动端抽屉 -->
@@ -424,12 +409,9 @@ onBeforeUnmount(() => {
         :body-style="{ padding: 0 }"
       >
         <TopicFilterSidebar
-          v-model:search-query="filterValues.search_query"
-          v-model:search-mode="filterValues.search_mode"
           v-model:status="filterValues.status"
           v-model:category="filterValues.category"
           v-model:board-ids="filterValues.board_ids"
-          @search="() => { handleSearch(); drawerVisible = false; }"
         />
       </a-drawer>
     </div>
@@ -447,6 +429,44 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* 整体容器高度控制 */
+.topic-list-container {
+  height: calc(100vh - 64px); /* 减去顶部导航栏高度 */
+  overflow: hidden;
+  background: hsl(var(--background));
+}
+
+.topic-content-wrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background: hsl(var(--background));
+}
+
+.topic-sidebar {
+  height: 100%;
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid hsl(var(--border) / 0.3);
+  overflow-y: auto;
+  background: hsl(var(--background));
+}
+
+.topic-main-content {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--background));
+}
+
+.topic-grid-wrapper {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* 重要：允许 flex 子元素收缩 */
+}
+
 .topic-title {
   display: flex;
   align-items: center;

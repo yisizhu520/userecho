@@ -4,22 +4,17 @@ import { ref, onMounted } from 'vue';
 import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type BoardApi } from '#/api';
 
 interface Props {
-  searchQuery?: string;
-  searchMode?: 'keyword' | 'semantic';
-  status?: string;
-  category?: string;
+  status?: string[];
+  category?: string[];
   boardIds?: string[];
 }
 
 defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:searchQuery': [value: string];
-  'update:searchMode': [value: 'keyword' | 'semantic'];
-  'update:status': [value: string];
-  'update:category': [value: string];
+  'update:status': [value: string[]];
+  'update:category': [value: string[]];
   'update:boardIds': [value: string[]];
-  'search': [];
 }>();
 
 // Board 列表
@@ -45,87 +40,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="px-4 py-4">
-    <!-- 主题搜索 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        主题搜索
-      </label>
-      <Input
-        :value="searchQuery"
-        @update:value="emit('update:searchQuery', $event)"
-        @pressEnter="emit('search')"
-        placeholder="搜索主题标题..."
-        allow-clear
-        size="small"
-      />
-    </div>
-
-    <!-- 搜索模式 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        搜索模式
-      </label>
-      <RadioGroup
-        :value="searchMode"
-        @update:value="emit('update:searchMode', $event)"
-        button-style="solid"
-        size="small"
-        class="w-full flex"
-      >
-        <RadioButton value="keyword" class="flex-1 text-center">
-          关键词 ⚡
-        </RadioButton>
-        <RadioButton value="semantic" class="flex-1 text-center">
-          语义 🤖
-        </RadioButton>
-      </RadioGroup>
-    </div>
-
-    <!-- 主题状态 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        主题状态
-      </label>
-      <Select
-        :value="status"
-        @update:value="emit('update:status', $event)"
-        allow-clear
-        size="small"
-        class="w-full"
-      >
-        <SelectOption
-          v-for="item in TOPIC_STATUSES"
-          :key="item.value"
-          :value="item.value"
-        >
-          {{ item.label }}
-        </SelectOption>
-      </Select>
-    </div>
-
-    <!-- 主题分类 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        主题分类
-      </label>
-      <Select
-        :value="category"
-        @update:value="emit('update:category', $event)"
-        allow-clear
-        size="small"
-        class="w-full"
-      >
-        <SelectOption
-          v-for="item in TOPIC_CATEGORIES"
-          :key="item.value"
-          :value="item.value"
-        >
-          {{ item.label }}
-        </SelectOption>
-      </Select>
-    </div>
-
+  <div class="px-4 py-4 bg-transparent">
     <!-- Board 筛选 -->
     <div class="mb-4">
       <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
@@ -156,14 +71,50 @@ onMounted(() => {
       </CheckboxGroup>
     </div>
 
-    <!-- 搜索按钮 -->
-    <Button
-      type="primary"
-      block
-      size="small"
-      @click="emit('search')"
-    >
-      搜索
-    </Button>
+    <!-- 主题状态 -->
+    <div class="mb-4">
+      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
+        主题状态
+      </label>
+      <CheckboxGroup
+        :value="status"
+        @update:value="emit('update:status', $event)"
+        class="w-full"
+      >
+        <div class="flex flex-col gap-2">
+          <Checkbox
+            v-for="item in TOPIC_STATUSES"
+            :key="item.value"
+            :value="item.value"
+            class="ml-0"
+          >
+            <span class="text-sm">{{ item.label }}</span>
+          </Checkbox>
+        </div>
+      </CheckboxGroup>
+    </div>
+
+    <!-- 主题分类 -->
+    <div class="mb-4">
+      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
+        主题分类
+      </label>
+      <CheckboxGroup
+        :value="category"
+        @update:value="emit('update:category', $event)"
+        class="w-full"
+      >
+        <div class="flex flex-col gap-2">
+          <Checkbox
+            v-for="item in TOPIC_CATEGORIES"
+            :key="item.value"
+            :value="item.value"
+            class="ml-0"
+          >
+            <span class="text-sm">{{ item.label }}</span>
+          </Checkbox>
+        </div>
+      </CheckboxGroup>
+    </div>
   </div>
 </template>

@@ -4,24 +4,19 @@ import { ref, onMounted } from 'vue';
 import { getBoardList, type BoardApi } from '#/api';
 
 interface Props {
-  searchQuery?: string;
-  searchMode?: 'keyword' | 'semantic';
-  isUrgent?: boolean | '';
-  hasTopic?: boolean | '';
-  clusteringStatus?: string;
+  isUrgent?: string[];
+  hasTopic?: string[];
+  clusteringStatus?: string[];
   boardIds?: string[];
 }
 
 defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:searchQuery': [value: string];
-  'update:searchMode': [value: 'keyword' | 'semantic'];
-  'update:isUrgent': [value: boolean | ''];
-  'update:hasTopic': [value: boolean | ''];
-  'update:clusteringStatus': [value: string];
+  'update:isUrgent': [value: string[]];
+  'update:hasTopic': [value: string[]];
+  'update:clusteringStatus': [value: string[]];
   'update:boardIds': [value: string[]];
-  'search': [];
 }>();
 
 // Board 列表
@@ -47,97 +42,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="px-4 py-4">
-    <!-- 内容搜索 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        内容搜索
-      </label>
-      <Input
-        :value="searchQuery"
-        @update:value="emit('update:searchQuery', $event)"
-        @pressEnter="emit('search')"
-        placeholder="搜索反馈内容..."
-        allow-clear
-        size="small"
-      />
-    </div>
-
-    <!-- 搜索模式 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        搜索模式
-      </label>
-      <RadioGroup
-        :value="searchMode"
-        @update:value="emit('update:searchMode', $event)"
-        button-style="solid"
-        size="small"
-        class="w-full flex"
-      >
-        <RadioButton value="keyword" class="flex-1 text-center">
-          关键词 ⚡
-        </RadioButton>
-        <RadioButton value="semantic" class="flex-1 text-center">
-          语义 🤖
-        </RadioButton>
-      </RadioGroup>
-    </div>
-
-    <!-- 紧急程度 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        紧急程度
-      </label>
-      <Select
-        :value="isUrgent === '' ? undefined : isUrgent"
-        @update:value="emit('update:isUrgent', $event === undefined ? '' : $event)"
-        allow-clear
-        size="small"
-        class="w-full"
-      >
-        <SelectOption :value="true">🔥 紧急</SelectOption>
-        <SelectOption :value="false">📝 常规</SelectOption>
-      </Select>
-    </div>
-
-    <!-- 是否已归类 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        归类状态
-      </label>
-      <Select
-        :value="hasTopic === '' ? undefined : hasTopic"
-        @update:value="emit('update:hasTopic', $event === undefined ? '' : $event)"
-        allow-clear
-        size="small"
-        class="w-full"
-      >
-        <SelectOption :value="true">已归类</SelectOption>
-        <SelectOption :value="false">未归类</SelectOption>
-      </Select>
-    </div>
-
-    <!-- AI 状态 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        AI 状态
-      </label>
-      <Select
-        :value="clusteringStatus"
-        @update:value="emit('update:clusteringStatus', $event)"
-        allow-clear
-        size="small"
-        class="w-full"
-      >
-        <SelectOption value="">全部</SelectOption>
-        <SelectOption value="pending">待处理</SelectOption>
-        <SelectOption value="processing">处理中</SelectOption>
-        <SelectOption value="clustered">已处理</SelectOption>
-        <SelectOption value="failed">失败</SelectOption>
-      </Select>
-    </div>
-
+  <div class="px-4 py-4 bg-transparent">
     <!-- Board 筛选 -->
     <div class="mb-4">
       <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
@@ -168,14 +73,73 @@ onMounted(() => {
       </CheckboxGroup>
     </div>
 
-    <!-- 搜索按钮 -->
-    <Button
-      type="primary"
-      block
-      size="small"
-      @click="emit('search')"
-    >
-      搜索
-    </Button>
+    <!-- 紧急程度 -->
+    <div class="mb-4">
+      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
+        紧急程度
+      </label>
+      <CheckboxGroup
+        :value="isUrgent"
+        @update:value="emit('update:isUrgent', $event)"
+        class="w-full"
+      >
+        <div class="flex flex-col gap-2">
+          <Checkbox value="true" class="ml-0">
+            <span class="text-sm">紧急</span>
+          </Checkbox>
+          <Checkbox value="false" class="ml-0">
+            <span class="text-sm">常规</span>
+          </Checkbox>
+        </div>
+      </CheckboxGroup>
+    </div>
+
+    <!-- 是否已归类 -->
+    <div class="mb-4">
+      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
+        归类状态
+      </label>
+      <CheckboxGroup
+        :value="hasTopic"
+        @update:value="emit('update:hasTopic', $event)"
+        class="w-full"
+      >
+        <div class="flex flex-col gap-2">
+          <Checkbox value="true" class="ml-0">
+            <span class="text-sm">已归类</span>
+          </Checkbox>
+          <Checkbox value="false" class="ml-0">
+            <span class="text-sm">未归类</span>
+          </Checkbox>
+        </div>
+      </CheckboxGroup>
+    </div>
+
+    <!-- AI 状态 -->
+    <div class="mb-4">
+      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
+        AI 状态
+      </label>
+      <CheckboxGroup
+        :value="clusteringStatus"
+        @update:value="emit('update:clusteringStatus', $event)"
+        class="w-full"
+      >
+        <div class="flex flex-col gap-2">
+          <Checkbox value="pending" class="ml-0">
+            <span class="text-sm">待处理</span>
+          </Checkbox>
+          <Checkbox value="processing" class="ml-0">
+            <span class="text-sm">处理中</span>
+          </Checkbox>
+          <Checkbox value="clustered" class="ml-0">
+            <span class="text-sm">已处理</span>
+          </Checkbox>
+          <Checkbox value="failed" class="ml-0">
+            <span class="text-sm">失败</span>
+          </Checkbox>
+        </div>
+      </CheckboxGroup>
+    </div>
   </div>
 </template>

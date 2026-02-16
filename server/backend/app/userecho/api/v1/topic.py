@@ -1,6 +1,6 @@
 """需求主题 API 端点"""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from backend.app.userecho.schema.topic import (
     TopicCreate,
@@ -31,8 +31,9 @@ async def get_topics(
     tenant_id: str = CurrentTenantId,
     skip: int = 0,
     limit: int = 100,
-    status: str | None = None,
-    category: str | None = None,
+    status: list[str] | None = Query(None),
+    category: list[str] | None = Query(None),
+    board_ids: list[str] | None = Query(None),
     sort_by: str = 'created_time',
     sort_order: str = 'desc',
     search_query: str | None = None,  # ✅ 添加搜索参数
@@ -42,8 +43,9 @@ async def get_topics(
     获取主题列表（支持排序、过滤和双模式搜索）
 
     过滤参数：
-    - **status**: 过滤状态 (pending/planned/in_progress/completed/ignored)
-    - **category**: 过滤分类 (bug/improvement/feature/performance/other)
+    - **status**: 过滤状态（多选，值: ['pending', 'planned', 'in_progress', 'completed', 'ignored']）
+    - **category**: 过滤分类（多选，值: ['bug', 'improvement', 'feature', 'performance', 'other']）
+    - **board_ids**: 过滤看板ID（多选）
     - **sort_by**: 排序字段 (created_time/feedback_count/total_score)
     - **sort_order**: 排序方向 (asc/desc)
     
@@ -72,6 +74,7 @@ async def get_topics(
         limit=limit,
         status=status,
         category=category,
+        board_ids=board_ids,
         sort_by=sort_by,
         sort_order=sort_order,
         search_query=search_query,  # ✅ 传递搜索参数

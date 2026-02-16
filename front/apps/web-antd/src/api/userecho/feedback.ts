@@ -50,9 +50,10 @@ export interface FeedbackListParams {
   limit?: number;
   topic_id?: string;
   customer_id?: string;
-  is_urgent?: boolean;
-  has_topic?: boolean;
-  clustering_status?: 'pending' | 'processing' | 'clustered' | 'failed';
+  is_urgent?: string[];
+  has_topic?: string[];
+  clustering_status?: string[];
+  board_ids?: string[];
   search_query?: string;
   search_mode?: 'keyword' | 'semantic';
 }

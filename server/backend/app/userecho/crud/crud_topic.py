@@ -149,8 +149,9 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         tenant_id: str,
         skip: int = 0,
         limit: int = 100,
-        status: str | None = None,
-        category: str | None = None,
+        status: list[str] | None = None,
+        category: list[str] | None = None,
+        board_ids: list[str] | None = None,
         sort_by: str = 'created_time',
         sort_order: str = 'desc',
         search_query: str | None = None,
@@ -163,8 +164,9 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             tenant_id: 租户ID
             skip: 跳过数量
             limit: 返回数量
-            status: 过滤状态
-            category: 过滤分类
+            status: 过滤状态（多选）
+            category: 过滤分类（多选）
+            board_ids: 过滤看板ID（多选）
             sort_by: 排序字段
             sort_order: 排序方向（asc/desc）
             search_query: 搜索关键词（搜索 title 和 description）
@@ -185,11 +187,13 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             )
         )
 
-        # 添加过滤条件
-        if status:
-            query = query.where(self.model.status == status)
-        if category:
-            query = query.where(self.model.category == category)
+        # 添加过滤条件（多选）
+        if status and len(status) > 0:
+            query = query.where(self.model.status.in_(status))
+        if category and len(category) > 0:
+            query = query.where(self.model.category.in_(category))
+        if board_ids and len(board_ids) > 0:
+            query = query.where(self.model.board_id.in_(board_ids))
         
         # 关键词搜索（搜索 title + description）
         if search_query:
@@ -226,8 +230,9 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         query_embedding: list[float],
         skip: int = 0,
         limit: int = 100,
-        status: str | None = None,
-        category: str | None = None,
+        status: list[str] | None = None,
+        category: list[str] | None = None,
+        board_ids: list[str] | None = None,
         min_similarity: float = 0.70,
     ) -> list[Topic]:
         """
@@ -239,8 +244,9 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             query_embedding: 查询向量
             skip: 跳过数量
             limit: 返回数量
-            status: 过滤状态
-            category: 过滤分类
+            status: 过滤状态（多选）
+            category: 过滤分类（多选）
+            board_ids: 过滤看板ID（多选）
             min_similarity: 最小相似度阈值（0-1，默认 0.70，主题搜索阈值较低）
         
         Returns:
@@ -260,11 +266,16 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             f"(1 - (t.centroid <=> '{embedding_str}'::vector)) >= {min_similarity}"
         ]
         
-        # 添加过滤条件
-        if status is not None:
-            filter_conditions.append(f"t.status = '{status}'")
-        if category is not None:
-            filter_conditions.append(f"t.category = '{category}'")
+        # 添加过滤条件（多选）
+        if status is not None and len(status) > 0:
+            status_conditions = " OR ".join([f"t.status = '{s}'" for s in status])
+            filter_conditions.append(f"({status_conditions})")
+        if category is not None and len(category) > 0:
+            category_conditions = " OR ".join([f"t.category = '{c}'" for c in category])
+            filter_conditions.append(f"({category_conditions})")
+        if board_ids is not None and len(board_ids) > 0:
+            board_conditions = " OR ".join([f"t.board_id = '{b}'" for b in board_ids])
+            filter_conditions.append(f"({board_conditions})")
         
         where_clause = " AND ".join(filter_conditions)
         
