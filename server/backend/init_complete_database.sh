@@ -157,15 +157,15 @@ step1_fba_init() {
     echo ""
 }
 
-# 步骤 2: 创建默认租户
+# 步骤 2: 创建默认租户和看板
 step2_default_tenant() {
-    print_header "步骤 2/5: 创建默认租户"
+    print_header "步骤 2/5: 创建默认租户和看板"
     
-    print_info "创建 default-tenant 租户记录..."
+    print_info "创建 default-tenant 租户和 default-board 看板..."
     python scripts/init_default_tenant.py
     
     if [ $? -eq 0 ]; then
-        print_success "默认租户创建完成"
+        print_success "默认租户和看板创建完成"
     else
         print_error "默认租户创建失败"
         exit 1
@@ -228,13 +228,18 @@ from backend.database.db import async_db_session
 from backend.app.admin.model import Menu, Role, User, Dept
 
 async def verify():
-    from backend.app.userecho.model import Tenant
+    from backend.app.userecho.model import Tenant, Board, TenantUser
     
     async with async_db_session() as db:
         # 检查租户
         tenant = await db.scalar(select(Tenant).where(Tenant.id == 'default-tenant'))
         if tenant:
-            print(f'  🏢 默认租户: {tenant.name} ({tenant.id})')
+            print(f'  🏢 默认租户: {tenant.name} ({tenant.id}, slug={tenant.slug})')
+        
+        # 检查看板
+        board = await db.scalar(select(Board).where(Board.id == 'default-board'))
+        if board:
+            print(f'  📋 默认看板: {board.name} ({board.id})')
         
         # 检查部门
         dept_count = await db.scalar(select(func.count(Dept.id)))
@@ -260,12 +265,16 @@ async def verify():
         user_count = await db.scalar(select(func.count(User.id)))
         print(f'  🧑 用户数量: {user_count}')
         
+        # 检查租户用户关联
+        tenant_user_count = await db.scalar(select(func.count(TenantUser.id)))
+        print(f'  🔗 租户用户关联数量: {tenant_user_count}')
+        
         # 检查 admin 用户
         admin = await db.scalar(select(User).where(User.username == 'admin'))
         if admin:
             print(f'  ✅ admin 超级管理员已创建')
         
-        return tenant and dept_count > 0 and sys_menu_count > 0 and app_menu_count > 0
+        return tenant and board and dept_count > 0 and sys_menu_count > 0 and app_menu_count > 0
 
 try:
     if asyncio.run(verify()):
@@ -304,9 +313,9 @@ main() {
     echo ""
     echo "  【数据初始化】"
     echo "  1. 使用 fba init 初始化系统基础数据（部门、系统菜单、admin）"
-    echo "  2. 创建默认租户（default-tenant）"
+    echo "  2. 创建默认租户和看板（default-tenant + default-board）"
     echo "  3. 初始化业务菜单和角色（/app/* 菜单）"
-    echo "  4. 创建测试用户（6 个测试账号）"
+    echo "  4. 创建测试用户（6 个测试账号 + 租户用户关联）"
     echo "  5. 验证初始化结果"
     echo ""
     print_warning "⚠️  注意：数据库中的所有现有数据将被删除 ⚠️"
@@ -343,15 +352,15 @@ main() {
     echo "  权限: 全部系统管理功能"
     echo ""
     echo "  👥 业务测试账号（统一密码：Test123456）"
-    echo "  ────────────────────────────────────────"
-    echo "  账号      角色            菜单权限"
-    echo "  ────────────────────────────────────────"
-    echo "  sysadmin  系统管理员      /admin/* 菜单"
-    echo "  pm        PM              /app/* 全部菜单"
-    echo "  cs        CS              /app/* 部分菜单"
-    echo "  dev       开发            /app/* 只读菜单"
-    echo "  boss      老板            /app/* 全部菜单"
-    echo "  hybrid    混合角色        全部菜单"
+    echo "  ─────────────────────────────────────────────────────"
+    echo "  账号      系统角色        租户角色            菜单权限"
+    echo "  ─────────────────────────────────────────────────────"
+    echo "  sysadmin  系统管理员      admin               /admin/* 菜单"
+    echo "  pm        PM              product_manager     /app/* 全部菜单"
+    echo "  cs        CS              customer_success    /app/* 部分菜单"
+    echo "  dev       开发            developer           /app/* 只读菜单"
+    echo "  boss      老板            admin               /app/* 全部菜单"
+    echo "  hybrid    混合角色        admin               全部菜单"
     echo ""
     print_header "🎉 初始化完成，祝您使用愉快！"
 }

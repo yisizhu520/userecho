@@ -20,17 +20,20 @@ sys.path.insert(0, str(backend_path))
 import bcrypt
 from sqlalchemy import select
 from backend.app.admin.model import User, Role, Dept, user_role
+from backend.app.userecho.model import TenantUser
 from backend.database.db import async_db_session
 from backend.app.admin.utils.password_security import get_hash_password
 
 
 # 测试用户配置
+# user_type: admin, product_manager, sales, customer_success, developer, member
 TEST_USERS = [
     {
         'username': 'sysadmin',
         'nickname': '系统管理员',
         'email': 'sysadmin@userecho.com',
         'role': '系统管理员',
+        'user_type': 'admin',  # 租户内角色类型
         'description': '系统管理员角色，只能访问系统管理菜单',
     },
     {
@@ -38,6 +41,7 @@ TEST_USERS = [
         'nickname': '产品经理',
         'email': 'pm@userecho.com',
         'role': 'PM',
+        'user_type': 'product_manager',  # 产品经理
         'description': 'PM角色，可管理全部反馈功能',
     },
     {
@@ -45,6 +49,7 @@ TEST_USERS = [
         'nickname': '客户成功',
         'email': 'cs@userecho.com',
         'role': 'CS',
+        'user_type': 'customer_success',  # 客户成功
         'description': 'CS角色，可查看反馈和客户',
     },
     {
@@ -52,6 +57,7 @@ TEST_USERS = [
         'nickname': '开发人员',
         'email': 'dev@userecho.com',
         'role': '开发',
+        'user_type': 'developer',  # 开发人员
         'description': '开发角色，只读需求主题',
     },
     {
@@ -59,6 +65,7 @@ TEST_USERS = [
         'nickname': '租户管理员',
         'email': 'boss@userecho.com',
         'role': '老板',
+        'user_type': 'admin',  # 老板是租户管理员
         'description': '老板角色，查看全部',
     },
     {
@@ -66,6 +73,7 @@ TEST_USERS = [
         'nickname': '混合角色用户',
         'email': 'hybrid@userecho.com',
         'role': ['系统管理员', 'PM'],
+        'user_type': 'admin',  # 混合角色
         'description': '混合角色，同时拥有系统管理员和PM权限',
     },
 ]
@@ -143,7 +151,17 @@ async def create_test_users():
                     )
                     assigned_roles.append(role_name)
             
-            print(f'✅ 创建用户: {username} ({", ".join(assigned_roles)})')
+            # 创建 TenantUser 关联（与默认租户关联）
+            tenant_user = TenantUser(
+                tenant_id='default-tenant',
+                user_id=user.id,
+                user_type=user_config.get('user_type', 'member'),
+                department_id=dept_id,
+                status='active',
+            )
+            db.add(tenant_user)
+            
+            print(f'✅ 创建用户: {username} ({", ".join(assigned_roles)}, 租户角色: {user_config.get("user_type", "member")})')
             created_count += 1
         
         await db.commit()
