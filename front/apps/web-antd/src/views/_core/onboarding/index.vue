@@ -95,7 +95,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: #f5f7f9;
   padding: 40px 20px;
 }
 
@@ -118,13 +118,13 @@ onMounted(async () => {
 .logo-text {
   font-size: 36px;
   font-weight: 700;
-  color: #fff;
+  color: #1f1f1f;
   letter-spacing: 2px;
 }
 
 .brand-subtitle {
   margin-top: 8px;
-  color: rgba(255, 255, 255, 0.85);
+  color: #666;
   font-size: 16px;
 }
 
@@ -132,11 +132,14 @@ onMounted(async () => {
   width: 100%;
   max-width: 600px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .step-card {
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   padding: 24px;
 }
 
@@ -158,7 +161,7 @@ onMounted(async () => {
 .footer-info {
   margin-top: 40px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.7);
+  color: #999;
   font-size: 14px;
 }
 

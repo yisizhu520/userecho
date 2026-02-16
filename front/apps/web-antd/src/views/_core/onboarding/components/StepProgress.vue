@@ -108,13 +108,13 @@ const progressPercent = computed(() => {
 }
 
 .step-item.active .step-dot {
-  border: 2px solid #667eea;
-  color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+  border: 2px solid hsl(181, 84%, 32%);
+  color: hsl(181, 84%, 32%);
+  box-shadow: 0 0 0 4px rgba(13, 150, 137, 0.2);
 }
 
 .step-item.completed .step-dot {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: hsl(181, 84%, 32%);
   border: none;
   color: #fff;
 }
@@ -139,12 +139,12 @@ const progressPercent = computed(() => {
 }
 
 .step-item.active .step-name {
-  color: #667eea;
+  color: hsl(181, 84%, 32%);
   font-weight: 600;
 }
 
 .step-item.completed .step-name {
-  color: #52c41a;
+  color: hsl(181, 84%, 32%);
 }
 
 .step-connector {
@@ -162,7 +162,7 @@ const progressPercent = computed(() => {
 }
 
 .connector-line.filled {
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: hsl(181, 84%, 32%);
 }
 
 .progress-bar {
@@ -174,7 +174,7 @@ const progressPercent = computed(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: hsl(181, 84%, 32%);
   transition: width 0.5s ease;
   border-radius: 2px;
 }

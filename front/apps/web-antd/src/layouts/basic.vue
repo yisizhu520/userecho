@@ -99,10 +99,12 @@ watch(
     immediate: true,
   },
 );
+import CustomSidebar from './components/sidebar/CustomSidebar.vue';
 </script>
 
 <template>
   <BasicLayout @clear-preferences-and-logout="handleLogout">
+
     <template #user-dropdown>
       <UserDropdown
         :avatar

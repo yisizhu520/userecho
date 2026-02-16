@@ -237,12 +237,12 @@ async function handleSubmit() {
 }
 
 .access-option:hover {
-  border-color: #667eea;
+  border-color: hsl(181, 84%, 32%);
 }
 
 .access-option.selected {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.05);
+  border-color: hsl(181, 84%, 32%);
+  background: rgba(13, 150, 137, 0.05);
 }
 
 .access-option:last-child {
@@ -284,16 +284,6 @@ async function handleSubmit() {
   flex: 1;
   height: 48px;
   font-size: 15px;
-}
-
-:deep(.ant-btn-primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  font-weight: 500;
-}
-
-:deep(.ant-btn-primary:hover) {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
 }
 
 :deep(.ant-radio-wrapper) {

@@ -1,6 +1,7 @@
 from .board import Board
 from .customer import Customer
 from .feedback import Feedback
+from .insight import Insight
 from .manual_adjustment import ManualAdjustment
 from .priority_score import PriorityScore
 from .status_history import StatusHistory
@@ -17,6 +18,7 @@ __all__ = [
     'Customer',
     'Feedback',
     'Topic',
+    'Insight',
     'PriorityScore',
     'StatusHistory',
     'ManualAdjustment',

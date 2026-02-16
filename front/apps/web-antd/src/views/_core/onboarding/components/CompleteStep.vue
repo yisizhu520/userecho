@@ -134,6 +134,7 @@ async function handleStart() {
 }
 
 .completion-info {
+  width: 100%;
   max-width: 400px;
   margin: 0 auto;
 }
@@ -165,7 +166,7 @@ async function handleStart() {
 
 .summary-value {
   margin: 0 !important;
-  color: #667eea;
+  color: hsl(181, 84%, 32%);
   font-weight: 500;
 }
 
@@ -178,7 +179,7 @@ async function handleStart() {
 .next-steps {
   text-align: left;
   padding: 16px 24px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  background: rgba(13, 150, 137, 0.05);
   border-radius: 12px;
   margin-bottom: 24px;
 }
@@ -200,13 +201,7 @@ async function handleStart() {
   height: 52px;
   font-size: 18px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
   border-radius: 8px;
-}
-
-.start-button:hover {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
 }
 
 :deep(.ant-result-icon) {
@@ -215,5 +210,6 @@ async function handleStart() {
 
 :deep(.ant-result-icon .anticon) {
   font-size: 64px;
+  color: hsl(181, 84%, 32%);
 }
 </style>

@@ -292,14 +292,8 @@ async function handleSubmit() {
 }
 
 :deep(.ant-btn-primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
   height: 48px;
   font-size: 16px;
   font-weight: 500;
-}
-
-:deep(.ant-btn-primary:hover) {
-  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
 }
 </style>

@@ -119,6 +119,7 @@ catalog:
   jsonc-eslint-parser: ^2.4.0
   jsonwebtoken: ^9.0.2
   lefthook: ^1.11.14
+  lodash-es: ^4.17.21
   lodash.clonedeep: ^4.5.0
   lodash.get: ^4.4.2
   lodash.isequal: ^4.5.0

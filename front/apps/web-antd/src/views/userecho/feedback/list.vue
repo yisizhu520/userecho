@@ -15,7 +15,7 @@ import { computed, onBeforeUnmount, ref, onMounted } from 'vue';
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
-import { message } from 'ant-design-vue';
+import { message, Drawer } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -32,6 +32,20 @@ import {
   useColumns,
   feedbackFormSchema,
 } from '#/views/userecho/feedback/data';
+import CustomSidebar from '#/layouts/components/sidebar/CustomSidebar.vue';
+
+/**
+ * 响应式布局检测
+ */
+const isMobile = ref(false);
+const drawerVisible = ref(false);
+
+const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
+  isMobile.value = e.matches;
+  if (!e.matches) {
+    drawerVisible.value = false; // 切换到桌面端时关闭抽屉
+  }
+};
 
 /**
  * 查询表单配置
@@ -364,99 +378,146 @@ const [addModal, addModalApi] = useVbenModal({
 });
 
 onMounted(() => {
-  // 初始化加载数据
+  // 初始化响应式检测
+  const mediaQuery = window.matchMedia('(max-width: 767px)');
+  handleMediaChange(mediaQuery);
+  mediaQuery.addEventListener('change', handleMediaChange);
+  
+  // 保存 mediaQuery 引用以便清理
+  (window as any).__feedbackMediaQuery = mediaQuery;
 });
-</script>
+
+onBeforeUnmount(() => {
+  // 清理响应式检测监听器
+  const mediaQuery = (window as any).__feedbackMediaQuery;
+  if (mediaQuery) {
+    mediaQuery.removeEventListener('change', handleMediaChange);
+    delete (window as any).__feedbackMediaQuery;
+  }
+  
+  // 清理聚类轮询
+  stopClusteringPoll();
+});</script>
 
 <template>
-  <div>
-    <Grid>
-      <template #toolbar-actions>
-        <div class="feedback-actions-group">
-          <div class="add-actions">
-            <VbenButton type="primary" @click="() => addModalApi.open()">
-              <span class="iconify lucide--pencil mr-2" />
-              手动录入
-            </VbenButton>
-            <VbenButton @click="() => $router.push('/app/feedback/screenshot')">
-              <span class="iconify lucide--camera mr-2" />
-              截图识别
-            </VbenButton>
-            <VbenButton @click="() => $router.push('/app/feedback/import')">
-              <span class="iconify lucide--upload mr-2" />
-              批量导入
+  <div class="flex h-full w-full">
+    <!-- 左侧栏 - 仅桌面端显示 -->
+    <div v-if="!isMobile" class="h-full w-[240px] flex-shrink-0 border-r border-border bg-sidebar">
+      <CustomSidebar />
+    </div>
+    
+    <!-- 右侧内容区域 -->
+    <div class="flex-1 h-full overflow-hidden bg-background" :class="isMobile ? 'p-2' : 'p-4'">
+      <!-- 移动端汉堡菜单按钮 -->
+      <VbenButton 
+        v-if="isMobile" 
+        class="mb-3"
+        variant="outline"
+        @click="drawerVisible = true"
+      >
+        <span class="iconify lucide--menu mr-2" />
+        筛选条件
+      </VbenButton>
+      
+      <Grid>
+        <template #toolbar-actions>
+          <div class="feedback-actions-group">
+            <div class="add-actions">
+              <VbenButton type="primary" @click="() => addModalApi.open()">
+                <span class="iconify lucide--pencil mr-2" />
+                手动录入
+              </VbenButton>
+              <VbenButton @click="() => $router.push('/app/feedback/screenshot')">
+                <span class="iconify lucide--camera mr-2" />
+                截图识别
+              </VbenButton>
+              <VbenButton @click="() => $router.push('/app/feedback/import')">
+                <span class="iconify lucide--upload mr-2" />
+                批量导入
+              </VbenButton>
+            </div>
+            <VbenButton
+              variant="outline"
+              @click="handleTriggerClustering"
+              :loading="clusteringLoading"
+            >
+              <span class="iconify lucide--sparkles mr-2" />
+              AI 智能聚类
             </VbenButton>
           </div>
-          <VbenButton
-            variant="outline"
-            @click="handleTriggerClustering"
-            :loading="clusteringLoading"
+        </template>
+
+        <template #topic="{ row }">
+          <span v-if="row.topic_id && row.topic_title">
+            <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/app/topic/detail/${row.topic_id}`)">
+              {{ row.topic_title }}
+            </a-tag>
+          </span>
+          <span v-else class="text-gray-400">未聚类</span>
+        </template>
+
+        <template #clustering_status="{ row }">
+          <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
+          <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
+          <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
+          <a-tag
+            v-else-if="row.clustering_status === 'clustered'"
+            :color="row.topic_id ? 'green' : 'default'"
           >
-            <span class="iconify lucide--sparkles mr-2" />
-            AI 智能聚类
-          </VbenButton>
+            {{ row.topic_id ? '已归类' : '待观察' }}
+          </a-tag>
+          <span v-else class="text-gray-400">-</span>
+        </template>
+
+        <template #urgent="{ row }">
+          <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
+          <a-tag v-else color="default">📝 常规</a-tag>
+        </template>
+      </Grid>
+
+      <!-- 编辑弹窗 -->
+      <editModal>
+        <EditForm />
+      </editModal>
+
+      <!-- 新建弹窗 -->
+      <addModal>
+        <AddForm />
+      </addModal>
+
+      <a-modal
+        v-model:open="clusteringModalOpen"
+        title="AI 智能聚类"
+        :footer="null"
+        :maskClosable="false"
+        @cancel="onClusteringModalCancel"
+      >
+        <a-steps :current="clusteringStep" size="small">
+          <a-step title="任务提交" />
+          <a-step title="处理中" />
+          <a-step title="完成" />
+        </a-steps>
+
+        <div class="mt-4">
+          <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
+          <div class="text-gray-500 mt-2">
+            <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
+            <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
+          </div>
         </div>
-    </template>
-
-    <template #topic="{ row }">
-      <span v-if="row.topic_id && row.topic_title">
-        <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/app/topic/detail/${row.topic_id}`)">
-          {{ row.topic_title }}
-        </a-tag>
-      </span>
-        <span v-else class="text-gray-400">未聚类</span>
-      </template>
-
-      <template #clustering_status="{ row }">
-        <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
-        <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
-        <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
-        <a-tag
-          v-else-if="row.clustering_status === 'clustered'"
-          :color="row.topic_id ? 'green' : 'default'"
-        >
-          {{ row.topic_id ? '已归类' : '待观察' }}
-        </a-tag>
-        <span v-else class="text-gray-400">-</span>
-      </template>
-
-      <template #urgent="{ row }">
-        <a-tag v-if="row.is_urgent" color="red">🔥 紧急</a-tag>
-        <a-tag v-else color="default">📝 常规</a-tag>
-      </template>
-    </Grid>
-
-    <!-- 编辑弹窗 -->
-    <editModal>
-      <EditForm />
-    </editModal>
-
-    <!-- 新建弹窗 -->
-    <addModal>
-      <AddForm />
-    </addModal>
-
-    <a-modal
-      v-model:open="clusteringModalOpen"
-      title="AI 智能聚类"
-      :footer="null"
-      :maskClosable="false"
-      @cancel="onClusteringModalCancel"
+      </a-modal>
+    </div>
+    
+    <!-- 移动端抽屉 -->
+    <a-drawer
+      v-model:open="drawerVisible"
+      title="筛选条件"
+      placement="left"
+      :width="280"
+      :body-style="{ padding: 0 }"
     >
-      <a-steps :current="clusteringStep" size="small">
-        <a-step title="任务提交" />
-        <a-step title="处理中" />
-        <a-step title="完成" />
-      </a-steps>
-
-      <div class="mt-4">
-        <a-progress :percent="clusteringProgress" :status="clusteringTaskState === 'FAILURE' ? 'exception' : 'active'" />
-        <div class="text-gray-500 mt-2">
-          <div v-if="clusteringTaskId">任务 ID：{{ clusteringTaskId }}</div>
-          <div v-if="clusteringTaskError" class="text-red-500 mt-1">错误：{{ clusteringTaskError }}</div>
-        </div>
-      </div>
-    </a-modal>
+      <CustomSidebar />
+    </a-drawer>
   </div>
 </template>
 

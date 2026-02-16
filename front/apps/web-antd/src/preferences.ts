@@ -12,6 +12,14 @@ export const overridesPreferences = defineOverridesPreferences({
     authPageLayout: 'panel-right',
     name: import.meta.env.VITE_APP_TITLE,
     enableRefreshToken: true,
+    layout: 'header-nav',
+  },
+  header: {
+    height: 64,
+  },
+  sidebar: {
+    width: 240,
+    enable: false,
   },
   footer: {
     enable: false,
@@ -24,7 +32,7 @@ export const overridesPreferences = defineOverridesPreferences({
     enable: false,
   },
   theme: {
-   "builtinType": "deep-green",
-   "colorPrimary": "hsl(181 84% 32%)"
+    "builtinType": "deep-green",
+    "colorPrimary": "hsl(181 84% 32%)"
   },
 });

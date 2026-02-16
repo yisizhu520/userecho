@@ -129,29 +129,100 @@ setup_database_environment() {
     fi
 }
 
-# 步骤 1: 使用 fba init 初始化系统基础数据
-step1_fba_init() {
-    print_header "步骤 1/4: 使用 fba init 初始化系统基础数据"
-    
-    print_warning "此操作将清空数据库所有数据并重建！"
+# 询问用户是否 drop 所有表
+ask_drop_tables() {
+    print_header "🗑️  数据库清理选项"
     echo ""
-    print_info "fba init 将会："
-    echo "  • 执行数据库迁移（创建表结构）"
-    echo "  • 导入系统管理菜单（/system/*, /log/*, /monitor/* 等）"
-    echo "  • 创建 admin 超级管理员（密码：Admin123456）"
-    echo "  • 创建测试部门和测试角色"
+    print_warning "您希望如何初始化数据库？"
+    echo ""
+    echo "  1) 完全重建（推荐）- 删除所有表并重新创建"
+    echo "     • 适用于：全新安装、彻底重置"
+    echo "     • 警告：将删除所有现有数据"
+    echo ""
+    echo "  2) 增量更新 - 保留现有数据，仅更新表结构"
+    echo "     • 适用于：数据库升级、添加新表"
+    echo "     • 注意：不会重新初始化基础数据"
     echo ""
     
-    # 自动确认 fba init（非交互模式）
-    print_info "执行 fba init..."
-    export PYTHONIOENCODING=utf-8
-    echo "y" | fba init
+    while true; do
+        read -p "请选择 [1/2]: " choice
+        case $choice in
+            1)
+                DROP_TABLES=true
+                print_info "已选择：完全重建数据库"
+                break
+                ;;
+            2)
+                DROP_TABLES=false
+                print_info "已选择：增量更新数据库"
+                break
+                ;;
+            *)
+                print_error "无效选择，请输入 1 或 2"
+                ;;
+        esac
+    done
     
-    if [ $? -eq 0 ]; then
-        print_success "系统基础数据初始化完成"
+    echo ""
+}
+
+# 步骤 1a: 删除所有表（可选）
+step1a_drop_tables() {
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 1/6: 删除所有数据库表"
+        
+        print_warning "正在删除所有表..."
+        python scripts/drop_all_tables.py
+        
+        if [ $? -eq 0 ]; then
+            print_success "所有表已删除"
+        else
+            print_error "删除表失败"
+            exit 1
+        fi
+        
+        echo ""
     else
-        print_error "fba init 执行失败"
-        exit 1
+        print_info "跳过删除表步骤"
+        echo ""
+    fi
+}
+
+# 步骤 1b: 执行数据库迁移
+step1b_migrate() {
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 2/6: 使用 fba init 初始化系统基础数据"
+        
+        print_info "fba init 将会："
+        echo "  • 执行数据库迁移（创建表结构）"
+        echo "  • 导入系统管理菜单（/system/*, /log/*, /monitor/* 等）"
+        echo "  • 创建 admin 超级管理员（密码：Admin123456）"
+        echo "  • 创建测试部门和测试角色"
+        echo ""
+        
+        # 自动确认 fba init（非交互模式）
+        print_info "执行 fba init..."
+        export PYTHONIOENCODING=utf-8
+        echo "y" | fba init
+        
+        if [ $? -eq 0 ]; then
+            print_success "系统基础数据初始化完成"
+        else
+            print_error "fba init 执行失败"
+            exit 1
+        fi
+    else
+        print_header "步骤 1/5: 执行数据库迁移"
+        
+        print_info "执行 Alembic 迁移..."
+        alembic upgrade head
+        
+        if [ $? -eq 0 ]; then
+            print_success "数据库迁移完成"
+        else
+            print_error "数据库迁移失败"
+            exit 1
+        fi
     fi
     
     echo ""
@@ -159,7 +230,11 @@ step1_fba_init() {
 
 # 步骤 2: 创建默认租户和看板
 step2_default_tenant() {
-    print_header "步骤 2/5: 创建默认租户和看板"
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 3/6: 创建默认租户和看板"
+    else
+        print_header "步骤 2/5: 创建默认租户和看板"
+    fi
     
     print_info "创建 default-tenant 租户和 default-board 看板..."
     python scripts/init_default_tenant.py
@@ -176,7 +251,11 @@ step2_default_tenant() {
 
 # 步骤 3: 初始化业务菜单和角色
 step3_business_menus() {
-    print_header "步骤 3/5: 初始化业务菜单和角色"
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 4/6: 初始化业务菜单和角色"
+    else
+        print_header "步骤 3/5: 初始化业务菜单和角色"
+    fi
     
     print_info "创建业务菜单（/app/*）和业务角色..."
     python scripts/init_business_menus.py
@@ -193,7 +272,11 @@ step3_business_menus() {
 
 # 步骤 4: 创建测试用户
 step4_test_users() {
-    print_header "步骤 4/5: 创建测试用户"
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 5/6: 创建测试用户"
+    else
+        print_header "步骤 4/5: 创建测试用户"
+    fi
     
     print_info "创建 6 个测试账号（sysadmin, pm, cs, dev, boss, hybrid）..."
     python scripts/create_test_users.py
@@ -209,7 +292,11 @@ step4_test_users() {
 
 # 步骤 5: 验证初始化结果
 step5_verify() {
-    print_header "步骤 5/5: 验证初始化结果"
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 6/6: 验证初始化结果"
+    else
+        print_header "步骤 5/5: 验证初始化结果"
+    fi
     
     print_info "验证数据库初始化状态..."
     
@@ -228,7 +315,7 @@ from backend.database.db import async_db_session
 from backend.app.admin.model import Menu, Role, User, Dept
 
 async def verify():
-    from backend.app.userecho.model import Tenant, Board, TenantUser
+    from backend.app.userecho.model import Tenant, Board, TenantUser, Insight
     
     async with async_db_session() as db:
         # 检查租户
@@ -269,6 +356,14 @@ async def verify():
         tenant_user_count = await db.scalar(select(func.count(TenantUser.id)))
         print(f'  🔗 租户用户关联数量: {tenant_user_count}')
         
+        # 检查 Insight 表是否存在
+        try:
+            insight_count = await db.scalar(select(func.count(Insight.id)))
+            print(f'  💡 Insight 表已创建（记录数: {insight_count}）')
+        except Exception as e:
+            print(f'  ❌ Insight 表检查失败: {e}')
+            return False
+        
         # 检查 admin 用户
         admin = await db.scalar(select(User).where(User.username == 'admin'))
         if admin:
@@ -302,27 +397,6 @@ main() {
     
     print_header "🚀 UserEcho 一键完整数据库初始化脚本"
     echo ""
-    print_warning "⚠️  此脚本将清空数据库所有数据并重建 ⚠️"
-    echo ""
-    print_info "此脚本将自动完成以下操作："
-    echo ""
-    echo "  【环境准备】（自动）"
-    echo "  • 检查并创建数据库（如果不存在）"
-    echo "  • 安装 pgvector 扩展"
-    echo "  • 配置 Redis 连接"
-    echo ""
-    echo "  【数据初始化】"
-    echo "  1. 使用 fba init 初始化系统基础数据（部门、系统菜单、admin）"
-    echo "  2. 创建默认租户和看板（default-tenant + default-board）"
-    echo "  3. 初始化业务菜单和角色（/app/* 菜单）"
-    echo "  4. 创建测试用户（6 个测试账号 + 租户用户关联）"
-    echo "  5. 验证初始化结果"
-    echo ""
-    print_warning "⚠️  注意：数据库中的所有现有数据将被删除 ⚠️"
-    echo ""
-    
-    read -p "确认继续？按 Enter 键继续，或按 Ctrl+C 取消..." dummy
-    echo ""
     
     # 前置检查
     check_directory
@@ -333,8 +407,39 @@ main() {
     
     echo ""
     
+    # 询问用户是否 drop 所有表
+    ask_drop_tables
+    
+    # 最终确认
+    if [ "$DROP_TABLES" = true ]; then
+        print_warning "⚠️  警告：即将删除数据库中的所有数据 ⚠️"
+        echo ""
+        print_info "此脚本将执行以下操作："
+        echo ""
+        echo "  1. 删除所有数据库表"
+        echo "  2. 使用 fba init 初始化系统基础数据"
+        echo "  3. 创建默认租户和看板"
+        echo "  4. 初始化业务菜单和角色"
+        echo "  5. 创建测试用户"
+        echo "  6. 验证初始化结果"
+        echo ""
+    else
+        print_info "此脚本将执行以下操作："
+        echo ""
+        echo "  1. 执行数据库迁移（Alembic upgrade head）"
+        echo "  2. 创建默认租户和看板（如果不存在）"
+        echo "  3. 初始化业务菜单和角色（如果不存在）"
+        echo "  4. 创建测试用户（如果不存在）"
+        echo "  5. 验证初始化结果"
+        echo ""
+    fi
+    
+    read -p "确认继续？按 Enter 键继续，或按 Ctrl+C 取消..." dummy
+    echo ""
+    
     # 执行初始化步骤
-    step1_fba_init
+    step1a_drop_tables
+    step1b_migrate
     step2_default_tenant
     step3_business_menus
     step4_test_users
