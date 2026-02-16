@@ -27,9 +27,9 @@ const isDark = computed(() => theme.value === 'dark');
 // Make STAGE_CONFIG available to template
 const stageConfig = {
   INGEST: { label: '收集反馈', icon: '📥', color: '#60a5fa' },
-  PROCESS: { label: '智能聚类', icon: '🧠', color: '#a78bfa' },
+  PROCESS: { label: '智能合并', icon: '🧠', color: '#a78bfa' },
   INSIGHT: { label: '发现洞察', icon: '⚡', color: '#fbbf24' },
-  SYNC: { label: '同步进度', icon: '✓', color: '#34d399' },
+  SYNC: { label: '同步用户', icon: '✓', color: '#34d399' },
 };
 const STAGE_CONFIG = Object.values(stageConfig);
 
