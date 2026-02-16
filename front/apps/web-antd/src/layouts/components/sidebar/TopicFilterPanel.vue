@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Input, RadioGroup, RadioButton, Select, SelectOption, Button, Checkbox, CheckboxGroup } from 'ant-design-vue';
+import { Checkbox, CheckboxGroup } from 'ant-design-vue';
 import { ref, onMounted } from 'vue';
 import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type BoardApi } from '#/api';
 
@@ -48,7 +48,7 @@ onMounted(() => {
       </label>
       <CheckboxGroup
         :value="boardIds"
-        @update:value="emit('update:boardIds', $event)"
+        @update:value="(val: any) => emit('update:boardIds', val)"
         class="w-full"
       >
         <div v-if="boardsLoading" class="text-xs text-gray-400 py-2">
@@ -78,7 +78,7 @@ onMounted(() => {
       </label>
       <CheckboxGroup
         :value="status"
-        @update:value="emit('update:status', $event)"
+        @update:value="(val: any) => emit('update:status', val)"
         class="w-full"
       >
         <div class="flex flex-col gap-2">
@@ -101,7 +101,7 @@ onMounted(() => {
       </label>
       <CheckboxGroup
         :value="category"
-        @update:value="emit('update:category', $event)"
+        @update:value="(val: any) => emit('update:category', val)"
         class="w-full"
       >
         <div class="flex flex-col gap-2">

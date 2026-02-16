@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { VbenFormProps } from '@vben/common-ui';
 import type {
   OnActionClickParams,
   VxeTableGridOptions,
@@ -15,9 +14,7 @@ import { useRouter } from 'vue-router';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { MaterialSymbolsAdd } from '@vben/icons';
-import { $t } from '@vben/locales';
-
-import { message, Drawer } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -26,14 +23,16 @@ import {
   createTopic,
   updateTopic,
 } from '#/api';
+import { getBoardList } from '#/api/userecho/board';
+import { TOPIC_CATEGORIES } from '#/api';
 import {
-  querySchema,
-  useColumns,
-  topicFormSchema,
-  getStatusConfig,
-  getCategoryConfig,
   categoryIcons,
+  getCategoryConfig,
+  getStatusConfig,
+  topicFormSchema,
+  useColumns,
 } from '#/views/userecho/topic/data';
+import { useFilterStorage } from '#/composables/useFilterStorage';
 import TopicFilterSidebar from '#/layouts/components/sidebar/TopicFilterSidebar.vue';
 
 const router = useRouter();
@@ -54,12 +53,34 @@ const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
 /**
  * 筛选条件状态
  */
-const filterValues = ref({
-  search_query: '',
-  status: [] as string[],
-  category: [] as string[],
-  board_ids: [] as string[],
+/**
+ * 筛选条件状态
+ */
+const { state: filterValues } = useFilterStorage({
+  key: 'topic_filter_values',
+  defaultValue: {
+    search_query: '',
+    status: ['pending', 'planned', 'in_progress'],
+    category: TOPIC_CATEGORIES.map((c) => c.value),
+    board_ids: [] as string[],
+  },
 });
+
+/**
+ * 初始化逻辑：加载 Board 并处理默认选中
+ */
+const initBoardSelection = async () => {
+  try {
+    const response = await getBoardList();
+    const boards = response.boards || [];
+    if (boards.length > 0 && (filterValues.value?.board_ids?.length ?? 0) === 0) {
+      // 只有在没有存储值时才默认选中第一个
+      filterValues.value.board_ids = [boards[0].id];
+    }
+  } catch (error) {
+    console.error('Failed to init board selection:', error);
+  }
+};
 
 /**
  * 优先级颜色计算
@@ -264,6 +285,9 @@ const [addModal, addModalApi] = useVbenModal({
 });
 
 onMounted(() => {
+  // 初始化看板选中
+  initBoardSelection();
+
   // 初始化响应式检测
   const mediaQuery = window.matchMedia('(max-width: 767px)');
   handleMediaChange(mediaQuery);

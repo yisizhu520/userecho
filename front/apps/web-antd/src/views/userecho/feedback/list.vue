@@ -38,6 +38,8 @@ import {
 } from '#/views/userecho/feedback/data';
 import FeedbackFilterSidebar from '#/layouts/components/sidebar/FeedbackFilterSidebar.vue';
 
+import { useFilterStorage } from '#/composables/useFilterStorage';
+
 /**
  * 响应式布局检测
  */
@@ -52,15 +54,34 @@ const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
 };
 
 /**
- * 筛选条件状态
+ * 筛选条件状态持久化
  */
-const filterValues = ref({
-  search_query: '',
-  is_urgent: [] as string[],
-  has_topic: [] as string[],
-  clustering_status: [] as string[],
-  board_ids: [] as string[],
+const { state: filterValues } = useFilterStorage({
+  key: 'feedback_filter_values',
+  defaultValue: {
+    search_query: '',
+    is_urgent: ['true', 'false'], // 默认全选
+    has_topic: ['true', 'false'], // 默认全选
+    clustering_status: [] as string[],
+    board_ids: [] as string[],
+  },
 });
+
+/**
+ * 初始化逻辑：加载 Board 并处理默认选中
+ */
+const initBoardSelection = async () => {
+  try {
+    const response = await getBoardList();
+    const boards = response.boards || [];
+    if (boards.length > 0 && (filterValues.value?.board_ids?.length ?? 0) === 0) {
+      // 只有在没有存储值时才默认选中第一个
+      filterValues.value.board_ids = [boards[0].id];
+    }
+  } catch (error) {
+    console.error('Failed to init board selection:', error);
+  }
+};
 
 /**
  * 表格配置
@@ -530,6 +551,9 @@ const handleCreateAndContinue = async () => {
 };
 
 onMounted(() => {
+  // 初始化看板选中
+  initBoardSelection();
+
   // 初始化响应式检测
   const mediaQuery = window.matchMedia('(max-width: 767px)');
   handleMediaChange(mediaQuery);

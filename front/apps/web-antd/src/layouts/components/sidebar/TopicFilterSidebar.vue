@@ -4,8 +4,8 @@ import TopicFilterPanel from './TopicFilterPanel.vue';
 interface Props {
   searchQuery?: string;
   searchMode?: 'keyword' | 'semantic';
-  status?: string;
-  category?: string;
+  status?: string[];
+  category?: string[];
   boardIds?: string[];
 }
 
@@ -14,8 +14,8 @@ defineProps<Props>();
 const emit = defineEmits<{
   'update:searchQuery': [value: string];
   'update:searchMode': [value: 'keyword' | 'semantic'];
-  'update:status': [value: string];
-  'update:category': [value: string];
+  'update:status': [value: string[]];
+  'update:category': [value: string[]];
   'update:boardIds': [value: string[]];
   'search': [];
 }>();
