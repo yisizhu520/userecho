@@ -15,7 +15,8 @@ import { computed, onBeforeUnmount, ref, onMounted, watch } from 'vue';
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
-import { message, Drawer } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
+import { PlusOutlined, LoadingOutlined } from '@ant-design/icons-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -26,9 +27,12 @@ import {
   deleteFeedback,
   triggerClustering,
   getClusteringTaskStatus,
+  analyzeScreenshot,
+  getScreenshotTaskStatus,
 } from '#/api';
+import { getBoardList } from '#/api/userecho/board';
+import { getTopicList } from '#/api/userecho/topic';
 import {
-  querySchema,
   useColumns,
   feedbackFormSchema,
 } from '#/views/userecho/feedback/data';
@@ -349,6 +353,115 @@ const [editModal, editModalApi] = useVbenModal({
 /**
  * 新建表单
  */
+const boardList = ref<any[]>([]);
+const selectedTopicId = ref<string>('');
+const similarTopics = ref<any[]>([]);
+const titleSearchLoading = ref(false);
+const uploadedScreenshots = ref<string[]>([]);
+const uploadingScreenshot = ref(false);
+
+// 加载 Board 列表
+const loadBoardList = async () => {
+  try {
+    const response = await getBoardList();
+    boardList.value = response.boards.map((board: any) => ({
+      label: board.name,
+      value: board.id,
+    }));
+    
+    // 更新表单 Schema 中的 Board 选项
+    const boardField = feedbackFormSchema.find(f => f.fieldName === 'board_id');
+    if (boardField && boardField.componentProps) {
+      (boardField.componentProps as any).options = boardList.value;
+    }
+  } catch (error: any) {
+    message.error('加载 Board 列表失败');
+  }
+};
+
+// 监听 Title 输入,搜索相似 Topic
+const handleTitleChange = async (title: string) => {
+  if (!title || title.trim().length < 2) {
+    similarTopics.value = [];
+    return;
+  }
+  
+  try {
+    titleSearchLoading.value = true;
+    const topics = await getTopicList({
+      search_query: title,
+      search_mode: 'keyword',
+      limit: 10,
+    });
+    similarTopics.value = topics;
+  } catch (error: any) {
+    console.error('搜索 Topic 失败', error);
+  } finally {
+    titleSearchLoading.value = false;
+  }
+};
+
+// 选择 Topic
+const handleTopicSelect = (topicId: string) => {
+  selectedTopicId.value = topicId;
+};
+
+// 处理图片上传
+const handleScreenshotUpload = async (file: File) => {
+  if (uploadedScreenshots.value.length >= 3) {
+    message.warning('最多只能上传3张截图');
+    return false;
+  }
+  
+  try {
+    uploadingScreenshot.value = true;
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // 调用上传接口（复用截图识别的上传逻辑）
+    const response = await analyzeScreenshot(formData);
+    
+    // 轮询获取上传结果
+    const taskId = response.task_id;
+    let pollCount = 0;
+    const maxPolls = 15;
+    
+    const pollUpload = async (): Promise<string | null> => {
+      pollCount++;
+      const status = await getScreenshotTaskStatus(taskId);
+      
+      if (status.state === 'SUCCESS' && status.result) {
+        return status.result.screenshot_url;
+      } else if (status.state === 'FAILURE') {
+        throw new Error(status.error || '上传失败');
+      } else if (pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return pollUpload();
+      } else {
+        throw new Error('上传超时');
+      }
+    };
+    
+    const screenshotUrl = await pollUpload();
+    if (screenshotUrl) {
+      uploadedScreenshots.value.push(screenshotUrl);
+      message.success('图片上传成功');
+    }
+    
+    return false; // 阻止默认上传行为
+  } catch (error: any) {
+    message.error(error.message || '图片上传失败');
+    return false;
+  } finally {
+    uploadingScreenshot.value = false;
+  }
+};
+
+// 移除已上传的截图
+const handleRemoveScreenshot = (index: number) => {
+  uploadedScreenshots.value.splice(index, 1);
+};
+
 const [AddForm, addFormApi] = useVbenForm({
   showDefaultActions: false,
   schema: feedbackFormSchema,
@@ -360,26 +473,61 @@ const [addModal, addModalApi] = useVbenModal({
   async onConfirm() {
     const { valid } = await addFormApi.validate();
     if (valid) {
-      addModalApi.lock();
-      const data = await addFormApi.getValues<CreateFeedbackParams>();
-      try {
-        await createFeedback(data);
-        message.success('创建成功');
-        await addModalApi.close();
-        onRefresh();
-      } catch {
-        message.error('创建失败');
-      } finally {
-        addModalApi.unlock();
-      }
+      await handleCreateFeedback(false);
     }
   },
   onOpenChange(isOpen) {
     if (isOpen) {
       addFormApi.resetForm();
+      selectedTopicId.value = '';
+      similarTopics.value = [];
+      uploadedScreenshots.value = [];
+      loadBoardList();
     }
   },
 });
+
+// 创建反馈（支持创建并继续）
+const handleCreateFeedback = async (continueCreating: boolean) => {
+  try {
+    addModalApi.lock();
+    const data = await addFormApi.getValues<CreateFeedbackParams>();
+    
+    // 添加 Topic 关联和截图
+    if (selectedTopicId.value) {
+      data.topic_id = selectedTopicId.value;
+    }
+    if (uploadedScreenshots.value.length > 0) {
+      data.screenshots = uploadedScreenshots.value;
+    }
+    
+    await createFeedback(data);
+    message.success('创建成功');
+    onRefresh();
+    
+    if (continueCreating) {
+      // 重置表单但保持弹窗打开
+      addFormApi.resetForm();
+      selectedTopicId.value = '';
+      similarTopics.value = [];
+      uploadedScreenshots.value = [];
+    } else {
+      await addModalApi.close();
+    }
+  } catch {
+    message.error('创建失败');
+  } finally {
+    addModalApi.unlock();
+  }
+};
+
+// 创建并继续
+const handleCreateAndContinue = async () => {
+  const { valid } = await addFormApi.validate();
+  if (valid) {
+    await handleCreateFeedback(true);
+  }
+};
 
 onMounted(() => {
   // 初始化响应式检测
@@ -507,8 +655,92 @@ onBeforeUnmount(() => {
         </editModal>
 
         <!-- 新建弹窗 -->
-        <addModal>
-          <AddForm />
+        <addModal class="w-[1000px]">
+          <div class="feedback-create-layout">
+            <a-row :gutter="24">
+              <!-- 左侧表单区域 -->
+              <a-col :span="14">
+                <div class="left-content-area">
+                  <AddForm @values-change="(changedValues: any) => {
+                    if (changedValues.title !== undefined) {
+                      handleTitleChange(changedValues.title);
+                    }
+                  }" />
+                  
+                  <!-- 图片上传组件 -->
+                  <div class="screenshot-upload-section">
+                    <div class="upload-label">截图上传（最多3张）</div>
+                    <a-upload
+                      :file-list="uploadedScreenshots.map((url, index) => ({
+                        uid: String(index),
+                        name: `screenshot-${index + 1}.png`,
+                        status: 'done',
+                        url: url,
+                      }))"
+                      list-type="picture-card"
+                      :before-upload="handleScreenshotUpload"
+                      :on-remove="(file: any) => handleRemoveScreenshot(Number(file.uid))"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      :max-count="3"
+                    >
+                      <div v-if="uploadedScreenshots.length < 3">
+                        <loading-outlined v-if="uploadingScreenshot" />
+                        <plus-outlined v-else />
+                        <div class="upload-text">上传图片</div>
+                      </div>
+                    </a-upload>
+                  </div>
+                </div>
+              </a-col>
+              
+              <!-- 右侧 Topic 列表 -->
+              <a-col :span="10">
+                <div class="similar-topics-panel">
+                  <div class="panel-header">
+                    <span class="iconify lucide--lightbulb mr-2" />
+                    相似主题
+                  </div>
+                  
+                  <div v-if="titleSearchLoading" class="panel-loading">
+                    <a-spin />
+                    <p>搜索中...</p>
+                  </div>
+                  
+                  <div v-else-if="similarTopics.length === 0" class="panel-empty">
+                    <span class="iconify lucide--search text-4xl mb-2" />
+                    <p>输入标题以搜索相似主题</p>
+                  </div>
+                  
+                  <div v-else class="topic-list">
+                    <div
+                      v-for="topic in similarTopics"
+                      :key="topic.id"
+                      class="topic-item"
+                      :class="{ 'topic-item-selected': selectedTopicId === topic.id }"
+                      @click="handleTopicSelect(topic.id)"
+                    >
+                      <div class="topic-title">{{ topic.title }}</div>
+                      <div class="topic-meta">
+                        <a-tag :color="topic.status === 'pending' ? 'default' : 'blue'" size="small">
+                          {{ topic.status }}
+                        </a-tag>
+                        <span class="topic-feedback-count">
+                          {{ topic.feedback_count }} 条反馈
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a-col>
+            </a-row>
+          </div>
+          <template #footer>
+            <div class="modal-footer-actions">
+              <VbenButton @click="() => addModalApi.close()">取消</VbenButton>
+              <VbenButton @click="handleCreateAndContinue">创建并继续</VbenButton>
+              <VbenButton type="primary" @click="() => addModalApi.onConfirm?.()">创建</VbenButton>
+            </div>
+          </template>
         </addModal>
 
         <a-modal
@@ -658,4 +890,129 @@ onBeforeUnmount(() => {
     opacity: 0;
   }
 }
+
+/* 新建反馈 Modal 样式 */
+.feedback-create-layout {
+  padding: 0;
+}
+
+/* 左侧内容区域 - 与右侧高度对齐 */
+.left-content-area {
+  height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.screenshot-upload-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid hsl(var(--border) / 0.2);
+}
+
+.upload-label {
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: hsl(var(--foreground));
+}
+
+.upload-text {
+  margin-top: 8px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0 0 0;
+}
+
+/* 相似主题面板 */
+.similar-topics-panel {
+  height: 600px;
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--background));
+}
+
+.panel-header {
+  padding: 16px;
+  border-bottom: 1px solid hsl(var(--border) / 0.3);
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  background: hsl(var(--muted) / 0.3);
+}
+
+.panel-loading,
+.panel-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--muted-foreground));
+  padding: 32px;
+  text-align: center;
+}
+
+.panel-loading p,
+.panel-empty p {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.topic-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.topic-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: hsl(var(--background));
+}
+
+.topic-item:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  background: hsl(var(--muted) / 0.2);
+  transform: translateX(2px);
+}
+
+.topic-item-selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2);
+}
+
+.topic-title {
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: hsl(var(--foreground));
+}
+
+.topic-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.topic-feedback-count {
+  display: flex;
+  align-items: center;
+}
+
 </style>

@@ -4,9 +4,9 @@ import FeedbackFilterPanel from './FeedbackFilterPanel.vue';
 interface Props {
   searchQuery?: string;
   searchMode?: 'keyword' | 'semantic';
-  isUrgent?: boolean | '';
-  hasTopic?: boolean | '';
-  clusteringStatus?: string;
+  isUrgent?: string[];
+  hasTopic?: string[];
+  clusteringStatus?: string[];
   boardIds?: string[];
 }
 
@@ -15,9 +15,9 @@ defineProps<Props>();
 const emit = defineEmits<{
   'update:searchQuery': [value: string];
   'update:searchMode': [value: 'keyword' | 'semantic'];
-  'update:isUrgent': [value: boolean | ''];
-  'update:hasTopic': [value: boolean | ''];
-  'update:clusteringStatus': [value: string];
+  'update:isUrgent': [value: string[]];
+  'update:hasTopic': [value: string[]];
+  'update:clusteringStatus': [value: string[]];
   'update:boardIds': [value: string[]];
   'search': [];
 }>();

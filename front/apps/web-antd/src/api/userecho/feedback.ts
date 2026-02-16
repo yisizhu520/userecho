@@ -29,12 +29,17 @@ export interface Feedback {
 
 /** 创建反馈参数 */
 export interface CreateFeedbackParams {
+  board_id?: string;
   customer_id?: string;
+  customer_name?: string;
   anonymous_author?: string;
   anonymous_source?: string;
+  title?: string;
   content: string;
   source?: string;
   is_urgent?: boolean;
+  topic_id?: string;
+  screenshots?: string[];
 }
 
 /** 更新反馈参数 */

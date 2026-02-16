@@ -27,12 +27,12 @@ export const querySchema: VbenFormSchema[] = [
     defaultValue: 'keyword',
     componentProps: {
       options: [
-        { 
-          label: '关键词 ⚡', 
+        {
+          label: '关键词 ⚡',
           value: 'keyword',
         },
-        { 
-          label: '语义理解 🤖', 
+        {
+          label: '语义理解 🤖',
           value: 'semantic',
         },
       ],
@@ -184,6 +184,24 @@ export function useColumns(
 
 /** 新建/编辑反馈表单 */
 export const feedbackFormSchema: VbenFormSchema[] = [
+  {
+    component: 'Select',
+    fieldName: 'board_id',
+    label: 'Board',
+    componentProps: {
+      placeholder: '选择 Board',
+      allowClear: true,
+      options: [], // 将在组件中动态加载
+    },
+  },
+  {
+    component: 'Input',
+    fieldName: 'title',
+    label: '标题',
+    componentProps: {
+      placeholder: '输入反馈标题（可选）',
+    },
+  },
   {
     component: 'Textarea',
     fieldName: 'content',
