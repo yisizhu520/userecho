@@ -107,6 +107,21 @@ const coreRoutes: RouteRecordRaw[] = [
       },
     ],
   },
+  /**
+   * 引导页面
+   * 新用户创建团队和看板的引导流程
+   */
+  {
+    component: () => import('#/views/_core/onboarding/index.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: '开始使用',
+    },
+    name: 'Onboarding',
+    path: '/onboarding',
+  },
 ];
 
 export { coreRoutes, fallbackNotFoundRoute };

@@ -67,8 +67,8 @@ function setupAccessGuard(router: Router) {
       if (to.path === LOGIN_PATH && accessStore.accessToken) {
         return decodeURIComponent(
           (to.query?.redirect as string) ||
-            userStore.userInfo?.homePath ||
-            preferences.app.defaultHomePath,
+          userStore.userInfo?.homePath ||
+          preferences.app.defaultHomePath,
         );
       }
       // 如果是根路径且已登录但动态路由未加载，继续执行后续逻辑加载动态路由
@@ -124,7 +124,21 @@ function setupAccessGuard(router: Router) {
     accessStore.setAccessMenus(accessibleMenus);
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
-    
+
+    // 检查是否需要引导流程（新用户没有租户）
+    // 仅在首次加载时检查，避免重复检查
+    const { useOnboardingStore } = await import('#/store');
+    const onboardingStore = useOnboardingStore();
+    const needsOnboarding = await onboardingStore.checkOnboardingStatus();
+
+    if (needsOnboarding) {
+      // 需要引导，重定向到引导页面
+      return {
+        path: '/onboarding',
+        replace: true,
+      };
+    }
+
     // 计算重定向路径
     let redirectPath: string;
     if (from.query.redirect) {

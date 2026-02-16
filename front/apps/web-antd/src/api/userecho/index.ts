@@ -8,3 +8,5 @@ export * from './topic';
 export * from './customer';
 export * from './clustering';
 export * from './priority';
+export * from './onboarding';
+

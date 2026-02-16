@@ -8,6 +8,7 @@ from backend.app.userecho.api.v1 import (
     dashboard,
     feedback,
     insight,
+    onboarding,
     priority,
     tenant_config,
     topic,
@@ -26,3 +27,5 @@ v1.include_router(tenant_config.router)
 v1.include_router(priority.router)
 v1.include_router(dashboard.router)
 v1.include_router(insight.router)
+v1.include_router(onboarding.router)
+
