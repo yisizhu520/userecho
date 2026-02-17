@@ -85,39 +85,42 @@ const handleRemove = (file: any) => {
 <template>
   <div class="screenshot-upload-section">
     <div class="upload-label">截图上传（最多{{ maxCount }}张）</div>
-    <a-upload
-      :file-list="modelValue.map((url, index) => ({
-        uid: String(index),
-        name: `screenshot-${index + 1}.png`,
-        status: 'done',
-        url: url,
-      }))"
-      list-type="picture-card"
-      :before-upload="handleBeforeUpload"
-      :on-remove="handleRemove"
-      accept="image/png,image/jpeg,image/jpg,image/webp"
-      :max-count="maxCount"
-    >
-      <div v-if="modelValue.length < maxCount">
-        <loading-outlined v-if="uploading" />
-        <plus-outlined v-else />
-        <div class="upload-text">上传图片</div>
-      </div>
-    </a-upload>
+    <div class="upload-content">
+      <a-upload
+        :file-list="modelValue.map((url, index) => ({
+          uid: String(index),
+          name: `screenshot-${index + 1}.png`,
+          status: 'done',
+          url: url,
+        }))"
+        list-type="picture-card"
+        :before-upload="handleBeforeUpload"
+        :on-remove="handleRemove"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        :max-count="maxCount"
+      >
+        <div v-if="modelValue.length < maxCount">
+          <loading-outlined v-if="uploading" />
+          <plus-outlined v-else />
+          <div class="upload-text">上传图片</div>
+        </div>
+      </a-upload>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .screenshot-upload-section {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid hsl(var(--border) / 0.2);
+  /* 移除原有的边框和间距，由父组件控制 */
 }
 
 .upload-label {
   font-weight: 500;
-  margin-bottom: 12px;
   color: hsl(var(--foreground));
+}
+
+.upload-content {
+  /* 上传区域容器 */
 }
 
 .upload-text {

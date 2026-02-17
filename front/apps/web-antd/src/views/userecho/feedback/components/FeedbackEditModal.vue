@@ -34,11 +34,15 @@ const loadBoardList = async () => {
       value: board.id,
     }));
     
-    // 更新表单 Schema 中的 Board 选项
-    const boardField = feedbackFormSchema.find(f => f.fieldName === 'board_id');
-    if (boardField && boardField.componentProps) {
-      (boardField.componentProps as any).options = boardList;
-    }
+    // 使用 formApi 动态更新字段选项
+    formApi.updateSchema([
+      {
+        fieldName: 'board_id',
+        componentProps: {
+          options: boardList,
+        },
+      },
+    ]);
   } catch (error: any) {
     message.error('加载 Board 列表失败');
   }

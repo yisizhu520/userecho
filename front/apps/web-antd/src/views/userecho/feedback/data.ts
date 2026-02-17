@@ -187,12 +187,13 @@ export const feedbackFormSchema: VbenFormSchema[] = [
   {
     component: 'Select',
     fieldName: 'board_id',
-    label: 'Board',
-    rules: z.string().min(1, '请选择 Board'),
+    label: '看板',
+    rules: z.string().min(1, '请选择看板'),
     componentProps: {
-      placeholder: '选择 Board',
+      placeholder: '选择看板',
       allowClear: false,
       options: [], // 将在组件中动态加载
+      style: { width: '100%' },
     },
   },
   {
@@ -205,6 +206,7 @@ export const feedbackFormSchema: VbenFormSchema[] = [
       placeholder: '请输入用户反馈内容...',
       showCount: true,
       maxlength: 1000,
+      style: { width: '100%' },
     },
   },
   {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { useVbenForm } from '#/adapter/form';
 import { message } from 'ant-design-vue';
@@ -20,9 +20,19 @@ const selectedTopicId = ref<string>('');
 const uploadedScreenshots = ref<string[]>([]);
 const currentTitle = ref<string>('');
 
-const [Form, formApi] = useVbenForm({
+// 将表单字段拆分为两组
+const topFormSchema = computed(() => feedbackFormSchema.slice(0, 2)); // 看板 + 反馈内容
+const bottomFormSchema = computed(() => feedbackFormSchema.slice(2)); // 客户信息等其余字段
+
+// 创建两个独立的表单实例
+const [TopForm, topFormApi] = useVbenForm({
   showDefaultActions: false,
-  schema: feedbackFormSchema,
+  schema: topFormSchema.value,
+});
+
+const [BottomForm, bottomFormApi] = useVbenForm({
+  showDefaultActions: false,
+  schema: bottomFormSchema.value,
 });
 
 const [Modal, modalApi] = useVbenModal({
@@ -30,14 +40,17 @@ const [Modal, modalApi] = useVbenModal({
   destroyOnClose: true,
   class: 'w-[1000px]',
   async onConfirm() {
-    const { valid } = await formApi.validate();
-    if (valid) {
+    // 验证两个表单
+    const topValid = await topFormApi.validate();
+    const bottomValid = await bottomFormApi.validate();
+    if (topValid.valid && bottomValid.valid) {
       await handleCreate(false);
     }
   },
   onOpenChange(isOpen) {
     if (isOpen) {
-      formApi.resetForm();
+      topFormApi.resetForm();
+      bottomFormApi.resetForm();
       selectedTopicId.value = '';
       uploadedScreenshots.value = [];
       currentTitle.value = '';
@@ -55,11 +68,15 @@ const loadBoardList = async () => {
       value: board.id,
     }));
     
-    // 更新表单 Schema 中的 Board 选项
-    const boardField = feedbackFormSchema.find(f => f.fieldName === 'board_id');
-    if (boardField && boardField.componentProps) {
-      (boardField.componentProps as any).options = boardList;
-    }
+    // 更新顶部表单的 board_id 字段选项
+    topFormApi.updateSchema([
+      {
+        fieldName: 'board_id',
+        componentProps: {
+          options: boardList,
+        },
+      },
+    ]);
   } catch (error: any) {
     message.error('加载 Board 列表失败');
   }
@@ -69,7 +86,10 @@ const loadBoardList = async () => {
 const handleCreate = async (continueCreating: boolean) => {
   try {
     modalApi.lock();
-    const data = await formApi.getValues<CreateFeedbackParams>();
+    // 合并两个表单的数据
+    const topData = await topFormApi.getValues();
+    const bottomData = await bottomFormApi.getValues();
+    const data = { ...topData, ...bottomData } as CreateFeedbackParams;
     
     // 验证：客户名称和匿名作者至少填写一个
     if (!data.customer_name && !data.anonymous_author) {
@@ -91,7 +111,8 @@ const handleCreate = async (continueCreating: boolean) => {
     
     if (continueCreating) {
       // 重置表单但保持弹窗打开
-      formApi.resetForm();
+      topFormApi.resetForm();
+      bottomFormApi.resetForm();
       selectedTopicId.value = '';
       uploadedScreenshots.value = [];
       currentTitle.value = '';
@@ -107,8 +128,9 @@ const handleCreate = async (continueCreating: boolean) => {
 
 // 创建并继续
 const handleCreateAndContinue = async () => {
-  const { valid } = await formApi.validate();
-  if (valid) {
+  const topValid = await topFormApi.validate();
+  const bottomValid = await bottomFormApi.validate();
+  if (topValid.valid && bottomValid.valid) {
     await handleCreate(true);
   }
 };
@@ -134,10 +156,16 @@ defineExpose({
         <!-- 左侧表单区域 -->
         <a-col :span="14">
           <div class="left-content-area">
-            <Form @values-change="handleValuesChange" />
+            <!-- 顶部表单：看板 + 反馈内容 -->
+            <TopForm @values-change="handleValuesChange" />
             
             <!-- 截图上传组件 -->
-            <ScreenshotUpload v-model="uploadedScreenshots" />
+            <div class="screenshot-upload-section">
+              <ScreenshotUpload v-model="uploadedScreenshots" />
+            </div>
+            
+            <!-- 底部表单：客户信息等其余字段 -->
+            <BottomForm />
           </div>
         </a-col>
         
@@ -170,6 +198,31 @@ defineExpose({
   height: 600px;
   overflow-y: auto;
   padding-right: 8px;
+}
+
+/* 截图上传区域 - 与表单字段对齐 */
+.screenshot-upload-section {
+  margin: 16px 0;
+}
+
+/* 覆盖 ScreenshotUpload 组件的样式，使其与表单字段对齐 */
+.screenshot-upload-section :deep(.screenshot-upload-section) {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px; /* 与标准表单字段的间距一致 */
+}
+
+.screenshot-upload-section :deep(.upload-label) {
+  width: 100px; /* 与标准表单 label 宽度一致 */
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 500;
+  padding-top: 4px;
+  line-height: 1.5;
+}
+
+.screenshot-upload-section :deep(.upload-content) {
+  flex: 1;
 }
 
 .modal-footer-actions {
