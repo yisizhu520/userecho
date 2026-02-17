@@ -133,6 +133,7 @@ async def create_test_users() -> None:
                 is_staff=True,
                 is_multi_login=True,
                 dept_id=dept_id,
+                tenant_id='default-tenant',  # 显式设置租户 ID，确保与 TenantUser 一致
             )
 
             db.add(user)

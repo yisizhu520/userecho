@@ -208,7 +208,7 @@ class Settings(BaseSettings):
     )
 
     # 日志（控制台）
-    LOG_STD_LEVEL: str = 'INFO'
+    LOG_STD_LEVEL: str = 'DEBUG'
 
     # 日志（文件）
     LOG_FILE_ACCESS_LEVEL: str = 'INFO'

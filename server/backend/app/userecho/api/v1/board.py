@@ -26,7 +26,7 @@ async def get_boards(
     stmt = (
         select(Board)
         .where(Board.tenant_id == tenant_id)
-        .where(not Board.is_archived)
+        .where(Board.is_archived == False)  # noqa: E712
         .order_by(Board.sort_order, Board.created_time.desc())
     )
     result = await db.execute(stmt)

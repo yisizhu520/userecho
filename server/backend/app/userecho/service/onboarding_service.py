@@ -48,10 +48,14 @@ class OnboardingService:
         tenant_user = result.scalar_one_or_none()
 
         if tenant_user:
-            # 用户已有租户，检查是否有看板
-            board_stmt = select(Board).where(
-                Board.tenant_id == tenant_user.tenant_id,
-                Board.is_archived == False,  # noqa: E712
+            # 用户已有租户，检查是否有看板（租户可能有多个看板，只需确认存在即可）
+            board_stmt = (
+                select(Board)
+                .where(
+                    Board.tenant_id == tenant_user.tenant_id,
+                    Board.is_archived == False,  # noqa: E712
+                )
+                .limit(1)  # 只需要知道是否存在，不需要查询所有
             )
             board_result = await db.execute(board_stmt)
             board = board_result.scalar_one_or_none()
@@ -352,10 +356,14 @@ class OnboardingService:
         if not tenant_user:
             raise ValueError('请先创建团队')
 
-        # 检查是否有看板
-        board_stmt = select(Board).where(
-            Board.tenant_id == tenant_user.tenant_id,
-            Board.is_archived == False,  # noqa: E712
+        # 检查是否有看板（租户可能有多个看板，只需确认存在即可）
+        board_stmt = (
+            select(Board)
+            .where(
+                Board.tenant_id == tenant_user.tenant_id,
+                Board.is_archived == False,  # noqa: E712
+            )
+            .limit(1)  # 只需要知道是否存在，不需要查询所有
         )
         board_result = await db.execute(board_stmt)
         board = board_result.scalar_one_or_none()
