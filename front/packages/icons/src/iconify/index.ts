@@ -24,6 +24,8 @@ export const MaterialSymbolsDelete = createIconifyIcon(
 
 export const MingcuteProfileLine = createIconifyIcon('mingcute:profile-line');
 
+export const LucideLayers = createIconifyIcon('lucide:layers');
+
 export const MaterialIconThemePython = createIconifyIcon(
   'material-icon-theme:python',
 );

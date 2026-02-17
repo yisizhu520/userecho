@@ -100,24 +100,14 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    name: 'Settings',
-    path: '/app/settings',
+    name: 'ClusteringConfig',
+    path: '/app/settings/clustering',
+    component: () => import('#/views/userecho/settings/clustering-config.vue'),
     meta: {
-      icon: 'lucide:settings',
-      order: 5,
-      title: $t('page.userecho.settings.title'),
+      hideInMenu: true,
+      icon: 'lucide:layers',
+      title: $t('page.userecho.settings.clustering'),
     },
-    children: [
-      {
-        name: 'ClusteringConfig',
-        path: '/app/settings/clustering',
-        component: () => import('#/views/userecho/settings/clustering-config.vue'),
-        meta: {
-          icon: 'lucide:layers',
-          title: $t('page.userecho.settings.clustering'),
-        },
-      },
-    ],
   },
 ];
 

@@ -5,7 +5,7 @@ import { computed, ref, watch } from 'vue';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
 import { useWatermark } from '@vben/hooks';
-import { MingcuteProfileLine } from '@vben/icons';
+import { LucideLayers, MingcuteProfileLine } from '@vben/icons';
 import {
   BasicLayout,
   LockScreen,
@@ -66,6 +66,13 @@ const menus = computed(() => [
     },
     icon: MingcuteProfileLine,
     text: $t('page.menu.profile'),
+  },
+  {
+    handler: () => {
+      router.push('/app/settings/clustering');
+    },
+    icon: LucideLayers,
+    text: $t('page.menu.clusteringSettings'),
   },
 ]);
 

@@ -34,6 +34,7 @@
     "sysRole": "角色管理",
     "sysUser": "用户管理",
     "profile": "个人中心",
+    "clusteringSettings": "聚类策略",
     "userecho": "回响",
     "feedalyze": "回响",
     "feedbackList": "反馈列表",
