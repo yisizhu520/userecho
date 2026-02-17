@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { NotificationItem } from '@vben/layouts';
 
-import { computed, ref, watch } from 'vue';
+import { computed, provide, ref, watch } from 'vue';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
 import { useWatermark } from '@vben/hooks';
-import { LucideLayers, MingcuteProfileLine } from '@vben/icons';
+import { MingcuteProfileLine } from '@vben/icons';
 import {
   BasicLayout,
   LockScreen,
@@ -16,9 +16,23 @@ import { $t } from '@vben/locales';
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
+import {
+  getClusteringConfig,
+  getClusteringPresets,
+  previewClusteringConfig,
+  updateClusteringPreset,
+} from '#/api';
 import { router } from '#/router';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
+
+// Provide 聚类 API 给 preferences 组件使用
+provide('clusteringAPI', {
+  getPresets: getClusteringPresets,
+  getConfig: getClusteringConfig,
+  updatePreset: updateClusteringPreset,
+  preview: previewClusteringConfig,
+});
 
 const notifications = ref<NotificationItem[]>([
   {
@@ -66,13 +80,6 @@ const menus = computed(() => [
     },
     icon: MingcuteProfileLine,
     text: $t('page.menu.profile'),
-  },
-  {
-    handler: () => {
-      router.push('/app/settings/clustering');
-    },
-    icon: LucideLayers,
-    text: $t('page.menu.clusteringSettings'),
   },
 ]);
 

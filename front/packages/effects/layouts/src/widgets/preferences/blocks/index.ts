@@ -1,5 +1,6 @@
 export { default as Block } from './block.vue';
 export { default as Animation } from './general/animation.vue';
+export { default as Clustering } from './general/clustering.vue';
 export { default as General } from './general/general.vue';
 export { default as Breadcrumb } from './layout/breadcrumb.vue';
 export { default as Content } from './layout/content.vue';

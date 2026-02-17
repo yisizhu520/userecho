@@ -156,6 +156,53 @@
 - 后端超过50行的代码改动，一定要执行 cd server && bash pre-commit.sh 命令，确保后端代码编译通过，没有error, 如果有错误自行修复，直到所有错误修复完成
 - 不要自动运行 npm run build, pnpm dev, pnpm build，除非主动让你执行
 
+### 前端跨 Package 架构规范
+
+> "分层是为了解耦，不是为了制造障碍。" - Linus
+
+**核心原则**：`packages` 层（通用组件）不能依赖 `apps` 层（业务逻辑）
+
+#### ❌ 禁止行为
+```typescript
+// 在 packages 层组件中直接导入应用层代码
+import SomeAPI from '#/api/xxx';  // ❌ 路径别名 #/ 在 packages 层不可用
+import { useStore } from '#/store'; // ❌ packages 不应依赖应用层状态
+```
+
+#### ✅ 正确做法：使用 provide/inject
+
+**应用层（apps/web-antd）- 提供实现**：
+```typescript
+// layouts/basic.vue
+import { provide } from 'vue';
+import { getSomeAPI } from '#/api';
+
+provide('apiKey', {
+  getData: getSomeAPI,
+  // ... 其他 API 函数
+});
+```
+
+**通用层（packages）- 声明依赖**：
+```typescript
+// components/some-component.vue
+import { inject } from 'vue';
+
+const api = inject('apiKey', {
+  getData: async () => ({}),  // 提供默认实现
+});
+
+// 使用 API
+const data = await api.getData();
+```
+
+#### 快速检查清单
+- [ ] packages 层组件是否直接导入了 `#/` 路径？
+- [ ] 是否尝试在 packages 层调用应用层 API？
+- [ ] 是否使用 provide/inject 实现依赖注入？
+- [ ] 是否为 inject 提供了合理的默认值？
+
+
 ## 日志打印规范
 
 > "日志不是写给你自己看的，是给凌晨 3 点被叫醒的运维看的。" - Linus

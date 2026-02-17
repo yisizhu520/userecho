@@ -40,6 +40,7 @@ import {
   Block,
   Breadcrumb,
   BuiltinTheme,
+  Clustering,
   ColorMode,
   Content,
   Copyright,
@@ -277,6 +278,10 @@ async function handleReset() {
                 v-model:transition-name="transitionName"
                 v-model:transition-progress="transitionProgress"
               />
+            </Block>
+
+            <Block title="聚类策略">
+              <Clustering />
             </Block>
           </template>
           <template #appearance>
