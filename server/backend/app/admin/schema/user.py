@@ -108,15 +108,47 @@ class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
 
     dept: str | None = Field(None, description='部门名称')
     roles: list[str] = Field(description='角色名称列表')
+    homePath: str = Field(description='用户首页路径')
 
     @model_validator(mode='before')
     @classmethod
     def handel(cls, data: Any) -> Self:
-        """处理部门和角色数据"""
+        """处理部门、角色数据和计算首页路径"""
+        # 处理部门
         dept = data['dept']
         if dept:
             data['dept'] = dept['name']
-        roles = data['roles']
-        if roles:
-            data['roles'] = [role['name'] for role in roles]
+
+        # 处理角色
+        raw_roles = data['roles']
+        role_names = []
+        if raw_roles:
+            role_names = [role['name'] for role in raw_roles]
+            data['roles'] = role_names
+
+        # 计算 homePath - 根据角色类型
+        is_superuser = data.get('is_superuser', False)
+        has_system_role = False
+        has_business_role = False
+
+        if raw_roles:
+            for role in raw_roles:
+                role_type = role.get('role_type', 'business')
+                if role_type == 'system':
+                    has_system_role = True
+                elif role_type == 'business':
+                    has_business_role = True
+
+        # 首页路径逻辑
+        if is_superuser:
+            # 超级管理员 → 系统管理页
+            data['homePath'] = '/admin/system/user'
+        elif has_system_role and not has_business_role:
+            # 纯系统角色 → 系统管理页
+            data['homePath'] = '/admin/system/user'
+        else:
+            # 业务角色或混合角色 → 工作台
+            data['homePath'] = '/app/dashboard/workspace'
+
         return data
+

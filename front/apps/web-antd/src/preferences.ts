@@ -13,6 +13,7 @@ export const overridesPreferences = defineOverridesPreferences({
     name: import.meta.env.VITE_APP_TITLE,
     enableRefreshToken: true,
     layout: 'header-nav',
+    defaultHomePath: '/app/dashboard/workspace',
   },
   header: {
     height: 64,
