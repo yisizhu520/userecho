@@ -56,8 +56,9 @@ const boardList = ref<Board[]>([]);
 // 加载看板列表
 onMounted(async () => {
   try {
-    const boards = await getBoardList();
-    boardList.value = boards.map((b: any) => ({ id: b.id, name: b.name }));
+    const response = await getBoardList();
+    // getBoardList 返回 { boards, total }，需要提取 boards 数组
+    boardList.value = (response.boards || []).map((b: any) => ({ id: b.id, name: b.name }));
   } catch (e) {
     console.error('Failed to load boards:', e);
   }

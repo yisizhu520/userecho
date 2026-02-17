@@ -11,6 +11,7 @@ from .feedback import (
     FeedbackOut,
     FeedbackUpdate,
 )
+# 必须在 topic 之前导入 priority，因为 TopicDetailOut.model_rebuild() 需要 PriorityScoreOut
 from .priority import PriorityScoreCreate, PriorityScoreOut, PriorityScoreUpdate
 from .status_history import StatusHistoryOut
 from .tenant import TenantCreate, TenantOut, TenantUpdate
