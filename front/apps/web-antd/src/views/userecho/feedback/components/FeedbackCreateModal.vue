@@ -71,6 +71,12 @@ const handleCreate = async (continueCreating: boolean) => {
     modalApi.lock();
     const data = await formApi.getValues<CreateFeedbackParams>();
     
+    // 验证：客户名称和匿名作者至少填写一个
+    if (!data.customer_name && !data.anonymous_author) {
+      message.error('客户名称和匿名作者至少填写一个');
+      return;
+    }
+    
     // 添加 Topic 关联和截图
     if (selectedTopicId.value) {
       data.topic_id = selectedTopicId.value;

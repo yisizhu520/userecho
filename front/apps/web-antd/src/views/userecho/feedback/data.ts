@@ -211,24 +211,18 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Input',
     fieldName: 'customer_name',
     label: '客户名称',
-    rules: z.string().optional().refine((val, ctx) => {
-      const anonymousAuthor = ctx.parent.anonymous_author;
-      return val || anonymousAuthor;
-    }, '客户名称和匿名作者至少填写一个'),
+    rules: z.string().optional(),
     componentProps: {
-      placeholder: '输入客户名称',
+      placeholder: '输入客户名称（与匿名作者至少填一个）',
     },
   },
   {
     component: 'Input',
     fieldName: 'anonymous_author',
     label: '匿名作者',
-    rules: z.string().optional().refine((val, ctx) => {
-      const customerName = ctx.parent.customer_name;
-      return val || customerName;
-    }, '客户名称和匿名作者至少填写一个'),
+    rules: z.string().optional(),
     componentProps: {
-      placeholder: '如：小红书用户@xxx',
+      placeholder: '如：小红书用户@xxx（与客户名称至少填一个）',
     },
   },
   {
