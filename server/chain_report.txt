@@ -1,0 +1,18 @@
+所有迁移 (按文件时间排序):
+========================================================================================================================
+✅ 0000 | rev=2025122201                | down=9a2de98df5fb              | 2025-12-22-01_add_role_type_and_update_menu_paths.py
+✅ 2025-12-21-15_15_51 | rev=9a2de98df5fb              | down=None                      | 2025-12-21-15_15_51-9a2de98df5fb_create_userecho_tables.py
+✅ 2025-12-22-18_50_00 | rev=2025122218                | down=2025122201                | 2025-12-22-18_50_00-add_timestamps_to_userecho_tables.py
+❌ 2025-12-24-20_39_41 | rev=f8b29330fc5d              | down=2025122223                | 2025-12-24-20_39_41-f8b29330fc5d_add_clustering_status_and_c
+✅ 2025-12-24-23_08_15 | rev=27752692c03c              | down=f8b29330fc5d              | 2025-12-24-23_08_15-27752692c03c_update_embedding_dimension_
+✅ 2025-12-25-14_00_00 | rev=add_tenant_config_table   | down=27752692c03c              | 2025-12-25-14_00_00-add_tenant_config_table.py
+✅ 2025-12-28-08_02_05 | rev=71cc2d84933e              | down=add_tenant_config_table   | 2025-12-28-08_02_05-71cc2d84933e_add_screenshot_fields_to_fe
+✅ 2025-12-28-16_00_00 | rev=add_insights_sentiment    | down=71cc2d84933e              | 2025-12-28-16_00_00-add_insights_and_sentiment.py
+✅ 2025-12-28-17_00_00 | rev=add_insights_deleted_at   | down=add_insights_sentiment    | 2025-12-28-17_00_00-add_insights_deleted_at.py
+❌ 2026-01-02-00_40_15 | rev=fef12c5bf8a1              | down=20260102a                 | 2026-01-02-00_40_15-fef12c5bf8a1_remove_title_from_feedback.
+✅ 2026-01-03-13_15_28 | rev=2d29d603a01b              | down=fef12c5bf8a1              | 2026-01-03-13_15_28-2d29d603a01b_make_feedback_board_id_requ
+
+断链的迁移:
+========================================================================================================================
+❌ f8b29330fc5d -> 2025122223 (不存在!)  文件: 2025-12-24-20_39_41-f8b29330fc5d_add_clustering_status_and_centroid.py
+❌ fef12c5bf8a1 -> 20260102a (不存在!)  文件: 2026-01-02-00_40_15-fef12c5bf8a1_remove_title_from_feedback.py

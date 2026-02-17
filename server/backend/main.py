@@ -9,6 +9,7 @@ This module MUST remain minimal to ensure fast startup:
 For plugin dependency management, use:
     python -m backend.cli plugin check-deps
 """
+
 from backend.core.registrar import register_app
 
 # Create FastAPI app instance

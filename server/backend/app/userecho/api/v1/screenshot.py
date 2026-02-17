@@ -5,7 +5,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, File, UploadFile
 
 from backend.app.userecho.schema.feedback import ScreenshotAnalyzeResponse
 from backend.common.response.response_schema import ResponseSchemaModel, response_base

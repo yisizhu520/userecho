@@ -13,12 +13,12 @@ from .tenant_config_service import tenant_config_service
 from .topic_service import topic_service
 
 __all__ = [
-    'feedback_service',
-    'customer_service',
-    'topic_service',
-    'clustering_service',
     'clustering_config_service',
-    'tenant_config_service',
+    'clustering_service',
+    'customer_service',
+    'feedback_service',
     'import_service',
     'priority_service',
+    'tenant_config_service',
+    'topic_service',
 ]

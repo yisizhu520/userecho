@@ -6,6 +6,7 @@
 import asyncio
 import sys
 import time
+
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
@@ -99,8 +100,7 @@ async def test_large_batch():
 
     texts = []
     for i in range(5):
-        for text in base_texts:
-            texts.append(f'{text} ({i+1})')
+        texts.extend(f'{text} ({i + 1})' for text in base_texts)
 
     print(f'  文本数量: {len(texts)}')
 
@@ -117,18 +117,18 @@ async def test_large_batch():
     return elapsed, results
 
 
-async def test_edge_cases():
+async def test_edge_cases() -> None:
     """测试边界情况"""
     print('\n' + '=' * 60)
     print('【测试 4】边界情况处理')
     print('=' * 60)
 
     texts = [
-        '',                    # 空字符串
-        '   ',                 # 空白字符
-        '正常文本',             # 正常文本
-        'a' * 3000,            # 超长文本（会被截断到 2000）
-        None,                  # None（需要过滤）
+        '',  # 空字符串
+        '   ',  # 空白字符
+        '正常文本',  # 正常文本
+        'a' * 3000,  # 超长文本（会被截断到 2000）
+        None,  # None（需要过滤）
     ]
 
     # 过滤 None
@@ -141,7 +141,7 @@ async def test_edge_cases():
         print(f'  {i}. "{text_preview}" → {"✓" if embedding else "✗"}')
 
 
-async def main():
+async def main() -> None:
     print('\n🚀 批量 Embedding API 测试')
     print(f'当前 AI Provider: {ai_client.current_provider.upper()}')
 
@@ -175,6 +175,7 @@ async def main():
     except Exception as e:
         print(f'\n❌ 测试失败: {e}')
         import traceback
+
         traceback.print_exc()
 
 

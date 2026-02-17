@@ -25,35 +25,35 @@ from .topic import (
 )
 
 __all__ = [
-    # Tenant
-    'TenantCreate',
-    'TenantUpdate',
-    'TenantOut',
-    # Tenant Config
-    'TenantConfigCreate',
-    'TenantConfigUpdate',
-    'TenantConfigOut',
     # Customer
     'CustomerCreate',
-    'CustomerUpdate',
     'CustomerOut',
+    'CustomerUpdate',
     # Feedback
     'FeedbackCreate',
-    'FeedbackUpdate',
-    'FeedbackOut',
     'FeedbackImportRow',
     'FeedbackListParams',
-    # Topic
-    'TopicCreate',
-    'TopicUpdate',
-    'TopicOut',
-    'TopicDetailOut',
-    'TopicListParams',
-    'TopicStatusUpdateParam',
+    'FeedbackOut',
+    'FeedbackUpdate',
     # Priority
     'PriorityScoreCreate',
-    'PriorityScoreUpdate',
     'PriorityScoreOut',
+    'PriorityScoreUpdate',
     # Status History
     'StatusHistoryOut',
+    # Tenant Config
+    'TenantConfigCreate',
+    'TenantConfigOut',
+    'TenantConfigUpdate',
+    # Tenant
+    'TenantCreate',
+    'TenantOut',
+    'TenantUpdate',
+    # Topic
+    'TopicCreate',
+    'TopicDetailOut',
+    'TopicListParams',
+    'TopicOut',
+    'TopicStatusUpdateParam',
+    'TopicUpdate',
 ]

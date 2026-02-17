@@ -5,11 +5,11 @@
 """
 
 import json
+
 from typing import Any
 
 from asgiref.sync import sync_to_async
 from fastapi import Response
-from starlette.datastructures import UploadFile
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -21,7 +21,7 @@ from backend.utils.trace_id import get_request_trace_id
 class DebugMiddleware(BaseHTTPMiddleware):
     """
     调试中间件 - 记录请求/响应详情
-    
+
     功能：
     1. 记录请求的完整信息（方法、路径、参数、请求体）
     2. 记录响应的状态码和响应体
@@ -61,11 +61,11 @@ class DebugMiddleware(BaseHTTPMiddleware):
         :return: Response
         """
         path = request.url.path
-        
+
         # 跳过静态资源和文档
         if any(path.startswith(excluded) for excluded in self.EXCLUDED_PATHS):
             return await call_next(request)
-        
+
         # 跳过 OPTIONS 请求
         if request.method == 'OPTIONS':
             return await call_next(request)
@@ -114,7 +114,8 @@ class DebugMiddleware(BaseHTTPMiddleware):
 
             # Headers（只记录关键的）
             important_headers = {
-                k: v for k, v in headers.items()
+                k: v
+                for k, v in headers.items()
                 if k.lower() in ['content-type', 'user-agent', 'x-request-id', 'accept']
             }
             if important_headers:
@@ -187,21 +188,20 @@ class DebugMiddleware(BaseHTTPMiddleware):
                 return None
 
             # 表单请求 - 不读取实际数据，避免消费掉 body stream
-            elif 'application/x-www-form-urlencoded' in content_type or 'multipart/form-data' in content_type:
+            if 'application/x-www-form-urlencoded' in content_type or 'multipart/form-data' in content_type:
                 # multipart/form-data 的 body stream 只能被读取一次
                 # 如果在这里读取，后续业务代码就拿不到数据了
                 # 只记录 Content-Type，不读取实际内容
                 return f'<{content_type}>'
 
             # 其他类型（如 text/plain）
-            else:
-                body = await request.body()
-                if body:
-                    # 限制长度，避免打印过长的二进制数据
-                    if len(body) > 1000:
-                        return f'<Binary data: {len(body)} bytes>'
-                    return body.decode('utf-8', errors='replace')
-                return None
+            body = await request.body()
+            if body:
+                # 限制长度，避免打印过长的二进制数据
+                if len(body) > 1000:
+                    return f'<Binary data: {len(body)} bytes>'
+                return body.decode('utf-8', errors='replace')
+            return None
 
         except Exception as e:
             log.warning(f'Failed to get request body: {e}')
@@ -250,10 +250,9 @@ class DebugMiddleware(BaseHTTPMiddleware):
                 key: '******' if key.lower() in self.SENSITIVE_FIELDS else self._desensitize_sync(value)
                 for key, value in data.items()
             }
-        elif isinstance(data, list):
+        if isinstance(data, list):
             return [self._desensitize_sync(item) for item in data]
-        else:
-            return data
+        return data
 
     def _desensitize_sync(self, data: Any) -> Any:
         """
@@ -267,8 +266,6 @@ class DebugMiddleware(BaseHTTPMiddleware):
                 key: '******' if key.lower() in self.SENSITIVE_FIELDS else self._desensitize_sync(value)
                 for key, value in data.items()
             }
-        elif isinstance(data, list):
+        if isinstance(data, list):
             return [self._desensitize_sync(item) for item in data]
-        else:
-            return data
-
+        return data

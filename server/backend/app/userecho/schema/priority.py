@@ -38,6 +38,6 @@ class PriorityScoreOut(PriorityScoreBase):
     total_score: float = Field(description='总分')
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')
-    
+
     # ✅ 支持从 ORM 对象创建
     model_config = ConfigDict(from_attributes=True)

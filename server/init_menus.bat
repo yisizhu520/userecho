@@ -10,4 +10,3 @@ call .venv\Scripts\activate.bat
 python scripts/init_business_menus.py
 
 pause
-

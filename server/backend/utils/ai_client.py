@@ -5,6 +5,7 @@
 """
 
 import json
+
 from typing import Any
 
 from openai import AsyncOpenAI
@@ -15,7 +16,7 @@ from backend.core.conf import settings
 
 class AIClient:
     """AI 客户端 - 支持多模型降级
-    
+
     通过配置驱动的方式支持多个 AI 提供商，避免硬编码的 if-elif 链。
     """
 
@@ -47,7 +48,7 @@ class AIClient:
         },
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """初始化 AI 客户端 - 配置驱动，零硬编码"""
         self.clients = {}
         self.current_provider = settings.AI_DEFAULT_PROVIDER
@@ -58,11 +59,11 @@ class AIClient:
             if api_key:
                 try:
                     client_kwargs = {'api_key': api_key, 'timeout': 60.0}
-                    
+
                     # 只在 base_url 非空时设置
                     if config['base_url']:
                         client_kwargs['base_url'] = config['base_url']
-                    
+
                     self.clients[provider_name] = AsyncOpenAI(**client_kwargs)
                     log.info(f'{provider_name.upper()} AI client initialized')
                 except Exception as e:
@@ -70,7 +71,7 @@ class AIClient:
 
         if not self.clients:
             log.warning('No AI clients initialized. AI features will be disabled.')
-        
+
         # 如果默认 provider 不可用，自动切换到第一个可用的
         if self.current_provider not in self.clients and self.clients:
             self.current_provider = next(iter(self.clients))
@@ -97,13 +98,13 @@ class AIClient:
             # 确保当前 provider 可用
             if self.current_provider not in self.clients:
                 break
-            
+
             try:
                 config = self.PROVIDERS_CONFIG[self.current_provider]
-                
+
                 # 获取 embedding model
                 embedding_model = config['embedding_model']
-                
+
                 # 火山引擎特殊处理：从环境变量读取 endpoint ID
                 if self.current_provider == 'volcengine':
                     embedding_model = getattr(settings, 'VOLCENGINE_EMBEDDING_ENDPOINT', None)
@@ -111,17 +112,16 @@ class AIClient:
                         log.warning('VOLCENGINE_EMBEDDING_ENDPOINT not configured')
                         self._fallback_to_next_provider()
                         continue
-                
+
                 # 如果当前 provider 不支持 embedding，跳到下一个
                 # 注意：需要在火山引擎处理之后检查，因为火山引擎的 model 从环境变量读取
                 if embedding_model is None:
                     log.info(f'{self.current_provider} does not support embedding, trying next provider')
                     self._fallback_to_next_provider()
                     continue
-                
+
                 response = await self.clients[self.current_provider].embeddings.create(
-                    model=embedding_model,
-                    input=text
+                    model=embedding_model, input=text
                 )
                 return response.data[0].embedding
 
@@ -135,10 +135,7 @@ class AIClient:
         return None
 
     async def get_embeddings_batch(
-        self,
-        texts: list[str],
-        batch_size: int = 50,
-        max_retries: int = 2
+        self, texts: list[str], batch_size: int = 50, max_retries: int = 2
     ) -> list[list[float] | None]:
         """
         批量获取文本 embedding 向量
@@ -169,17 +166,13 @@ class AIClient:
 
         # 分批处理
         for i in range(0, len(processed_texts), batch_size):
-            batch = processed_texts[i:i + batch_size]
+            batch = processed_texts[i : i + batch_size]
             batch_results = await self._get_embeddings_batch_single(batch, max_retries)
             results.extend(batch_results)
 
         return results
 
-    async def _get_embeddings_batch_single(
-        self,
-        texts: list[str],
-        max_retries: int = 2
-    ) -> list[list[float] | None]:
+    async def _get_embeddings_batch_single(self, texts: list[str], max_retries: int = 2) -> list[list[float] | None]:
         """
         单次批量获取 embedding（内部方法）
 
@@ -231,7 +224,7 @@ class AIClient:
                 # 所有 provider（OpenAI, GLM, Volcengine）都支持 input 为数组
                 response = await self.clients[self.current_provider].embeddings.create(
                     model=embedding_model,
-                    input=non_empty_texts  # 批量输入
+                    input=non_empty_texts,  # 批量输入
                 )
 
                 # 提取 embedding 向量
@@ -247,7 +240,9 @@ class AIClient:
                     else:
                         results.append(None)
 
-                log.info(f'Batch embedding completed: {len(non_empty_texts)}/{len(texts)} texts, provider: {self.current_provider}')
+                log.info(
+                    f'Batch embedding completed: {len(non_empty_texts)}/{len(texts)} texts, provider: {self.current_provider}'
+                )
                 return results
 
             except Exception as e:
@@ -258,19 +253,19 @@ class AIClient:
 
         log.error(f'Failed to get batch embeddings after {max_retries} retries')
         return [None] * len(texts)
-    
-    def _fallback_to_next_provider(self):
+
+    def _fallback_to_next_provider(self) -> None:
         """降级到下一个可用的 provider"""
         available_providers = list(self.clients.keys())
         if not available_providers:
             return
-        
+
         try:
             current_idx = available_providers.index(self.current_provider)
             # 切换到下一个（循环）
             next_idx = (current_idx + 1) % len(available_providers)
             next_provider = available_providers[next_idx]
-            
+
             if next_provider != self.current_provider:
                 log.info(f'Falling back from {self.current_provider} to {next_provider}')
                 self.current_provider = next_provider
@@ -279,11 +274,7 @@ class AIClient:
             self.current_provider = available_providers[0]
             log.info(f'Switched to {self.current_provider}')
 
-    async def generate_topic_title(
-        self,
-        feedbacks: list[str],
-        max_feedbacks: int = 10
-    ) -> dict[str, Any]:
+    async def generate_topic_title(self, feedbacks: list[str], max_feedbacks: int = 10) -> dict[str, Any]:
         """
         根据反馈列表生成需求主题
 
@@ -303,7 +294,7 @@ class AIClient:
         prompt = f"""你是一个产品经理助手，请分析以下用户反馈，提取核心需求主题。
 
 用户反馈内容：
-{chr(10).join(f'{i+1}. {f[:200]}' for i, f in enumerate(sample_feedbacks))}
+{chr(10).join(f'{i + 1}. {f[:200]}' for i, f in enumerate(sample_feedbacks))}
 
 要求：
 1. 生成一个15字以内的主题标题（中文）
@@ -317,29 +308,29 @@ class AIClient:
         try:
             if self.current_provider in self.clients:
                 config = self.PROVIDERS_CONFIG[self.current_provider]
-                
+
                 # 获取 chat model
                 chat_model = config['chat_model']
-                
+
                 # 火山引擎特殊处理
                 if self.current_provider == 'volcengine':
                     chat_model = getattr(settings, 'VOLCENGINE_CHAT_ENDPOINT', None)
                     if not chat_model:
                         raise ValueError('VOLCENGINE_CHAT_ENDPOINT not configured')
-                
+
                 response = await self.clients[self.current_provider].chat.completions.create(
                     model=chat_model,
                     messages=[{'role': 'user', 'content': prompt}],
                     response_format={'type': 'json_object'},
                     max_tokens=200,
-                    temperature=0.7
+                    temperature=0.7,
                 )
 
                 result = json.loads(response.choices[0].message.content)
                 return {
                     'title': result.get('title', '未分类主题')[:50],
                     'category': result.get('category', 'other'),
-                    'is_urgent': result.get('is_urgent', False)
+                    'is_urgent': result.get('is_urgent', False),
                 }
 
         except Exception as e:
@@ -349,7 +340,7 @@ class AIClient:
         return {
             'title': f'用户反馈主题 ({len(feedbacks)}条)',
             'category': 'other',
-            'is_urgent': any(word in ' '.join(feedbacks) for word in ['崩溃', '无法使用', '严重', '紧急'])
+            'is_urgent': any(word in ' '.join(feedbacks) for word in ['崩溃', '无法使用', '严重', '紧急']),
         }
 
     async def generate_summary(self, content: str, max_length: int = 20) -> str:
@@ -370,26 +361,23 @@ class AIClient:
         if len(content) <= max_length + 5:
             return content[:max_length]
 
-        prompt = f"将以下反馈概括为{max_length}字以内的摘要（中文）：\n{content[:500]}"
+        prompt = f'将以下反馈概括为{max_length}字以内的摘要（中文）：\n{content[:500]}'
 
         try:
             if self.current_provider in self.clients:
                 config = self.PROVIDERS_CONFIG[self.current_provider]
-                
+
                 # 获取 chat model
                 chat_model = config['chat_model']
-                
+
                 # 火山引擎特殊处理
                 if self.current_provider == 'volcengine':
                     chat_model = getattr(settings, 'VOLCENGINE_CHAT_ENDPOINT', None)
                     if not chat_model:
                         raise ValueError('VOLCENGINE_CHAT_ENDPOINT not configured')
-                
+
                 response = await self.clients[self.current_provider].chat.completions.create(
-                    model=chat_model,
-                    messages=[{'role': 'user', 'content': prompt}],
-                    max_tokens=50,
-                    temperature=0.5
+                    model=chat_model, messages=[{'role': 'user', 'content': prompt}], max_tokens=50, temperature=0.5
                 )
                 return response.choices[0].message.content.strip()[:max_length]
 
@@ -409,31 +397,31 @@ class AIClient:
     ) -> str:
         """
         通用 Chat 接口
-        
+
         Args:
             prompt: 用户输入提示词
             max_tokens: 最大返回 token 数
             temperature: 温度参数（0-1）
             response_format: 返回格式，'json' 表示 JSON 格式
             max_retries: 最大重试次数
-        
+
         Returns:
             AI 生成的文本
         """
         if not prompt:
             return ''
-        
+
         for attempt in range(max_retries):
             try:
                 if self.current_provider not in self.clients:
                     self._fallback_to_next_provider()
                     continue
-                
+
                 config = self.PROVIDERS_CONFIG[self.current_provider]
-                
+
                 # 获取 chat model
                 chat_model = config['chat_model']
-                
+
                 # 火山引擎特殊处理
                 if self.current_provider == 'volcengine':
                     chat_model = getattr(settings, 'VOLCENGINE_CHAT_ENDPOINT', None)
@@ -441,7 +429,7 @@ class AIClient:
                         log.warning('VOLCENGINE_CHAT_ENDPOINT not configured')
                         self._fallback_to_next_provider()
                         continue
-                
+
                 # 构建请求参数
                 create_params = {
                     'model': chat_model,
@@ -449,34 +437,32 @@ class AIClient:
                     'max_tokens': max_tokens,
                     'temperature': temperature,
                 }
-                
+
                 # 添加 response_format（如果需要）
                 if response_format == 'json':
                     create_params['response_format'] = {'type': 'json_object'}
-                
+
                 response = await self.clients[self.current_provider].chat.completions.create(**create_params)
                 return response.choices[0].message.content.strip()
-            
+
             except Exception as e:
-                log.warning(f'Chat failed (attempt {attempt + 1}/{max_retries}, provider: {self.current_provider}): {e}')
+                log.warning(
+                    f'Chat failed (attempt {attempt + 1}/{max_retries}, provider: {self.current_provider}): {e}'
+                )
                 self._fallback_to_next_provider()
-        
+
         # 所有重试都失败
         log.error(f'Failed to chat after {max_retries} retries')
         return ''
 
-    async def analyze_screenshot(
-        self,
-        image_url: str,
-        max_retries: int = 2
-    ) -> dict[str, Any]:
+    async def analyze_screenshot(self, image_url: str, max_retries: int = 2) -> dict[str, Any]:
         """
         分析截图，提取反馈信息
-        
+
         Args:
             image_url: 截图 URL（需要公开可访问）
             max_retries: 最大重试次数
-            
+
         Returns:
             包含 platform, user_name, content, feedback_type, sentiment, confidence 的字典
         """
@@ -534,10 +520,10 @@ class AIClient:
 
             try:
                 config = self.PROVIDERS_CONFIG[self.current_provider]
-                
+
                 # 获取 chat model (支持 vision 的模型)
                 chat_model = config['chat_model']
-                
+
                 # 针对不同提供商使用不同的 vision 模型
                 if self.current_provider == 'openai':
                     chat_model = 'gpt-4o'
@@ -547,12 +533,13 @@ class AIClient:
                     chat_model = 'glm-4v-flash'  # GLM-4V 支持图像
                 elif self.current_provider == 'volcengine':
                     # 火山引擎使用 endpoint（优先 VISION，回退 CHAT）
-                    chat_model = (
-                        getattr(settings, 'VOLCENGINE_VISION_ENDPOINT', None) or
-                        getattr(settings, 'VOLCENGINE_CHAT_ENDPOINT', None)
+                    chat_model = getattr(settings, 'VOLCENGINE_VISION_ENDPOINT', None) or getattr(
+                        settings, 'VOLCENGINE_CHAT_ENDPOINT', None
                     )
                     if not chat_model:
-                        log.warning('VOLCENGINE_VISION_ENDPOINT or VOLCENGINE_CHAT_ENDPOINT not configured, falling back')
+                        log.warning(
+                            'VOLCENGINE_VISION_ENDPOINT or VOLCENGINE_CHAT_ENDPOINT not configured, falling back'
+                        )
                         self._fallback_to_next_provider()
                         continue
 
@@ -564,17 +551,17 @@ class AIClient:
                             'role': 'user',
                             'content': [
                                 {'type': 'text', 'text': prompt},
-                                {'type': 'image_url', 'image_url': {'url': image_url}}
-                            ]
+                                {'type': 'image_url', 'image_url': {'url': image_url}},
+                            ],
                         }
                     ],
                     response_format={'type': 'json_object'},
                     max_tokens=500,
-                    temperature=0.3
+                    temperature=0.3,
                 )
 
                 result = json.loads(response.choices[0].message.content)
-                
+
                 # 验证和规范化结果
                 return {
                     'platform': result.get('platform', 'other'),
@@ -583,12 +570,14 @@ class AIClient:
                     'content': result.get('content', ''),
                     'feedback_type': result.get('feedback_type', 'other'),
                     'sentiment': result.get('sentiment', 'neutral'),
-                    'confidence': float(result.get('confidence', 0.5))
+                    'confidence': float(result.get('confidence', 0.5)),
                 }
 
             except Exception as e:
-                log.warning(f'Screenshot analysis failed (attempt {attempt + 1}/{max_retries}, provider: {self.current_provider}): {e}')
-                
+                log.warning(
+                    f'Screenshot analysis failed (attempt {attempt + 1}/{max_retries}, provider: {self.current_provider}): {e}'
+                )
+
                 # 尝试降级到其他可用的 provider
                 self._fallback_to_next_provider()
 
@@ -601,7 +590,7 @@ class AIClient:
             'content': '图像识别失败，请手动填写',
             'feedback_type': 'other',
             'sentiment': 'neutral',
-            'confidence': 0.0
+            'confidence': 0.0,
         }
 
     async def suggest_impact_scope_ai(
@@ -614,14 +603,14 @@ class AIClient:
     ) -> dict:
         """
         AI 完整分析影响范围（详情页点击「AI 重新分析」时调用）
-        
+
         Args:
             feedbacks: 反馈内容列表
             customer_count: 涉及客户数量
             title: 主题标题
             category: 分类
             max_retries: 最大重试次数
-        
+
         Returns:
             {
                 "scope": 1/3/5/10,
@@ -629,38 +618,38 @@ class AIClient:
                 "reason": "原因"
             }
         """
+
         # 快速降级方案（基于规则）
         def fallback_result():
             if customer_count >= 10:
                 return {'scope': 10, 'confidence': 0.6, 'reason': f'基于 {customer_count} 个客户的规则判断'}
-            elif customer_count >= 5:
+            if customer_count >= 5:
                 return {'scope': 5, 'confidence': 0.6, 'reason': f'基于 {customer_count} 个客户的规则判断'}
-            elif customer_count >= 2:
+            if customer_count >= 2:
                 return {'scope': 3, 'confidence': 0.6, 'reason': f'基于 {customer_count} 个客户的规则判断'}
-            else:
-                return {'scope': 1, 'confidence': 0.6, 'reason': '仅 1 个客户反馈'}
-        
+            return {'scope': 1, 'confidence': 0.6, 'reason': '仅 1 个客户反馈'}
+
         # 关键词匹配增强
         keywords_high_impact = ['所有用户', '所有人', '每个人', '全部', 'all users', 'everyone']
         keywords_medium_impact = ['大部分', '很多人', '多个用户', 'most users', 'many users']
         keywords_low_impact = ['部分', '个别', '少数', 'some users', 'few users']
-        
+
         title_lower = title.lower()
         feedback_text = ' '.join(feedbacks[:5]).lower()  # 前5条
-        
+
         # 关键词快速判断
         if any(kw in title_lower or kw in feedback_text for kw in keywords_high_impact):
             return {'scope': 10, 'confidence': 0.8, 'reason': '检测到"所有用户"等关键词'}
-        elif any(kw in title_lower or kw in feedback_text for kw in keywords_medium_impact):
+        if any(kw in title_lower or kw in feedback_text for kw in keywords_medium_impact):
             return {'scope': 5, 'confidence': 0.7, 'reason': '检测到"大部分用户"等关键词'}
-        elif any(kw in title_lower or kw in feedback_text for kw in keywords_low_impact):
+        if any(kw in title_lower or kw in feedback_text for kw in keywords_low_impact):
             return {'scope': 3, 'confidence': 0.7, 'reason': '检测到"部分用户"等关键词'}
-        
+
         # 只对重要需求调用 AI（客户数量 >= 5）
         if customer_count < 5:
             log.debug(f'Customer count {customer_count} < 5, using fallback for impact_scope')
             return fallback_result()
-        
+
         # AI 分析
         prompt = f"""分析用户反馈的影响范围：
 
@@ -688,25 +677,25 @@ class AIClient:
                     temperature=0.3,
                     max_tokens=200,
                 )
-                
+
                 # 解析 JSON 响应
                 result = self._parse_json_response(response)
-                
+
                 # 验证结果
                 scope = result.get('scope', 3)
                 if scope not in [1, 3, 5, 10]:
                     scope = 3  # 默认值
-                
+
                 return {
                     'scope': scope,
                     'confidence': float(result.get('confidence', 0.7)),
-                    'reason': result.get('reason', 'AI 分析结果')
+                    'reason': result.get('reason', 'AI 分析结果'),
                 }
-            
+
             except Exception as e:
                 log.warning(f'AI impact_scope analysis failed (attempt {attempt + 1}/{max_retries}): {e}')
                 self._fallback_to_next_provider()
-        
+
         # 所有重试失败，返回降级结果
         log.error('AI impact_scope analysis failed, using fallback')
         return fallback_result()
@@ -720,13 +709,13 @@ class AIClient:
     ) -> dict:
         """
         AI 建议开发成本（详情页点击「AI 重新分析」时调用）
-        
+
         Args:
             title: 主题标题
             category: 分类
             feedbacks: 反馈内容列表（前5条样本）
             max_retries: 最大重试次数
-        
+
         Returns:
             {
                 "days": 1/3/5/10,
@@ -734,6 +723,7 @@ class AIClient:
                 "reason": "原因"
             }
         """
+
         # 快速降级方案（基于规则）
         def fallback_result():
             category_costs = {
@@ -744,22 +734,18 @@ class AIClient:
                 'other': 3,
             }
             days = category_costs.get(category, 3)
-            return {
-                'days': days,
-                'confidence': 0.5,
-                'reason': f'基于分类 {category} 的经验值'
-            }
-        
+            return {'days': days, 'confidence': 0.5, 'reason': f'基于分类 {category} 的经验值'}
+
         # 关键词匹配
         title_lower = title.lower()
         urgent_keywords = ['崩溃', '闪退', '无法', '不能', 'crash', 'bug']
         feature_keywords = ['新增', '增加', '添加', '支持', 'add', 'new']
-        
+
         if any(kw in title_lower for kw in urgent_keywords):
             return {'days': 1, 'confidence': 0.7, 'reason': '检测到紧急问题关键词'}
-        elif any(kw in title_lower for kw in feature_keywords):
+        if any(kw in title_lower for kw in feature_keywords):
             return {'days': 5, 'confidence': 0.6, 'reason': '检测到新功能关键词'}
-        
+
         # AI 分析（可选，成本高）
         if len(feedbacks) >= 5:  # 只对重要需求调用 AI
             prompt = f"""估算开发成本（工作日）：
@@ -786,24 +772,24 @@ class AIClient:
                         temperature=0.3,
                         max_tokens=200,
                     )
-                    
+
                     result = self._parse_json_response(response)
-                    
+
                     # 验证结果
                     days = result.get('days', 3)
                     if days not in [1, 3, 5, 10]:
                         days = 3
-                    
+
                     return {
                         'days': days,
                         'confidence': float(result.get('confidence', 0.6)),
-                        'reason': result.get('reason', 'AI 分析结果')
+                        'reason': result.get('reason', 'AI 分析结果'),
                     }
-                
+
                 except Exception as e:
                     log.warning(f'AI dev_cost analysis failed (attempt {attempt + 1}/{max_retries}): {e}')
                     self._fallback_to_next_provider()
-        
+
         # 降级结果
         return fallback_result()
 
@@ -813,7 +799,7 @@ class AIClient:
 #
 # Problem: AIClient.__init__() creates AsyncOpenAI clients which may do:
 #   - DNS resolution
-#   - Network connections  
+#   - Network connections
 #   - Connection pool warmup
 # This can take 60-120 seconds during module import!
 #
@@ -822,16 +808,17 @@ class AIClient:
 # - Zero cost at import time
 # - Fully compatible with existing code
 
+
 class _AIClientLazyProxy:
     """Lazy initialization proxy for AIClient
-    
+
     Delays expensive AI client initialization until first use.
     """
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self._instance: AIClient | None = None
         self._initializing = False
-    
+
     def _ensure_initialized(self) -> AIClient:
         """Initialize client on first access"""
         if self._instance is None and not self._initializing:
@@ -842,17 +829,17 @@ class _AIClientLazyProxy:
                 log.info('AI clients initialized successfully')
             finally:
                 self._initializing = False
-        
+
         return self._instance
-    
+
     def __getattr__(self, name):
         """Forward all attribute access to real AIClient instance"""
         instance = self._ensure_initialized()
         if instance is None:
             raise RuntimeError('AIClient initialization failed')
         return getattr(instance, name)
-    
-    def __bool__(self):
+
+    def __bool__(self) -> bool:
         """Support truthiness check"""
         instance = self._ensure_initialized()
         return instance is not None

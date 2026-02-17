@@ -10,15 +10,13 @@ class CustomerBase(SchemaBase):
 
     name: str = Field(description='客户名称')
     customer_type: str = Field(
-        default='normal',
-        description='客户类型: normal=普通, paid=付费, major=大客户, strategic=战略客户'
+        default='normal', description='客户类型: normal=普通, paid=付费, major=大客户, strategic=战略客户'
     )
     business_value: int = Field(default=1, ge=1, le=10, description='商业价值权重 (1-10)')
 
 
 class CustomerCreate(CustomerBase):
     """创建客户参数"""
-    pass
 
 
 class CustomerUpdate(SchemaBase):

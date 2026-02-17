@@ -1,5 +1,7 @@
 """Feedback CRUD"""
+
 import numpy as np
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,7 +30,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         - clustering_status in (pending, failed?)
         """
         from backend.common.log import log
-        
+
         statuses = ['pending']
         if include_failed:
             statuses.append('failed')
@@ -36,12 +38,16 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             # 仅针对 topic_id IS NULL 的反馈，允许重新跑（包括已 clustered 的噪声点）
             statuses.append('clustered')
 
-        query = select(self.model).where(
-            self.model.tenant_id == tenant_id,
-            self.model.topic_id.is_(None),
-            self.model.clustering_status.in_(statuses),
-            self.model.deleted_at.is_(None),
-        ).limit(limit)
+        query = (
+            select(self.model)
+            .where(
+                self.model.tenant_id == tenant_id,
+                self.model.topic_id.is_(None),
+                self.model.clustering_status.in_(statuses),
+                self.model.deleted_at.is_(None),
+            )
+            .limit(limit)
+        )
 
         log.debug(f'Query pending clustering: tenant={tenant_id}, statuses={statuses}, limit={limit}')
         result = await db.execute(query)
@@ -57,12 +63,12 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
     ) -> list[Feedback]:
         """
         获取未聚类的反馈（topic_id 为 NULL）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             limit: 返回数量上限
-        
+
         Returns:
             反馈列表
         """
@@ -119,13 +125,13 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
     ) -> int:
         """
         批量更新反馈的主题ID（用于聚类后批量关联）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             feedback_ids: 反馈ID列表
             topic_id: 主题ID
-        
+
         Returns:
             更新的记录数量
         """
@@ -133,11 +139,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         stmt = (
             update(self.model)
-            .where(
-                self.model.id.in_(feedback_ids),
-                self.model.tenant_id == tenant_id,
-                self.model.deleted_at.is_(None)
-            )
+            .where(self.model.id.in_(feedback_ids), self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
             .values(topic_id=topic_id)
         )
 
@@ -169,11 +171,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         # SQLAlchemy + pgvector 自动处理 list[float] <-> vector 转换
         stmt = (
             update(self.model)
-            .where(
-                self.model.id == feedback_id,
-                self.model.tenant_id == tenant_id,
-                self.model.deleted_at.is_(None)
-            )
+            .where(self.model.id == feedback_id, self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
             .values(embedding=embedding)
         )
 
@@ -206,9 +204,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         # 批量获取反馈
         feedback_ids = list(feedback_embeddings.keys())
         query = select(self.model).where(
-            self.model.id.in_(feedback_ids),
-            self.model.tenant_id == tenant_id,
-            self.model.deleted_at.is_(None)
+            self.model.id.in_(feedback_ids), self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None)
         )
         result = await db.execute(query)
         feedbacks = result.scalars().all()
@@ -217,10 +213,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         for feedback in feedbacks:
             if feedback.id in feedback_embeddings:
                 embedding = feedback_embeddings[feedback.id]
-                
+
                 # SQLAlchemy + pgvector 自动处理类型转换
                 feedback.embedding = embedding
-                
+
                 updated_count += 1
 
         await db.commit()
@@ -235,7 +231,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         Returns:
             embedding 向量（numpy.ndarray），如果没有缓存则返回 None
-        
+
         Warning:
             返回值是 numpy.ndarray，不能直接用 if 判断，应使用 `is not None`
         """
@@ -271,11 +267,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         # 使用 pgvector 余弦相似度搜索
         # <=> 是余弦距离操作符，1 - 余弦距离 = 余弦相似度
         query = text("""
-            SELECT 
+            SELECT
                 id,
                 1 - (embedding <=> :query_vector::vector) as similarity
             FROM feedbacks
-            WHERE 
+            WHERE
                 tenant_id = :tenant_id
                 AND embedding IS NOT NULL
                 AND deleted_at IS NULL
@@ -286,12 +282,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         result = await db.execute(
             query,
-            {
-                'tenant_id': tenant_id,
-                'query_vector': embedding_str,
-                'min_similarity': min_similarity,
-                'limit': limit
-            }
+            {'tenant_id': tenant_id, 'query_vector': embedding_str, 'min_similarity': min_similarity, 'limit': limit},
         )
 
         # 获取完整的反馈对象
@@ -319,7 +310,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
     ) -> list[dict]:
         """
         获取反馈列表（包含关联的客户名和主题标题，支持关键词搜索）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
@@ -332,31 +323,25 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             clustering_status: 过滤聚类状态（多选）
             board_ids: 过滤看板ID（多选）
             search_query: 搜索关键词（搜索 content 和 ai_summary）
-        
+
         Returns:
             反馈列表（包含 customer_name 和 topic_title）
         """
+        from sqlalchemy import or_
+        from sqlalchemy.orm import aliased
+
         from backend.app.userecho.model.customer import Customer
         from backend.app.userecho.model.topic import Topic
-        from sqlalchemy.orm import aliased
-        from sqlalchemy import or_
 
         # 使用左连接查询
         CustomerAlias = aliased(Customer)
         TopicAlias = aliased(Topic)
 
         query = (
-            select(
-                self.model,
-                CustomerAlias.name.label('customer_name'),
-                TopicAlias.title.label('topic_title')
-            )
+            select(self.model, CustomerAlias.name.label('customer_name'), TopicAlias.title.label('topic_title'))
             .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
             .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
-            .where(
-                self.model.tenant_id == tenant_id,
-                self.model.deleted_at.is_(None)
-            )
+            .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
         )
 
         # 添加过滤条件
@@ -364,13 +349,13 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             query = query.where(self.model.topic_id == topic_id)
         if customer_id is not None:
             query = query.where(self.model.customer_id == customer_id)
-        
+
         # 多选过滤：is_urgent
         if is_urgent is not None and len(is_urgent) > 0:
             # 将字符串 'true'/'false' 转换为布尔值
             bool_values = [v.lower() == 'true' for v in is_urgent]
             query = query.where(self.model.is_urgent.in_(bool_values))
-        
+
         # 多选过滤：has_topic
         if has_topic is not None and len(has_topic) > 0:
             conditions = []
@@ -379,27 +364,21 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                     conditions.append(self.model.topic_id.is_not(None))
                 else:
                     conditions.append(self.model.topic_id.is_(None))
-            if len(conditions) == 1:
-                query = query.where(conditions[0])
-            else:
-                query = query.where(or_(*conditions))
-        
+            query = query.where(conditions[0]) if len(conditions) == 1 else query.where(or_(*conditions))
+
         # 多选过滤：clustering_status
         if clustering_status is not None and len(clustering_status) > 0:
             query = query.where(self.model.clustering_status.in_(clustering_status))
-        
+
         # 多选过滤：board_ids
         if board_ids is not None and len(board_ids) > 0:
             query = query.where(self.model.board_id.in_(board_ids))
-        
+
         # 关键词搜索（搜索 content + ai_summary）
         if search_query:
             search_pattern = f'%{search_query}%'
             query = query.where(
-                or_(
-                    self.model.content.ilike(search_pattern),
-                    self.model.ai_summary.ilike(search_pattern)
-                )
+                or_(self.model.content.ilike(search_pattern), self.model.ai_summary.ilike(search_pattern))
             )
 
         query = query.offset(skip).limit(limit)
@@ -413,7 +392,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             feedback_dict = {
                 **{c.name: getattr(row[0], c.name) for c in row[0].__table__.columns if c.name != 'embedding'},
                 'customer_name': row.customer_name,
-                'topic_title': row.topic_title
+                'topic_title': row.topic_title,
             }
             feedback_list.append(feedback_dict)
 
@@ -435,7 +414,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
     ) -> list[dict]:
         """
         使用 pgvector 语义搜索反馈（包含关联查询）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
@@ -448,43 +427,43 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             is_urgent: 过滤紧急程度
             has_topic: 过滤是否已聚类
             clustering_status: 过滤聚类状态
-        
+
         Returns:
             反馈列表（包含 customer_name, topic_title, similarity_score）
         """
         from sqlalchemy import text
-        
+
         # 将 embedding 向量转换为 PostgreSQL vector 格式字符串
         embedding_str = str(query_embedding)
-        
+
         # 构建过滤条件 SQL（使用 f-string 直接嵌入，避免参数绑定问题）
         filter_conditions = [
             f"f.tenant_id = '{tenant_id}'",
-            "f.embedding IS NOT NULL",
-            "f.deleted_at IS NULL",
-            f"(1 - (f.embedding <=> '{embedding_str}'::vector)) >= {min_similarity}"
+            'f.embedding IS NOT NULL',
+            'f.deleted_at IS NULL',
+            f"(1 - (f.embedding <=> '{embedding_str}'::vector)) >= {min_similarity}",
         ]
-        
+
         # 添加过滤条件
         if topic_id is not None:
             filter_conditions.append(f"f.topic_id = '{topic_id}'")
         if customer_id is not None:
             filter_conditions.append(f"f.customer_id = '{customer_id}'")
         if is_urgent is not None:
-            filter_conditions.append(f"f.is_urgent = {is_urgent}")
+            filter_conditions.append(f'f.is_urgent = {is_urgent}')
         if has_topic is not None:
             if has_topic:
-                filter_conditions.append("f.topic_id IS NOT NULL")
+                filter_conditions.append('f.topic_id IS NOT NULL')
             else:
-                filter_conditions.append("f.topic_id IS NULL")
+                filter_conditions.append('f.topic_id IS NULL')
         if clustering_status is not None:
             filter_conditions.append(f"f.clustering_status = '{clustering_status}'")
-        
-        where_clause = " AND ".join(filter_conditions)
-        
+
+        where_clause = ' AND '.join(filter_conditions)
+
         # pgvector 相似度搜索 + 关联查询
         query_sql = f"""
-            SELECT 
+            SELECT
                 f.id, f.tenant_id, f.customer_id, f.anonymous_author, f.anonymous_source,
                 f.topic_id, f.content, f.source, f.ai_summary, f.is_urgent, f.ai_metadata,
                 f.screenshot_url, f.source_platform, f.source_user_name, f.source_user_id,
@@ -501,10 +480,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             ORDER BY f.embedding <=> '{embedding_str}'::vector
             LIMIT {limit} OFFSET {skip}
         """
-        
+
         result = await db.execute(text(query_sql))
         rows = result.all()
-        
+
         # 转换为字典列表
         feedback_list = []
         for row in rows:
@@ -512,7 +491,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             row_dict = dict(row._mapping)
             # 排除 embedding 字段（SQL 中未查询）
             feedback_list.append(row_dict)
-        
+
         return feedback_list
 
 

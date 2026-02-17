@@ -21,7 +21,7 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
     ) -> Insight | None:
         """
         获取缓存的洞察（避免重复生成）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
@@ -29,21 +29,25 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
             time_range: 时间范围
             start_date: 开始日期
             end_date: 结束日期
-        
+
         Returns:
             洞察实例或 None
         """
-        query = select(Insight).where(
-            and_(
-                Insight.tenant_id == tenant_id,
-                Insight.insight_type == insight_type,
-                Insight.time_range == time_range,
-                Insight.start_date == start_date,
-                Insight.end_date == end_date,
-                Insight.status == 'active'
+        query = (
+            select(Insight)
+            .where(
+                and_(
+                    Insight.tenant_id == tenant_id,
+                    Insight.insight_type == insight_type,
+                    Insight.time_range == time_range,
+                    Insight.start_date == start_date,
+                    Insight.end_date == end_date,
+                    Insight.status == 'active',
+                )
             )
-        ).order_by(Insight.created_time.desc())
-        
+            .order_by(Insight.created_time.desc())
+        )
+
         result = await db.execute(query)
         return result.scalar_one_or_none()
 
@@ -62,7 +66,7 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
     ) -> Insight:
         """
         创建新的洞察实例
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
@@ -74,7 +78,7 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
             generated_by: 生成方式
             confidence: AI 置信度
             execution_time_ms: 生成耗时
-        
+
         Returns:
             洞察实例
         """
@@ -100,27 +104,27 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
     ) -> Insight:
         """
         忽略洞察
-        
+
         Args:
             db: 数据库会话
             insight_id: 洞察ID
             tenant_id: 租户ID
             reason: 忽略原因
-        
+
         Returns:
             更新后的洞察实例
         """
         insight = await self.get_by_id(db, tenant_id, insight_id)
-        
+
         if not insight:
             raise ValueError(f'Insight {insight_id} not found')
-        
+
         insight.status = 'dismissed'
         insight.dismissed_reason = reason
-        
+
         await db.commit()
         await db.refresh(insight)
-        
+
         return insight
 
 

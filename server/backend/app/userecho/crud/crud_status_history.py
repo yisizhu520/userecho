@@ -1,9 +1,11 @@
 """Status History CRUD"""
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.app.userecho.crud.base import TenantAwareCRUD
 from backend.app.userecho.model.status_history import StatusHistory
 from backend.database.db import uuid4_str
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from backend.utils.timezone import timezone
 
 
@@ -22,7 +24,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
     ) -> StatusHistory:
         """
         创建状态变更历史记录
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
@@ -31,7 +33,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
             to_status: 新状态
             changed_by: 操作人用户ID
             reason: 变更原因
-        
+
         Returns:
             状态历史实例
         """
@@ -43,7 +45,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
             to_status=to_status,
             changed_by=changed_by,
             reason=reason,
-            changed_at=timezone.now()
+            changed_at=timezone.now(),
         )
         db.add(history)
         await db.commit()
@@ -59,22 +61,19 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
     ) -> list[StatusHistory]:
         """
         获取主题的状态变更历史
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             topic_id: 主题ID
             limit: 返回数量上限
-        
+
         Returns:
             状态历史列表（按时间倒序）
         """
         query = (
             select(self.model)
-            .where(
-                self.model.tenant_id == tenant_id,
-                self.model.topic_id == topic_id
-            )
+            .where(self.model.tenant_id == tenant_id, self.model.topic_id == topic_id)
             .order_by(self.model.changed_at.desc())
             .limit(limit)
         )

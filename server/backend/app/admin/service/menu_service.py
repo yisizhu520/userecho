@@ -1,5 +1,5 @@
-from typing import Any
 from collections.abc import Sequence
+from typing import Any
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,10 +14,10 @@ from backend.utils.build_tree import get_tree_data, get_vben5_tree_data
 
 class MenuService:
     """菜单服务类"""
-    
+
     # 路由前缀常量
-    BUSINESS_PREFIX = '/app'      # 业务功能前缀
-    SYSTEM_PREFIX = '/admin'      # 系统管理前缀
+    BUSINESS_PREFIX = '/app'  # 业务功能前缀
+    SYSTEM_PREFIX = '/admin'  # 系统管理前缀
 
     @staticmethod
     async def get(*, db: AsyncSession, pk: int) -> Menu:
@@ -59,7 +59,7 @@ class MenuService:
         :return:
         """
         menu_data = None
-        
+
         # 1. 超级管理员：看所有菜单
         if request.user.is_superuser:
             menu_data = await menu_dao.get_sidebar(db, None)
@@ -67,32 +67,22 @@ class MenuService:
             # 2. 普通用户：根据角色类型过滤菜单
             roles = request.user.roles
             menu_ids = set()
-            
+
             if roles:
                 # 判断用户的角色类型
-                has_system_role = any(
-                    getattr(role, 'role_type', 'business') == 'system' 
-                    for role in roles
-                )
-                has_business_role = any(
-                    getattr(role, 'role_type', 'business') == 'business' 
-                    for role in roles
-                )
-                
+                has_system_role = any(getattr(role, 'role_type', 'business') == 'system' for role in roles)
+                has_business_role = any(getattr(role, 'role_type', 'business') == 'business' for role in roles)
+
                 # 收集菜单 ID
                 for role in roles:
                     menu_ids.update(menu.id for menu in role.menus)
-                
+
                 # 获取菜单数据
                 menu_data = await menu_dao.get_sidebar(db, list(menu_ids))
-                
+
                 # 根据角色类型过滤菜单
                 if menu_data:
-                    menu_data = MenuService._filter_menus_by_role_type(
-                        menu_data, 
-                        has_system_role, 
-                        has_business_role
-                    )
+                    menu_data = MenuService._filter_menus_by_role_type(menu_data, has_system_role, has_business_role)
             else:
                 menu_data = []
 
@@ -100,21 +90,17 @@ class MenuService:
             return get_vben5_tree_data(menu_data)
 
         return []
-    
+
     @staticmethod
-    def _filter_menus_by_role_type(
-        menus: Sequence[Menu], 
-        has_system_role: bool, 
-        has_business_role: bool
-    ) -> list[Menu]:
+    def _filter_menus_by_role_type(menus: Sequence[Menu], has_system_role: bool, has_business_role: bool) -> list[Menu]:
         """
         根据角色类型过滤菜单
-        
+
         规则：
         - 系统角色：只看 /admin/* 菜单
-        - 业务角色：只看 /app/* 菜单  
+        - 业务角色：只看 /app/* 菜单
         - 同时拥有：看全部
-        
+
         :param menus: 原始菜单列表
         :param has_system_role: 是否拥有系统角色
         :param has_business_role: 是否拥有业务角色
@@ -123,22 +109,22 @@ class MenuService:
         # 拥有系统+业务角色：看全部
         if has_system_role and has_business_role:
             return list(menus)
-        
+
         filtered_menus = []
         for menu in menus:
             path = menu.path or ''
-            
+
             # 根菜单或空路径：保留（用于目录结构）
             if not path or path == '/':
                 filtered_menus.append(menu)
                 continue
-            
+
             # 🔥 关键简化：只需判断 2 个前缀
-            if has_system_role and path.startswith(MenuService.SYSTEM_PREFIX):
+            if (has_system_role and path.startswith(MenuService.SYSTEM_PREFIX)) or (
+                has_business_role and path.startswith(MenuService.BUSINESS_PREFIX)
+            ):
                 filtered_menus.append(menu)
-            elif has_business_role and path.startswith(MenuService.BUSINESS_PREFIX):
-                filtered_menus.append(menu)
-        
+
         return filtered_menus
 
     @staticmethod

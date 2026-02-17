@@ -188,18 +188,11 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Select',
     fieldName: 'board_id',
     label: 'Board',
+    rules: z.string().min(1, '请选择 Board'),
     componentProps: {
       placeholder: '选择 Board',
-      allowClear: true,
+      allowClear: false,
       options: [], // 将在组件中动态加载
-    },
-  },
-  {
-    component: 'Input',
-    fieldName: 'title',
-    label: '标题',
-    componentProps: {
-      placeholder: '输入反馈标题（可选）',
     },
   },
   {
@@ -208,7 +201,7 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     label: '反馈内容',
     rules: z.string().min(1, '请输入反馈内容').max(1000, '内容长度不能超过1000字'),
     componentProps: {
-      rows: 6,
+      rows: 8,
       placeholder: '请输入用户反馈内容...',
       showCount: true,
       maxlength: 1000,
@@ -218,6 +211,10 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Input',
     fieldName: 'customer_name',
     label: '客户名称',
+    rules: z.string().optional().refine((val, ctx) => {
+      const anonymousAuthor = ctx.parent.anonymous_author;
+      return val || anonymousAuthor;
+    }, '客户名称和匿名作者至少填写一个'),
     componentProps: {
       placeholder: '输入客户名称',
     },
@@ -226,6 +223,10 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Input',
     fieldName: 'anonymous_author',
     label: '匿名作者',
+    rules: z.string().optional().refine((val, ctx) => {
+      const customerName = ctx.parent.customer_name;
+      return val || customerName;
+    }, '客户名称和匿名作者至少填写一个'),
     componentProps: {
       placeholder: '如：小红书用户@xxx',
     },

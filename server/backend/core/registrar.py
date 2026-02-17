@@ -40,21 +40,22 @@ from backend.utils.serializers import MsgSpecJSONResponse
 from backend.utils.snowflake import snowflake
 from backend.utils.trace_id import OtelTraceIdPlugin
 
+
 # ============= 启动性能监控工具 =============
-def _debug_log(msg: str, duration: float = None):
+def _debug_log(msg: str, duration: float | None = None) -> None:
     """输出调试日志"""
     try:
         if duration is not None:
-            print(f"[Startup] {msg}: {duration:.3f}s", flush=True)
+            print(f'[Startup] {msg}: {duration:.3f}s', flush=True)
         else:
-            print(f"[Startup] {msg}", flush=True)
+            print(f'[Startup] {msg}', flush=True)
     except UnicodeEncodeError:
         # 如果编码失败，使用 ASCII 安全模式
         msg_safe = msg.encode('ascii', errors='replace').decode('ascii')
         if duration is not None:
-            print(f"[Startup] {msg_safe}: {duration:.3f}s", flush=True)
+            print(f'[Startup] {msg_safe}: {duration:.3f}s', flush=True)
         else:
-            print(f"[Startup] {msg_safe}", flush=True)
+            print(f'[Startup] {msg_safe}', flush=True)
 
 
 @asynccontextmanager
@@ -65,75 +66,76 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     :param app: FastAPI 应用实例
     :return:
     """
-    _debug_log(">> Lifespan Init Started")
-    _init_start = time.time()
-    
+    _debug_log('>> Lifespan Init Started')
+    init_start = time.time()
+
     # 创建数据库表（仅在明确需要时执行）
     # NOTE: 生产环境应使用 Alembic migrations，不应依赖自动创建
     # 设置环境变量 AUTO_CREATE_TABLES=true 来启用（默认禁用）
     if os.getenv('AUTO_CREATE_TABLES', 'false').lower() == 'true':
-        _step_start = time.time()
-        _debug_log("  - Creating database tables...")
+        step_start = time.time()
+        _debug_log('  - Creating database tables...')
         await create_tables()
-        _debug_log("    [OK] Database tables created", time.time() - _step_start)
+        _debug_log('    [OK] Database tables created', time.time() - step_start)
     else:
-        _debug_log("  - Skipping table creation (use Alembic migrations or set AUTO_CREATE_TABLES=true)")
+        _debug_log('  - Skipping table creation (use Alembic migrations or set AUTO_CREATE_TABLES=true)')
 
     # 初始化 redis
-    _step_start = time.time()
-    _debug_log("  - Initializing Redis connection...")
+    step_start = time.time()
+    _debug_log('  - Initializing Redis connection...')
     await redis_client.open()
-    _debug_log("    [OK] Redis connected", time.time() - _step_start)
+    _debug_log('    [OK] Redis connected', time.time() - step_start)
 
     # 同步插件配置到 Redis
-    _step_start = time.time()
-    _debug_log("  - Syncing plugin configs to Redis...")
+    step_start = time.time()
+    _debug_log('  - Syncing plugin configs to Redis...')
     from backend.plugin.tools import sync_plugin_config_to_redis
+
     await sync_plugin_config_to_redis()
-    _debug_log("    [OK] Plugin configs synced", time.time() - _step_start)
+    _debug_log('    [OK] Plugin configs synced', time.time() - step_start)
 
     # 初始化 limiter
-    _step_start = time.time()
-    _debug_log("  - Initializing rate limiter...")
+    step_start = time.time()
+    _debug_log('  - Initializing rate limiter...')
     await FastAPILimiter.init(
         redis=redis_client,
         prefix=settings.REQUEST_LIMITER_REDIS_PREFIX,
         http_callback=http_limit_callback,
     )
-    _debug_log("    [OK] Rate limiter initialized", time.time() - _step_start)
+    _debug_log('    [OK] Rate limiter initialized', time.time() - step_start)
 
     # 初始化 snowflake 节点
-    _step_start = time.time()
-    _debug_log("  - Initializing Snowflake node...")
+    step_start = time.time()
+    _debug_log('  - Initializing Snowflake node...')
     await snowflake.init()
-    _debug_log("    [OK] Snowflake node initialized", time.time() - _step_start)
+    _debug_log('    [OK] Snowflake node initialized', time.time() - step_start)
 
     # 创建操作日志任务
-    _step_start = time.time()
-    _debug_log("  - Creating operation log task...")
+    step_start = time.time()
+    _debug_log('  - Creating operation log task...')
     create_task(OperaLogMiddleware.consumer())
-    _debug_log("    [OK] Operation log task created", time.time() - _step_start)
+    _debug_log('    [OK] Operation log task created', time.time() - step_start)
 
-    _debug_log(">> Lifespan Init Completed", time.time() - _init_start)
+    _debug_log('>> Lifespan Init Completed', time.time() - init_start)
 
     yield
 
-    _debug_log(">> Lifespan Shutdown Started")
+    _debug_log('>> Lifespan Shutdown Started')
     # 释放 snowflake 节点
     await snowflake.shutdown()
 
     # 关闭 redis 连接
     await redis_client.aclose()
-    _debug_log(">> Lifespan Shutdown Completed")
+    _debug_log('>> Lifespan Shutdown Completed')
 
 
 def register_app() -> FastAPI:
     """注册 FastAPI 应用"""
-    _debug_log(">> FastAPI App Registration Started")
-    _app_start = time.time()
+    _debug_log('>> FastAPI App Registration Started')
+    app_start = time.time()
 
-    _step_start = time.time()
-    _debug_log("  - Creating FastAPI instance...")
+    step_start = time.time()
+    _debug_log('  - Creating FastAPI instance...')
     app = FastAPI(
         title=settings.FASTAPI_TITLE,
         version=__version__,
@@ -144,51 +146,51 @@ def register_app() -> FastAPI:
         default_response_class=MsgSpecJSONResponse,
         lifespan=register_init,
     )
-    _debug_log("    [OK] FastAPI instance created", time.time() - _step_start)
+    _debug_log('    [OK] FastAPI instance created', time.time() - step_start)
 
     # 注册组件
-    _step_start = time.time()
-    _debug_log("  - Registering logger...")
+    step_start = time.time()
+    _debug_log('  - Registering logger...')
     register_logger()
-    _debug_log("    [OK] Logger registered", time.time() - _step_start)
+    _debug_log('    [OK] Logger registered', time.time() - step_start)
 
-    _step_start = time.time()
-    _debug_log("  - Registering Socket.IO...")
+    step_start = time.time()
+    _debug_log('  - Registering Socket.IO...')
     register_socket_app(app)
-    _debug_log("    [OK] Socket.IO registered", time.time() - _step_start)
+    _debug_log('    [OK] Socket.IO registered', time.time() - step_start)
 
-    _step_start = time.time()
-    _debug_log("  - Registering static files...")
+    step_start = time.time()
+    _debug_log('  - Registering static files...')
     register_static_file(app)
-    _debug_log("    [OK] Static files registered", time.time() - _step_start)
+    _debug_log('    [OK] Static files registered', time.time() - step_start)
 
-    _step_start = time.time()
-    _debug_log("  - Registering middleware...")
+    step_start = time.time()
+    _debug_log('  - Registering middleware...')
     register_middleware(app)
-    _debug_log("    [OK] Middleware registered", time.time() - _step_start)
+    _debug_log('    [OK] Middleware registered', time.time() - step_start)
 
-    _step_start = time.time()
-    _debug_log("  - Registering routes...")
+    step_start = time.time()
+    _debug_log('  - Registering routes...')
     register_router(app)
-    _debug_log("    [OK] Routes registered", time.time() - _step_start)
+    _debug_log('    [OK] Routes registered', time.time() - step_start)
 
-    _step_start = time.time()
-    _debug_log("  - Registering pagination...")
+    step_start = time.time()
+    _debug_log('  - Registering pagination...')
     register_page(app)
-    _debug_log("    [OK] Pagination registered", time.time() - _step_start)
+    _debug_log('    [OK] Pagination registered', time.time() - step_start)
 
-    _step_start = time.time()
-    _debug_log("  - Registering exception handlers...")
+    step_start = time.time()
+    _debug_log('  - Registering exception handlers...')
     register_exception(app)
-    _debug_log("    [OK] Exception handlers registered", time.time() - _step_start)
+    _debug_log('    [OK] Exception handlers registered', time.time() - step_start)
 
     if settings.GRAFANA_METRICS:
-        _step_start = time.time()
-        _debug_log("  - Registering metrics...")
+        step_start = time.time()
+        _debug_log('  - Registering metrics...')
         register_metrics(app)
-        _debug_log("    [OK] Metrics registered", time.time() - _step_start)
+        _debug_log('    [OK] Metrics registered', time.time() - step_start)
 
-    _debug_log(">> FastAPI App Registration Completed", time.time() - _app_start)
+    _debug_log('>> FastAPI App Registration Completed', time.time() - app_start)
     return app
 
 
@@ -279,26 +281,26 @@ def register_router(app: FastAPI) -> None:
     dependencies = [Depends(demo_site)] if settings.DEMO_MODE else None
 
     # API
-    _step_start = time.time()
-    _debug_log("    - Building router...")
+    step_start = time.time()
+    _debug_log('    - Building router...')
     router = build_final_router()
-    _debug_log("      [OK] Router built", time.time() - _step_start)
-    
-    _step_start = time.time()
-    _debug_log("    - Including router...")
+    _debug_log('      [OK] Router built', time.time() - step_start)
+
+    step_start = time.time()
+    _debug_log('    - Including router...')
     app.include_router(router, dependencies=dependencies)
-    _debug_log("      [OK] Router included", time.time() - _step_start)
+    _debug_log('      [OK] Router included', time.time() - step_start)
 
     # Extra
-    _step_start = time.time()
-    _debug_log("    - Ensuring unique route names...")
+    step_start = time.time()
+    _debug_log('    - Ensuring unique route names...')
     ensure_unique_route_names(app)
-    _debug_log("      [OK] Route names validated", time.time() - _step_start)
-    
-    _step_start = time.time()
-    _debug_log("    - Simplifying operation IDs...")
+    _debug_log('      [OK] Route names validated', time.time() - step_start)
+
+    step_start = time.time()
+    _debug_log('    - Simplifying operation IDs...')
     simplify_operation_ids(app)
-    _debug_log("      [OK] Operation IDs simplified", time.time() - _step_start)
+    _debug_log('      [OK] Operation IDs simplified', time.time() - step_start)
 
 
 def register_page(app: FastAPI) -> None:

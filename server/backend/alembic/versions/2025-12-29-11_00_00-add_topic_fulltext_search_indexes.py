@@ -15,68 +15,67 @@ Create Date: 2025-12-29 11:00:00.000000
 - 支持模糊搜索、ILIKE 查询优化
 - 支持中文、英文全文搜索
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '2025122911'
-down_revision: Union[str, None] = '2025122910'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = '2025122910'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """
     添加主题表全文搜索索引
-    
+
     注意事项：
     1. 需要 PostgreSQL 数据库
     2. pg_trgm 扩展已在 2025122910 迁移中启用
     3. GIN 索引适合不频繁更新但频繁查询的场景
     4. 索引创建可能需要几秒到几分钟（取决于数据量）
     """
-    
+
     # 检查是否使用 PostgreSQL
     bind = op.get_bind()
     if bind.dialect.name == 'postgresql':
         print('🔧 正在为主题表添加全文搜索索引...')
-        
+
         # 1. 为 topics.title 添加 GIN 索引
         # gin_trgm_ops 支持 LIKE/ILIKE 查询优化
         print('   ├─ 为 title 字段创建 GIN 索引...')
-        op.execute('''
-            CREATE INDEX IF NOT EXISTS idx_topics_title_gin 
-            ON topics 
+        op.execute("""
+            CREATE INDEX IF NOT EXISTS idx_topics_title_gin
+            ON topics
             USING gin(title gin_trgm_ops)
-        ''')
-        
+        """)
+
         # 2. 为 topics.description 添加 GIN 索引
         print('   ├─ 为 description 字段创建 GIN 索引...')
-        op.execute('''
-            CREATE INDEX IF NOT EXISTS idx_topics_description_gin 
-            ON topics 
+        op.execute("""
+            CREATE INDEX IF NOT EXISTS idx_topics_description_gin
+            ON topics
             USING gin(description gin_trgm_ops)
-        ''')
-        
+        """)
+
         print('✅ 主题表全文搜索索引创建完成！')
-        print('')
+        print()
         print('📊 索引信息：')
         print('   - idx_topics_title_gin: 用于 title 字段模糊搜索')
         print('   - idx_topics_description_gin: 用于 description 字段模糊搜索')
-        print('')
+        print()
         print('🚀 性能提升预期：')
         print('   - 小数据量（<100）：2-3倍提升')
         print('   - 中等数据量（100-1000）：5-10倍提升')
         print('   - 大数据量（>1000）：10-15倍提升')
-        
+
     else:
         # 非 PostgreSQL 数据库
         print('⚠️  当前数据库不支持 pg_trgm 扩展')
         print('    全文搜索索引仅支持 PostgreSQL')
         print('    关键词搜索仍可正常工作，但性能较低')
-        pass
 
 
 def downgrade() -> None:
@@ -84,12 +83,12 @@ def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == 'postgresql':
         print('🔧 正在删除主题表全文搜索索引...')
-        
+
         # 删除索引（按相反顺序）
         print('   ├─ 删除 description 索引...')
         op.execute('DROP INDEX IF EXISTS idx_topics_description_gin')
-        
+
         print('   ├─ 删除 title 索引...')
         op.execute('DROP INDEX IF EXISTS idx_topics_title_gin')
-        
+
         print('✅ 主题表全文搜索索引已删除')

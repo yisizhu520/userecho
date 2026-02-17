@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import CheckConstraint, ForeignKey, JSON, Numeric, String, Text
+from sqlalchemy import JSON, CheckConstraint, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.common.model import MappedBase, TimeZone
@@ -15,14 +15,12 @@ class Feedback(MappedBase):
 
     __tablename__ = 'feedbacks'
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=uuid4_str, comment='反馈ID'
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str, comment='反馈ID')
     tenant_id: Mapped[str] = mapped_column(
         String(36), ForeignKey('tenants.id', ondelete='CASCADE'), index=True, comment='租户ID'
     )
-    board_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey('boards.id', ondelete='CASCADE'), index=True, default=None, comment='看板ID'
+    board_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey('boards.id', ondelete='CASCADE'), index=True, comment='看板ID (必填)'
     )
     customer_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey('customers.id', ondelete='SET NULL'), comment='客户ID'
@@ -31,59 +29,36 @@ class Feedback(MappedBase):
     customer_mrr: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2), default=None, comment='客户月收入（冗余字段，便于聚合）'
     )
-    customer_type: Mapped[str | None] = mapped_column(
-        String(20), default=None, comment='客户类型（冗余字段）'
-    )
+    customer_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='客户类型（冗余字段）')
     # 匿名反馈（支持更完整的匿名信息）
     is_anonymous: Mapped[bool] = mapped_column(default=False, comment='是否匿名反馈')
-    anonymous_author: Mapped[str | None] = mapped_column(
-        String(100), default=None, comment='匿名作者名称'
-    )
-    anonymous_email: Mapped[str | None] = mapped_column(
-        String(255), default=None, comment='匿名作者邮箱'
-    )
-    anonymous_source: Mapped[str | None] = mapped_column(
-        String(50), default=None, comment='匿名来源平台'
-    )
+    anonymous_author: Mapped[str | None] = mapped_column(String(100), default=None, comment='匿名作者名称')
+    anonymous_email: Mapped[str | None] = mapped_column(String(255), default=None, comment='匿名作者邮箱')
+    anonymous_source: Mapped[str | None] = mapped_column(String(50), default=None, comment='匿名来源平台')
     topic_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey('topics.id', ondelete='SET NULL'), index=True, comment='关联主题ID'
     )
-    
+
     # 反馈内容
-    title: Mapped[str | None] = mapped_column(
-        String(400), default=None, comment='反馈标题（可选）'
-    )
     content: Mapped[str] = mapped_column(Text, comment='反馈内容')
-    source: Mapped[str] = mapped_column(
-        String(20), default='manual', comment='来源: manual, import, api, screenshot'
-    )
-    ai_summary: Mapped[str | None] = mapped_column(
-        String(50), default=None, comment='AI生成的20字摘要'
-    )
+    source: Mapped[str] = mapped_column(String(20), default='manual', comment='来源: manual, import, api, screenshot')
+    ai_summary: Mapped[str | None] = mapped_column(String(50), default=None, comment='AI生成的20字摘要')
     is_urgent: Mapped[bool] = mapped_column(default=False, comment='是否紧急')
-    ai_metadata: Mapped[dict | None] = mapped_column(
-        JSON, default=None, comment='AI相关元数据(embedding等)'
-    )
-    
+    ai_metadata: Mapped[dict | None] = mapped_column(JSON, default=None, comment='AI相关元数据(embedding等)')
+
     # 图片识别相关字段（支持多张图片）
     images_metadata: Mapped[dict | None] = mapped_column(
-        JSON, default=None, comment='图片元数据数组'
+        JSON,
+        default=None,
+        comment='图片元数据 JSONB: {"images": [{"url": "...", "platform": "wechat", "user_name": "...", "confidence": 0.95, "uploaded_at": "..."}]}',
     )
-    screenshot_url: Mapped[str | None] = mapped_column(
-        Text, default=None, comment='截图 OSS 地址'
-    )
+    screenshot_url: Mapped[str | None] = mapped_column(Text, default=None, comment='截图 OSS 地址')
     source_platform: Mapped[str | None] = mapped_column(
         String(50), default=None, comment='来源平台: wechat, xiaohongshu, appstore, weibo, other'
     )
-    source_user_name: Mapped[str | None] = mapped_column(
-        String(255), default=None, comment='来源平台用户昵称'
-    )
-    source_user_id: Mapped[str | None] = mapped_column(
-        String(255), default=None, comment='来源平台用户 ID'
-    )
-    ai_confidence: Mapped[float | None] = mapped_column(
-        default=None, comment='AI 识别置信度 (0.00-1.00)'
-    )
+    source_user_name: Mapped[str | None] = mapped_column(String(255), default=None, comment='来源平台用户昵称')
+    source_user_id: Mapped[str | None] = mapped_column(String(255), default=None, comment='来源平台用户 ID')
+    ai_confidence: Mapped[float | None] = mapped_column(default=None, comment='AI 识别置信度 (0.00-1.00)')
     submitter_id: Mapped[int | None] = mapped_column(
         ForeignKey('sys_user.id', ondelete='SET NULL'), default=None, comment='内部提交者（员工）ID'
     )
@@ -95,12 +70,8 @@ class Feedback(MappedBase):
     sentiment: Mapped[str | None] = mapped_column(
         String(20), default=None, index=True, comment='情感倾向: positive | neutral | negative'
     )
-    sentiment_score: Mapped[float | None] = mapped_column(
-        default=None, comment='情感分数 (-1.0 to 1.0)'
-    )
-    sentiment_reason: Mapped[str | None] = mapped_column(
-        Text, default=None, comment='AI 情感分析理由'
-    )
+    sentiment_score: Mapped[float | None] = mapped_column(default=None, comment='情感分数 (-1.0 to 1.0)')
+    sentiment_reason: Mapped[str | None] = mapped_column(Text, default=None, comment='AI 情感分析理由')
 
     # 聚类状态与元数据（用于避免 topic_id=NULL 的噪声点被反复聚类）
     clustering_status: Mapped[str] = mapped_column(
@@ -114,26 +85,19 @@ class Feedback(MappedBase):
         default=None,
         comment='聚类元数据: {cluster_label: int, clustered_at: datetime, quality: dict, reason: str}',
     )
-    
+
     # 优先级
-    priority: Mapped[str | None] = mapped_column(
-        String(20), default=None, comment='优先级: low, medium, high, urgent'
-    )
-    
-    submitted_at: Mapped[datetime] = mapped_column(
-        TimeZone, default=timezone.now, comment='提交时间'
-    )
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        TimeZone, default=None, comment='软删除时间'
-    )
-    
+    priority: Mapped[str | None] = mapped_column(String(20), default=None, comment='优先级: low, medium, high, urgent')
+
+    submitted_at: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='提交时间')
+    deleted_at: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment='软删除时间')
+
     # 时间戳字段
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
-    updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')
+    updated_time: Mapped[datetime | None] = mapped_column(
+        TimeZone, onupdate=timezone.now, default=None, comment='更新时间'
+    )
 
     __table_args__ = (
-        CheckConstraint(
-            'customer_id IS NOT NULL OR anonymous_author IS NOT NULL',
-            name='chk_author_exists'
-        ),
+        CheckConstraint('customer_id IS NOT NULL OR anonymous_author IS NOT NULL', name='chk_author_exists'),
     )

@@ -2,7 +2,8 @@
 
 提供自动租户过滤和软删除支持的 CRUD 基类
 """
-from typing import Any, Generic, Type, TypeVar
+
+from typing import Any, Generic, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,10 +17,10 @@ ModelType = TypeVar('ModelType', bound=Base)
 class TenantAwareCRUD(Generic[ModelType]):
     """多租户 CRUD 基类 - 所有查询自动过滤租户和软删除"""
 
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: type[ModelType]) -> None:
         """
         初始化 CRUD 基类
-        
+
         Args:
             model: SQLAlchemy 模型类
         """
@@ -35,20 +36,20 @@ class TenantAwareCRUD(Generic[ModelType]):
     ) -> list[ModelType]:
         """
         获取列表（自动过滤租户和软删除）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             skip: 跳过数量
             limit: 返回数量
             **filters: 额外过滤条件
-        
+
         Returns:
             模型列表
         """
         query = select(self.model).where(
             self.model.tenant_id == tenant_id,
-            self.model.deleted_at.is_(None)  # 软删除过滤
+            self.model.deleted_at.is_(None),  # 软删除过滤
         )
 
         # 添加额外过滤条件
@@ -68,19 +69,17 @@ class TenantAwareCRUD(Generic[ModelType]):
     ) -> ModelType | None:
         """
         根据ID获取单条记录
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             id: 记录ID
-        
+
         Returns:
             模型实例或 None
         """
         query = select(self.model).where(
-            self.model.id == id,
-            self.model.tenant_id == tenant_id,
-            self.model.deleted_at.is_(None)
+            self.model.id == id, self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None)
         )
         result = await db.execute(query)
         return result.scalar_one_or_none()
@@ -93,12 +92,12 @@ class TenantAwareCRUD(Generic[ModelType]):
     ) -> ModelType:
         """
         创建记录（自动注入 tenant_id）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             **data: 模型字段数据
-        
+
         Returns:
             创建的模型实例
         """
@@ -119,13 +118,13 @@ class TenantAwareCRUD(Generic[ModelType]):
     ) -> ModelType | None:
         """
         更新记录
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             id: 记录ID
             **data: 更新字段数据
-        
+
         Returns:
             更新后的模型实例或 None
         """
@@ -151,13 +150,13 @@ class TenantAwareCRUD(Generic[ModelType]):
     ) -> bool:
         """
         删除记录（默认软删除）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             id: 记录ID
             soft: 是否软删除（True=软删除，False=物理删除）
-        
+
         Returns:
             是否删除成功
         """
@@ -168,6 +167,7 @@ class TenantAwareCRUD(Generic[ModelType]):
         if soft:
             # 软删除：设置 deleted_at
             from backend.utils.timezone import timezone
+
             obj.deleted_at = timezone.now()
             await db.commit()
         else:
@@ -185,20 +185,19 @@ class TenantAwareCRUD(Generic[ModelType]):
     ) -> int:
         """
         统计记录数量
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             **filters: 过滤条件
-        
+
         Returns:
             记录数量
         """
         from sqlalchemy import func
 
         query = select(func.count(self.model.id)).where(
-            self.model.tenant_id == tenant_id,
-            self.model.deleted_at.is_(None)
+            self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None)
         )
 
         for key, value in filters.items():

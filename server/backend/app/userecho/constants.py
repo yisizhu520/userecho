@@ -42,4 +42,3 @@ DEFAULT_CLUSTERING_CONFIG = {
     'preset_mode': 'standard',
     **CLUSTERING_PRESETS['standard']['params'],
 }
-

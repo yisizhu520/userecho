@@ -102,4 +102,3 @@ python scripts/update_role_menus.py
 - 如果忘记密码：所有测试账号密码都是 `Test123456`
 - 如果需要重置：运行 `./init_database.sh` 重新初始化
 - 如果遇到问题：查看 [DATABASE_INIT.md](./DATABASE_INIT.md)
-

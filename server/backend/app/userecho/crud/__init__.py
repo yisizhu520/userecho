@@ -12,11 +12,11 @@ from .crud_tenant_config import tenant_config_dao
 from .crud_topic import crud_topic
 
 __all__ = [
-    'crud_tenant',
     'crud_customer',
     'crud_feedback',
-    'crud_topic',
     'crud_priority_score',
     'crud_status_history',
+    'crud_tenant',
+    'crud_topic',
     'tenant_config_dao',
 ]

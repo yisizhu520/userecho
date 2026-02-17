@@ -34,7 +34,6 @@ export interface CreateFeedbackParams {
   customer_name?: string;
   anonymous_author?: string;
   anonymous_source?: string;
-  title?: string;
   content: string;
   source?: string;
   is_urgent?: boolean;

@@ -7,4 +7,3 @@ echo
 cd backend || exit
 source .venv/bin/activate
 python scripts/init_business_menus.py
-

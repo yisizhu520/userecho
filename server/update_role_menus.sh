@@ -7,4 +7,3 @@ echo
 cd backend || exit
 source .venv/Scripts/activate
 python scripts/update_role_menus.py
-

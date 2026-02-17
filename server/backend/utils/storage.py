@@ -5,6 +5,7 @@
 
 import hashlib
 import os
+
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -36,7 +37,6 @@ class StorageBackend(ABC):
         :param content_type: 文件 MIME 类型
         :return: 文件访问 URL
         """
-        pass
 
     @abstractmethod
     async def delete(self, path: str) -> bool:
@@ -46,7 +46,6 @@ class StorageBackend(ABC):
         :param path: 文件路径
         :return: 是否成功
         """
-        pass
 
     @abstractmethod
     async def get_url(self, path: str, expire_seconds: int = 3600) -> str:
@@ -57,7 +56,6 @@ class StorageBackend(ABC):
         :param expire_seconds: 过期时间（秒）
         :return: 访问 URL
         """
-        pass
 
     @abstractmethod
     async def exists(self, path: str) -> bool:
@@ -67,13 +65,12 @@ class StorageBackend(ABC):
         :param path: 文件路径
         :return: 是否存在
         """
-        pass
 
 
 class LocalStorage(StorageBackend):
     """本地存储"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_dir = UPLOAD_DIR
         self.base_url = settings.STORAGE_LOCAL_BASE_URL or '/static/upload'
 
@@ -93,8 +90,7 @@ class LocalStorage(StorageBackend):
                     while chunk := await file.read(settings.UPLOAD_READ_SIZE):
                         f.write(chunk)
             else:
-                with open(full_path, 'wb') as f:
-                    f.write(file.read())
+                Path(full_path).write_bytes(file.read())
 
             return f'{self.base_url}/{path}'
         except Exception as e:
@@ -125,7 +121,7 @@ class LocalStorage(StorageBackend):
 class AliyunOSSStorage(StorageBackend):
     """阿里云 OSS 存储"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import oss2
         except ImportError:
@@ -164,8 +160,7 @@ class AliyunOSSStorage(StorageBackend):
             # 返回 CDN 域名或 OSS 域名
             if hasattr(settings, 'ALIYUN_OSS_CDN_DOMAIN') and settings.ALIYUN_OSS_CDN_DOMAIN:
                 return f'{settings.ALIYUN_OSS_CDN_DOMAIN}/{oss_path}'
-            else:
-                return f'https://{self.bucket_name}.{self.endpoint}/{oss_path}'
+            return f'https://{self.bucket_name}.{self.endpoint}/{oss_path}'
         except Exception as e:
             log.error(f'上传到阿里云 OSS 失败 {oss_path}: {e}')
             raise errors.ServerError(msg='文件上传失败')
@@ -201,7 +196,7 @@ class AliyunOSSStorage(StorageBackend):
 class TencentCOSStorage(StorageBackend):
     """腾讯云 COS 存储"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             from qcloud_cos import CosConfig, CosS3Client
         except ImportError:
@@ -239,6 +234,7 @@ class TencentCOSStorage(StorageBackend):
 
             # 使用 BytesIO 包装以确保兼容性
             from io import BytesIO
+
             file_obj = BytesIO(content)
 
             kwargs = {}
@@ -250,8 +246,7 @@ class TencentCOSStorage(StorageBackend):
             # 返回 CDN 域名或 COS 域名
             if hasattr(settings, 'TENCENT_COS_CDN_DOMAIN') and settings.TENCENT_COS_CDN_DOMAIN:
                 return f'{settings.TENCENT_COS_CDN_DOMAIN}/{cos_path}'
-            else:
-                return f'https://{self.bucket_name}.cos.{self.region}.myqcloud.com/{cos_path}'
+            return f'https://{self.bucket_name}.cos.{self.region}.myqcloud.com/{cos_path}'
         except Exception as e:
             log.error(f'上传到腾讯云 COS 失败 {cos_path}: {e}')
             raise errors.ServerError(msg='文件上传失败')
@@ -294,7 +289,7 @@ class TencentCOSStorage(StorageBackend):
 class AWSS3Storage(StorageBackend):
     """AWS S3 存储"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             import boto3
         except ImportError:
@@ -336,6 +331,7 @@ class AWSS3Storage(StorageBackend):
 
             # 使用 BytesIO 包装以确保兼容性
             from io import BytesIO
+
             file_obj = BytesIO(content)
 
             extra_args = {}
@@ -347,8 +343,7 @@ class AWSS3Storage(StorageBackend):
             # 返回 CloudFront 域名或 S3 域名
             if hasattr(settings, 'AWS_S3_CDN_DOMAIN') and settings.AWS_S3_CDN_DOMAIN:
                 return f'{settings.AWS_S3_CDN_DOMAIN}/{s3_path}'
-            else:
-                return f'https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{s3_path}'
+            return f'https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{s3_path}'
         except Exception as e:
             log.error(f'上传到 AWS S3 失败 {s3_path}: {e}')
             raise errors.ServerError(msg='文件上传失败')
@@ -398,11 +393,11 @@ class StorageManager:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._backend is None:
             self._init_backend()
 
-    def _init_backend(self):
+    def _init_backend(self) -> None:
         """初始化存储后端"""
         storage_type = settings.STORAGE_TYPE.lower()
 

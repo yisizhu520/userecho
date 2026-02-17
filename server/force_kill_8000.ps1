@@ -16,5 +16,3 @@ if ($connections) {
 } else {
     Write-Host "Port 8000 is free!" -ForegroundColor Green
 }
-
-

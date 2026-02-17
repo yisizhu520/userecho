@@ -28,8 +28,7 @@ def _normalize_vben_component(component: str | None) -> str | None:
             break
 
     # 常见错误：带了 .vue 后缀
-    if c.endswith('.vue'):
-        c = c[:-4]
+    c = c.removesuffix('.vue')
 
     # 常见错误：带了 views 目录前缀或别名
     for prefix in ('#/views/', '/views/', 'views/', 'src/views/', '/src/views/'):
@@ -200,12 +199,12 @@ def get_vben5_tree_data(
         for n in nodes:
             if not isinstance(n, dict):
                 continue
-            
+
             children = n.get('children') or []
             # 先递归处理子节点
             if children and isinstance(children, list):
                 _fill_redirect(children)
-            
+
             # 目录(type=0)没有 component 时，必须设置 redirect，否则内容区会空白
             if n.get('type') == 0 and not n.get('component'):
                 if not n.get('redirect'):  # 只在没有手动设置时才自动填充

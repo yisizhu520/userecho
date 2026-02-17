@@ -384,20 +384,18 @@ class CheckDeps:
         str | None,
         cappa.Arg(default=None, help='指定插件名称，不指定则检查所有插件'),
     ]
-    
+
     def __call__(self) -> None:
-        from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
-        from rich.text import Text
         import time
-        
+
+        from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+
         plugins = [self.plugin] if self.plugin else get_plugins()
-        
-        console.print(Panel(
-            f'检查 {len(plugins)} 个插件的依赖...',
-            title='Plugin Dependencies Check',
-            border_style='cyan'
-        ))
-        
+
+        console.print(
+            Panel(f'检查 {len(plugins)} 个插件的依赖...', title='Plugin Dependencies Check', border_style='cyan')
+        )
+
         with Progress(
             SpinnerColumn(),
             TextColumn('{task.description}'),
@@ -416,7 +414,7 @@ class CheckDeps:
                 except Exception as e:
                     console.print(f'  ✗ {plugin}: {e}', style='red')
                 progress.advance(task)
-        
+
         console.print('\n所有插件依赖检查完成！', style='bold green')
 
 

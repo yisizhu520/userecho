@@ -11,16 +11,16 @@ from .tenant_user import TenantUser, TenantUserRole
 from .topic import Topic
 
 __all__ = [
-    'Tenant',
-    'TenantUser',
-    'TenantUserRole',
     'Board',
     'Customer',
     'Feedback',
-    'Topic',
     'Insight',
+    'ManualAdjustment',
     'PriorityScore',
     'StatusHistory',
-    'ManualAdjustment',
+    'Tenant',
     'TenantConfig',
+    'TenantUser',
+    'TenantUserRole',
+    'Topic',
 ]

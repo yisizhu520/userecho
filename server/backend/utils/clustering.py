@@ -4,7 +4,9 @@
 """
 
 import math
+
 import numpy as np
+
 from sklearn.cluster import DBSCAN
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -15,11 +17,7 @@ from backend.core.conf import settings
 class FeedbackClustering:
     """反馈聚类引擎 - MVP 简化版"""
 
-    def __init__(
-        self,
-        similarity_threshold: float | None = None,
-        min_samples: int | None = None
-    ):
+    def __init__(self, similarity_threshold: float | None = None, min_samples: int | None = None) -> None:
         """
         初始化聚类引擎
 
@@ -57,7 +55,7 @@ class FeedbackClustering:
             clustering = DBSCAN(
                 eps=1 - self.threshold,  # 距离阈值
                 min_samples=self.min_samples,  # 最小聚类大小
-                metric='precomputed'
+                metric='precomputed',
             )
 
             labels = clustering.fit_predict(distance_matrix)
@@ -75,10 +73,7 @@ class FeedbackClustering:
             return np.full(embeddings.shape[0], -1)
 
     def find_similar_feedbacks(
-        self,
-        query_embedding: np.ndarray,
-        all_embeddings: np.ndarray,
-        top_k: int = 10
+        self, query_embedding: np.ndarray, all_embeddings: np.ndarray, top_k: int = 10
     ) -> list[tuple[int, float]]:
         """
         查找最相似的反馈
@@ -105,11 +100,7 @@ class FeedbackClustering:
             log.error(f'Failed to find similar feedbacks: {e}')
             return []
 
-    def calculate_cluster_quality(
-        self,
-        embeddings: np.ndarray,
-        labels: np.ndarray
-    ) -> dict[str, float | None]:
+    def calculate_cluster_quality(self, embeddings: np.ndarray, labels: np.ndarray) -> dict[str, float | None]:
         """
         计算聚类质量指标
 
@@ -124,12 +115,12 @@ class FeedbackClustering:
             - noise_ratio: 噪声比例 (0 到 1)
         """
         try:
-            from sklearn.metrics import silhouette_score, davies_bouldin_score
+            from sklearn.metrics import davies_bouldin_score, silhouette_score
 
             # 过滤噪声点
             mask = labels != -1
             filtered_labels = labels[mask]
-            
+
             # 检查是否有足够的聚类用于计算质量指标
             n_unique_labels = len(set(filtered_labels))
             if n_unique_labels < 2:
@@ -144,12 +135,9 @@ class FeedbackClustering:
 
             # Davies-Bouldin 指数 (越小越好)
             davies_bouldin = davies_bouldin_score(filtered_embeddings, filtered_labels)
-            
+
             # 防止 Infinity 导致 JSON 序列化失败
-            if math.isinf(davies_bouldin) or math.isnan(davies_bouldin):
-                davies_bouldin = None
-            else:
-                davies_bouldin = float(davies_bouldin)
+            davies_bouldin = None if math.isinf(davies_bouldin) or math.isnan(davies_bouldin) else float(davies_bouldin)
 
             # 噪声比例
             noise_ratio = (labels == -1).sum() / len(labels)
@@ -157,7 +145,7 @@ class FeedbackClustering:
             return {
                 'silhouette': float(silhouette),
                 'davies_bouldin': davies_bouldin,
-                'noise_ratio': float(noise_ratio)
+                'noise_ratio': float(noise_ratio),
             }
 
         except Exception as e:

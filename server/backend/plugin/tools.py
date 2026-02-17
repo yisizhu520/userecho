@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 import warnings
 
 from functools import lru_cache
@@ -21,8 +20,7 @@ from backend.common.exception import errors
 from backend.common.log import log
 from backend.core.conf import settings
 from backend.core.path_conf import PLUGIN_DIR
-from backend.database.redis import RedisCli, redis_client
-from backend.utils._await import run_await
+from backend.database.redis import redis_client
 from backend.utils.import_parse import get_model_objects, import_module_cached
 
 
@@ -116,7 +114,7 @@ def load_plugin_config(plugin: str) -> dict[str, Any]:
 def parse_plugin_config() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     解析插件配置
-    
+
     WARNING: This function is called during module import, MUST be fast!
     - NO Redis operations (deferred to lifespan)
     - Only parse config files from disk
@@ -158,25 +156,25 @@ def parse_plugin_config() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
 async def sync_plugin_config_to_redis() -> None:
     """
     Sync plugin configurations to Redis
-    
+
     Should be called during lifespan startup (async context)
-    
+
     Performance Note:
     - Uses MGET to fetch all plugin states in 1 round-trip
     - Uses Pipeline to batch all SET operations
     - Avoids slow SCAN operation during startup (cleanup deferred)
     """
     plugins = get_plugins()
-    
+
     # Step 1: Batch read all existing plugin states (1 network round-trip)
     plugin_keys = [f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}' for plugin in plugins]
     cached_states = await redis_client.mget(plugin_keys)
-    
+
     # Step 2: Build plugin configs with preserved states
     plugin_configs = {}
     for plugin, cached_json in zip(plugins, cached_states):
         data = load_plugin_config(plugin)
-        
+
         # Preserve enable/disable state if exists
         if cached_json:
             try:
@@ -187,21 +185,21 @@ async def sync_plugin_config_to_redis() -> None:
                 data['plugin']['enable'] = str(StatusType.enable.value)
         else:
             data['plugin']['enable'] = str(StatusType.enable.value)
-        
+
         data['plugin']['name'] = plugin
         plugin_configs[f'{settings.PLUGIN_REDIS_PREFIX}:{plugin}'] = json.dumps(data, ensure_ascii=False)
-    
+
     # Step 3: Batch write all plugin configs (1 network round-trip via pipeline)
     pipeline = redis_client.pipeline()
     for key, value in plugin_configs.items():
         pipeline.set(key, value)
-    
+
     # Reset plugin change flag
     pipeline.delete(f'{settings.PLUGIN_REDIS_PREFIX}:changed')
-    
+
     # Execute all operations in one batch
     await pipeline.execute()
-    
+
     # Optional: Clean up stale plugin info (deferred to avoid slow SCAN during startup)
     # This runs in background and won't block startup
     # If you need immediate cleanup, uncomment the next line:

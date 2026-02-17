@@ -5,7 +5,6 @@ from typing import Any
 
 from asgiref.sync import sync_to_async
 from fastapi import Response
-from starlette.datastructures import UploadFile
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -116,7 +115,9 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
             # 日志记录
             is_failed = bool(error)
             try:
-                code_int = int(code) if isinstance(code, (int, str)) and str(code).isdigit() else StandardResponseCode.HTTP_500
+                code_int = (
+                    int(code) if isinstance(code, (int, str)) and str(code).isdigit() else StandardResponseCode.HTTP_500
+                )
             except Exception:
                 code_int = StandardResponseCode.HTTP_500
             if code_int >= 400:

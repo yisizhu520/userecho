@@ -6,19 +6,20 @@
 import asyncio
 import sys
 import time
+
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from backend.app.userecho.crud import crud_feedback
-from backend.app.userecho.model.feedback import Feedback
 from backend.database.db_mysql import async_db_session
+
+from backend.app.userecho.crud import crud_feedback
 from backend.utils.ai_client import ai_client
 
 
-async def test_cache_single_feedback():
+async def test_cache_single_feedback() -> None:
     """测试单条反馈的缓存读写"""
     print('\n' + '=' * 60)
     print('【测试 1】单条反馈缓存读写')
@@ -49,10 +50,7 @@ async def test_cache_single_feedback():
 
                 # 保存到缓存
                 success = await crud_feedback.update_embedding(
-                    db=db,
-                    tenant_id='default-tenant',
-                    feedback_id=feedback.id,
-                    embedding=embedding
+                    db=db, tenant_id='default-tenant', feedback_id=feedback.id, embedding=embedding
                 )
                 print(f'  缓存保存: {"✓ 成功" if success else "✗ 失败"}')
 
@@ -66,7 +64,7 @@ async def test_cache_single_feedback():
             print(f'  已有缓存: {len(cached)} 维')
 
 
-async def test_batch_cache():
+async def test_batch_cache() -> None:
     """测试批量缓存"""
     print('\n' + '=' * 60)
     print('【测试 2】批量缓存性能')
@@ -102,9 +100,7 @@ async def test_batch_cache():
                 embeddings_to_cache[feedback.id] = embedding
 
         cached_count = await crud_feedback.batch_update_embeddings(
-            db=db,
-            tenant_id='default-tenant',
-            feedback_embeddings=embeddings_to_cache
+            db=db, tenant_id='default-tenant', feedback_embeddings=embeddings_to_cache
         )
 
         elapsed_first = time.time() - start
@@ -126,16 +122,16 @@ async def test_batch_cache():
 
         elapsed_second = time.time() - start
         print(f'  耗时: {elapsed_second:.2f}s')
-        print(f'  缓存命中: {cache_hit}/{len(feedbacks_refreshed)} ({cache_hit/len(feedbacks_refreshed)*100:.1f}%)')
+        print(f'  缓存命中: {cache_hit}/{len(feedbacks_refreshed)} ({cache_hit / len(feedbacks_refreshed) * 100:.1f}%)')
 
         # 5. 性能对比
         if elapsed_first > 0 and elapsed_second > 0:
             speedup = elapsed_first / elapsed_second
             print(f'\n  性能提升: {speedup:.1f}x 🎉')
-            print(f'  时间节省: {(1 - elapsed_second/elapsed_first)*100:.1f}%')
+            print(f'  时间节省: {(1 - elapsed_second / elapsed_first) * 100:.1f}%')
 
 
-async def test_clustering_with_cache():
+async def test_clustering_with_cache() -> None:
     """测试聚类服务的缓存使用"""
     print('\n' + '=' * 60)
     print('【测试 3】聚类服务缓存使用')
@@ -146,11 +142,7 @@ async def test_clustering_with_cache():
     async with async_db_session() as db:
         # 触发聚类
         print('  触发聚类（观察缓存命中率）...')
-        result = await clustering_service.trigger_clustering(
-            db=db,
-            tenant_id='default-tenant',
-            max_feedbacks=20
-        )
+        result = await clustering_service.trigger_clustering(db=db, tenant_id='default-tenant', max_feedbacks=20)
 
         print(f'\n  聚类状态: {result.get("status")}')
         print(f'  反馈数量: {result.get("feedbacks_count", 0)}')
@@ -160,7 +152,7 @@ async def test_clustering_with_cache():
         # 注意：缓存命中率会在聚类服务的日志中显示
 
 
-async def main():
+async def main() -> None:
     print('\n🚀 Embedding 缓存功能测试')
 
     try:
@@ -184,6 +176,7 @@ async def main():
     except Exception as e:
         print(f'\n❌ 测试失败: {e}')
         import traceback
+
         traceback.print_exc()
 
 

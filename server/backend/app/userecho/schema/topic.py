@@ -1,8 +1,14 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import ConfigDict, Field
 
 from backend.common.schema import SchemaBase
+
+if TYPE_CHECKING:
+    from backend.app.userecho.schema.feedback import FeedbackOut
+    from backend.app.userecho.schema.priority import PriorityScoreOut
+    from backend.app.userecho.schema.status_history import StatusHistoryOut
 
 
 class TopicBase(SchemaBase):
@@ -11,18 +17,17 @@ class TopicBase(SchemaBase):
     title: str = Field(description='主题标题')
     category: str = Field(
         default='other',
-        description='分类: bug=缺陷, improvement=体验优化, feature=新功能, performance=性能, other=其他'
+        description='分类: bug=缺陷, improvement=体验优化, feature=新功能, performance=性能, other=其他',
     )
     status: str = Field(
         default='pending',
-        description='状态: pending=待处理, planned=计划中, in_progress=进行中, completed=已完成, ignored=已忽略'
+        description='状态: pending=待处理, planned=计划中, in_progress=进行中, completed=已完成, ignored=已忽略',
     )
     description: str | None = Field(None, description='详细描述')
 
 
 class TopicCreate(TopicBase):
     """创建主题参数"""
-    pass
 
 
 class TopicUpdate(SchemaBase):
@@ -46,7 +51,7 @@ class TopicOut(TopicBase):
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')
     deleted_at: datetime | None = Field(None, description='删除时间')
-    
+
     # ✅ 支持从 ORM 对象创建（自动排除 centroid 字段）
     model_config = ConfigDict(from_attributes=True)
 
@@ -76,8 +81,5 @@ class TopicStatusUpdateParam(SchemaBase):
 
 
 # 避免循环导入，在文件末尾导入
-from backend.app.userecho.schema.feedback import FeedbackOut  # noqa: E402
-from backend.app.userecho.schema.priority import PriorityScoreOut  # noqa: E402
-from backend.app.userecho.schema.status_history import StatusHistoryOut  # noqa: E402
 
 TopicDetailOut.model_rebuild()

@@ -262,3 +262,26 @@ log.warning('invalid data')
 
 详细的日志打印最佳实践请查看：`docs/development/logging-best-practices.md`
 
+## 数据库迁移准则 (Alembic)
+
+> "Alembic 不是你的玩具，它是你的生命线。断了链你就在地狱里待着吧。" - Linus
+
+### 核心原则
+
+1. **绝对禁止手动 SQL**：禁止绕过 Alembic 手动执行 SQL 补丁。如果迁移失败，修复脚本，而不是跑补丁。手动 SQL 会导致 `alembic_version` 与实际 schema 脱节。
+2. **幂等性是铁律**：每个 `upgrade` 和 `downgrade` 函数必须能够重复运行而不报错。
+   - 使用 `IF NOT EXISTS`
+   - 使用 `DROP ... IF EXISTS`
+   - 使用 `CREATE OR REPLACE FUNCTION`
+3. **保持版本链完整**：每个迁移文件的 `down_revision` 必须指向正确的前序版本。禁止出现分叉（多个 head）或断链。
+4. **拒绝提交补丁文件**：禁止将 `manual_*.sql` 等临时补丁文件提交到代码库。所有的变更必须通过迁移脚本进行。
+5. **单一职责**：一个迁移脚本只做一件事。不要在后续迁移中重复定义相同的触发器或函数。
+
+### 检查清单
+
+- [ ] 迁移脚本是否支持多次重复运行？
+- [ ] `down_revision` 是否正确指向上一个版本？
+- [ ] 是否清理了所有 `manual_*.sql` 补丁？
+- [ ] 是否在本地执行 `alembic check` 验证通过？
+- [ ] 是否使用了 Postgres 特有的 `IF EXISTS` 语法来确保健壮性？
+

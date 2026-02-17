@@ -54,4 +54,3 @@ COMMENT ON COLUMN insights.dismissed_reason IS '用户忽略的原因';
 COMMENT ON COLUMN insights.created_time IS '创建时间';
 COMMENT ON COLUMN insights.updated_time IS '更新时间';
 COMMENT ON COLUMN insights.deleted_at IS '软删除时间';
-

@@ -36,24 +36,72 @@ class FeedbackService:
         Returns:
             创建的反馈实例
         """
+        from backend.app.userecho.crud import crud_board, crud_customer
+        from backend.utils.timezone import timezone
+
         try:
-            # 生成 AI 摘要
+            # 1. 验证 Board 归属（board_id 必填）
+            board = await crud_board.get_by_id(db, tenant_id, data.board_id)
+            if not board:
+                raise ValueError(f'Board {data.board_id} not found for tenant {tenant_id}')
+
+            # 2. 处理客户名称（自动创建客户）
+            customer_id = data.customer_id
+            if data.customer_name and not customer_id:
+                # 根据客户名称查找或创建客户
+                from sqlalchemy import select
+
+                from backend.app.userecho.model.customer import Customer
+
+                query = select(Customer).where(
+                    Customer.tenant_id == tenant_id, Customer.name == data.customer_name, Customer.deleted_at.is_(None)
+                )
+                result = await db.execute(query)
+                customer = result.scalar_one_or_none()
+
+                if not customer:
+                    # 创建新客户
+                    customer = await crud_customer.create(
+                        db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type='normal'
+                    )
+                    log.info(f'Auto-created customer {customer.id} for feedback: {data.customer_name}')
+
+                customer_id = customer.id
+
+            # 3. 处理截图（存储到 images_metadata）
+            images_metadata = None
+            if data.screenshots:
+                images_metadata = {
+                    'images': [{'url': url, 'uploaded_at': timezone.now().isoformat()} for url in data.screenshots]
+                }
+
+            # 4. 生成 AI 摘要（失败不影响创建）
             ai_summary = None
             if generate_summary and data.content:
-                ai_summary = await ai_client.generate_summary(data.content, max_length=20)
+                try:
+                    ai_summary = await ai_client.generate_summary(data.content, max_length=20)
+                except Exception as e:
+                    log.warning(f'Failed to generate summary for feedback: {e}')
 
-            # 创建反馈
+            # 5. 确定聚类状态
+            clustering_status = 'clustered' if data.topic_id else 'pending'
+
+            # 6. 创建反馈
             feedback = await crud_feedback.create(
                 db=db,
                 tenant_id=tenant_id,
                 id=uuid4_str(),
-                customer_id=data.customer_id,
+                board_id=data.board_id,
+                customer_id=customer_id,
+                topic_id=data.topic_id,
                 anonymous_author=data.anonymous_author,
                 anonymous_source=data.anonymous_source,
                 content=data.content,
                 source=data.source,
                 is_urgent=data.is_urgent,
-                ai_summary=ai_summary
+                ai_summary=ai_summary,
+                images_metadata=images_metadata,
+                clustering_status=clustering_status,
             )
 
             return feedback
@@ -92,20 +140,17 @@ class FeedbackService:
             # 1. 生成搜索词的 embedding
             query_embedding = await ai_client.get_embedding(search_query)
             if not query_embedding:
-                log.warning(f'Failed to generate embedding for search query: {search_query}, fallback to keyword search')
+                log.warning(
+                    f'Failed to generate embedding for search query: {search_query}, fallback to keyword search'
+                )
                 # Fallback 到关键词搜索
                 search_mode = 'keyword'
             else:
                 # 2. 使用 pgvector 语义搜索
                 return await crud_feedback.search_by_semantic(
-                    db=db,
-                    tenant_id=tenant_id,
-                    query_embedding=query_embedding,
-                    skip=skip,
-                    limit=limit,
-                    **filters
+                    db=db, tenant_id=tenant_id, query_embedding=query_embedding, skip=skip, limit=limit, **filters
                 )
-        
+
         # 关键词搜索模式（默认）
         return await crud_feedback.get_list_with_relations(
             db=db,
@@ -113,7 +158,7 @@ class FeedbackService:
             skip=skip,
             limit=limit,
             search_query=search_query if search_mode == 'keyword' else None,
-            **filters
+            **filters,
         )
 
     async def update_feedback(
@@ -136,12 +181,7 @@ class FeedbackService:
             更新后的反馈实例
         """
         update_dict = data.model_dump(exclude_unset=True)
-        return await crud_feedback.update(
-            db=db,
-            tenant_id=tenant_id,
-            id=feedback_id,
-            **update_dict
-        )
+        return await crud_feedback.update(db=db, tenant_id=tenant_id, id=feedback_id, **update_dict)
 
     async def delete_feedback(
         self,
@@ -160,12 +200,7 @@ class FeedbackService:
         Returns:
             是否成功
         """
-        return await crud_feedback.delete(
-            db=db,
-            tenant_id=tenant_id,
-            id=feedback_id,
-            soft=True
-        )
+        return await crud_feedback.delete(db=db, tenant_id=tenant_id, id=feedback_id, soft=True)
 
 
 feedback_service = FeedbackService()

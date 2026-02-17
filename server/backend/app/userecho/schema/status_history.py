@@ -18,6 +18,6 @@ class StatusHistoryOut(SchemaBase):
     changed_by_name: str | None = Field(None, description='操作人姓名 (关联查询)')
     changed_at: datetime = Field(description='变更时间')
     created_time: datetime = Field(description='创建时间')
-    
+
     # ✅ 支持从 ORM 对象创建
     model_config = ConfigDict(from_attributes=True)

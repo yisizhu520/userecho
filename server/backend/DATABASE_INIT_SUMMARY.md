@@ -154,4 +154,3 @@ python scripts/update_role_menus.py
 **初始化完成时间**: 2025-12-26  
 **数据库类型**: PostgreSQL 16.11  
 **状态**: ✅ 成功
-

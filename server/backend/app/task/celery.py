@@ -36,7 +36,7 @@ def init_celery() -> celery.Celery:
             # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
             # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
             broker_url = settings.REDIS_URL.rsplit('/', 1)[0] + f'/{settings.CELERY_BROKER_REDIS_DATABASE}'
-            
+
             # TLS 连接跳过证书验证（与 redis.py 保持一致）
             if settings.REDIS_URL.startswith('rediss://'):
                 broker_use_ssl = {'ssl_cert_reqs': None}
@@ -46,7 +46,9 @@ def init_celery() -> celery.Celery:
             auth = f':{password}' if password else ''
             if settings.REDIS_USERNAME:
                 auth = f'{settings.REDIS_USERNAME}:{password}'
-            broker_url = f'redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}'
+            broker_url = (
+                f'redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}'
+            )
 
     result_backend = f'db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}'
     if DataBaseType.mysql == settings.DATABASE_TYPE:
@@ -68,11 +70,11 @@ def init_celery() -> celery.Celery:
         'worker_send_task_events': True,
         'task_send_sent_event': True,
     }
-    
+
     # 如果需要 SSL 配置，添加到配置中
     if broker_use_ssl is not None:
         celery_config['broker_use_ssl'] = broker_use_ssl
-    
+
     app = celery.Celery('fba_celery', **celery_config)
 
     # 在 Celery 中设置此参数无效

@@ -305,5 +305,3 @@ log.info(f'Daily active tenants: {count}, avg_feedbacks_per_tenant: {avg:.2f}')
 所有日志现在都遵循 Linus 的原则：**记录失败，不记录成功；记录上下文，不记录废话。**
 
 这些改进将大大提升生产环境的问题排查效率。
-
-

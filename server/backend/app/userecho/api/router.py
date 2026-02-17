@@ -30,4 +30,3 @@ v1.include_router(dashboard.router)
 v1.include_router(insight.router)
 v1.include_router(onboarding.router)
 v1.include_router(board.router)
-

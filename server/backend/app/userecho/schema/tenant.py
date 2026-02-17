@@ -14,7 +14,6 @@ class TenantBase(SchemaBase):
 
 class TenantCreate(TenantBase):
     """创建租户参数"""
-    pass
 
 
 class TenantUpdate(SchemaBase):

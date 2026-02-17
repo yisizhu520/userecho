@@ -1,5 +1,6 @@
 import asyncio
 import os
+import pathlib
 import uuid
 
 from backend.app.task.celery import celery_app
@@ -27,11 +28,12 @@ def userecho_clustering_batch(
     - 任务结果会写入 Celery result_backend（DB），前端可通过 task_id 轮询状态
     - time_limit: 10分钟硬超时，防止任务卡死
     - soft_time_limit: 9分钟软超时，给予任务优雅退出的机会
-    
+
     Event Loop 管理：
     - 不使用 asyncio.run()，因为它会关闭 loop 导致第二次任务失败
     - 手动获取或创建 event loop，复用同一个 loop
     """
+
     async def _async_run():
         """异步执行聚类任务"""
         async with async_db_session() as db:
@@ -41,7 +43,7 @@ def userecho_clustering_batch(
                 max_feedbacks=max_feedbacks,
                 force_recluster=force_recluster,
             )
-    
+
     # 手动管理 event loop，避免 asyncio.run() 关闭 loop 的问题
     try:
         loop = asyncio.get_event_loop()
@@ -51,7 +53,7 @@ def userecho_clustering_batch(
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    
+
     # 运行异步任务，但不关闭 loop（让 Celery 管理生命周期）
     return loop.run_until_complete(_async_run())
 
@@ -72,59 +74,59 @@ def analyze_screenshot_task(
 ) -> dict:
     """
     异步分析截图
-    
+
     说明：
     - 从临时文件读取 → 上传 OSS → AI 识别 → 清理临时文件
     - 失败自动重试（最多 2 次）
     - 手动管理 event loop（与聚类任务相同）
-    
+
     Args:
         file_path: 临时文件路径
         content_type: 文件 MIME 类型
         tenant_id: 租户 ID
         original_filename: 原始文件名
-    
+
     Returns:
         {
             'screenshot_url': str,
             'extracted': {...}  # AI 提取的信息
         }
     """
-    from backend.utils.storage import storage
-    from backend.utils.ai_client import ai_client
     from backend.common.log import log
-    
+    from backend.utils.ai_client import ai_client
+    from backend.utils.storage import storage
+
     async def _async_run():
         """异步执行上传和识别"""
         try:
             # 1. 读取临时文件
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f'临时文件不存在: {file_path}')
-            
-            with open(file_path, 'rb') as f:
-                file_content = f.read()
-            
+
+            file_content = pathlib.Path(file_path).read_bytes()
+
             # 2. 上传到 OSS
             file_ext = original_filename.split('.')[-1].lower() if '.' in original_filename else 'jpg'
             storage_path = f'screenshots/{tenant_id}/{uuid.uuid4()}.{file_ext}'
-            
+
             from io import BytesIO
+
             file_obj = BytesIO(file_content)
-            
+
             log.info(f'[Task {self.request.id}] Uploading screenshot to OSS: {storage_path}')
             screenshot_url = await storage.upload(file_obj, storage_path, content_type=content_type)
             log.info(f'[Task {self.request.id}] Screenshot uploaded: {screenshot_url}')
-            
+
             # 3. AI 识别
             log.info(f'[Task {self.request.id}] Analyzing screenshot with AI')
             extracted_data = await ai_client.analyze_screenshot(screenshot_url)
             log.info(f'[Task {self.request.id}] Analysis completed: confidence={extracted_data.get("confidence", 0)}')
-            
+
             return {
                 'screenshot_url': screenshot_url,
                 'extracted': extracted_data,
             }
-            
+
         finally:
             # 4. 清理临时文件（无论成功或失败）
             if os.path.exists(file_path):
@@ -133,7 +135,7 @@ def analyze_screenshot_task(
                     log.info(f'[Task {self.request.id}] Cleaned up temp file: {file_path}')
                 except Exception as e:
                     log.warning(f'[Task {self.request.id}] Failed to remove temp file: {e}')
-    
+
     # 手动管理 event loop（与聚类任务相同模式）
     try:
         loop = asyncio.get_event_loop()
@@ -143,7 +145,7 @@ def analyze_screenshot_task(
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    
+
     # 运行异步任务
     try:
         return loop.run_until_complete(_async_run())
@@ -162,30 +164,27 @@ def analyze_screenshot_task(
 def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week', format: str = 'markdown'):
     """
     按需生成洞察报告（用户触发）
-    
+
     Args:
         tenant_id: 租户ID
         time_range: 时间范围
         format: 导出格式
-    
+
     Returns:
         生成的报告内容
     """
     from backend.app.userecho.service.insight_service import insight_service
     from backend.common.log import log
-    
+
     async def _async_run():
         """异步执行报告生成"""
         try:
             # 更新任务状态为进行中
-            self.update_state(
-                state='PROGRESS',
-                meta={'current': 0, 'total': 100, 'status': '正在生成报告...'}
-            )
-            
+            self.update_state(state='PROGRESS', meta={'current': 0, 'total': 100, 'status': '正在生成报告...'})
+
             async with async_db_session() as db:
                 log.info(f'[Task {self.request.id}] Starting insight report generation for tenant: {tenant_id}')
-                
+
                 # 生成洞察
                 content = await insight_service.generate_insight(
                     db=db,
@@ -194,22 +193,21 @@ def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week',
                     time_range=time_range,
                     force_refresh=True,  # 用户主动触发，强制刷新
                 )
-                
+
                 log.info(f'[Task {self.request.id}] Completed insight report generation for tenant: {tenant_id}')
-                
+
                 # 返回结果
                 if format == 'markdown':
                     return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
-                elif format == 'html':
+                if format == 'html':
                     # TODO: 使用 markdown2 转 HTML
                     return {'content': content['markdown'], 'format': 'html', 'status': 'success'}
-                else:
-                    return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
-        
+                return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
+
         except Exception as e:
             log.error(f'[Task {self.request.id}] Failed to generate insight report for tenant {tenant_id}: {e}')
             raise
-    
+
     # 手动管理 event loop（与其他任务相同模式）
     try:
         loop = asyncio.get_event_loop()
@@ -219,7 +217,6 @@ def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week',
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    
+
     # 运行异步任务
     return loop.run_until_complete(_async_run())
-

@@ -3,15 +3,14 @@
 from . import board, clustering, customer, dashboard, feedback, insight, onboarding, priority, tenant_config, topic
 
 __all__ = [
-    'feedback',
-    'topic',
-    'customer',
+    'board',
     'clustering',
-    'tenant_config',
-    'priority',
+    'customer',
     'dashboard',
+    'feedback',
     'insight',
     'onboarding',
-    'board',
+    'priority',
+    'tenant_config',
+    'topic',
 ]
-

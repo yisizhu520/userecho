@@ -1,4 +1,5 @@
 """Priority Score CRUD"""
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,19 +18,16 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
     ) -> PriorityScore | None:
         """
         根据主题ID获取优先级评分
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             topic_id: 主题ID
-        
+
         Returns:
             优先级评分 或 None
         """
-        query = select(self.model).where(
-            self.model.tenant_id == tenant_id,
-            self.model.topic_id == topic_id
-        )
+        query = select(self.model).where(self.model.tenant_id == tenant_id, self.model.topic_id == topic_id)
         result = await db.execute(query)
         return result.scalar_one_or_none()
 
@@ -45,7 +43,7 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
     ) -> PriorityScore:
         """
         创建或更新优先级评分
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
@@ -54,7 +52,7 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
             business_value: 商业价值
             dev_cost: 开发成本
             urgency_factor: 紧急系数
-        
+
         Returns:
             优先级评分实例
         """
@@ -74,18 +72,17 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
             await db.commit()
             await db.refresh(existing)
             return existing
-        else:
-            # 创建
-            return await self.create(
-                db=db,
-                tenant_id=tenant_id,
-                topic_id=topic_id,
-                impact_scope=impact_scope,
-                business_value=business_value,
-                dev_cost=dev_cost,
-                urgency_factor=urgency_factor,
-                total_score=total_score
-            )
+        # 创建
+        return await self.create(
+            db=db,
+            tenant_id=tenant_id,
+            topic_id=topic_id,
+            impact_scope=impact_scope,
+            business_value=business_value,
+            dev_cost=dev_cost,
+            urgency_factor=urgency_factor,
+            total_score=total_score,
+        )
 
 
 crud_priority_score = CRUDPriorityScore(PriorityScore)

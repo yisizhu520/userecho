@@ -4,7 +4,6 @@
 """
 
 import re
-from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,9 +22,6 @@ from backend.app.userecho.schema.onboarding import (
 )
 from backend.common.log import log
 from backend.database.db import uuid4_str
-
-if TYPE_CHECKING:
-    from backend.app.admin.model import User
 
 
 class OnboardingService:
@@ -47,10 +43,7 @@ class OnboardingService:
             引导状态信息
         """
         # 检查用户是否有关联的租户
-        stmt = select(TenantUser).where(
-            TenantUser.user_id == user_id,
-            TenantUser.status == 'active'
-        )
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
         result = await db.execute(stmt)
         tenant_user = result.scalar_one_or_none()
 
@@ -58,7 +51,7 @@ class OnboardingService:
             # 用户已有租户，检查是否有看板
             board_stmt = select(Board).where(
                 Board.tenant_id == tenant_user.tenant_id,
-                Board.is_archived == False  # noqa: E712
+                Board.is_archived == False,  # noqa: E712
             )
             board_result = await db.execute(board_stmt)
             board = board_result.scalar_one_or_none()
@@ -70,26 +63,20 @@ class OnboardingService:
                     current_step=None,
                     tenant_id=tenant_user.tenant_id,
                     board_id=board.id,
-                    completed_steps=['create-tenant', 'create-board', 'complete']
+                    completed_steps=['create-tenant', 'create-board', 'complete'],
                 )
-            else:
-                # 有租户但没有看板
-                return OnboardingStatusOut(
-                    needs_onboarding=True,
-                    current_step='create-board',
-                    tenant_id=tenant_user.tenant_id,
-                    board_id=None,
-                    completed_steps=['create-tenant']
-                )
-        else:
-            # 没有租户，需要从头开始
+            # 有租户但没有看板
             return OnboardingStatusOut(
                 needs_onboarding=True,
-                current_step='create-tenant',
-                tenant_id=None,
+                current_step='create-board',
+                tenant_id=tenant_user.tenant_id,
                 board_id=None,
-                completed_steps=[]
+                completed_steps=['create-tenant'],
             )
+        # 没有租户，需要从头开始
+        return OnboardingStatusOut(
+            needs_onboarding=True, current_step='create-tenant', tenant_id=None, board_id=None, completed_steps=[]
+        )
 
     async def check_slug_available(
         self,
@@ -112,19 +99,11 @@ class OnboardingService:
         existing = result.scalar_one_or_none()
 
         if existing is None:
-            return SlugCheckOut(
-                slug=slug,
-                available=True,
-                suggestion=None
-            )
+            return SlugCheckOut(slug=slug, available=True, suggestion=None)
 
         # 生成建议的替代 slug
         suggestion = await self._generate_unique_slug(db, slug)
-        return SlugCheckOut(
-            slug=slug,
-            available=False,
-            suggestion=suggestion
-        )
+        return SlugCheckOut(slug=slug, available=False, suggestion=suggestion)
 
     async def _generate_unique_slug(
         self,
@@ -204,10 +183,7 @@ class OnboardingService:
             raise ValueError(f'URL标识 "{data.slug}" 已被使用，建议使用: {slug_check.suggestion}')
 
         # 检查用户是否已有租户
-        stmt = select(TenantUser).where(
-            TenantUser.user_id == user_id,
-            TenantUser.status == 'active'
-        )
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
         result = await db.execute(stmt)
         existing = result.scalar_one_or_none()
         if existing:
@@ -215,34 +191,20 @@ class OnboardingService:
 
         try:
             # 创建租户
-            tenant = Tenant(
-                id=uuid4_str(),
-                name=data.name,
-                slug=data.slug,
-                status='active'
-            )
+            tenant = Tenant(id=uuid4_str(), name=data.name, slug=data.slug, status='active')
             db.add(tenant)
             await db.flush()
 
             # 创建 TenantUser 关联（设为 admin）
             tenant_user = TenantUser(
-                id=uuid4_str(),
-                tenant_id=tenant.id,
-                user_id=user_id,
-                user_type='admin',
-                status='active'
+                id=uuid4_str(), tenant_id=tenant.id, user_id=user_id, user_type='admin', status='active'
             )
             db.add(tenant_user)
             await db.flush()
 
             log.info(f'Created tenant "{data.name}" (slug={data.slug}) for user {user_id}')
 
-            return CreateTenantOut(
-                id=tenant.id,
-                name=tenant.name,
-                slug=tenant.slug,
-                created_time=tenant.created_time
-            )
+            return CreateTenantOut(id=tenant.id, name=tenant.name, slug=tenant.slug, created_time=tenant.created_time)
 
         except Exception as e:
             log.error(f'Failed to create tenant for user {user_id}: {e}')
@@ -266,10 +228,7 @@ class OnboardingService:
             创建的看板信息
         """
         # 获取用户的租户
-        stmt = select(TenantUser).where(
-            TenantUser.user_id == user_id,
-            TenantUser.status == 'active'
-        )
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
         result = await db.execute(stmt)
         tenant_user = result.scalar_one_or_none()
 
@@ -291,7 +250,7 @@ class OnboardingService:
                 url_name=url_name,
                 description=data.description,
                 access_mode=data.access_mode,
-                is_archived=False
+                is_archived=False,
             )
             db.add(board)
             await db.flush()
@@ -305,7 +264,7 @@ class OnboardingService:
                 url_name=board.url_name,
                 description=board.description,
                 access_mode=board.access_mode,
-                created_time=board.created_time
+                created_time=board.created_time,
             )
 
         except Exception as e:
@@ -361,10 +320,7 @@ class OnboardingService:
         counter = 1
 
         while True:
-            stmt = select(Board).where(
-                Board.tenant_id == tenant_id,
-                Board.url_name == url_name
-            )
+            stmt = select(Board).where(Board.tenant_id == tenant_id, Board.url_name == url_name)
             result = await db.execute(stmt)
             if result.scalar_one_or_none() is None:
                 return url_name
@@ -389,10 +345,7 @@ class OnboardingService:
             完成信息
         """
         # 获取用户的租户和看板
-        stmt = select(TenantUser).where(
-            TenantUser.user_id == user_id,
-            TenantUser.status == 'active'
-        )
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
         result = await db.execute(stmt)
         tenant_user = result.scalar_one_or_none()
 
@@ -402,7 +355,7 @@ class OnboardingService:
         # 检查是否有看板
         board_stmt = select(Board).where(
             Board.tenant_id == tenant_user.tenant_id,
-            Board.is_archived == False  # noqa: E712
+            Board.is_archived == False,  # noqa: E712
         )
         board_result = await db.execute(board_stmt)
         board = board_result.scalar_one_or_none()
@@ -413,10 +366,7 @@ class OnboardingService:
         log.info(f'User {user_id} completed onboarding for tenant {tenant_user.tenant_id}')
 
         return OnboardingCompleteOut(
-            success=True,
-            tenant_id=tenant_user.tenant_id,
-            board_id=board.id,
-            redirect_path='/dashboard'
+            success=True, tenant_id=tenant_user.tenant_id, board_id=board.id, redirect_path='/dashboard'
         )
 
 

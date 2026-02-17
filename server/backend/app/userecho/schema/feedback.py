@@ -17,7 +17,11 @@ class FeedbackBase(SchemaBase):
 class FeedbackCreate(FeedbackBase):
     """创建反馈参数"""
 
+    board_id: str = Field(description='看板ID (必填)')
     customer_id: str | None = Field(None, description='客户ID (与匿名作者二选一)')
+    customer_name: str | None = Field(None, description='客户名称 (若无 customer_id 则自动创建客户)')
+    topic_id: str | None = Field(None, description='关联主题ID (手动关联)')
+    screenshots: list[str] | None = Field(None, description='截图URL列表 (最多3张)')
     anonymous_author: str | None = Field(None, description='匿名作者名称 (与客户ID二选一)')
     anonymous_source: str | None = Field(None, description='匿名来源平台 (如: 小红书, 微博)')
 
@@ -47,7 +51,7 @@ class FeedbackOut(FeedbackBase):
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')
     deleted_at: datetime | None = Field(None, description='删除时间')
-    
+
     # ✅ 支持从 ORM/dict 创建（自动排除 embedding 字段）
     model_config = ConfigDict(from_attributes=True)
 
@@ -79,18 +83,12 @@ class FeedbackListParams(SchemaBase):
 class ExtractedScreenshotData(SchemaBase):
     """AI 提取的截图数据"""
 
-    platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(
-        description='平台类型'
-    )
+    platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(description='平台类型')
     user_name: str = Field(default='', description='用户昵称')
     user_id: str = Field(default='', description='平台用户 ID')
     content: str = Field(description='提取的反馈内容')
-    feedback_type: Literal['bug', 'feature', 'complaint', 'other'] = Field(
-        default='other', description='反馈类型'
-    )
-    sentiment: Literal['positive', 'neutral', 'negative'] = Field(
-        default='neutral', description='情感倾向'
-    )
+    feedback_type: Literal['bug', 'feature', 'complaint', 'other'] = Field(default='other', description='反馈类型')
+    sentiment: Literal['positive', 'neutral', 'negative'] = Field(default='neutral', description='情感倾向')
     confidence: float = Field(ge=0.0, le=1.0, description='AI 识别置信度')
 
 
@@ -107,9 +105,7 @@ class ScreenshotFeedbackCreate(SchemaBase):
     content: str = Field(description='反馈内容')
     screenshot_url: str = Field(description='截图 URL')
     source_type: Literal['screenshot'] = Field(default='screenshot', description='来源类型')
-    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(
-        description='来源平台'
-    )
+    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(description='来源平台')
     source_user_name: str = Field(default='', description='平台用户昵称')
     source_user_id: str = Field(default='', description='平台用户 ID')
     ai_confidence: float | None = Field(None, ge=0.0, le=1.0, description='AI 识别置信度')

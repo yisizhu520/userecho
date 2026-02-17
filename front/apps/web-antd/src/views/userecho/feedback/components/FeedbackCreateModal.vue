@@ -109,8 +109,8 @@ const handleCreateAndContinue = async () => {
 
 // 监听表单值变化
 const handleValuesChange = (changedValues: any) => {
-  if (changedValues.title !== undefined) {
-    currentTitle.value = changedValues.title;
+  if (changedValues.content !== undefined) {
+    currentTitle.value = changedValues.content;
   }
 };
 

@@ -20,24 +20,25 @@ class TenantUser(MappedBase):
     user_id: Mapped[int] = mapped_column(
         ForeignKey('sys_user.id', ondelete='CASCADE'), index=True, comment='平台用户ID'
     )
-    
+
     # 用户类型（在该租户中的角色）
     user_type: Mapped[str] = mapped_column(
-        String(20), default='member', 
-        comment='用户类型: admin, product_manager, sales, customer_success, developer, member'
+        String(20),
+        default='member',
+        comment='用户类型: admin, product_manager, sales, customer_success, developer, member',
     )
-    
+
     # 部门信息
     department_id: Mapped[int | None] = mapped_column(
         ForeignKey('sys_dept.id', ondelete='SET NULL'), default=None, comment='部门ID'
     )
-    
+
     # 统计（租户内）
     feedback_count: Mapped[int] = mapped_column(default=0, comment='录入的反馈数')
-    
+
     # 状态
     status: Mapped[str] = mapped_column(String(20), default='active', comment='状态: active, suspended, left')
-    
+
     # 时间戳
     joined_at: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='加入时间')
     last_active_at: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment='最后活跃时间')
@@ -57,10 +58,8 @@ class TenantUserRole(MappedBase):
     tenant_user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey('tenant_users.id', ondelete='CASCADE'), index=True, comment='租户用户ID'
     )
-    role_id: Mapped[int] = mapped_column(
-        ForeignKey('sys_role.id', ondelete='CASCADE'), index=True, comment='角色ID'
-    )
-    
+    role_id: Mapped[int] = mapped_column(ForeignKey('sys_role.id', ondelete='CASCADE'), index=True, comment='角色ID')
+
     # 分配信息
     assigned_by: Mapped[int | None] = mapped_column(
         ForeignKey('sys_user.id', ondelete='SET NULL'), default=None, comment='分配人'

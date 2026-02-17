@@ -258,4 +258,3 @@ python scripts/create_test_users.py
 2. ✅ 重新初始化后会立即重新创建业务数据
 
 请回复 "yes" 我就开始执行。
-

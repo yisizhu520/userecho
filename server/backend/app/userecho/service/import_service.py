@@ -3,11 +3,11 @@
 负责从 Excel 文件批量导入反馈
 """
 
-from datetime import datetime
 from io import BytesIO, StringIO
 from typing import Any
 
 import pandas as pd
+
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,17 +72,17 @@ class ImportService:
                 return {
                     'status': 'error',
                     'message': f'不支持的文件格式: {file_ext}',
-                    'allowed': settings.IMPORT_ALLOWED_EXTENSIONS
+                    'allowed': settings.IMPORT_ALLOWED_EXTENSIONS,
                 }
 
             # 2. 读取文件
             try:
                 content = await file.read()
-                
+
                 if len(content) > settings.IMPORT_MAX_FILE_SIZE:
                     return {
                         'status': 'error',
-                        'message': f'文件过大: {len(content)} bytes, 最大允许: {settings.IMPORT_MAX_FILE_SIZE}'
+                        'message': f'文件过大: {len(content)} bytes, 最大允许: {settings.IMPORT_MAX_FILE_SIZE}',
                     }
 
                 # 根据文件类型读取
@@ -114,7 +114,7 @@ class ImportService:
 
             except Exception as e:
                 log.error(f'Failed to read file for tenant {tenant_id}, filename={file.filename}: {e}')
-                return {'status': 'error', 'message': f'文件读取失败: {str(e)}'}
+                return {'status': 'error', 'message': f'文件读取失败: {e!s}'}
 
             # 3. 验证必填列
             required_columns = ['反馈内容', '客户名称']
@@ -125,7 +125,7 @@ class ImportService:
                     'status': 'error',
                     'message': f'缺少必填列: {", ".join(missing_columns)}',
                     'required_columns': required_columns,
-                    'found_columns': list(df.columns)
+                    'found_columns': list(df.columns),
                 }
 
             log.debug(f'Excel loaded: {len(df)} rows, columns: {list(df.columns)}')
@@ -146,10 +146,7 @@ class ImportService:
                     customer_type = self.CUSTOMER_TYPE_MAP.get(str(customer_type_raw).strip(), 'normal')
 
                     customer = await self._get_or_create_customer(
-                        db=db,
-                        tenant_id=tenant_id,
-                        name=customer_name,
-                        customer_type=customer_type
+                        db=db, tenant_id=tenant_id, name=customer_name, customer_type=customer_type
                     )
 
                     # 解析提交时间
@@ -162,10 +159,7 @@ class ImportService:
                             if hasattr(dt, 'to_pydatetime'):
                                 dt = dt.to_pydatetime()
                             # 添加时区信息（假定输入为本地时区时间）
-                            if dt.tzinfo is None:
-                                submitted_at = dt.replace(tzinfo=timezone.tz_info)
-                            else:
-                                submitted_at = dt
+                            submitted_at = dt.replace(tzinfo=timezone.tz_info) if dt.tzinfo is None else dt
                         except:
                             pass
 
@@ -195,21 +189,23 @@ class ImportService:
                         source='import',
                         is_urgent=is_urgent,
                         ai_summary=ai_summary,
-                        submitted_at=submitted_at
+                        submitted_at=submitted_at,
                     )
 
                     success_count += 1
 
                 except Exception as e:
-                    error_msg = f'第 {idx + 2} 行导入失败: {str(e)}'
+                    error_msg = f'第 {idx + 2} 行导入失败: {e!s}'
                     log.warning(error_msg)
                     errors.append({
                         'row': idx + 2,  # Excel 行号（从1开始，表头占1行）
                         'error': str(e),
-                        'content': str(row.get('反馈内容', ''))[:50]
+                        'content': str(row.get('反馈内容', ''))[:50],
                     })
 
-            log.info(f'Excel import completed for tenant {tenant_id}: {success_count} success, {len(errors)} errors, file: {file.filename}')
+            log.info(
+                f'Excel import completed for tenant {tenant_id}: {success_count} success, {len(errors)} errors, file: {file.filename}'
+            )
 
             return {
                 'status': 'completed',
@@ -217,26 +213,14 @@ class ImportService:
                 'success': success_count,
                 'failed': len(errors),
                 'errors': errors[:20],  # 最多返回 20 条错误
-                'has_more_errors': len(errors) > 20
+                'has_more_errors': len(errors) > 20,
             }
 
         except Exception as e:
             log.error(f'Excel import failed for tenant {tenant_id}, file {file.filename}: {e}')
-            return {
-                'status': 'error',
-                'message': str(e),
-                'total': 0,
-                'success': 0,
-                'failed': 0
-            }
+            return {'status': 'error', 'message': str(e), 'total': 0, 'success': 0, 'failed': 0}
 
-    async def _get_or_create_customer(
-        self,
-        db: AsyncSession,
-        tenant_id: str,
-        name: str,
-        customer_type: str
-    ):
+    async def _get_or_create_customer(self, db: AsyncSession, tenant_id: str, name: str, customer_type: str):
         """
         获取或创建客户
 
@@ -265,7 +249,7 @@ class ImportService:
             id=uuid4_str(),
             name=name,
             customer_type=customer_type,
-            business_value=business_value
+            business_value=business_value,
         )
 
     def generate_template(self) -> pd.DataFrame:
@@ -280,7 +264,7 @@ class ImportService:
             '客户名称': ['小米科技', '字节跳动'],
             '客户类型': ['strategic', 'major'],
             '提交时间': ['2025-01-01', '2025-01-02'],
-            '是否紧急': ['否', '是']
+            '是否紧急': ['否', '是'],
         }
 
         return pd.DataFrame(template_data)

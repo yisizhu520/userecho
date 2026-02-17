@@ -1,17 +1,18 @@
 """反馈 API 端点"""
 
-from io import BytesIO
+import pathlib
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from io import BytesIO
+from typing import Annotated
+
 import pandas as pd
+
+from fastapi import APIRouter, File, Query, UploadFile
 
 from backend.app.userecho.schema.feedback import (
     FeedbackCreate,
-    FeedbackListParams,
     FeedbackOut,
     FeedbackUpdate,
-    ScreenshotAnalyzeResponse,
-    ExtractedScreenshotData,
     ScreenshotFeedbackCreate,
 )
 from backend.app.userecho.service import feedback_service, import_service
@@ -31,10 +32,10 @@ async def get_feedbacks(
     limit: int = 100,
     topic_id: str | None = None,
     customer_id: str | None = None,
-    is_urgent: list[str] | None = Query(None),
-    has_topic: list[str] | None = Query(None),
-    clustering_status: list[str] | None = Query(None),
-    board_ids: list[str] | None = Query(None),
+    is_urgent: Annotated[list[str] | None, Query()] = None,
+    has_topic: Annotated[list[str] | None, Query()] = None,
+    clustering_status: Annotated[list[str] | None, Query()] = None,
+    board_ids: Annotated[list[str] | None, Query()] = None,
     search_query: str | None = None,
     search_mode: str = 'keyword',
 ):
@@ -48,13 +49,13 @@ async def get_feedbacks(
     - **has_topic**: 过滤是否已聚类（多选，值: ['true', 'false']）
     - **clustering_status**: 过滤聚类状态（多选，值: ['pending', 'processing', 'clustered', 'failed']）
     - **board_ids**: 过滤看板ID（多选）
-    
+
     搜索参数：
     - **search_query**: 搜索关键词（搜索反馈内容和AI摘要）
     - **search_mode**: 搜索模式
       - keyword: 关键词搜索（默认，快速，精确匹配）
       - semantic: 语义搜索（智能，理解语义相似性，需要AI支持）
-    
+
     注意：搜索与过滤条件同时生效（AND关系）
     """
     feedbacks = await feedback_service.get_list(
@@ -85,10 +86,7 @@ async def create_feedback(
 ):
     """创建反馈（自动生成 AI 摘要）"""
     feedback = await feedback_service.create_with_ai_processing(
-        db=db,
-        tenant_id=tenant_id,
-        data=data,
-        generate_summary=True
+        db=db, tenant_id=tenant_id, data=data, generate_summary=True
     )
     # ✅ Pydantic 自动将 ORM 对象转换为 FeedbackOut（排除 embedding）
     feedback_out = FeedbackOut.model_validate(feedback)
@@ -103,12 +101,7 @@ async def update_feedback(
     tenant_id: str = CurrentTenantId,
 ):
     """更新反馈"""
-    feedback = await feedback_service.update_feedback(
-        db=db,
-        tenant_id=tenant_id,
-        feedback_id=feedback_id,
-        data=data
-    )
+    feedback = await feedback_service.update_feedback(db=db, tenant_id=tenant_id, feedback_id=feedback_id, data=data)
     if not feedback:
         return response_base.fail(res=CustomResponse(code=400, msg='反馈不存在'))
     # ✅ Pydantic 自动将 ORM 对象转换为 FeedbackOut
@@ -123,11 +116,7 @@ async def delete_feedback(
     tenant_id: str = CurrentTenantId,
 ):
     """删除反馈（软删除）"""
-    success = await feedback_service.delete_feedback(
-        db=db,
-        tenant_id=tenant_id,
-        feedback_id=feedback_id
-    )
+    success = await feedback_service.delete_feedback(db=db, tenant_id=tenant_id, feedback_id=feedback_id)
     if not success:
         return response_base.fail(res=CustomResponse(code=400, msg='反馈不存在或已删除'))
     return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
@@ -136,7 +125,7 @@ async def delete_feedback(
 @router.post('/import', summary='导入 Excel 反馈')
 async def import_feedbacks(
     db: CurrentSession,
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File()],
     tenant_id: str = CurrentTenantId,
 ):
     """
@@ -154,15 +143,15 @@ async def import_feedbacks(
     - 是否紧急
     """
     from backend.common.log import log
-    
+
     log.info('[DEBUG] Starting import_feedbacks handler')
-    
+
     try:
         result = await import_service.import_excel(
             db=db,
             tenant_id=tenant_id,
             file=file,
-            generate_summary=False  # 导入时不生成摘要，避免超时
+            generate_summary=False,  # 导入时不生成摘要，避免超时
         )
         log.info(f'[DEBUG] import_excel returned: type={type(result)}, result={result}')
 
@@ -179,6 +168,7 @@ async def import_feedbacks(
     except Exception as e:
         log.error(f'[DEBUG] Exception in import_feedbacks: {e}')
         import traceback
+
         log.error(f'[DEBUG] Traceback: {traceback.format_exc()}')
         raise
 
@@ -219,42 +209,40 @@ async def batch_generate_summary(
 ):
     """
     为没有 AI 摘要的反馈批量生成摘要
-    
+
     适用场景：
     - Excel 导入后批量补充摘要
     - 历史数据补充摘要
-    
+
     Args:
         limit: 最多处理多少条反馈（默认 100）
     """
-    from backend.app.userecho.model.feedback import Feedback
-    from backend.utils.ai_client import ai_client
-    from backend.common.log import log
     from sqlalchemy import select
-    
+
+    from backend.app.userecho.model.feedback import Feedback
+    from backend.common.log import log
+    from backend.utils.ai_client import ai_client
+
     try:
         # 1. 查询没有摘要的反馈 (ai_summary IS NULL)
-        query = select(Feedback).where(
-            Feedback.tenant_id == tenant_id,
-            Feedback.ai_summary.is_(None),
-            Feedback.deleted_at.is_(None)
-        ).limit(limit)
-        
+        query = (
+            select(Feedback)
+            .where(Feedback.tenant_id == tenant_id, Feedback.ai_summary.is_(None), Feedback.deleted_at.is_(None))
+            .limit(limit)
+        )
+
         result = await db.execute(query)
         feedbacks = list(result.scalars().all())
-        
+
         if not feedbacks:
-            return response_base.success(data={
-                'total': 0,
-                'success': 0,
-                'failed': 0,
-                'message': '没有需要生成摘要的反馈'
-            })
-        
+            return response_base.success(
+                data={'total': 0, 'success': 0, 'failed': 0, 'message': '没有需要生成摘要的反馈'}
+            )
+
         # 2. 批量生成摘要
         success_count = 0
         failed_count = 0
-        
+
         for feedback in feedbacks:
             try:
                 ai_summary = await ai_client.generate_summary(feedback.content, max_length=20)
@@ -263,21 +251,25 @@ async def batch_generate_summary(
             except Exception as e:
                 log.warning(f'Failed to generate summary for feedback {feedback.id}: {e}')
                 failed_count += 1
-        
+
         await db.commit()
-        
-        log.info(f'Batch summary generation completed for tenant {tenant_id}: {success_count} success, {failed_count} failed')
-        
-        return response_base.success(data={
-            'total': len(feedbacks),
-            'success': success_count,
-            'failed': failed_count,
-            'message': f'成功为 {success_count} 条反馈生成摘要'
-        })
-        
+
+        log.info(
+            f'Batch summary generation completed for tenant {tenant_id}: {success_count} success, {failed_count} failed'
+        )
+
+        return response_base.success(
+            data={
+                'total': len(feedbacks),
+                'success': success_count,
+                'failed': failed_count,
+                'message': f'成功为 {success_count} 条反馈生成摘要',
+            }
+        )
+
     except Exception as e:
         log.error(f'Batch summary generation failed for tenant {tenant_id}: {e}')
-        return response_base.fail(res=CustomResponse(code=500, msg=f'批量生成摘要失败: {str(e)}'))
+        return response_base.fail(res=CustomResponse(code=500, msg=f'批量生成摘要失败: {e!s}'))
 
 
 # ==================== 截图智能识别相关接口 ====================
@@ -285,107 +277,105 @@ async def batch_generate_summary(
 
 @router.post('/screenshot/analyze', summary='截图智能识别（异步）')
 async def analyze_screenshot(
-    file: UploadFile = File(..., description='截图文件（PNG/JPG/JPEG/WEBP，最大 10MB）'),
+    file: Annotated[UploadFile, File(description='截图文件（PNG/JPG/JPEG/WEBP，最大 10MB）')],
     tenant_id: str = CurrentTenantId,
 ):
     """
     上传截图并 AI 智能识别（异步处理）
-    
+
     流程：
     1. 验证文件格式和大小
     2. 保存到临时目录
     3. 提交 Celery 异步任务
     4. 立即返回 task_id
-    
+
     前端轮询：
     - 使用返回的 task_id 调用 GET /api/v1/task/{task_id} 查询状态
     - 状态：PENDING → STARTED → SUCCESS/FAILURE
-    
+
     返回：
     - task_id: 任务 ID
     - status: processing（处理中）
     - status_url: 状态查询 URL
     """
-    from backend.common.log import log
     import os
     import tempfile
     import uuid
-    
+
+    from backend.common.log import log
+
     # 1. 验证文件
     if not file.filename:
         return response_base.fail(res=CustomResponse(code=400, msg='文件名不能为空'))
-    
+
     # 验证文件类型
     allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
     file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
     if file_ext not in allowed_extensions:
-        return response_base.fail(res=CustomResponse(
-            code=400, 
-            msg=f'不支持的文件格式，仅支持: {", ".join(allowed_extensions)}'
-        ))
-    
+        return response_base.fail(
+            res=CustomResponse(code=400, msg=f'不支持的文件格式，仅支持: {", ".join(allowed_extensions)}')
+        )
+
     # 验证文件大小（10MB）
     max_size = 10 * 1024 * 1024  # 10MB
-    
+
     # 读取并验证大小
     content = await file.read()
     file_size = len(content)
-    
+
     if file_size > max_size:
-        return response_base.fail(res=CustomResponse(
-            code=400, 
-            msg=f'文件过大（{file_size / 1024 / 1024:.1f}MB），最大支持 10MB'
-        ))
-    
+        return response_base.fail(
+            res=CustomResponse(code=400, msg=f'文件过大（{file_size / 1024 / 1024:.1f}MB），最大支持 10MB')
+        )
+
     try:
         # 2. 保存到临时目录
         temp_dir = tempfile.gettempdir()
         screenshots_dir = os.path.join(temp_dir, 'screenshots')
         os.makedirs(screenshots_dir, exist_ok=True)
-        
+
         temp_filename = f'screenshot_{uuid.uuid4()}.{file_ext}'
         temp_file_path = os.path.join(screenshots_dir, temp_filename)
-        
-        with open(temp_file_path, 'wb') as f:
-            f.write(content)
-        
+
+        pathlib.Path(temp_file_path).write_bytes(content)
+
         log.info(f'Saved temp screenshot for tenant {tenant_id}: {temp_file_path}')
-        
+
         # 3. 提交 Celery 任务
         from backend.app.task.tasks.userecho.tasks import analyze_screenshot_task
-        
+
         task = analyze_screenshot_task.delay(
             file_path=temp_file_path,
             content_type=file.content_type or f'image/{file_ext}',
             tenant_id=tenant_id,
             original_filename=file.filename,
         )
-        
+
         log.info(f'Submitted screenshot analysis task: {task.id} for tenant {tenant_id}')
-        
+
         # 4. 返回 task_id 和状态查询 URL
-        return response_base.success(data={
-            'task_id': task.id,
-            'status': 'processing',
-            'status_url': f'/api/v1/task/{task.id}',
-        })
-        
+        return response_base.success(
+            data={
+                'task_id': task.id,
+                'status': 'processing',
+                'status_url': f'/api/v1/task/{task.id}',
+            }
+        )
+
     except Exception as e:
         log.error(f'Failed to submit screenshot analysis task for tenant {tenant_id}: {e}')
         import traceback
+
         log.error(f'Traceback: {traceback.format_exc()}')
-        
+
         # 清理临时文件（如果存在）
         if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
             try:
                 os.remove(temp_file_path)
             except Exception:
                 pass
-        
-        return response_base.fail(res=CustomResponse(
-            code=500, 
-            msg=f'提交识别任务失败: {str(e)}'
-        ))
+
+        return response_base.fail(res=CustomResponse(code=500, msg=f'提交识别任务失败: {e!s}'))
 
 
 @router.get('/screenshot/task/{task_id}', summary='查询截图分析任务状态')
@@ -395,7 +385,7 @@ async def get_screenshot_task_status(
 ):
     """
     查询截图分析任务状态
-    
+
     返回字段：
     - task_id: 任务 ID
     - state: PENDING / STARTED / SUCCESS / FAILURE / RETRY
@@ -412,16 +402,16 @@ async def get_screenshot_task_status(
     - error: 失败时返回错误信息
     """
     from backend.app.task.celery import celery_app
-    
+
     _ = tenant_id  # 租户鉴权由依赖保证
     r = celery_app.AsyncResult(task_id)
     data: dict = {'task_id': task_id, 'state': r.state}
-    
+
     if r.successful():
         data['result'] = r.result
     elif r.failed():
         data['error'] = str(r.result)
-    
+
     return response_base.success(data=data)
 
 
@@ -433,7 +423,7 @@ async def create_feedback_from_screenshot(
 ):
     """
     从截图识别结果创建反馈
-    
+
     字段说明：
     - content: 反馈内容（必填）
     - screenshot_url: 截图 URL（必填）
@@ -444,10 +434,10 @@ async def create_feedback_from_screenshot(
     - customer_id: 关联的客户 ID（可选，MVP 阶段通常为空）
     """
     from backend.app.userecho.model.feedback import Feedback
-    from backend.utils.ai_client import ai_client
     from backend.common.log import log
+    from backend.utils.ai_client import ai_client
     from backend.utils.timezone import timezone
-    
+
     try:
         # 1. 创建反馈记录
         feedback = Feedback(
@@ -464,31 +454,31 @@ async def create_feedback_from_screenshot(
             ai_confidence=data.ai_confidence,
             submitted_at=timezone.now(),
         )
-        
+
         # 2. 生成 AI 摘要
         try:
             ai_summary = await ai_client.generate_summary(data.content, max_length=20)
             feedback.ai_summary = ai_summary
         except Exception as e:
             log.warning(f'Failed to generate summary for screenshot feedback: {e}')
-        
+
         # 3. 保存到数据库
         db.add(feedback)
         await db.commit()
         await db.refresh(feedback)
-        
-        log.info(f'Created feedback from screenshot: id={feedback.id}, tenant={tenant_id}, platform={data.source_platform}')
-        
+
+        log.info(
+            f'Created feedback from screenshot: id={feedback.id}, tenant={tenant_id}, platform={data.source_platform}'
+        )
+
         # 4. 返回结果
         feedback_out = FeedbackOut.model_validate(feedback)
         return response_base.success(data=feedback_out)
-        
+
     except Exception as e:
         log.error(f'Failed to create feedback from screenshot for tenant {tenant_id}: {e}')
         import traceback
+
         log.error(f'Traceback: {traceback.format_exc()}')
         await db.rollback()
-        return response_base.fail(res=CustomResponse(
-            code=500, 
-            msg=f'创建反馈失败: {str(e)}'
-        ))
+        return response_base.fail(res=CustomResponse(code=500, msg=f'创建反馈失败: {e!s}'))

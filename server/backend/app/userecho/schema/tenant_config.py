@@ -18,8 +18,6 @@ class TenantConfigBase(SchemaBase):
 class TenantConfigCreate(TenantConfigBase):
     """创建租户配置参数"""
 
-    pass
-
 
 class TenantConfigUpdate(SchemaBase):
     """更新租户配置参数"""
@@ -37,4 +35,3 @@ class TenantConfigOut(TenantConfigBase):
     tenant_id: str = Field(description='租户ID')
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')
-

@@ -51,7 +51,7 @@ class TopicService:
                 'topic': topic_data['topic'],
                 'feedbacks': topic_data['feedbacks'],
                 'priority_score': priority_score,
-                'status_history': status_history
+                'status_history': status_history,
             }
 
         except Exception as e:
@@ -100,7 +100,7 @@ class TopicService:
                     from_status=old_status,
                     to_status=new_status,
                     changed_by=current_user_id,
-                    reason=data.reason
+                    reason=data.reason,
                 )
 
             return topic
@@ -134,7 +134,7 @@ class TopicService:
             category=data.category,
             status=data.status,
             description=data.description,
-            ai_generated=False  # 手动创建的主题
+            ai_generated=False,  # 手动创建的主题
         )
 
     async def update_topic(
@@ -157,12 +157,7 @@ class TopicService:
             更新后的主题实例
         """
         update_dict = data.model_dump(exclude_unset=True)
-        return await crud_topic.update(
-            db=db,
-            tenant_id=tenant_id,
-            id=topic_id,
-            **update_dict
-        )
+        return await crud_topic.update(db=db, tenant_id=tenant_id, id=topic_id, **update_dict)
 
     async def get_list_sorted(
         self,
@@ -198,17 +193,21 @@ class TopicService:
             主题列表
         """
         from backend.utils.ai_client import ai_client
-        
+
         # ✅ 使用 INFO 级别确保日志输出
-        log.info(f'[SEARCH_DEBUG] Service Layer - Received params: search_query={search_query!r}, search_mode={search_mode!r}')
-        
+        log.info(
+            f'[SEARCH_DEBUG] Service Layer - Received params: search_query={search_query!r}, search_mode={search_mode!r}'
+        )
+
         # 语义搜索模式
         if search_query and search_mode == 'semantic':
-            log.info(f'[SEARCH_DEBUG] Service Layer - Using semantic search')
+            log.info('[SEARCH_DEBUG] Service Layer - Using semantic search')
             # 1. 生成搜索词的 embedding
             query_embedding = await ai_client.get_embedding(search_query)
             if not query_embedding:
-                log.warning(f'Failed to generate embedding for search query: {search_query}, fallback to keyword search')
+                log.warning(
+                    f'Failed to generate embedding for search query: {search_query}, fallback to keyword search'
+                )
                 # Fallback 到关键词搜索
                 search_mode = 'keyword'
             else:
@@ -223,11 +222,13 @@ class TopicService:
                     category=category,
                     board_ids=board_ids,
                 )
-        
+
         # 关键词搜索模式（默认）
         effective_search_query = search_query if (search_query and search_mode == 'keyword') else None
-        log.info(f'[SEARCH_DEBUG] Service Layer - Using keyword search: effective_search_query={effective_search_query!r}')
-        
+        log.info(
+            f'[SEARCH_DEBUG] Service Layer - Using keyword search: effective_search_query={effective_search_query!r}'
+        )
+
         return await crud_topic.get_list_sorted(
             db=db,
             tenant_id=tenant_id,
@@ -256,11 +257,7 @@ class TopicService:
         Returns:
             待确认主题数量
         """
-        return await crud_topic.count(
-            db=db,
-            tenant_id=tenant_id,
-            status='pending'
-        )
+        return await crud_topic.count(db=db, tenant_id=tenant_id, status='pending')
 
 
 topic_service = TopicService()

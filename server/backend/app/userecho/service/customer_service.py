@@ -38,7 +38,7 @@ class CustomerService:
                 id=uuid4_str(),
                 name=data.name,
                 customer_type=data.customer_type,
-                business_value=data.business_value
+                business_value=data.business_value,
             )
 
         except Exception as e:
@@ -65,12 +65,7 @@ class CustomerService:
             更新后的客户实例
         """
         update_dict = data.model_dump(exclude_unset=True)
-        return await crud_customer.update(
-            db=db,
-            tenant_id=tenant_id,
-            id=customer_id,
-            **update_dict
-        )
+        return await crud_customer.update(db=db, tenant_id=tenant_id, id=customer_id, **update_dict)
 
     async def get_list(
         self,
@@ -91,12 +86,7 @@ class CustomerService:
         Returns:
             客户列表
         """
-        return await crud_customer.get_multi(
-            db=db,
-            tenant_id=tenant_id,
-            skip=skip,
-            limit=limit
-        )
+        return await crud_customer.get_multi(db=db, tenant_id=tenant_id, skip=skip, limit=limit)
 
     async def delete_customer(
         self,
@@ -115,12 +105,7 @@ class CustomerService:
         Returns:
             是否成功
         """
-        return await crud_customer.delete(
-            db=db,
-            tenant_id=tenant_id,
-            id=customer_id,
-            soft=True
-        )
+        return await crud_customer.delete(db=db, tenant_id=tenant_id, id=customer_id, soft=True)
 
 
 customer_service = CustomerService()

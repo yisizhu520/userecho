@@ -96,4 +96,3 @@ python diagnose_db_connections.py
 3. **连接池配置**
    - `pool_timeout` 设置合理（本地 10s，远程 30s）
    - `pool_pre_ping=True` 检测死连接
-

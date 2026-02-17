@@ -3,9 +3,11 @@
 用于快速验证数据库配置是否正确
 执行方式: python test_db_connection_simple.py
 """
+
 import asyncio
 import io
 import sys
+
 from pathlib import Path
 
 # 修复 Windows 控制台编码问题
@@ -18,14 +20,14 @@ backend_path = Path(__file__).resolve().parent
 sys.path.insert(0, str(backend_path))
 
 
-async def test_connection():
+async def test_connection() -> bool | None:
     """测试数据库连接"""
     try:
         print('=' * 60)
         print('数据库连接测试')
         print('=' * 60)
         print()
-        
+
         # 1. 检查 .env 文件
         env_file = backend_path / '.env'
         if not env_file.exists():
@@ -34,60 +36,60 @@ async def test_connection():
             print()
             print('请在 server/backend/ 目录下创建 .env 文件')
             return False
-        
+
         print(f'✅ .env 文件存在: {env_file}')
         print()
-        
+
         # 2. 读取配置
         print('📋 读取数据库配置...')
         from backend.core.conf import settings
-        
+
         print(f'   DATABASE_TYPE: {settings.DATABASE_TYPE}')
         print(f'   DATABASE_HOST: {settings.DATABASE_HOST}')
         print(f'   DATABASE_PORT: {settings.DATABASE_PORT}')
         print(f'   DATABASE_USER: {settings.DATABASE_USER}')
         print(f'   DATABASE_SCHEMA: {settings.DATABASE_SCHEMA}')
         print()
-        
+
         # 3. 测试连接
         print('🔌 测试数据库连接...')
         from sqlalchemy import text
+
         from backend.database.db import async_db_session
-        
+
         async with async_db_session() as db:
             result = await db.execute(text('SELECT 1 as test'))
             row = result.fetchone()
             if row and row[0] == 1:
                 print('✅ 数据库连接成功！')
                 print()
-                
+
                 # 4. 检查数据库版本
                 if settings.DATABASE_TYPE == 'postgresql':
                     version_result = await db.execute(text('SELECT version()'))
                     version = version_result.fetchone()[0]
-                    print(f'📊 PostgreSQL 版本:')
+                    print('📊 PostgreSQL 版本:')
                     print(f'   {version.split(",")[0]}')
                 elif settings.DATABASE_TYPE == 'mysql':
                     version_result = await db.execute(text('SELECT VERSION()'))
                     version = version_result.fetchone()[0]
                     print(f'📊 MySQL 版本: {version}')
-                
+
                 print()
                 print('=' * 60)
                 print('✅ 数据库配置正确，可以继续初始化')
                 print('=' * 60)
                 return True
-            else:
-                print('❌ 数据库连接测试失败')
-                return False
-                
+            print('❌ 数据库连接测试失败')
+            return False
+
     except ModuleNotFoundError as e:
         print(f'❌ 缺少依赖模块: {e}')
         print()
         print('请安装依赖:')
         print('  pip install -r ../../requirements.txt')
         return False
-        
+
     except Exception as e:
         print(f'❌ 数据库连接失败: {e}')
         print()
@@ -115,6 +117,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f'\n❌ 发生未预期的错误: {e}')
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
-

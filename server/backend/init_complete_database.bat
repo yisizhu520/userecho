@@ -282,4 +282,3 @@ call :print_header "🎉 初始化完成，祝您使用愉快！"
 echo.
 
 pause
-

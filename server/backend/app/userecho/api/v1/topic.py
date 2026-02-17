@@ -1,20 +1,21 @@
 """需求主题 API 端点"""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 
 from backend.app.userecho.schema.topic import (
     TopicCreate,
-    TopicListParams,
     TopicOut,
     TopicStatusUpdateParam,
     TopicUpdate,
 )
 from backend.app.userecho.service import topic_service
+from backend.common.log import log  # ✅ 添加日志导入
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
-from backend.common.log import log  # ✅ 添加日志导入
 
 router = APIRouter(prefix='/topics', tags=['UserEcho - 需求主题'])
 
@@ -31,13 +32,13 @@ async def get_topics(
     tenant_id: str = CurrentTenantId,
     skip: int = 0,
     limit: int = 100,
-    status: list[str] | None = Query(None),
-    category: list[str] | None = Query(None),
-    board_ids: list[str] | None = Query(None),
+    status: Annotated[list[str] | None, Query()] = None,
+    category: Annotated[list[str] | None, Query()] = None,
+    board_ids: Annotated[list[str] | None, Query()] = None,
     sort_by: str = 'created_time',
     sort_order: str = 'desc',
     search_query: str | None = None,  # ✅ 添加搜索参数
-    search_mode: str = 'keyword',     # ✅ 添加搜索模式
+    search_mode: str = 'keyword',  # ✅ 添加搜索模式
 ):
     """
     获取主题列表（支持排序、过滤和双模式搜索）
@@ -48,25 +49,25 @@ async def get_topics(
     - **board_ids**: 过滤看板ID（多选）
     - **sort_by**: 排序字段 (created_time/feedback_count/total_score)
     - **sort_order**: 排序方向 (asc/desc)
-    
+
     搜索参数：
     - **search_query**: 搜索关键词（搜索主题标题和描述）
     - **search_mode**: 搜索模式
       - keyword: 关键词搜索（默认，快速，精确匹配）
       - semantic: 语义搜索（智能，理解语义相似性，需要AI支持）
-    
+
     注意：搜索与过滤条件同时生效（AND关系）
     """
     # ✅ 第一时间打印原始参数
     log.info(f'[SEARCH_DEBUG] API Layer - RAW params: search_query={search_query!r}, search_mode={search_mode!r}')
-    
+
     # 清理空字符串：将空字符串转换为 None
     if search_query is not None and search_query.strip() == '':
-        log.info(f'[SEARCH_DEBUG] API Layer - Cleaned empty search_query')
+        log.info('[SEARCH_DEBUG] API Layer - Cleaned empty search_query')
         search_query = None
-    
+
     log.info(f'[SEARCH_DEBUG] API Layer - After cleanup: search_query={search_query!r}')
-    
+
     topics = await topic_service.get_list_sorted(
         db=db,
         tenant_id=tenant_id,
@@ -78,7 +79,7 @@ async def get_topics(
         sort_by=sort_by,
         sort_order=sort_order,
         search_query=search_query,  # ✅ 传递搜索参数
-        search_mode=search_mode,     # ✅ 传递搜索模式
+        search_mode=search_mode,  # ✅ 传递搜索模式
     )
     # ✅ Pydantic 自动将 ORM 对象列表转换为 TopicOut 列表（排除 centroid）
     topics_out = [TopicOut.model_validate(topic) for topic in topics]
@@ -93,10 +94,7 @@ async def get_pending_count(
     """
     获取待确认主题数量（用于 badge 显示）
     """
-    count = await topic_service.get_pending_count(
-        db=db,
-        tenant_id=tenant_id
-    )
+    count = await topic_service.get_pending_count(db=db, tenant_id=tenant_id)
     return response_base.success(data={'count': count})
 
 
@@ -111,10 +109,7 @@ async def get_topic_detail(
     获取主题详情（包含关联反馈、优先级评分、状态历史）
     """
     detail = await topic_service.get_detail_with_relations(
-        db=db,
-        tenant_id=tenant_id,
-        topic_id=topic_id,
-        current_user_id=current_user_id
+        db=db, tenant_id=tenant_id, topic_id=topic_id, current_user_id=current_user_id
     )
 
     if not detail:
@@ -124,12 +119,14 @@ async def get_topic_detail(
     from backend.app.userecho.schema.feedback import FeedbackOut
     from backend.app.userecho.schema.priority import PriorityScoreOut
     from backend.app.userecho.schema.status_history import StatusHistoryOut
-    
+
     detail_out = {
         'topic': TopicOut.model_validate(detail['topic']),
         'feedbacks': [FeedbackOut.model_validate(fb) for fb in detail['feedbacks']],
-        'priority_score': PriorityScoreOut.model_validate(detail['priority_score']) if detail['priority_score'] else None,
-        'status_history': [StatusHistoryOut.model_validate(sh) for sh in detail['status_history']]
+        'priority_score': PriorityScoreOut.model_validate(detail['priority_score'])
+        if detail['priority_score']
+        else None,
+        'status_history': [StatusHistoryOut.model_validate(sh) for sh in detail['status_history']],
     }
 
     return response_base.success(data=detail_out)
@@ -142,11 +139,7 @@ async def create_topic(
     tenant_id: str = CurrentTenantId,
 ):
     """创建主题（手动创建）"""
-    topic = await topic_service.create_topic(
-        db=db,
-        tenant_id=tenant_id,
-        data=data
-    )
+    topic = await topic_service.create_topic(db=db, tenant_id=tenant_id, data=data)
     # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut（排除 centroid）
     topic_out = TopicOut.model_validate(topic)
     return response_base.success(data=topic_out)
@@ -160,12 +153,7 @@ async def update_topic(
     tenant_id: str = CurrentTenantId,
 ):
     """更新主题"""
-    topic = await topic_service.update_topic(
-        db=db,
-        tenant_id=tenant_id,
-        topic_id=topic_id,
-        data=data
-    )
+    topic = await topic_service.update_topic(db=db, tenant_id=tenant_id, topic_id=topic_id, data=data)
     if not topic:
         return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
     # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut
@@ -188,11 +176,7 @@ async def update_topic_status(
     - **reason**: 变更原因（可选）
     """
     topic = await topic_service.update_status_with_history(
-        db=db,
-        tenant_id=tenant_id,
-        topic_id=topic_id,
-        data=data,
-        current_user_id=current_user_id
+        db=db, tenant_id=tenant_id, topic_id=topic_id, data=data, current_user_id=current_user_id
     )
     if not topic:
         return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))

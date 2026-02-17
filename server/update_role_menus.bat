@@ -10,4 +10,3 @@ call .venv\Scripts\activate.bat
 python scripts/update_role_menus.py
 
 pause
-

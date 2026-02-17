@@ -16,21 +16,22 @@ router = APIRouter(prefix='/config', tags=['UserEcho - 租户配置'])
 # 请求体模型
 # ========================================
 
+
 class UpdatePresetParam(BaseModel):
     """更新预设模式参数"""
-    
+
     preset_mode: str = Field(description='预设模式名称（strict/standard/relaxed）')
 
 
 class UpdateParamsParam(BaseModel):
     """更新自定义参数"""
-    
+
     params: dict = Field(description='要更新的参数字典')
 
 
 class PreviewConfigParam(BaseModel):
     """预览配置参数"""
-    
+
     preset_mode: str = Field(description='预设模式名称')
 
 
@@ -38,11 +39,12 @@ class PreviewConfigParam(BaseModel):
 # 聚类配置 API
 # ========================================
 
+
 @router.get('/clustering/presets', summary='获取聚类预设模式')
 async def get_clustering_presets():
     """
     获取所有聚类预设模式（不含技术参数）
-    
+
     用于配置页面的选项展示
     """
     presets = {
@@ -53,7 +55,7 @@ async def get_clustering_presets():
         }
         for mode, config in CLUSTERING_PRESETS.items()
     }
-    
+
     return response_base.success(data=presets)
 
 
@@ -64,7 +66,7 @@ async def get_clustering_config(
 ):
     """
     获取当前租户的聚类配置
-    
+
     包含 preset_mode 和所有技术参数
     """
     config = await clustering_config_service.get_clustering_config(db, tenant_id)
@@ -79,7 +81,7 @@ async def update_clustering_preset(
 ):
     """
     更新聚类预设模式
-    
+
     系统会自动展开预设对应的技术参数
     """
     config = await clustering_config_service.update_preset(
@@ -87,7 +89,7 @@ async def update_clustering_preset(
         tenant_id=tenant_id,
         preset_mode=param.preset_mode,
     )
-    
+
     return response_base.success(data=config)
 
 
@@ -99,7 +101,7 @@ async def preview_clustering_config(
 ):
     """
     预览聚类配置效果（智能验证）
-    
+
     使用租户最近的未聚类反馈进行试运行，
     返回预估的聚类效果
     """
@@ -108,7 +110,7 @@ async def preview_clustering_config(
         tenant_id=tenant_id,
         preset_mode=param.preset_mode,
     )
-    
+
     return response_base.success(data=result)
 
 
@@ -120,7 +122,7 @@ async def update_clustering_params(
 ):
     """
     微调聚类参数（高级功能）
-    
+
     允许基于预设进行细粒度调整
     修改后 preset_mode 会变为 'custom'
     """
@@ -129,6 +131,5 @@ async def update_clustering_params(
         tenant_id=tenant_id,
         params=param.params,
     )
-    
-    return response_base.success(data=config)
 
+    return response_base.success(data=config)

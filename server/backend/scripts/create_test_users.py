@@ -3,9 +3,11 @@
 用于测试路由隔离功能的不同角色用户
 执行方式: python scripts/create_test_users.py
 """
+
 import asyncio
 import io
 import sys
+
 from pathlib import Path
 
 # 修复 Windows 控制台编码问题
@@ -18,12 +20,13 @@ backend_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_path))
 
 import bcrypt
+
 from sqlalchemy import select
-from backend.app.admin.model import User, Role, Dept, user_role
+
+from backend.app.admin.model import Dept, Role, User, user_role
+from backend.app.admin.utils.password_security import get_hash_password
 from backend.app.userecho.model import TenantUser
 from backend.database.db import async_db_session
-from backend.app.admin.utils.password_security import get_hash_password
-
 
 # 测试用户配置
 # user_type: admin, product_manager, sales, customer_success, developer, member
@@ -82,47 +85,43 @@ TEST_USERS = [
 TEST_PASSWORD = 'Test123456'
 
 
-async def create_test_users():
+async def create_test_users() -> None:
     """创建测试用户"""
     async with async_db_session.begin() as db:
         print('=' * 60)
         print('🚀 测试用户创建脚本')
         print('=' * 60)
         print()
-        
+
         # 获取默认部门
-        default_dept = await db.scalar(
-            select(Dept).where(Dept.name == '测试').limit(1)
-        )
+        default_dept = await db.scalar(select(Dept).where(Dept.name == '测试').limit(1))
         if not default_dept:
             default_dept = await db.scalar(select(Dept).limit(1))
-        
+
         dept_id = default_dept.id if default_dept else 1
-        
+
         # 获取所有角色
         roles = await db.scalars(select(Role))
         role_map = {role.name: role for role in roles}
-        
+
         created_count = 0
         skipped_count = 0
-        
+
         for user_config in TEST_USERS:
             username = user_config['username']
-            
+
             # 检查用户是否已存在
-            existing_user = await db.scalar(
-                select(User).where(User.username == username)
-            )
-            
+            existing_user = await db.scalar(select(User).where(User.username == username))
+
             if existing_user:
                 print(f'⏭️  跳过: 用户 {username} 已存在')
                 skipped_count += 1
                 continue
-            
+
             # 创建用户
             salt = bcrypt.gensalt()
             password_hash = get_hash_password(TEST_PASSWORD, salt)
-            
+
             user = User(
                 username=username,
                 nickname=user_config['nickname'],
@@ -135,22 +134,20 @@ async def create_test_users():
                 is_multi_login=True,
                 dept_id=dept_id,
             )
-            
+
             db.add(user)
             await db.flush()
-            
+
             # 关联角色
             role_names = user_config['role'] if isinstance(user_config['role'], list) else [user_config['role']]
             assigned_roles = []
-            
+
             for role_name in role_names:
                 role = role_map.get(role_name)
                 if role:
-                    await db.execute(
-                        user_role.insert().values(user_id=user.id, role_id=role.id)
-                    )
+                    await db.execute(user_role.insert().values(user_id=user.id, role_id=role.id))
                     assigned_roles.append(role_name)
-            
+
             # 创建 TenantUser 关联（与默认租户关联）
             tenant_user = TenantUser(
                 tenant_id='default-tenant',
@@ -160,15 +157,17 @@ async def create_test_users():
                 status='active',
             )
             db.add(tenant_user)
-            
-            print(f'✅ 创建用户: {username} ({", ".join(assigned_roles)}, 租户角色: {user_config.get("user_type", "member")})')
+
+            print(
+                f'✅ 创建用户: {username} ({", ".join(assigned_roles)}, 租户角色: {user_config.get("user_type", "member")})'
+            )
             created_count += 1
-        
+
         await db.commit()
-        
+
         print()
         print('=' * 60)
-        print(f'✅ 测试用户创建完成！')
+        print('✅ 测试用户创建完成！')
         print(f'   创建: {created_count} 个')
         print(f'   跳过: {skipped_count} 个')
         print('=' * 60)
@@ -188,34 +187,30 @@ async def create_test_users():
         print()
 
 
-async def verify_users():
+async def verify_users() -> None:
     """验证测试用户"""
     async with async_db_session() as db:
         print('🔍 验证测试用户...')
         print()
-        
+
         for user_config in TEST_USERS:
             username = user_config['username']
-            user = await db.scalar(
-                select(User).where(User.username == username)
-            )
-            
+            user = await db.scalar(select(User).where(User.username == username))
+
             if user:
                 # 查询用户的角色
                 roles = await db.scalars(
-                    select(Role)
-                    .join(user_role, Role.id == user_role.c.role_id)
-                    .where(user_role.c.user_id == user.id)
+                    select(Role).join(user_role, Role.id == user_role.c.role_id).where(user_role.c.user_id == user.id)
                 )
                 role_names = [role.name for role in roles]
                 print(f'  ✅ {username:<12} - {", ".join(role_names)}')
             else:
                 print(f'  ❌ {username:<12} - 不存在')
-        
+
         print()
 
 
-async def main():
+async def main() -> None:
     """主函数"""
     await create_test_users()
     await verify_users()
@@ -226,7 +221,7 @@ if __name__ == '__main__':
     print('测试用户创建脚本')
     print('=' * 60)
     print()
-    
+
     try:
         asyncio.run(main())
         print('=' * 60)
@@ -235,5 +230,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f'\n❌ 初始化失败: {e}')
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

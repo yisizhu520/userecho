@@ -6,13 +6,13 @@
 from typing import Any
 
 import numpy as np
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.crud import crud_feedback, crud_topic
 from backend.app.userecho.service.clustering_config_service import clustering_config_service
 from backend.common.log import log
-from backend.core.conf import settings
 from backend.utils.ai_client import ai_client
 from backend.utils.clustering import FeedbackClustering
 from backend.utils.timezone import timezone
@@ -28,16 +28,15 @@ class ClusteringService:
 
         注意：当没有任何有效聚类（全是噪声点）时，silhouette/noise_ratio 会非常差，
         但这不是错误，只代表"这批数据暂时不该生成 Topic"。
-        
+
         Args:
             quality: 质量指标
             config: 租户聚类配置
         """
         try:
-            return (
-                quality.get('silhouette', 0.0) >= config.get('min_silhouette', 0.3)
-                and quality.get('noise_ratio', 1.0) <= config.get('max_noise_ratio', 0.5)
-            )
+            return quality.get('silhouette', 0.0) >= config.get('min_silhouette', 0.3) and quality.get(
+                'noise_ratio', 1.0
+            ) <= config.get('max_noise_ratio', 0.5)
         except Exception:
             return False
 
@@ -115,7 +114,7 @@ class ClusteringService:
                     # 需要调用 API
                     feedbacks_need_embedding.append(feedback)
 
-            log.info(f'Embedding cache hit: {cache_hit}/{len(feedbacks)} ({cache_hit/len(feedbacks)*100:.1f}%)')
+            log.info(f'Embedding cache hit: {cache_hit}/{len(feedbacks)} ({cache_hit / len(feedbacks) * 100:.1f}%)')
 
             # 2.2 批量调用 API 获取缺失的 embedding
             failed_embedding_ids: list[str] = []
@@ -137,9 +136,7 @@ class ClusteringService:
                 # 2.4 批量写入缓存
                 if embeddings_to_cache:
                     cached_count = await crud_feedback.batch_update_embeddings(
-                        db=db,
-                        tenant_id=tenant_id,
-                        feedback_embeddings=embeddings_to_cache
+                        db=db, tenant_id=tenant_id, feedback_embeddings=embeddings_to_cache
                     )
                     log.info(f'Cached {cached_count} new embeddings to database')
 
@@ -174,11 +171,13 @@ class ClusteringService:
                     'feedbacks_count': len(feedbacks),
                     'valid_embeddings': len(embeddings),
                     'clusters_count': 0,
-                    'topics_created': 0
+                    'topics_created': 0,
                 }
 
             embeddings_array = np.array(embeddings)
-            log.info(f'Batch embedding completed: {len(embeddings)}/{len(feedbacks)} valid, shape: {embeddings_array.shape}')
+            log.info(
+                f'Batch embedding completed: {len(embeddings)}/{len(feedbacks)} valid, shape: {embeddings_array.shape}'
+            )
 
             # 4. 使用租户配置创建聚类引擎并执行聚类
             clustering_engine = FeedbackClustering(
@@ -255,7 +254,9 @@ class ClusteringService:
                     continue
                 clusters.setdefault(int(label), []).append(idx)
 
-            log.info(f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters, {len(noise_indices)} noise points')
+            log.info(
+                f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters, {len(noise_indices)} noise points'
+            )
 
             # 7. 为每个聚类创建 Topic
             created_topics = []
@@ -311,14 +312,14 @@ class ClusteringService:
                     # ✅ 自动生成默认优先级评分
                     try:
                         from backend.app.userecho.service.priority_service import priority_service
-                        
+
                         # 统计客户数量
                         customer_ids = {f.customer_id for f in cluster_feedbacks if f.customer_id}
                         customer_count = len(customer_ids)
-                        
+
                         # 检测紧急程度（关键词匹配）
                         is_urgent = any(f.is_urgent for f in cluster_feedbacks)
-                        
+
                         await priority_service.create_default_priority_score(
                             db=db,
                             tenant_id=tenant_id,
@@ -329,7 +330,7 @@ class ClusteringService:
                             feedback_count=len(cluster_feedbacks),
                             is_urgent=is_urgent,
                         )
-                        
+
                         log.debug(f'Generated default priority score for topic {topic.id}')
                     except Exception as e:
                         # 评分失败不影响聚类流程
@@ -379,7 +380,9 @@ class ClusteringService:
                     },
                 )
 
-            log.info(f'Topic creation completed for tenant {tenant_id}: {len(created_topics)} created, {len(failed_topics)} failed')
+            log.info(
+                f'Topic creation completed for tenant {tenant_id}: {len(created_topics)} created, {len(failed_topics)} failed'
+            )
 
             return {
                 'status': 'completed',
@@ -415,7 +418,7 @@ class ClusteringService:
                 'message': str(e),
                 'feedbacks_count': 0,
                 'clusters_count': 0,
-                'topics_created': 0
+                'topics_created': 0,
             }
 
     async def get_clustering_suggestions(
@@ -440,7 +443,7 @@ class ClusteringService:
         try:
             # 获取租户聚类配置
             tenant_config = await clustering_config_service.get_clustering_config(db, tenant_id)
-            
+
             # 获取目标反馈
             target_feedback = await crud_feedback.get_by_id(db, tenant_id, feedback_id)
             if not target_feedback:
@@ -494,7 +497,7 @@ class ClusteringService:
                     'content': fb.content,
                     'similarity': similarity,
                     'topic_id': fb.topic_id,
-                    'topic_title': topic_title_map.get(fb.topic_id or '', None),
+                    'topic_title': topic_title_map.get(fb.topic_id or ''),
                 }
                 for fb, similarity in similar
             ]

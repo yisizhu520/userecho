@@ -14,4 +14,3 @@ if ($connections) {
 }
 
 Start-Sleep -Seconds 1
-

@@ -17,18 +17,18 @@ class DashboardService:
     async def get_stats(db: AsyncSession, tenant_id: str) -> dict:
         """
         获取工作台所有统计数据
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
-        
+
         Returns:
             统计数据字典
         """
         try:
             # 计算时间范围
             week_ago = datetime.now() - timedelta(days=7)
-            
+
             # 并行执行所有查询
             feedback_stats = await DashboardService._get_feedback_stats(db, tenant_id, week_ago)
             topic_stats = await DashboardService._get_topic_stats(db, tenant_id, week_ago)
@@ -36,7 +36,7 @@ class DashboardService:
             top_topics = await DashboardService._get_top_topics(db, tenant_id)
             weekly_trend = await DashboardService._get_weekly_trend(db, tenant_id, week_ago)
             tag_distribution = await DashboardService._get_tag_distribution(db, tenant_id)
-            
+
             return {
                 'feedback_stats': feedback_stats,
                 'topic_stats': topic_stats,
@@ -62,7 +62,7 @@ class DashboardService:
             Feedback.deleted_at.is_(None),
         )
         total = await db.scalar(total_query) or 0
-        
+
         # 待处理反馈数（未聚类）
         pending_query = select(func.count(Feedback.id)).where(
             Feedback.tenant_id == tenant_id,
@@ -70,7 +70,7 @@ class DashboardService:
             Feedback.topic_id.is_(None),
         )
         pending = await db.scalar(pending_query) or 0
-        
+
         # 本周新增反馈数
         weekly_query = select(func.count(Feedback.id)).where(
             Feedback.tenant_id == tenant_id,
@@ -78,7 +78,7 @@ class DashboardService:
             Feedback.created_time >= week_ago,
         )
         weekly_count = await db.scalar(weekly_query) or 0
-        
+
         return {
             'total': total,
             'pending': pending,
@@ -98,7 +98,7 @@ class DashboardService:
             Topic.deleted_at.is_(None),
         )
         total = await db.scalar(total_query) or 0
-        
+
         # 待处理需求数
         pending_query = select(func.count(Topic.id)).where(
             Topic.tenant_id == tenant_id,
@@ -106,7 +106,7 @@ class DashboardService:
             Topic.status == 'pending',
         )
         pending = await db.scalar(pending_query) or 0
-        
+
         # 已完成需求数
         completed_query = select(func.count(Topic.id)).where(
             Topic.tenant_id == tenant_id,
@@ -114,7 +114,7 @@ class DashboardService:
             Topic.status == 'completed',
         )
         completed = await db.scalar(completed_query) or 0
-        
+
         # 本周新增需求数
         weekly_query = select(func.count(Topic.id)).where(
             Topic.tenant_id == tenant_id,
@@ -122,7 +122,7 @@ class DashboardService:
             Topic.created_time >= week_ago,
         )
         weekly_count = await db.scalar(weekly_query) or 0
-        
+
         return {
             'total': total,
             'pending': pending,
@@ -137,14 +137,15 @@ class DashboardService:
     ) -> list[dict]:
         """
         获取紧急需求列表 TOP 5
-        
+
         优先级排序：
         1. 有 priority_score 的按 total_score 降序
         2. 没有 priority_score 的按 feedback_count 降序
         """
         from sqlalchemy import case
+
         from backend.app.userecho.model.priority_score import PriorityScore
-        
+
         # 使用显式 LEFT JOIN 而不是 joinedload，这样可以在 ORDER BY 中引用
         query = (
             select(Topic, PriorityScore)
@@ -163,19 +164,17 @@ class DashboardService:
             )
             .limit(5)
         )
-        
+
         result = await db.execute(query)
         rows = result.all()
-        
+
         return [
             {
                 'id': topic.id,
                 'title': topic.title,
                 'feedback_count': topic.feedback_count,
                 'priority_score': (
-                    round(priority_score.total_score, 2)
-                    if priority_score and priority_score.total_score
-                    else None
+                    round(priority_score.total_score, 2) if priority_score and priority_score.total_score else None
                 ),
                 'category': topic.category,
                 'status': topic.status,
@@ -198,10 +197,10 @@ class DashboardService:
             .order_by(desc(Topic.feedback_count))
             .limit(5)
         )
-        
+
         result = await db.execute(query)
         topics = result.scalars().all()
-        
+
         return [
             {
                 'id': t.id,
@@ -233,10 +232,10 @@ class DashboardService:
             .group_by(func.date(Feedback.created_time))
             .order_by(func.date(Feedback.created_time))
         )
-        
+
         result = await db.execute(query)
         trend_data = result.all()
-        
+
         return [
             {
                 'date': str(row.date),
@@ -252,15 +251,14 @@ class DashboardService:
     ) -> list[dict]:
         """
         获取标签分布统计
-        
+
         返回各标签的：
         - Topic 数量
         - 反馈数量总和
         - 平均优先级分数（如果有评分）
         """
-        from sqlalchemy import case
         from backend.app.userecho.model.priority_score import PriorityScore
-        
+
         # 按标签分组统计
         query = (
             select(
@@ -277,10 +275,10 @@ class DashboardService:
             .group_by(Topic.category)
             .order_by(desc(func.count(Topic.id)))  # 按 Topic 数量降序
         )
-        
+
         result = await db.execute(query)
         tag_data = result.all()
-        
+
         # 标签名称映射
         category_names = {
             'bug': 'Bug',
@@ -289,18 +287,14 @@ class DashboardService:
             'performance': '性能问题',
             'other': '其他',
         }
-        
+
         return [
             {
                 'category': row.category,
                 'name': category_names.get(row.category, row.category),
                 'topic_count': row.topic_count or 0,
                 'feedback_count': row.feedback_count or 0,
-                'avg_priority_score': (
-                    round(row.avg_priority_score, 2)
-                    if row.avg_priority_score
-                    else None
-                ),
+                'avg_priority_score': (round(row.avg_priority_score, 2) if row.avg_priority_score else None),
             }
             for row in tag_data
         ]

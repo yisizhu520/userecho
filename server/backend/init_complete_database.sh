@@ -475,4 +475,3 @@ trap 'print_error "初始化过程中发生错误，请检查上述输出"; exit
 
 # 执行主函数
 main
-

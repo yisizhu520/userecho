@@ -1,4 +1,5 @@
 """Customer CRUD"""
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,19 +18,17 @@ class CRUDCustomer(TenantAwareCRUD[Customer]):
     ) -> Customer | None:
         """
         根据名称获取客户（用于导入时去重）
-        
+
         Args:
             db: 数据库会话
             tenant_id: 租户ID
             name: 客户名称
-        
+
         Returns:
             客户实例或 None
         """
         query = select(self.model).where(
-            self.model.tenant_id == tenant_id,
-            self.model.name == name,
-            self.model.deleted_at.is_(None)
+            self.model.tenant_id == tenant_id, self.model.name == name, self.model.deleted_at.is_(None)
         )
         result = await db.execute(query)
         return result.scalar_one_or_none()

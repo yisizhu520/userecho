@@ -19,8 +19,9 @@ class Tenant(MappedBase):
     status: Mapped[str] = mapped_column(String(20), default='active', comment='状态: active, suspended, deleted')
     settings: Mapped[dict | None] = mapped_column(JSON, default=None, comment='租户配置')
     deleted_at: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment='软删除时间')
-    
+
     # 时间戳字段
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
-    updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')
-
+    updated_time: Mapped[datetime | None] = mapped_column(
+        TimeZone, onupdate=timezone.now, default=None, comment='更新时间'
+    )

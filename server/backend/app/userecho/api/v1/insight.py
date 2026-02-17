@@ -1,14 +1,12 @@
 """洞察 API 接口"""
+
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
-from backend.app.userecho.crud.crud_insight import crud_insight
-from backend.app.userecho.schema.insight import (
-    DashboardInsightsResponse,
-    GenerateInsightRequest,
-    InsightResponse,
-)
-from backend.app.userecho.service.insight_service import insight_service
 from backend.app.task.celery import celery_app
+from backend.app.userecho.crud.crud_insight import crud_insight
+from backend.app.userecho.service.insight_service import insight_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
@@ -22,12 +20,12 @@ async def get_insight(
     insight_type: str,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    time_range: str = Query('this_week', description='时间范围：this_week | this_month | custom'),
-    force_refresh: bool = Query(False, description='是否强制刷新（忽略缓存）'),
+    time_range: Annotated[str, Query(description='时间范围：this_week | this_month | custom')] = 'this_week',
+    force_refresh: Annotated[bool, Query(description='是否强制刷新（忽略缓存）')] = False,
 ):
     """
     获取指定类型的洞察
-    
+
     洞察类型：
     - priority_suggestion: 优先级建议
     - high_risk: 高风险需求识别
@@ -51,25 +49,19 @@ async def get_dashboard_insights(
 ):
     """
     工作台一次性获取所有洞察
-    
+
     返回：
     - priority_suggestions: 优先级建议
     - high_risk_topics: 高风险需求
     - sentiment_summary: 满意度趋势
     """
     # 并发获取 3 种洞察（周报单独生成，不在工作台显示）
-    priority_suggestions = await insight_service.generate_insight(
-        db, tenant_id, 'priority_suggestion', 'this_week'
-    )
-    
-    high_risk_topics = await insight_service.generate_insight(
-        db, tenant_id, 'high_risk', 'this_week'
-    )
-    
-    sentiment_summary = await insight_service.generate_insight(
-        db, tenant_id, 'sentiment_trend', 'this_week'
-    )
-    
+    priority_suggestions = await insight_service.generate_insight(db, tenant_id, 'priority_suggestion', 'this_week')
+
+    high_risk_topics = await insight_service.generate_insight(db, tenant_id, 'high_risk', 'this_week')
+
+    sentiment_summary = await insight_service.generate_insight(db, tenant_id, 'sentiment_trend', 'this_week')
+
     return response_base.success(
         data={
             'priority_suggestions': priority_suggestions,
@@ -82,12 +74,12 @@ async def get_dashboard_insights(
 @router.post('/insights/report/export', summary='导出周报/月报（异步）')
 async def export_report(
     tenant_id: str = CurrentTenantId,
-    time_range: str = Query('this_week', description='时间范围：this_week | this_month'),
-    format: str = Query('markdown', description='导出格式：markdown | html'),
+    time_range: Annotated[str, Query(description='时间范围：this_week | this_month')] = 'this_week',
+    format: Annotated[str, Query(description='导出格式：markdown | html')] = 'markdown',
 ):
     """
     导出周报/月报（异步生成）
-    
+
     返回 task_id，前端通过 /insights/task/{task_id} 轮询任务状态
     """
     async_result = celery_app.send_task(
@@ -107,7 +99,7 @@ async def get_insight_task_status(
 ):
     """
     查询 Celery 洞察生成任务状态
-    
+
     返回字段：
     - state: PENDING / STARTED / SUCCESS / FAILURE / RETRY
     - result: 成功时返回生成的报告内容
@@ -117,7 +109,7 @@ async def get_insight_task_status(
     _ = tenant_id  # 租户鉴权由依赖保证；MVP 不做 task_id ↔ tenant 的强绑定
     r = celery_app.AsyncResult(task_id)
     data: dict = {'task_id': task_id, 'state': r.state}
-    
+
     if r.successful():
         data['result'] = r.result
     elif r.failed():
@@ -125,7 +117,7 @@ async def get_insight_task_status(
     elif r.state == 'PROGRESS':
         # 支持进度更新（可选）
         data['progress'] = r.info
-    
+
     return response_base.success(data=data)
 
 
@@ -152,10 +144,10 @@ async def dismiss_insight(
 async def get_insights_history(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    insight_type: str | None = Query(None, description='洞察类型筛选'),
-    status: str = Query('active', description='状态筛选：active | archived | dismissed'),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    insight_type: Annotated[str | None, Query(description='洞察类型筛选')] = None,
+    status: Annotated[str, Query(description='状态筛选：active | archived | dismissed')] = 'active',
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ):
     """
     获取历史洞察列表（分页）
