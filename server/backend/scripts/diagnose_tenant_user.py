@@ -17,7 +17,7 @@ from backend.app.userecho.model import TenantUser
 from backend.database.db import async_db_session
 
 
-async def diagnose_tenant_user():
+async def diagnose_tenant_user() -> None:
     """诊断 TenantUser 重复数据"""
     async with async_db_session() as db:
         print('=' * 80)
@@ -37,7 +37,7 @@ async def diagnose_tenant_user():
         # 2. 查找 boss 的所有 TenantUser 记录
         print('📋 boss 用户的 TenantUser 记录:')
         print('-' * 80)
-        
+
         stmt = select(TenantUser).where(TenantUser.user_id == boss.id)
         result = await db.execute(stmt)
         tenant_users = result.scalars().all()
@@ -47,22 +47,22 @@ async def diagnose_tenant_user():
         else:
             for i, tu in enumerate(tenant_users, 1):
                 print(f'{i}. tenant_id={tu.tenant_id!r}, user_type={tu.user_type}, status={tu.status}')
-        
+
         print()
 
         # 3. 查找所有用户的重复 TenantUser 记录
         print('🔍 检查所有用户的 TenantUser 重复记录:')
         print('-' * 80)
-        
+
         all_tenant_users = await db.scalars(select(TenantUser))
         user_tenant_map = {}
-        
+
         for tu in all_tenant_users:
             key = (tu.user_id, tu.status)
             if key not in user_tenant_map:
                 user_tenant_map[key] = []
             user_tenant_map[key].append(tu)
-        
+
         duplicates_found = False
         for (user_id, status), records in user_tenant_map.items():
             if len(records) > 1:
@@ -72,10 +72,10 @@ async def diagnose_tenant_user():
                 print(f'⚠️  用户 {username} (status={status}) 有 {len(records)} 条记录:')
                 for record in records:
                     print(f'   - tenant_id={record.tenant_id!r}, user_type={record.user_type}')
-        
+
         if not duplicates_found:
             print('✅ 没有发现重复记录')
-        
+
         print()
 
 

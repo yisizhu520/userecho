@@ -122,10 +122,35 @@ async def delete_feedback(
     return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
 
 
+@router.post('/import/preview', summary='预览导入文件')
+async def preview_import(
+    file: Annotated[UploadFile, File()],
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    解析文件并返回预览信息（不执行导入）
+
+    返回：
+    - status: ready / error
+    - detected_columns: 检测到的列
+    - missing_optional: 缺失但可补全的列（看板名称、客户名称）
+    - sample_data: 前 5 行数据预览
+    - total_rows: 总行数
+    """
+    _ = tenant_id  # 租户鉴权由依赖保证
+    result = await import_service.preview_excel(file=file)
+    if result['status'] == 'error':
+        return response_base.fail(res=CustomResponse(code=400, msg=result.get('message', '解析失败')))
+    return response_base.success(data=result)
+
+
 @router.post('/import', summary='导入 Excel 反馈')
 async def import_feedbacks(
     db: CurrentSession,
     file: Annotated[UploadFile, File()],
+    default_board_id: Annotated[str | None, Query(description='默认看板ID（当Excel无看板列时使用）')] = None,
+    default_customer_name: Annotated[str | None, Query(description='默认客户名称（当Excel无客户列时使用）')] = None,
+    use_anonymous: Annotated[bool, Query(description='是否使用匿名（优先级高于default_customer_name）')] = False,
     tenant_id: str = CurrentTenantId,
 ):
     """
@@ -135,41 +160,35 @@ async def import_feedbacks(
 
     必填列:
     - 反馈内容
-    - 客户名称
 
-    可选列:
-    - 客户类型 (normal/paid/major/strategic)
+    可选列（可通过参数补全）:
+    - 看板名称（或使用 default_board_id 参数）
+    - 客户名称（或使用 default_customer_name / use_anonymous）
+    - 客户类型
     - 提交时间
     - 是否紧急
     """
     from backend.common.log import log
 
-    log.info('[DEBUG] Starting import_feedbacks handler')
+    log.info(f'Starting import for tenant {tenant_id}, board={default_board_id}, customer={default_customer_name}, anonymous={use_anonymous}')
 
     try:
         result = await import_service.import_excel(
             db=db,
             tenant_id=tenant_id,
             file=file,
-            generate_summary=False,  # 导入时不生成摘要，避免超时
+            default_board_id=default_board_id,
+            default_customer_name=default_customer_name,
+            use_anonymous=use_anonymous,
+            generate_summary=False,
         )
-        log.info(f'[DEBUG] import_excel returned: type={type(result)}, result={result}')
 
         if result['status'] == 'error':
-            log.info('[DEBUG] Returning error response')
-            resp = response_base.fail(res=CustomResponse(code=400, msg=result['message']))
-            log.info(f'[DEBUG] Error response created: type={type(resp)}, resp={resp}')
-            return resp
+            return response_base.fail(res=CustomResponse(code=400, msg=result['message']))
 
-        log.info('[DEBUG] Returning success response')
-        resp = response_base.success(data=result)
-        log.info(f'[DEBUG] Success response created: type={type(resp)}, resp={resp}')
-        return resp
+        return response_base.success(data=result)
     except Exception as e:
-        log.error(f'[DEBUG] Exception in import_feedbacks: {e}')
-        import traceback
-
-        log.error(f'[DEBUG] Traceback: {traceback.format_exc()}')
+        log.error(f'Import failed for tenant {tenant_id}: {e}')
         raise
 
 

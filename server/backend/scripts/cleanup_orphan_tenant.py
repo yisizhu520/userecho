@@ -16,7 +16,7 @@ from backend.app.userecho.model import Board, Tenant
 from backend.database.db import async_db_session
 
 
-async def cleanup_orphan_tenant():
+async def cleanup_orphan_tenant() -> None:
     """清理孤立的 userecho 租户"""
     async with async_db_session.begin() as db:
         print('=' * 80)

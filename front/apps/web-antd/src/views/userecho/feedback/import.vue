@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { UploadProps } from 'ant-design-vue';
-import type { ImportResult } from '#/api';
+import type { ImportResult, ImportPreviewResult, ImportConfig } from '#/api';
 
-import { ref, computed, h, resolveComponent } from 'vue';
+import { ref, computed, h, resolveComponent, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { VbenButton } from '@vben/common-ui';
@@ -14,18 +14,54 @@ import {
   CloseCircleOutlined,
   DownloadOutlined,
   LeftOutlined,
+  SettingOutlined,
 } from '@ant-design/icons-vue';
 
-import { importFeedbacks, downloadImportTemplate } from '#/api';
+import { 
+  previewImport, 
+  importFeedbacksWithConfig, 
+  downloadImportTemplate, 
+  getBoardList 
+} from '#/api';
 
 const router = useRouter();
 
 /**
- * 上传状态
+ * 上传状态：idle -> parsing -> configuring -> importing -> success/error
  */
-const uploadStatus = ref<'idle' | 'uploading' | 'success' | 'error'>('idle');
+type UploadStatus = 'idle' | 'parsing' | 'configuring' | 'importing' | 'success' | 'error';
+const uploadStatus = ref<UploadStatus>('idle');
 const importResult = ref<ImportResult | null>(null);
 const uploadProgress = ref(0);
+
+/**
+ * 预览和配置
+ */
+const previewResult = ref<ImportPreviewResult | null>(null);
+const currentFile = ref<File | null>(null);
+const importConfig = ref<ImportConfig>({
+  default_board_id: undefined,
+  default_customer_name: undefined,
+  use_anonymous: false,
+});
+const customerMode = ref<'anonymous' | 'single'>('anonymous');
+
+// 看板列表
+interface Board {
+  id: string;
+  name: string;
+}
+const boardList = ref<Board[]>([]);
+
+// 加载看板列表
+onMounted(async () => {
+  try {
+    const boards = await getBoardList();
+    boardList.value = boards.map((b: any) => ({ id: b.id, name: b.name }));
+  } catch (e) {
+    console.error('Failed to load boards:', e);
+  }
+});
 
 /**
  * 文件上传配置
@@ -55,31 +91,73 @@ const uploadProps: UploadProps = {
     }
 
     handleUpload(file);
-    return false; // 阻止自动上传
+    return false;
   },
   onRemove: () => {
-    fileList.value = [];
-    uploadStatus.value = 'idle';
-    importResult.value = null;
+    handleReset();
   },
 };
 
 /**
- * 处理文件上传
+ * 处理文件上传 - 第一阶段：预览
  */
 const handleUpload = async (file: File) => {
+  currentFile.value = file;
+  uploadStatus.value = 'parsing';
+  
   try {
-    uploadStatus.value = 'uploading';
-    uploadProgress.value = 0;
+    const preview = await previewImport(file);
+    previewResult.value = preview;
+    
+    if (preview.status === 'error') {
+      message.error(preview.message || '文件解析失败');
+      uploadStatus.value = 'error';
+      return;
+    }
+    
+    // 判断是否需要配置
+    if (preview.missing_optional.includes('看板名称') || preview.missing_optional.includes('客户名称')) {
+      uploadStatus.value = 'configuring';
+    } else {
+      // 直接导入
+      await doImport();
+    }
+  } catch (error: any) {
+    uploadStatus.value = 'error';
+    message.error(error.message || '文件解析失败');
+  }
+};
 
-    // 模拟进度
-    const progressInterval = setInterval(() => {
-      if (uploadProgress.value < 90) {
-        uploadProgress.value += 10;
+/**
+ * 执行导入 - 第二阶段
+ */
+const doImport = async () => {
+  if (!currentFile.value) return;
+  
+  uploadStatus.value = 'importing';
+  uploadProgress.value = 0;
+  
+  const progressInterval = setInterval(() => {
+    if (uploadProgress.value < 90) {
+      uploadProgress.value += 10;
+    }
+  }, 200);
+  
+  try {
+    // 构建配置
+    const config: ImportConfig = {};
+    if (previewResult.value?.missing_optional.includes('看板名称')) {
+      config.default_board_id = importConfig.value.default_board_id;
+    }
+    if (previewResult.value?.missing_optional.includes('客户名称')) {
+      if (customerMode.value === 'anonymous') {
+        config.use_anonymous = true;
+      } else {
+        config.default_customer_name = importConfig.value.default_customer_name;
       }
-    }, 200);
-
-    const result = await importFeedbacks(file);
+    }
+    
+    const result = await importFeedbacksWithConfig(currentFile.value, config);
     
     clearInterval(progressInterval);
     uploadProgress.value = 100;
@@ -91,13 +169,46 @@ const handleUpload = async (file: File) => {
       message.success(`成功导入 ${result.success} 条反馈！`);
     } else {
       message.warning(`导入完成：成功 ${result.success} 条，失败 ${result.failed} 条`);
-      showErrorDetails();
     }
   } catch (error: any) {
+    clearInterval(progressInterval);
     uploadStatus.value = 'error';
-    message.error(error.message || '导入失败，请检查文件格式');
+    message.error(error.message || '导入失败');
   }
 };
+
+/**
+ * 校验是否可以导入
+ */
+const canImport = computed(() => {
+  if (!previewResult.value) return false;
+  
+  // 如果缺少看板列，必须选择看板
+  if (previewResult.value.missing_optional.includes('看板名称')) {
+    if (!importConfig.value.default_board_id) return false;
+  }
+  
+  // 如果缺少客户列且选择单一客户，必须填写名称
+  if (previewResult.value.missing_optional.includes('客户名称')) {
+    if (customerMode.value === 'single' && !importConfig.value.default_customer_name) {
+      return false;
+    }
+  }
+  
+  return true;
+});
+
+/**
+ * 生成预览表格列
+ */
+const previewColumns = computed(() => {
+  if (!previewResult.value?.detected_columns) return [];
+  return previewResult.value.detected_columns.map(col => ({
+    title: col,
+    dataIndex: col,
+    ellipsis: true,
+  }));
+});
 
 /**
  * 显示错误详情
@@ -134,7 +245,7 @@ const showErrorDetails = () => {
           ? h(
               'p',
               { style: { color: '#ff4d4f', marginTop: '12px' } },
-              '* 仅显示前 10 条错误，完整错误列表请下载日志文件',
+              '* 仅显示前 20 条错误',
             )
           : null,
       ]),
@@ -150,13 +261,21 @@ const handleDownloadTemplate = () => {
 };
 
 /**
- * 重新导入
+ * 重置
  */
 const handleReset = () => {
   fileList.value = [];
   uploadStatus.value = 'idle';
   importResult.value = null;
+  previewResult.value = null;
+  currentFile.value = null;
   uploadProgress.value = 0;
+  importConfig.value = {
+    default_board_id: undefined,
+    default_customer_name: undefined,
+    use_anonymous: false,
+  };
+  customerMode.value = 'anonymous';
 };
 
 /**
@@ -197,11 +316,11 @@ const statistics = computed(() => {
 
     <!-- 导入指南 -->
     <a-card title="📋 导入说明" class="mb-4">
-      <a-steps :current="1" size="small">
-        <a-step title="下载模板" description="下载标准 Excel 模板" />
-        <a-step title="填写数据" description="按照模板格式填写反馈数据" />
-        <a-step title="上传文件" description="上传填好的 Excel 文件" />
-        <a-step title="完成导入" description="系统自动处理并生成反馈" />
+      <a-steps :current="uploadStatus === 'idle' ? 0 : uploadStatus === 'configuring' ? 2 : 3" size="small">
+        <a-step title="上传文件" description="上传 Excel 或 CSV 文件" />
+        <a-step title="解析预览" description="系统自动检测列" />
+        <a-step title="补全配置" description="配置缺失的字段" />
+        <a-step title="完成导入" description="数据入库成功" />
       </a-steps>
 
       <a-divider />
@@ -209,24 +328,14 @@ const statistics = computed(() => {
       <div class="guide-content">
         <h4>🔖 必填字段：</h4>
         <ul>
-          <li><strong>反馈内容</strong>：用户的原始反馈文本（1-1000 字）</li>
-          <li><strong>客户名称</strong>：可以是客户名称或匿名作者（如：小红书用户@xxx）</li>
+          <li><strong>反馈内容</strong>：用户的原始反馈文本</li>
         </ul>
 
-        <h4>📌 可选字段：</h4>
+        <h4>📌 可选字段（可在上传后补全）：</h4>
         <ul>
-          <li><strong>客户类型</strong>：normal（普通）/ paid（付费）/ major（大客户）/ strategic（战略客户）</li>
-          <li><strong>提交时间</strong>：格式如 2025-01-01 或 2025-01-01 12:00:00</li>
-          <li><strong>来源平台</strong>：如微信、小红书、知乎等</li>
-          <li><strong>是否紧急</strong>：填写 是/否 或 true/false</li>
-        </ul>
-
-        <h4>⚠️ 注意事项：</h4>
-        <ul>
-          <li>支持 .xlsx、.xls、.csv 格式</li>
-          <li>文件大小不超过 10MB</li>
-          <li>建议单次导入不超过 500 条数据</li>
-          <li>系统会自动去重，相同内容的反馈只会保留一条</li>
+          <li><strong>看板名称</strong>：反馈所属看板（缺失时可选择默认看板）</li>
+          <li><strong>客户名称</strong>：留空可选择匿名或统一客户</li>
+          <li><strong>客户类型</strong>、<strong>提交时间</strong>、<strong>是否紧急</strong></li>
         </ul>
 
         <VbenButton type="primary" @click="handleDownloadTemplate" class="mt-4">
@@ -238,6 +347,7 @@ const statistics = computed(() => {
 
     <!-- 上传区域 -->
     <a-card title="📤 上传文件">
+      <!-- 初始状态：上传 -->
       <div v-if="uploadStatus === 'idle'">
         <a-upload-dragger v-bind="uploadProps">
           <p class="ant-upload-drag-icon">
@@ -250,8 +360,81 @@ const statistics = computed(() => {
         </a-upload-dragger>
       </div>
 
-      <!-- 上传中 -->
-      <div v-if="uploadStatus === 'uploading'" class="upload-progress">
+      <!-- 解析中 -->
+      <div v-if="uploadStatus === 'parsing'" class="upload-progress">
+        <a-spin size="large" />
+        <p class="mt-4">正在解析文件...</p>
+      </div>
+
+      <!-- 配置面板 -->
+      <div v-if="uploadStatus === 'configuring'" class="config-panel">
+        <a-alert type="info" show-icon class="mb-4">
+          <template #message>检测到以下列缺失，请补充配置</template>
+          <template #description>
+            缺失列：{{ previewResult?.missing_optional.join('、') }}
+          </template>
+        </a-alert>
+
+        <!-- 数据预览 -->
+        <a-card title="📊 数据预览（前 5 行）" size="small" class="mb-4">
+          <a-table
+            :dataSource="previewResult?.sample_data"
+            :columns="previewColumns"
+            size="small"
+            :pagination="false"
+            :scroll="{ x: 'max-content' }"
+          />
+          <p class="text-gray-500 mt-2">共 {{ previewResult?.total_rows }} 行数据</p>
+        </a-card>
+
+        <!-- 配置表单 -->
+        <a-card title="⚙️ 补全配置" size="small">
+          <a-form layout="vertical">
+            <!-- 看板选择 -->
+            <a-form-item
+              v-if="previewResult?.missing_optional.includes('看板名称')"
+              label="目标看板"
+              required
+            >
+              <a-select
+                v-model:value="importConfig.default_board_id"
+                placeholder="请选择导入到哪个看板"
+                :options="boardList.map(b => ({ value: b.id, label: b.name }))"
+                style="width: 100%"
+              />
+            </a-form-item>
+
+            <!-- 客户处理 -->
+            <a-form-item
+              v-if="previewResult?.missing_optional.includes('客户名称')"
+              label="客户处理方式"
+            >
+              <a-radio-group v-model:value="customerMode">
+                <a-radio value="anonymous">全部设为匿名反馈</a-radio>
+                <a-radio value="single">使用统一客户名称</a-radio>
+              </a-radio-group>
+              
+              <a-input
+                v-if="customerMode === 'single'"
+                v-model:value="importConfig.default_customer_name"
+                placeholder="输入客户名称"
+                class="mt-2"
+              />
+            </a-form-item>
+          </a-form>
+
+          <div class="action-buttons mt-4">
+            <VbenButton type="primary" @click="doImport" :disabled="!canImport">
+              <SettingOutlined />
+              确认导入
+            </VbenButton>
+            <VbenButton @click="handleReset">取消</VbenButton>
+          </div>
+        </a-card>
+      </div>
+
+      <!-- 导入中 -->
+      <div v-if="uploadStatus === 'importing'" class="upload-progress">
         <a-spin size="large" />
         <p class="mt-4">正在导入数据，请稍候...</p>
         <a-progress :percent="uploadProgress" status="active" />
@@ -410,5 +593,14 @@ const statistics = computed(() => {
   display: flex;
   justify-content: center;
   gap: 12px;
+}
+
+.config-panel {
+  padding: 16px;
+}
+
+.text-gray-500 {
+  color: #666;
+  font-size: 12px;
 }
 </style>

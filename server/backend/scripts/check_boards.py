@@ -16,7 +16,7 @@ from backend.app.userecho.model import Board
 from backend.database.db import async_db_session
 
 
-async def check_boards():
+async def check_boards() -> None:
     """检查 Board 数据"""
     async with async_db_session() as db:
         print('=' * 80)
@@ -30,7 +30,7 @@ async def check_boards():
 
         print(f'总共 {len(board_list)} 个看板:')
         print('-' * 80)
-        
+
         for board in board_list:
             print(f'ID: {board.id}')
             print(f'  名称: {board.name}')
@@ -42,13 +42,13 @@ async def check_boards():
         print('=' * 80)
         print('按租户分组:')
         print('=' * 80)
-        
+
         tenant_boards = {}
         for board in board_list:
             if board.tenant_id not in tenant_boards:
                 tenant_boards[board.tenant_id] = []
             tenant_boards[board.tenant_id].append(board)
-        
+
         for tenant_id, boards in tenant_boards.items():
             active_boards = [b for b in boards if not b.is_archived]
             print(f'\n租户: {tenant_id}')

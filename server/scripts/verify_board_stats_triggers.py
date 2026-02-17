@@ -1,26 +1,30 @@
 """
 验证 Board 统计触发器是否正常工作
 """
+
 import asyncio
 import sys
+
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import text
+
 from backend.database.db import async_engine
 
 
-async def verify_triggers():
+async def verify_triggers() -> None:
     """验证触发器"""
-    
+
     print('🔍 验证 Board 统计触发器...\n')
-    
+
     async with async_engine.begin() as conn:
         # 1. 检查触发器是否存在
         print('[1/3] 检查触发器是否存在...')
-        result = await conn.execute(text("""
-            SELECT 
+        result = await conn.execute(
+            text("""
+            SELECT
                 trigger_name,
                 event_object_table,
                 action_statement
@@ -30,8 +34,9 @@ async def verify_triggers():
                 'trigger_update_board_topic_count'
             )
             ORDER BY trigger_name;
-        """))
-        
+        """)
+        )
+
         triggers = result.fetchall()
         if triggers:
             print(f'    ✅ 找到 {len(triggers)} 个触发器:')
@@ -40,11 +45,12 @@ async def verify_triggers():
         else:
             print('    ❌ 未找到触发器')
             return
-        
+
         # 2. 检查触发器函数是否存在
         print('\n[2/3] 检查触发器函数是否存在...')
-        result = await conn.execute(text("""
-            SELECT 
+        result = await conn.execute(
+            text("""
+            SELECT
                 routine_name,
                 routine_type
             FROM information_schema.routines
@@ -53,8 +59,9 @@ async def verify_triggers():
                 'update_board_topic_count'
             )
             ORDER BY routine_name;
-        """))
-        
+        """)
+        )
+
         functions = result.fetchall()
         if functions:
             print(f'    ✅ 找到 {len(functions)} 个触发器函数:')
@@ -63,11 +70,12 @@ async def verify_triggers():
         else:
             print('    ❌ 未找到触发器函数')
             return
-        
+
         # 3. 查看当前 Board 统计数据
         print('\n[3/3] 查看当前 Board 统计数据...')
-        result = await conn.execute(text("""
-            SELECT 
+        result = await conn.execute(
+            text("""
+            SELECT
                 b.id,
                 b.name,
                 b.feedback_count,
@@ -77,32 +85,35 @@ async def verify_triggers():
             FROM boards b
             WHERE b.is_archived = false
             ORDER BY b.created_time;
-        """))
-        
+        """)
+        )
+
         boards = result.fetchall()
         if boards:
             print(f'    📊 Board 统计数据 ({len(boards)} 个看板):')
             print(f'    {"看板名称":<20} {"统计反馈数":<12} {"实际反馈数":<12} {"统计主题数":<12} {"实际主题数":<12}')
-            print(f'    {"-"*20} {"-"*12} {"-"*12} {"-"*12} {"-"*12}')
-            
+            print(f'    {"-" * 20} {"-" * 12} {"-" * 12} {"-" * 12} {"-" * 12}')
+
             all_match = True
             for board in boards:
                 feedback_match = '✅' if board.feedback_count == board.actual_feedback_count else '❌'
                 topic_match = '✅' if board.topic_count == board.actual_topic_count else '❌'
-                
-                print(f'    {board.name:<20} {board.feedback_count:<12} {board.actual_feedback_count:<12} {board.topic_count:<12} {board.actual_topic_count:<12}')
-                
+
+                print(
+                    f'    {board.name:<20} {board.feedback_count:<12} {board.actual_feedback_count:<12} {board.topic_count:<12} {board.actual_topic_count:<12}'
+                )
+
                 if board.feedback_count != board.actual_feedback_count or board.topic_count != board.actual_topic_count:
                     all_match = False
                     print(f'       ⚠️  数据不匹配: feedback {feedback_match}, topic {topic_match}')
-            
+
             if all_match:
                 print('\n    ✅ 所有 Board 的统计数据都正确！')
             else:
                 print('\n    ⚠️  部分 Board 的统计数据不匹配')
         else:
             print('    📊 暂无看板数据')
-    
+
     print('\n🎉 验证完成！')
 
 

@@ -310,7 +310,7 @@ class InsightService:
             prompt = f"""
 你是产品经理的智能助手。基于以下需求数据，生成一句话总结建议（不超过 50 字）：
 
-1. {suggestions[0]["title"]} - 优先级：{suggestions[0]["estimated_roi"]:.1f}，{suggestions[0]["reason"]}
+1. {suggestions[0]['title']} - 优先级：{suggestions[0]['estimated_roi']:.1f}，{suggestions[0]['reason']}
 {f'2. {suggestions[1]["title"]} - 优先级：{suggestions[1]["estimated_roi"]:.1f}' if len(suggestions) > 1 else ''}
 {f'3. {suggestions[2]["title"]} - 优先级：{suggestions[2]["estimated_roi"]:.1f}' if len(suggestions) > 2 else ''}
 
@@ -584,7 +584,7 @@ class InsightService:
             top_topics = data['top_topics']
             prompt = f"""
 基于以下 TOP 3 需求，生成一句话建议（不超过 50 字）：
-1. {top_topics[0]["title"]} - 影响 {top_topics[0]["customer_count"]} 个客户
+1. {top_topics[0]['title']} - 影响 {top_topics[0]['customer_count']} 个客户
 {f'2. {top_topics[1]["title"]} - 影响 {top_topics[1]["customer_count"]} 个客户' if len(top_topics) > 1 else ''}
 {f'3. {top_topics[2]["title"]} - 影响 {top_topics[2]["customer_count"]} 个客户' if len(top_topics) > 2 else ''}
 

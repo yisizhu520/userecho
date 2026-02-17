@@ -17,7 +17,7 @@ from backend.app.userecho.service.onboarding_service import onboarding_service
 from backend.database.db import async_db_session
 
 
-async def test_onboarding_status():
+async def test_onboarding_status() -> None:
     """测试 onboarding status 方法"""
     async with async_db_session() as db:
         print('=' * 80)
@@ -38,7 +38,7 @@ async def test_onboarding_status():
             # 调用 get_onboarding_status 方法
             print('📞 调用 get_onboarding_status...')
             status = await onboarding_service.get_onboarding_status(db=db, user_id=boss.id)
-            
+
             print('✅ 调用成功！')
             print()
             print('📊 返回结果:')
@@ -48,15 +48,16 @@ async def test_onboarding_status():
             print(f'  board_id: {status.board_id}')
             print(f'  completed_steps: {status.completed_steps}')
             print()
-            
+
             if not status.needs_onboarding:
                 print('✅ 验证通过：boss 用户已完成 onboarding')
             else:
                 print(f'⚠️  boss 用户还需要完成 onboarding，当前步骤: {status.current_step}')
-            
+
         except Exception as e:
             print(f'❌ 调用失败: {e}')
             import traceback
+
             traceback.print_exc()
             return
 

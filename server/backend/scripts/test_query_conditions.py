@@ -16,7 +16,7 @@ from backend.app.userecho.model import Board
 from backend.database.db import async_db_session
 
 
-async def test_queries():
+async def test_queries() -> None:
     """测试不同的查询条件"""
     async with async_db_session() as db:
         print('=' * 80)
@@ -48,11 +48,7 @@ async def test_queries():
 
         # 3. 使用 not Board.is_archived（API 当前的写法）
         print(f'3️⃣ tenant_id={tenant_id!r} AND not Board.is_archived:')
-        stmt3 = (
-            select(Board)
-            .where(Board.tenant_id == tenant_id)
-            .where(not Board.is_archived)
-        )
+        stmt3 = select(Board).where(Board.tenant_id == tenant_id).where(not Board.is_archived)
         result3 = await db.execute(stmt3)
         boards3 = result3.scalars().all()
         print(f'   结果: {len(boards3)} 个看板')
@@ -63,9 +59,7 @@ async def test_queries():
         # 4. 使用 Board.is_archived == False（推荐写法）
         print(f'4️⃣ tenant_id={tenant_id!r} AND Board.is_archived == False:')
         stmt4 = (
-            select(Board)
-            .where(Board.tenant_id == tenant_id)
-            .where(Board.is_archived == False)  # noqa: E712
+            select(Board).where(Board.tenant_id == tenant_id).where(Board.is_archived == False)  # noqa: E712
         )
         result4 = await db.execute(stmt4)
         boards4 = result4.scalars().all()
@@ -76,11 +70,7 @@ async def test_queries():
 
         # 5. 使用 ~Board.is_archived（位运算符）
         print(f'5️⃣ tenant_id={tenant_id!r} AND ~Board.is_archived:')
-        stmt5 = (
-            select(Board)
-            .where(Board.tenant_id == tenant_id)
-            .where(~Board.is_archived)
-        )
+        stmt5 = select(Board).where(Board.tenant_id == tenant_id).where(~Board.is_archived)
         result5 = await db.execute(stmt5)
         boards5 = result5.scalars().all()
         print(f'   结果: {len(boards5)} 个看板')

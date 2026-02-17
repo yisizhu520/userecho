@@ -17,7 +17,7 @@ from backend.app.userecho.model import Board
 from backend.database.db import async_db_session
 
 
-async def debug_board_api():
+async def debug_board_api() -> None:
     """调试 Board API"""
     async with async_db_session() as db:
         print('=' * 80)
@@ -31,7 +31,7 @@ async def debug_board_api():
             print('❌ boss 用户不存在')
             return
 
-        print(f'1️⃣ boss 用户信息:')
+        print('1️⃣ boss 用户信息:')
         print(f'   ID: {boss.id}')
         print(f'   username: {boss.username}')
         print(f'   User.tenant_id: {boss.tenant_id!r}')
@@ -39,12 +39,12 @@ async def debug_board_api():
 
         # 2. 模拟 JWT 中间件的逻辑
         tenant_id = boss.tenant_id or 'default-tenant'
-        print(f'2️⃣ JWT 中间件会使用的 tenant_id:')
+        print('2️⃣ JWT 中间件会使用的 tenant_id:')
         print(f'   tenant_id = {tenant_id!r}')
         print()
 
         # 3. 查询所有看板（不加过滤）
-        print(f'3️⃣ 数据库中的所有看板:')
+        print('3️⃣ 数据库中的所有看板:')
         all_boards = await db.scalars(select(Board))
         all_board_list = list(all_boards)
         if all_board_list:
@@ -63,12 +63,12 @@ async def debug_board_api():
         stmt = (
             select(Board)
             .where(Board.tenant_id == tenant_id)
-            .where(Board.is_archived == False)
+            .where(not Board.is_archived)
             .order_by(Board.sort_order, Board.created_time.desc())
         )
         result = await db.execute(stmt)
         boards = result.scalars().all()
-        
+
         print(f'   查询结果: {len(boards)} 个看板')
         if boards:
             for board in boards:
@@ -78,13 +78,13 @@ async def debug_board_api():
         print()
 
         # 5. 检查是否有 tenant_id 不匹配的情况
-        print(f'5️⃣ 诊断:')
+        print('5️⃣ 诊断:')
         if not boards and all_board_list:
             print('   ⚠️  数据库有看板，但查询结果为空')
-            print(f'   可能原因:')
+            print('   可能原因:')
             print(f'   - boss.tenant_id ({boss.tenant_id!r}) 与看板的 tenant_id 不匹配')
-            print(f'   - 或者所有看板都被归档了')
-            
+            print('   - 或者所有看板都被归档了')
+
             # 检查每个看板
             for board in all_board_list:
                 if board.tenant_id != tenant_id:

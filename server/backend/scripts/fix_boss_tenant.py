@@ -17,7 +17,7 @@ from backend.app.userecho.model import TenantUser
 from backend.database.db import async_db_session
 
 
-async def fix_boss_tenant():
+async def fix_boss_tenant() -> None:
     """将 boss 用户切换到 userecho 租户"""
     async with async_db_session.begin() as db:
         print('=' * 80)
@@ -27,9 +27,7 @@ async def fix_boss_tenant():
 
         # 1. 更新 User 表的 tenant_id
         await db.execute(
-            update(User)
-            .where(User.username == 'boss')
-            .values(tenant_id='79a2fd29-36f0-4d94-9999-e35ad6e66031')
+            update(User).where(User.username == 'boss').values(tenant_id='79a2fd29-36f0-4d94-9999-e35ad6e66031')
         )
         print('✅ 更新 User.tenant_id 为 79a2fd29-36f0-4d94-9999-e35ad6e66031')
 

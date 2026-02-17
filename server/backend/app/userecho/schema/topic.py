@@ -81,8 +81,5 @@ class TopicStatusUpdateParam(SchemaBase):
 
 
 # 避免循环导入，在文件末尾导入
-from backend.app.userecho.schema.feedback import FeedbackOut
-from backend.app.userecho.schema.priority import PriorityScoreOut
-from backend.app.userecho.schema.status_history import StatusHistoryOut
 
 TopicDetailOut.model_rebuild()

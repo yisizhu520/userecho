@@ -76,6 +76,24 @@ export interface ImportResult {
   has_more_errors?: boolean;
 }
 
+/** 导入预览结果 */
+export interface ImportPreviewResult {
+  status: 'ready' | 'error';
+  message?: string;
+  total_rows: number;
+  sample_data: Record<string, string>[];
+  detected_columns: string[];
+  missing_required: string[];
+  missing_optional: string[];
+}
+
+/** 导入配置 */
+export interface ImportConfig {
+  default_board_id?: string;
+  default_customer_name?: string;
+  use_anonymous?: boolean;
+}
+
 /** 截图识别提取的数据 */
 export interface ExtractedScreenshotData {
   platform: 'wechat' | 'xiaohongshu' | 'appstore' | 'weibo' | 'other';
@@ -160,6 +178,41 @@ export async function importFeedbacks(file: File) {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+  });
+}
+
+/**
+ * 预览导入文件
+ */
+export async function previewImport(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return requestClient.post<ImportPreviewResult>(
+    '/api/v1/app/feedbacks/import/preview',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+}
+
+/**
+ * 导入反馈（带配置）
+ */
+export async function importFeedbacksWithConfig(file: File, config: ImportConfig) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const params = new URLSearchParams();
+  if (config.default_board_id) params.append('default_board_id', config.default_board_id);
+  if (config.default_customer_name) params.append('default_customer_name', config.default_customer_name);
+  if (config.use_anonymous) params.append('use_anonymous', 'true');
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `/api/v1/app/feedbacks/import?${queryString}`
+    : '/api/v1/app/feedbacks/import';
+
+  return requestClient.post<ImportResult>(url, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
 }
 

@@ -17,7 +17,7 @@ from backend.app.userecho.model import Board, Tenant, TenantUser
 from backend.database.db import async_db_session
 
 
-async def diagnose():
+async def diagnose() -> None:
     """诊断租户数据"""
     async with async_db_session() as db:
         print('=' * 80)
@@ -30,7 +30,7 @@ async def diagnose():
         print('-' * 80)
         boss = await db.scalar(select(User).where(User.username == 'boss'))
         if boss:
-            print(f'   ✅ boss 用户存在')
+            print('   ✅ boss 用户存在')
             print(f'   User ID: {boss.id}')
             print(f'   User.tenant_id: {boss.tenant_id!r}')
         else:
@@ -43,7 +43,7 @@ async def diagnose():
         if boss:
             tenant_user = await db.scalar(select(TenantUser).where(TenantUser.user_id == boss.id))
             if tenant_user:
-                print(f'   ✅ TenantUser 关联存在')
+                print('   ✅ TenantUser 关联存在')
                 print(f'   TenantUser.tenant_id: {tenant_user.tenant_id!r}')
                 print(f'   TenantUser.user_type: {tenant_user.user_type}')
             else:
@@ -83,16 +83,16 @@ async def diagnose():
         if boss:
             tenant_id = boss.tenant_id or 'default-tenant'
             print(f'   查询条件: tenant_id={tenant_id!r}, is_archived=False')
-            
+
             stmt = (
                 select(Board)
                 .where(Board.tenant_id == tenant_id)
-                .where(Board.is_archived == False)
+                .where(not Board.is_archived)
                 .order_by(Board.sort_order, Board.created_time.desc())
             )
             result = await db.execute(stmt)
             api_boards = result.scalars().all()
-            
+
             if api_boards:
                 print(f'   ✅ 查询到 {len(api_boards)} 个看板:')
                 for board in api_boards:
@@ -105,11 +105,11 @@ async def diagnose():
         print('=' * 80)
         print('📋 诊断结论')
         print('=' * 80)
-        
+
         if boss and board_list:
             boss_tenant = boss.tenant_id or 'default-tenant'
             board_tenants = {b.tenant_id for b in board_list}
-            
+
             if boss_tenant in board_tenants:
                 print('✅ 数据正常：boss 的 tenant_id 与看板的 tenant_id 匹配')
             else:

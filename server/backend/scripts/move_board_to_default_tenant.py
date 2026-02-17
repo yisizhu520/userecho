@@ -16,7 +16,7 @@ from backend.app.userecho.model import Board
 from backend.database.db import async_db_session
 
 
-async def move_board_to_default_tenant():
+async def move_board_to_default_tenant() -> None:
     """将 web端反馈 看板移动到 default-tenant"""
     async with async_db_session.begin() as db:
         print('=' * 80)
@@ -26,11 +26,9 @@ async def move_board_to_default_tenant():
 
         # 更新看板的 tenant_id
         result = await db.execute(
-            update(Board)
-            .where(Board.id == '983bd86b-743e-4f3e-969b-7dcf20fa55c3')
-            .values(tenant_id='default-tenant')
+            update(Board).where(Board.id == '983bd86b-743e-4f3e-969b-7dcf20fa55c3').values(tenant_id='default-tenant')
         )
-        
+
         if result.rowcount > 0:
             print('✅ 成功将 web端反馈 看板移动到 default-tenant')
         else:

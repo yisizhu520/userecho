@@ -151,4 +151,3 @@ class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
             data['homePath'] = '/app/dashboard/workspace'
 
         return data
-
