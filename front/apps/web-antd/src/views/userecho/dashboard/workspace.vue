@@ -18,10 +18,10 @@ import { useUserStore } from '@vben/stores';
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
 import InsightsCard from './components/InsightsCard.vue';
+import PendingDecisionsCard from './components/PendingDecisionsCard.vue';
 import TagDistributionChart from './components/TagDistributionChart.vue';
 import TopTopicsCard from './components/TopTopicsCard.vue';
 import TrendChart from './components/TrendChart.vue';
-import UrgentTopicsCard from './components/UrgentTopicsCard.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -119,6 +119,11 @@ function navTo(item: WorkbenchQuickNavItem) {
   }
 }
 
+// 刷新数据
+function handleRefresh() {
+  loadStats();
+}
+
 onMounted(() => {
   loadStats();
 });
@@ -147,9 +152,14 @@ onMounted(() => {
 
     <!-- 主内容区 -->
     <div v-if="!loading && stats" class="mt-5 flex flex-col lg:flex-row">
-      <!-- 左侧：紧急需求 + 趋势图 -->
+      <!-- 左侧：待决策 + 趋势图 -->
       <div class="mr-0 w-full lg:mr-4 lg:w-3/5">
-        <UrgentTopicsCard :topics="stats.urgent_topics" />
+        <!-- 今日待决策（新增核心组件） -->
+        <PendingDecisionsCard 
+          :decisions="stats.pending_decisions || []" 
+          @refresh="handleRefresh"
+        />
+        
         <AnalysisChartCard class="mt-5" title="7天反馈趋势">
           <TrendChart :data="stats.weekly_trend" />
         </AnalysisChartCard>

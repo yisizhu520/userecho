@@ -23,6 +23,7 @@ export interface PriorityScore {
   dev_cost: number;
   urgency_factor: number;
   total_score: number;
+  details?: any; // JSON
   created_time: string;
   updated_time?: string;
 }

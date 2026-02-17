@@ -1,5 +1,7 @@
 """工作台统计服务"""
 
+import operator
+
 from datetime import datetime, timedelta
 
 from sqlalchemy import desc, func, select
@@ -36,11 +38,14 @@ class DashboardService:
             top_topics = await DashboardService._get_top_topics(db, tenant_id)
             weekly_trend = await DashboardService._get_weekly_trend(db, tenant_id, week_ago)
             tag_distribution = await DashboardService._get_tag_distribution(db, tenant_id)
+            # 新增：待决策主题（带 MVP 优先级评分）
+            pending_decisions = await DashboardService._get_pending_decisions(db, tenant_id)
 
             return {
                 'feedback_stats': feedback_stats,
                 'topic_stats': topic_stats,
-                'urgent_topics': urgent_topics,
+                'urgent_topics': urgent_topics,  # 保留向后兼容
+                'pending_decisions': pending_decisions,  # 新增
                 'top_topics': top_topics,
                 'weekly_trend': weekly_trend,
                 'tag_distribution': tag_distribution,
@@ -298,6 +303,100 @@ class DashboardService:
             }
             for row in tag_data
         ]
+
+    @staticmethod
+    async def _get_pending_decisions(
+        db: AsyncSession,
+        tenant_id: str,
+    ) -> list[dict]:
+        """
+        获取待决策主题列表 TOP 5（带 MVP 优先级评分）
+
+        用于工作台「今日待决策」卡片
+        """
+        from backend.app.userecho.api.v1.tenant_config import DEFAULT_STRATEGIC_KEYWORDS
+        from backend.app.userecho.service.priority_calculator import priority_calculator
+        from backend.app.userecho.service.tenant_config_service import tenant_config_service
+
+        # 1. 获取战略关键词配置
+        strategic_config = await tenant_config_service.get_config(
+            db=db,
+            tenant_id=tenant_id,
+            config_group='strategic',
+            default={'keywords': DEFAULT_STRATEGIC_KEYWORDS},
+        )
+        strategic_keywords = strategic_config.get('keywords', [])
+
+        # 2. 查询待决策主题（pending 状态，按反馈数量排序）
+        query = (
+            select(Topic)
+            .where(
+                Topic.tenant_id == tenant_id,
+                Topic.deleted_at.is_(None),
+                Topic.status == 'pending',  # 仅待决策的主题
+            )
+            .order_by(desc(Topic.feedback_count))
+            .limit(5)
+        )
+
+        result = await db.execute(query)
+        topics = result.scalars().all()
+
+        if not topics:
+            return []
+
+        # 3. 批量获取每个主题的反馈内容
+        topic_ids = [t.id for t in topics]
+        feedback_query = select(Feedback.topic_id, Feedback.content, Feedback.created_time).where(
+            Feedback.topic_id.in_(topic_ids),
+            Feedback.deleted_at.is_(None),
+        )
+        feedback_result = await db.execute(feedback_query)
+        feedback_rows = feedback_result.all()
+
+        # 按主题分组反馈
+        feedbacks_by_topic: dict[str, list[tuple[str, datetime]]] = {}
+        for topic_id, content, created_time in feedback_rows:
+            if topic_id not in feedbacks_by_topic:
+                feedbacks_by_topic[topic_id] = []
+            feedbacks_by_topic[topic_id].append((content or '', created_time))
+
+        # 4. 计算每个主题的优先级评分
+        pending_decisions = []
+        for topic in topics:
+            topic_feedbacks = feedbacks_by_topic.get(topic.id, [])
+            feedback_contents = [f[0] for f in topic_feedbacks]
+            last_feedback_time = max((f[1] for f in topic_feedbacks), default=None) if topic_feedbacks else None
+
+            # 计算优先级评分
+            priority_data = priority_calculator.calculate_score(
+                topic_title=topic.title,
+                topic_description=topic.description,
+                feedback_contents=feedback_contents,
+                strategic_keywords=strategic_keywords,
+                last_feedback_time=last_feedback_time,
+            )
+
+            pending_decisions.append({
+                'id': topic.id,
+                'title': topic.title,
+                'category': topic.category,
+                'status': topic.status,
+                # MVP 优先级评分数据
+                'priority_score': priority_data['total_score'],
+                'feedback_count': priority_data['feedback_count'],
+                'urgent_ratio': priority_data['urgent_ratio'],
+                'strategic_keywords_matched': priority_data['strategic_keywords_matched'],
+                'last_feedback_days': priority_data['last_feedback_days'],
+                # 商业价值数据（来自 Topic 模型）
+                'total_mrr': float(topic.total_mrr) if topic.total_mrr else 0,
+                'affected_customer_count': topic.affected_customer_count,
+            })
+
+        # 按优先级评分排序
+        pending_decisions.sort(key=operator.itemgetter('priority_score'), reverse=True)
+
+        return pending_decisions
 
 
 dashboard_service = DashboardService()

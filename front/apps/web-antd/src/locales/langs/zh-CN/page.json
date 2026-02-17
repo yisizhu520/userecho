@@ -39,7 +39,7 @@
     "feedalyze": "回响",
     "feedbackList": "反馈列表",
     "feedbackImport": "导入反馈",
-    "topicList": "需求主题",
+    "topicList": "需求库",
     "topicDetail": "主题详情",
     "customerManage": "客户管理"
   },
@@ -51,14 +51,14 @@
         "import": "导入反馈"
       },
       "topic": {
-        "list": "需求主题",
+        "list": "需求库",
         "detail": "主题详情"
       },
       "customer": {
         "title": "客户管理"
       },
       "discovery": {
-        "title": "AI 发现中心"
+        "title": "待决策中心"
       },
       "settings": {
         "title": "设置",

@@ -5,6 +5,23 @@
 import { requestClient } from '#/api/request';
 
 /**
+ * 待决策主题数据结构
+ */
+export interface PendingDecision {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  priority_score: number;
+  feedback_count: number;
+  urgent_ratio: number;
+  strategic_keywords_matched: string[];
+  last_feedback_days: number | null;
+  total_mrr: number;
+  affected_customer_count: number;
+}
+
+/**
  * 工作台统计数据结构
  */
 export interface DashboardStats {
@@ -27,6 +44,7 @@ export interface DashboardStats {
     category: string;
     status: string;
   }>;
+  pending_decisions: PendingDecision[];
   top_topics: Array<{
     id: string;
     title: string;

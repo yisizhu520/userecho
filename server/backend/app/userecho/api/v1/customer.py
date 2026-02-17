@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from backend.app.userecho.schema.customer import CustomerCreate, CustomerUpdate
+from backend.app.userecho.schema.customer import CustomerCreate, CustomerOut, CustomerUpdate
 from backend.app.userecho.service import customer_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
@@ -21,7 +21,9 @@ async def get_customers(
 ):
     """获取客户列表"""
     customers = await customer_service.get_list(db=db, tenant_id=tenant_id, skip=skip, limit=limit)
-    return response_base.success(data=customers)
+    # 转换为 Pydantic schema
+    customers_out = [CustomerOut.model_validate(c) for c in customers]
+    return response_base.success(data=customers_out)
 
 
 @router.post('', summary='创建客户')

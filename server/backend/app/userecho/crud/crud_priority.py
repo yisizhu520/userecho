@@ -40,6 +40,7 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
         business_value: int,
         dev_cost: int,
         urgency_factor: float = 1.0,
+        details: dict | None = None,
     ) -> PriorityScore:
         """
         创建或更新优先级评分
@@ -69,6 +70,8 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
             existing.dev_cost = dev_cost
             existing.urgency_factor = urgency_factor
             existing.total_score = total_score
+            if details is not None:
+                existing.details = details
             await db.commit()
             await db.refresh(existing)
             return existing
@@ -82,6 +85,7 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
             dev_cost=dev_cost,
             urgency_factor=urgency_factor,
             total_score=total_score,
+            details=details,
         )
 
 

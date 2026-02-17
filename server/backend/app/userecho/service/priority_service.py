@@ -255,6 +255,7 @@ class PriorityService:
         business_value: int,
         dev_cost: int,
         urgency_factor: float = 1.0,
+        details: dict | None = None,
     ) -> None:
         """
         创建或更新优先级评分（手动确认后保存）
@@ -276,6 +277,7 @@ class PriorityService:
             business_value=business_value,
             dev_cost=dev_cost,
             urgency_factor=urgency_factor,
+            details=details,
         )
 
         log.info(f'Updated priority score for topic {topic_id}')

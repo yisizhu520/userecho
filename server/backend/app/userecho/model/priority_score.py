@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.common.model import MappedBase, TimeZone
@@ -24,6 +24,7 @@ class PriorityScore(MappedBase):
     dev_cost: Mapped[int] = mapped_column(default=1, comment='开发成本 (1-10)')
     urgency_factor: Mapped[float] = mapped_column(default=1.0, comment='紧急系数 (1.0-2.0)')
     total_score: Mapped[float] = mapped_column(default=0.0, comment='总分: (影响 × 价值) / 成本 × 紧急系数')
+    details: Mapped[dict | None] = mapped_column(JSON, default=None, comment='详细计算结果')
 
     # 时间戳字段
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')

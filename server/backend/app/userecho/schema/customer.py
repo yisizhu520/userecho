@@ -30,6 +30,8 @@ class CustomerUpdate(SchemaBase):
 class CustomerOut(CustomerBase):
     """客户输出模型"""
 
+    model_config = {'from_attributes': True}
+
     id: str = Field(description='客户ID')
     tenant_id: str = Field(description='租户ID')
     created_time: datetime = Field(description='创建时间')

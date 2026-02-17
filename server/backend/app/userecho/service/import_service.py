@@ -61,13 +61,11 @@ class ImportService:
                 excel_io = BytesIO(content)
                 if file_ext == 'xlsx':
                     return pd.read_excel(excel_io, engine='openpyxl')
-                else:
-                    return pd.read_excel(excel_io)
-            elif file_ext == 'csv':
+                return pd.read_excel(excel_io)
+            if file_ext == 'csv':
                 text = content.decode('utf-8-sig', errors='replace')
                 return pd.read_csv(StringIO(text))
-            else:
-                return {'status': 'error', 'message': f'不支持的文件格式: {file_ext}'}
+            return {'status': 'error', 'message': f'不支持的文件格式: {file_ext}'}
         except ImportError as e:
             missing = str(e)
             if 'openpyxl' in missing:

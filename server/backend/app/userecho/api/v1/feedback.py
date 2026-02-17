@@ -170,7 +170,9 @@ async def import_feedbacks(
     """
     from backend.common.log import log
 
-    log.info(f'Starting import for tenant {tenant_id}, board={default_board_id}, customer={default_customer_name}, anonymous={use_anonymous}')
+    log.info(
+        f'Starting import for tenant {tenant_id}, board={default_board_id}, customer={default_customer_name}, anonymous={use_anonymous}'
+    )
 
     try:
         result = await import_service.import_excel(

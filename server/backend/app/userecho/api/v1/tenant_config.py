@@ -133,3 +133,65 @@ async def update_clustering_params(
     )
 
     return response_base.success(data=config)
+
+
+# ========================================
+# 战略关键词配置 API
+# ========================================
+
+
+class StrategicKeywordsParam(BaseModel):
+    """战略关键词参数"""
+
+    keywords: list[str] = Field(description='战略关键词列表')
+
+
+# 默认战略关键词（用于新租户）
+DEFAULT_STRATEGIC_KEYWORDS = ['信创', '国际化', '降本增效', 'AI', '安全合规']
+
+
+@router.get('/strategic', summary='获取战略关键词配置')
+async def get_strategic_keywords(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    获取当前租户的战略关键词配置
+
+    用于优先级评分的战略匹配度计算
+    """
+    from backend.app.userecho.service.tenant_config_service import tenant_config_service
+
+    config = await tenant_config_service.get_config(
+        db=db,
+        tenant_id=tenant_id,
+        config_group='strategic',
+        default={'keywords': DEFAULT_STRATEGIC_KEYWORDS},
+    )
+
+    return response_base.success(data=config)
+
+
+@router.put('/strategic', summary='更新战略关键词配置')
+async def update_strategic_keywords(
+    param: StrategicKeywordsParam,
+    db: CurrentSessionTransaction,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    更新战略关键词配置
+
+    老板设置一次，系统自动匹配计算优先级
+    """
+    from backend.app.userecho.service.tenant_config_service import tenant_config_service
+
+    config_data = {'keywords': param.keywords}
+
+    await tenant_config_service.set_config(
+        db=db,
+        tenant_id=tenant_id,
+        config_group='strategic',
+        config_data=config_data,
+    )
+
+    return response_base.success(data=config_data)

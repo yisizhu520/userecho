@@ -76,9 +76,30 @@ export interface SentimentTrendResponse {
 }
 
 // 周报数据
+export interface TopTopic {
+  id: string;
+  title: string;
+  status: string;
+  customer_count: number;
+  score: number;
+  estimated_days: number;
+  category: string;
+}
+
+export interface WeeklyReportData {
+  new_feedbacks_count: number;
+  change_percent: number;
+  new_topics_count: number;
+  completed_count: number;
+  tag_distribution: [string, number][];
+  top_topics: TopTopic[];
+  total_topics: number;
+}
+
+// 周报数据
 export interface WeeklyReportResponse {
   markdown: string;
-  data: any;
+  data: WeeklyReportData;
   generated_at: string;
 }
 
@@ -93,9 +114,14 @@ export interface TaskStatusResponse {
   task_id: string;
   state: 'PENDING' | 'STARTED' | 'PROGRESS' | 'SUCCESS' | 'FAILURE' | 'RETRY';
   result?: {
-    content: string;
-    format: string;
-    status: string;
+    // 新结构：同时包含 markdown 和 data
+    markdown?: string;
+    data?: WeeklyReportData;
+    generated_at?: string;
+    format?: string;
+    status?: string;
+    // 兼容旧结构 (可选)
+    content?: string;
   };
   error?: string;
   progress?: {
@@ -167,3 +193,17 @@ export async function dismissInsight(insightId: string, reason: string) {
     },
   });
 }
+
+// 发送报告邮件请求
+export interface SendReportEmailRequest {
+  recipients: string[];
+  time_range: TimeRange;
+}
+
+/**
+ * 发送报告邮件
+ */
+export async function sendReportEmail(data: SendReportEmailRequest) {
+  return requestClient.post('/api/v1/app/insights/report/send-email', data);
+}
+

@@ -92,6 +92,40 @@ async def export_report(
     )
 
 
+@router.post('/insights/report/send-email', summary='发送报告邮件')
+async def send_report_email(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+    recipients: Annotated[list[str] | None, Query(description='收件人邮箱列表')] = None,
+    time_range: Annotated[str, Query(description='时间范围：this_week | this_month')] = 'this_week',
+):
+    """
+    发送周报邮件给指定收件人
+    """
+    if not recipients:
+        return response_base.fail(msg='请提供收件人邮箱')
+
+    # 生成报告数据
+    report_content = await insight_service.generate_insight(
+        db=db,
+        tenant_id=tenant_id,
+        insight_type='weekly_report',
+        time_range=time_range,
+        force_refresh=False,
+    )
+
+    # 发送邮件
+    await insight_service.send_report_email(
+        db=db,
+        recipients=recipients,
+        report_data=report_content,
+        time_range=time_range,
+    )
+
+    return response_base.success(msg='报告邮件发送成功')
+
+
+
 @router.get('/insights/task/{task_id}', summary='查询洞察生成任务状态')
 async def get_insight_task_status(
     task_id: str,

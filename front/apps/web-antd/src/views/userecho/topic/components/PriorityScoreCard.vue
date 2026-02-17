@@ -58,6 +58,11 @@ const priorityColor = computed(() => {
  */
 const hasScore = computed(() => props.existingScore !== null && props.existingScore !== undefined);
 
+const matchedKeywords = computed(() => {
+  if (!props.existingScore?.details?.strategic_keywords_matched) return [];
+  return props.existingScore.details.strategic_keywords_matched as string[];
+});
+
 /**
  * AI 重新分析
  */
@@ -213,6 +218,12 @@ watch(
               自动计算
             </a-tag>
             <span class="suggestion-reason">{{ aiSuggestion.business_value.reason }}</span>
+          </div>
+          <div v-if="matchedKeywords.length > 0" class="matched-keywords mt-2 pl-2">
+            <span class="text-secondary text-xs mr-2">战略匹配:</span>
+            <a-tag v-for="kw in matchedKeywords" :key="kw" color="purple" size="small">
+              {{ kw }}
+            </a-tag>
           </div>
         </div>
 

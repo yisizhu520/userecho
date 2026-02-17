@@ -37,7 +37,7 @@
     "userecho": "UserEcho",
     "feedbackList": "Feedback List",
     "feedbackImport": "Import Feedback",
-    "topicList": "Topics",
+    "topicList": "Demand Library",
     "topicDetail": "Topic Detail",
     "customerManage": "Customer Management"
   },
@@ -49,14 +49,14 @@
         "import": "Import Feedback"
       },
       "topic": {
-        "list": "Topics",
+        "list": "Demand Library",
         "detail": "Topic Detail"
       },
       "customer": {
         "title": "Customer Management"
       },
       "discovery": {
-        "title": "AI Discovery"
+        "title": "Pending Decisions"
       },
       "settings": {
         "title": "Settings",

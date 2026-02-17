@@ -558,7 +558,9 @@ class InsightService:
                     estimated_days = 14
 
             top_topics.append({
+                'id': topic.id,
                 'title': topic.title,
+                'status': topic.status,
                 'customer_count': customer_count,
                 'score': round(topic.priority_score.total_score, 1) if topic.priority_score else 0,
                 'estimated_days': estimated_days,
@@ -814,5 +816,65 @@ class InsightService:
             log.error(f'Sentiment analysis failed: {e}')
             # 失败不影响主流程，继续执行
 
+    async def send_report_email(
+        self,
+        db: AsyncSession,
+        recipients: list[str],
+        report_data: dict,
+        time_range: str = 'this_week',
+    ) -> None:
+        """
+        发送报告邮件
+
+        Args:
+            db: 数据库会话
+            recipients: 收件人列表
+            report_data: 报告数据
+            time_range: 时间范围
+        """
+        from backend.plugin.email.utils.send import send_email
+
+        if not recipients:
+            log.warning('No recipients provided for report email')
+            return
+
+        # 解析时间范围
+        start_date, end_date = self._parse_time_range(time_range)
+
+        # 准备邮件内容
+        data = report_data.get('data', {})
+        email_content = {
+            'date_range': f"{start_date.strftime('%Y年%m月%d日')} - {end_date.strftime('%Y年%m月%d日')}",
+            'new_feedbacks_count': data.get('new_feedbacks_count', 0),
+            'change_percent': data.get('change_percent', 0),
+            'new_topics_count': data.get('new_topics_count', 0),
+            'completed_count': data.get('completed_count', 0),
+            'top_topics': data.get('top_topics', []),
+        }
+
+        # 生成核心洞察文案
+        top_topics = data.get('top_topics', [])
+        if top_topics:
+            top = top_topics[0]
+            email_content['insight'] = f'"{top["title"]}" 影响 {top["customer_count"]} 位客户，建议优先处理。'
+        else:
+            email_content['insight'] = '本周暂无高优先级需求需要处理。'
+
+        subject = f'📊 Feedalyze 周度洞察简报 ({start_date.strftime("%m/%d")}-{end_date.strftime("%m/%d")})'
+
+        try:
+            await send_email(
+                db=db,
+                recipients=recipients,
+                subject=subject,
+                content=email_content,
+                template='weekly_report.html',
+            )
+            log.info(f'Report email sent to {len(recipients)} recipients')
+        except Exception as e:
+            log.error(f'Failed to send report email: {e}')
+            raise
+
 
 insight_service = InsightService()
+

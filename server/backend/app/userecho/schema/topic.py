@@ -80,10 +80,4 @@ class TopicStatusUpdateParam(SchemaBase):
     reason: str | None = Field(None, description='变更原因')
 
 
-# 避免循环导入，在文件末尾导入并调用 model_rebuild() 解析前向引用
-from backend.app.userecho.schema.feedback import FeedbackOut  # noqa: F401
-from backend.app.userecho.schema.priority import PriorityScoreOut  # noqa: F401
-from backend.app.userecho.schema.status_history import StatusHistoryOut  # noqa: F401
-
-TopicOut.model_rebuild()
-TopicDetailOut.model_rebuild()
+# 前向引用将在 __init__.py 中统一解析（确保所有 schema 类加载后再执行 model_rebuild）

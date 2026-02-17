@@ -27,6 +27,7 @@ export interface Topic {
     dev_cost: number;
     urgency_factor: number;
     total_score: number;
+    details?: any; // JSON
     tenant_id: string;
     topic_id: string;
     created_time: string;

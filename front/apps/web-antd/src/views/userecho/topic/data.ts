@@ -117,6 +117,13 @@ export function useColumns(
       slots: { default: 'feedback_count' },
     },
     {
+      field: 'priority_score',
+      title: '优先级',
+      width: 100,
+      sortable: true,
+      slots: { default: 'priority_score' },
+    },
+    {
       field: 'ai_generated',
       title: 'AI 生成',
       width: 100,

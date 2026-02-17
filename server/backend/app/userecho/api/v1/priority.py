@@ -6,6 +6,7 @@ from backend.app.userecho.crud.crud_feedback import crud_feedback
 from backend.app.userecho.crud.crud_priority import crud_priority_score
 from backend.app.userecho.crud.crud_topic import crud_topic
 from backend.app.userecho.schema.priority import PriorityScoreCreate
+from backend.app.userecho.service.priority_calculator import priority_calculator
 from backend.app.userecho.service.priority_service import priority_service
 from backend.common.log import log
 from backend.common.response.response_schema import response_base
@@ -137,6 +138,24 @@ async def create_or_update_priority(
     if not topic:
         return response_base.fail(msg='Topic 不存在')
 
+    # 获取关联的反馈以计算详细数据
+    feedbacks = await crud_feedback.get_list_with_relations(
+        db=db,
+        tenant_id=tenant_id,
+        topic_id=topic_id,
+        limit=100,
+    )
+    feedback_contents = [fb.get('content', '') for fb in feedbacks] if feedbacks else []
+    last_feedback_time = feedbacks[0].get('created_time') if feedbacks else None
+
+    # 计算详细数据
+    calc_result = priority_calculator.calculate_score(
+        topic_title=topic.title,
+        topic_description=topic.description,
+        feedback_contents=feedback_contents,
+        last_feedback_time=last_feedback_time,
+    )
+
     # 创建或更新评分
     await priority_service.create_or_update_priority_score(
         db=db,
@@ -146,6 +165,7 @@ async def create_or_update_priority(
         business_value=data.business_value,
         dev_cost=data.dev_cost,
         urgency_factor=data.urgency_factor,
+        details=calc_result,
     )
 
     log.info(f'Priority score saved for topic {topic_id} by user {current_user_id}')

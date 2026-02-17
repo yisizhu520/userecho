@@ -97,7 +97,7 @@ async def init_business_menus() -> None:
                 'display': 0,  # 隐藏菜单
             },
             {
-                'title': 'AI 发现中心',
+                'title': '待决策中心',
                 'name': 'AIDiscovery',
                 'path': '/app/ai/discovery',
                 'component': '/userecho/discovery/index',
@@ -163,6 +163,7 @@ async def init_business_menus() -> None:
                 created_menus.append(menu_data['title'])
             else:
                 # 更新已存在的菜单
+                existing.title = menu_data['title']  # 更新标题（支持重命名）
                 existing.component = menu_data['component']
                 existing.icon = menu_data['icon']
                 existing.sort = menu_data['sort']
@@ -249,13 +250,13 @@ async def init_business_menus() -> None:
         print('\n📝 创建的资源：')
         print(
             '   - 9 个顶级菜单（工作台、反馈列表、截图识别[隐藏]、导入反馈[隐藏]、'
-            'AI发现、需求主题、主题详情[隐藏]、客户管理、洞察报告）'
+            '待决策中心、需求主题、主题详情[隐藏]、客户管理、洞察报告）'
         )
         print('   - 4 个业务角色（PM、CS、开发、老板）')
         print('\n💡 菜单结构（扁平化展示）：')
         print('   📊 工作台')
         print('   📋 反馈列表')
-        print('   ✨ AI 发现中心')
+        print('   ✨ 待决策中心')
         print('   💡 需求主题')
         print('   👥 客户管理')
         print('   📊 洞察报告')

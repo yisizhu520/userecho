@@ -185,24 +185,25 @@ def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week',
             async with async_db_session() as db:
                 log.info(f'[Task {self.request.id}] Starting insight report generation for tenant: {tenant_id}')
 
-                # 生成洞察
+                # 生成洞察（使用缓存，避免重复生成）
                 content = await insight_service.generate_insight(
                     db=db,
                     tenant_id=tenant_id,
                     insight_type='weekly_report',
                     time_range=time_range,
-                    force_refresh=True,  # 用户主动触发，强制刷新
+                    force_refresh=False,  # 默认使用缓存，用户可通过"重新生成"按钮强制刷新
                 )
 
                 log.info(f'[Task {self.request.id}] Completed insight report generation for tenant: {tenant_id}')
 
-                # 返回结果
-                if format == 'markdown':
-                    return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
-                if format == 'html':
-                    # TODO: 使用 markdown2 转 HTML
-                    return {'content': content['markdown'], 'format': 'html', 'status': 'success'}
-                return {'content': content['markdown'], 'format': 'markdown', 'status': 'success'}
+                # 返回结果 - 同时返回 markdown 和 结构化数据
+                return {
+                    'markdown': content.get('markdown', ''),
+                    'data': content.get('data', {}),
+                    'generated_at': content.get('generated_at', ''),
+                    'format': format,
+                    'status': 'success',
+                }
 
         except Exception as e:
             log.error(f'[Task {self.request.id}] Failed to generate insight report for tenant {tenant_id}: {e}')

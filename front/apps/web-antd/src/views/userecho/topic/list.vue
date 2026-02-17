@@ -388,14 +388,37 @@ onBeforeUnmount(() => {
           <template #priority_score="{ row }">
             <div class="priority-score-cell">
               <!-- 已有评分：显示总分徽章 -->
-              <a-tag
-                v-if="row.priority_score"
-                :color="getPriorityColor(row.priority_score.total_score)"
-                style="font-size: 14px; font-weight: bold; cursor: pointer"
-                @click="router.push(`/app/topic/detail/${row.id}`)"
-              >
-                {{ row.priority_score.total_score.toFixed(1) }}
-              </a-tag>
+              <a-popover v-if="row.priority_score" title="评分详情">
+                <template #content>
+                  <div class="w-48">
+                    <div v-if="row.priority_score.details?.strategic_keywords_matched?.length" class="mb-2">
+                      <div class="text-xs text-gray-500 mb-1">战略匹配:</div>
+                      <div class="flex flex-wrap gap-1">
+                        <a-tag v-for="kw in row.priority_score.details.strategic_keywords_matched" :key="kw" color="purple" size="small">
+                          {{ kw }}
+                        </a-tag>
+                      </div>
+                    </div>
+                    <div v-if="row.priority_score.details?.urgent_ratio !== undefined">
+                      <span class="text-xs text-gray-500">紧急反馈占比: </span>
+                      <span :class="row.priority_score.details.urgent_ratio > 0.3 ? 'text-red-500 font-bold' : ''">
+                        {{ (row.priority_score.details.urgent_ratio * 100).toFixed(0) }}%
+                      </span>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-gray-100 flex justify-between text-xs text-gray-400">
+                      <span>反馈数: {{ row.feedback_count }}</span>
+                      <span>时效分: {{ row.priority_score.details?.recency_score ?? '-' }}</span>
+                    </div>
+                  </div>
+                </template>
+                <a-tag
+                  :color="getPriorityColor(row.priority_score.total_score)"
+                  style="font-size: 14px; font-weight: bold; cursor: pointer"
+                  @click.stop="router.push(`/app/topic/detail/${row.id}`)"
+                >
+                  {{ row.priority_score.total_score.toFixed(1) }}
+                </a-tag>
+              </a-popover>
               <!-- 未评分：提示去评分 -->
               <span v-else style="color: #999; font-size: 12px">
                 未评分
