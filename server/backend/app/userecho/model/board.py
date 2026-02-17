@@ -51,6 +51,7 @@ class Board(MappedBase):
     updated_time: Mapped[datetime | None] = mapped_column(
         TimeZone, onupdate=timezone.now, default=None, comment='更新时间'
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment='软删除时间')
 
     __table_args__ = (
         # tenant_id + url_name 联合唯一

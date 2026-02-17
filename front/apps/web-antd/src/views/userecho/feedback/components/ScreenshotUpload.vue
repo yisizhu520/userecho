@@ -75,9 +75,8 @@ const handleBeforeUpload = async (file: File) => {
 
 // 移除已上传的截图
 const handleRemove = (file: any) => {
-  const index = Number(file.uid);
-  const newList = [...props.modelValue];
-  newList.splice(index, 1);
+  // 使用 URL 过滤而非索引，避免删除后索引错乱
+  const newList = props.modelValue.filter(url => url !== file.url);
   emit('update:modelValue', newList);
 };
 </script>
@@ -95,7 +94,7 @@ const handleRemove = (file: any) => {
         }))"
         list-type="picture-card"
         :before-upload="handleBeforeUpload"
-        :on-remove="handleRemove"
+        @remove="handleRemove"
         accept="image/png,image/jpeg,image/jpg,image/webp"
         :max-count="maxCount"
       >

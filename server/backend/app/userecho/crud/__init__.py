@@ -3,6 +3,7 @@
 包含所有业务数据的 CRUD 操作
 """
 
+from .crud_board import crud_board
 from .crud_customer import crud_customer
 from .crud_feedback import crud_feedback
 from .crud_priority import crud_priority_score
@@ -12,6 +13,7 @@ from .crud_tenant_config import tenant_config_dao
 from .crud_topic import crud_topic
 
 __all__ = [
+    'crud_board',
     'crud_customer',
     'crud_feedback',
     'crud_priority_score',

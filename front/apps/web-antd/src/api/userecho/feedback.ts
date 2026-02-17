@@ -29,7 +29,7 @@ export interface Feedback {
 
 /** 创建反馈参数 */
 export interface CreateFeedbackParams {
-  board_id?: string;
+  board_id: string;
   customer_id?: string;
   customer_name?: string;
   anonymous_author?: string;
@@ -121,7 +121,12 @@ export interface ScreenshotFeedbackCreateParams {
  * 获取反馈列表
  */
 export async function getFeedbackList(params: FeedbackListParams) {
-  return requestClient.get<Feedback[]>('/api/v1/app/feedbacks', { params });
+  return requestClient.get<Feedback[]>('/api/v1/app/feedbacks', {
+    params,
+    // 使用 repeat 格式序列化数组参数：is_urgent=true&is_urgent=false
+    // 而不是默认的 is_urgent[]=true&is_urgent[]=false
+    paramsSerializer: 'repeat',
+  });
 }
 
 /**

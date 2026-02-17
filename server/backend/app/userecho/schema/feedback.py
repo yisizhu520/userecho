@@ -39,6 +39,7 @@ class FeedbackOut(FeedbackBase):
 
     id: str = Field(description='反馈ID')
     tenant_id: str = Field(description='租户ID')
+    board_id: str | None = Field(None, description='看板ID')
     customer_id: str | None = Field(None, description='客户ID')
     customer_name: str | None = Field(None, description='客户名称 (关联查询)')
     anonymous_author: str | None = Field(None, description='匿名作者')

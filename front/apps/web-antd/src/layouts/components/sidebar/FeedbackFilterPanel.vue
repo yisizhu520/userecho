@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Checkbox, CheckboxGroup } from 'ant-design-vue';
-import { ref, onMounted } from 'vue';
-import { getBoardList, type BoardApi } from '#/api';
+import { onMounted, computed } from 'vue';
+import { useBoardStore } from '#/store';
 
 interface Props {
   isUrgent?: string[];
@@ -19,25 +19,14 @@ const emit = defineEmits<{
   'update:boardIds': [value: string[]];
 }>();
 
-// Board 列表
-const boards = ref<BoardApi.Board[]>([]);
-const boardsLoading = ref(false);
-
-// 加载 Board 列表
-async function loadBoards() {
-  try {
-    boardsLoading.value = true;
-    const response = await getBoardList();
-    boards.value = response.boards || [];
-  } catch (error) {
-    console.error('Failed to load boards:', error);
-  } finally {
-    boardsLoading.value = false;
-  }
-}
+// 使用 Board Store
+const boardStore = useBoardStore();
+const boards = computed(() => boardStore.boards);
+const boardsLoading = computed(() => boardStore.loading);
 
 onMounted(() => {
-  loadBoards();
+  // 加载 Board 列表（带缓存）
+  boardStore.refreshBoards();
 });
 </script>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useDebounceFn } from '@vueuse/core';
 import { getTopicList } from '#/api/userecho/topic';
 
 interface Props {
@@ -17,8 +18,8 @@ const emit = defineEmits<Emits>();
 const similarTopics = ref<any[]>([]);
 const loading = ref(false);
 
-// 监听标题变化，搜索相似主题
-watch(() => props.searchTitle, async (title) => {
+// 防抖搜索函数
+const searchTopics = useDebounceFn(async (title: string) => {
   if (!title || title.trim().length < 2) {
     similarTopics.value = [];
     return;
@@ -37,6 +38,11 @@ watch(() => props.searchTitle, async (title) => {
   } finally {
     loading.value = false;
   }
+}, 300);
+
+// 监听标题变化
+watch(() => props.searchTitle, (title) => {
+  searchTopics(title);
 }, { immediate: true });
 
 // 选择主题

@@ -19,7 +19,7 @@ import {
   deleteFeedback,
   triggerClustering,
 } from '#/api';
-import { getBoardList } from '#/api/userecho/board';
+import { useBoardStore } from '#/store';
 import { useColumns } from '#/views/userecho/feedback/data';
 import FeedbackFilterSidebar from '#/layouts/components/sidebar/FeedbackFilterSidebar.vue';
 import FeedbackToolbar from './components/FeedbackToolbar.vue';
@@ -57,12 +57,17 @@ const { state: filterValues } = useFilterStorage({
 });
 
 /**
+ * Board Store
+ */
+const boardStore = useBoardStore();
+
+/**
  * 初始化逻辑：加载 Board 并处理默认选中
  */
 const initBoardSelection = async () => {
   try {
-    const response = await getBoardList();
-    const boards = response.boards || [];
+    await boardStore.refreshBoards();
+    const boards = boardStore.boards;
     if (boards.length > 0 && (filterValues.value?.board_ids?.length ?? 0) === 0) {
       filterValues.value.board_ids = [boards[0].id];
     }
@@ -149,13 +154,9 @@ function handleSearch() {
  * 监听筛选条件变化，自动触发查询
  */
 watch(
-  () => [
-    filterValues.value.is_urgent,
-    filterValues.value.has_topic,
-    filterValues.value.clustering_status,
-    filterValues.value.board_ids,
-  ],
-  () => {
+  filterValues,
+  (newVal) => {
+    console.log('[DEBUG] Filter values changed:', newVal);
     handleSearch();
   },
   { deep: true }
@@ -177,6 +178,8 @@ function onActionClick({ code, row }: OnActionClickParams<Feedback>) {
       deleteFeedback(row.id).then(() => {
         message.success('删除成功');
         onRefresh();
+        // 刷新 Board 数量
+        boardStore.forceRefresh();
       }).catch(() => {
         message.error('删除失败');
       });

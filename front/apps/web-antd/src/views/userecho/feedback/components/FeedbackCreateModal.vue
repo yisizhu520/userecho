@@ -4,7 +4,7 @@ import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { useVbenForm } from '#/adapter/form';
 import { message } from 'ant-design-vue';
 import { createFeedback } from '#/api';
-import { getBoardList } from '#/api/userecho/board';
+import { useBoardStore } from '#/store';
 import type { CreateFeedbackParams } from '#/api';
 import { feedbackFormSchema } from '#/views/userecho/feedback/data';
 import ScreenshotUpload from './ScreenshotUpload.vue';
@@ -59,11 +59,14 @@ const [Modal, modalApi] = useVbenModal({
   },
 });
 
+// Board Store
+const boardStore = useBoardStore();
+
 // 加载 Board 列表
 const loadBoardList = async () => {
   try {
-    const response = await getBoardList();
-    const boardList = response.boards.map((board: any) => ({
+    await boardStore.refreshBoards();
+    const boardList = boardStore.boards.map((board: any) => ({
       label: board.name,
       value: board.id,
     }));
@@ -108,6 +111,8 @@ const handleCreate = async (continueCreating: boolean) => {
     await createFeedback(data);
     message.success('创建成功');
     emit('success');
+    // 刷新 Board 数量
+    boardStore.forceRefresh();
     
     if (continueCreating) {
       // 重置表单但保持弹窗打开
