@@ -24,8 +24,7 @@ import { useBoardStore } from '#/store';
 import { useColumns } from '#/views/userecho/feedback/data';
 import FeedbackFilterSidebar from '#/layouts/components/sidebar/FeedbackFilterSidebar.vue';
 import FeedbackToolbar from './components/FeedbackToolbar.vue';
-import FeedbackCreateModal from './components/FeedbackCreateModal.vue';
-import FeedbackEditModal from './components/FeedbackEditModal.vue';
+import FeedbackModal from './components/FeedbackModal.vue';
 import ClusteringProgressModal from './components/ClusteringProgressModal.vue';
 import ClusteringStatusBanner from './components/ClusteringStatusBanner.vue';
 import ScreenshotCell from './components/ScreenshotCell.vue';
@@ -210,7 +209,7 @@ function onActionClick({ code, row }: OnActionClickParams<Feedback>) {
       break;
     }
     case 'edit': {
-      editModalRef.value?.open(row);
+      feedbackModalRef.value?.openEdit(row);
       break;
     }
   }
@@ -219,8 +218,7 @@ function onActionClick({ code, row }: OnActionClickParams<Feedback>) {
 /**
  * 组件引用
  */
-const createModalRef = ref<InstanceType<typeof FeedbackCreateModal>>();
-const editModalRef = ref<InstanceType<typeof FeedbackEditModal>>();
+const feedbackModalRef = ref<InstanceType<typeof FeedbackModal>>();
 const clusteringBannerRef = ref<InstanceType<typeof ClusteringStatusBanner>>();
 
 /**
@@ -321,7 +319,7 @@ onBeforeUnmount(() => {
               v-model:search-query="filterValues.search_query"
               :clustering-loading="clusteringLoading"
               @search="handleSearch"
-              @create="createModalRef?.open()"
+              @create="feedbackModalRef?.openCreate()"
               @screenshot="$router.push('/app/feedback/screenshot')"
               @import="$router.push('/app/feedback/import')"
               @clustering="handleTriggerClustering"
@@ -361,11 +359,8 @@ onBeforeUnmount(() => {
         </Grid>
         </div>
 
-        <!-- 新建弹窗 -->
-        <FeedbackCreateModal ref="createModalRef" @success="onRefresh" />
-
-        <!-- 编辑弹窗 -->
-        <FeedbackEditModal ref="editModalRef" feedback-id="" @success="onRefresh" />
+        <!-- 反馈弹窗（创建/编辑统一） -->
+        <FeedbackModal ref="feedbackModalRef" @success="onRefresh" />
 
         <!-- AI 聚类进度弹窗 -->
         <ClusteringProgressModal

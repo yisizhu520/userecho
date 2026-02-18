@@ -1,21 +1,28 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { useVbenForm } from '#/adapter/form';
 import { message } from 'ant-design-vue';
-import { createFeedback } from '#/api';
+import { createFeedback, updateFeedback } from '#/api';
 import { useBoardStore } from '#/store';
-import type { CreateFeedbackParams, Customer } from '#/api';
+import type { CreateFeedbackParams, UpdateFeedbackParams, Customer, Feedback } from '#/api';
 import { feedbackFormSchema } from '#/views/userecho/feedback/data';
 import ScreenshotUpload from './ScreenshotUpload.vue';
 import SimilarTopicsPanel from './SimilarTopicsPanel.vue';
 import CustomerAutoComplete from './CustomerAutoComplete.vue';
 
 interface Emits {
-  (e: 'success', boardId: string): void;
+  (e: 'success', boardId?: string): void;
 }
 
 const emit = defineEmits<Emits>();
+
+// 模式控制
+const mode = ref<'create' | 'edit'>('create');
+const editingFeedback = ref<Feedback | null>(null);
+
+const isCreateMode = computed(() => mode.value === 'create');
+const isEditMode = computed(() => mode.value === 'edit');
 
 const selectedTopicId = ref<string>('');
 const screenshotUploadRef = ref<InstanceType<typeof ScreenshotUpload> | null>(null);
@@ -38,8 +45,8 @@ const handleValuesChange = (values: Record<string, any>, changedFields: string[]
   if (changedFields.includes('content')) {
     currentTitle.value = values.content || '';
   }
-  // 记住用户选择的看板
-  if (changedFields.includes('board_id') && values.board_id) {
+  // 记住用户选择的看板（仅创建模式）
+  if (isCreateMode.value && changedFields.includes('board_id') && values.board_id) {
     localStorage.setItem(LAST_SELECTED_BOARD_KEY, values.board_id);
   }
 };
@@ -56,21 +63,29 @@ const [BottomForm, bottomFormApi] = useVbenForm({
   schema: bottomFormSchema.value,
 });
 
+// Modal 标题
+const modalTitle = computed(() => isCreateMode.value ? '新建反馈' : '编辑反馈');
+
 const [Modal, modalApi] = useVbenModal({
-  title: '新建反馈',
+  title: modalTitle,
   destroyOnClose: true,
   class: 'w-[1000px]',
   async onConfirm() {
-    // 验证表单和客户名称
+    // 验证表单
     const topValid = await topFormApi.validate();
     const bottomValid = await bottomFormApi.validate();
-    const customerValid = customerName.value.trim().length > 0;
-    if (!customerValid) {
-      message.warning('请输入客户名称');
-      return;
+    
+    // 创建模式需要验证客户名称
+    if (isCreateMode.value) {
+      const customerValid = customerName.value.trim().length > 0;
+      if (!customerValid) {
+        message.warning('请输入客户名称');
+        return;
+      }
     }
+    
     if (topValid.valid && bottomValid.valid) {
-      await handleCreate(false);
+      await handleSubmit(false);
     }
   },
   onOpenChange(isOpen) {
@@ -84,6 +99,29 @@ const [Modal, modalApi] = useVbenModal({
       customerType.value = 'normal';
       selectedCustomer.value = null;
       loadBoardList();
+      
+      // 编辑模式：填充初始数据
+      if (isEditMode.value && editingFeedback.value) {
+        const data = editingFeedback.value;
+        topFormApi.setValues({
+          board_id: data.board_id,
+          content: data.content,
+        });
+        bottomFormApi.setValues({
+          is_urgent: data.is_urgent,
+        });
+        currentTitle.value = data.content || '';
+        customerName.value = data.customer_name || '';
+        // 填充现有的主题关联
+        selectedTopicId.value = data.topic_id || '';
+        // 填充现有的图片（使用 nextTick 确保组件已挂载）
+        if (data.images_metadata?.images && data.images_metadata.images.length > 0) {
+          const urls = data.images_metadata.images.map((img: { url: string }) => img.url);
+          nextTick(() => {
+            screenshotUploadRef.value?.initWithUrls(urls);
+          });
+        }
+      }
     }
   },
 });
@@ -110,10 +148,9 @@ const loadBoardList = async () => {
       },
     ]);
 
-    // 智能选择默认看板
-    if (boardList.length > 0) {
+    // 创建模式：智能选择默认看板
+    if (isCreateMode.value && boardList.length > 0) {
       const lastSelectedBoardId = localStorage.getItem(LAST_SELECTED_BOARD_KEY);
-      // 检查上次选择的看板是否仍然存在
       const boardExists = lastSelectedBoardId && boardList.some((b: { value: string }) => b.value === lastSelectedBoardId);
       const defaultBoardId = boardExists ? lastSelectedBoardId : boardList[0].value;
       topFormApi.setValues({ board_id: defaultBoardId });
@@ -123,56 +160,84 @@ const loadBoardList = async () => {
   }
 };
 
-// 创建反馈
-const handleCreate = async (continueCreating: boolean) => {
+// 提交处理
+const handleSubmit = async (continueCreating: boolean) => {
   try {
     modalApi.lock();
-    // 合并两个表单的数据
     const topData = await topFormApi.getValues();
     const bottomData = await bottomFormApi.getValues();
-    const data = { ...topData, ...bottomData } as CreateFeedbackParams;
     
-    // 添加客户信息
-    data.customer_name = customerName.value;
-    // 如果是新建客户（未选择已有客户），传递客户类型
-    if (!selectedCustomer.value) {
-      data.customer_type = customerType.value;
-    }
-    
-    // 添加 Topic 关联
-    if (selectedTopicId.value) {
-      data.topic_id = selectedTopicId.value;
-    }
-    
-    // 上传截图（在提交时才真正上传）
-    if (screenshotUploadRef.value?.hasFiles) {
-      const urls = await screenshotUploadRef.value.uploadAll();
-      if (urls.length > 0) {
-        data.screenshots = urls;
+    if (isCreateMode.value) {
+      // 创建模式
+      const data = { ...topData, ...bottomData } as CreateFeedbackParams;
+      
+      // 添加客户信息
+      data.customer_name = customerName.value;
+      if (!selectedCustomer.value) {
+        data.customer_type = customerType.value;
       }
-    }
-    
-    await createFeedback(data);
-    message.success('创建成功');
-    emit('success', data.board_id);
-    // 刷新 Board 数量
-    boardStore.forceRefresh();
-    
-    if (continueCreating) {
-      // 重置表单但保持弹窗打开
-      topFormApi.resetForm();
-      bottomFormApi.resetForm();
-      selectedTopicId.value = '';
-      screenshotUploadRef.value?.reset();
-      currentTitle.value = '';
-      customerName.value = '';
-      customerType.value = 'normal';
-      selectedCustomer.value = null;
+      
+      // 添加 Topic 关联
+      if (selectedTopicId.value) {
+        data.topic_id = selectedTopicId.value;
+      }
+      
+      // 上传截图
+      if (screenshotUploadRef.value?.hasFiles) {
+        const urls = await screenshotUploadRef.value.uploadAll();
+        if (urls.length > 0) {
+          data.screenshots = urls;
+        }
+      }
+      
+      await createFeedback(data);
+      message.success('创建成功');
+      emit('success', data.board_id);
+      boardStore.forceRefresh();
+      
+      if (continueCreating) {
+        // 重置表单但保持弹窗打开
+        topFormApi.resetForm();
+        bottomFormApi.resetForm();
+        selectedTopicId.value = '';
+        screenshotUploadRef.value?.reset();
+        currentTitle.value = '';
+        customerName.value = '';
+        customerType.value = 'normal';
+        selectedCustomer.value = null;
+      } else {
+        await modalApi.close();
+      }
     } else {
+      // 编辑模式
+      if (!editingFeedback.value) {
+        message.error('缺少反馈数据');
+        return;
+      }
+      
+      const data = { ...topData, ...bottomData } as UpdateFeedbackParams;
+      // 添加主题关联更新
+      if (selectedTopicId.value) {
+        data.topic_id = selectedTopicId.value;
+      } else {
+        data.topic_id = null;  // 清除关联
+      }
+      // 添加客户名称更新
+      data.customer_name = customerName.value;
+      // 上传截图
+      if (screenshotUploadRef.value?.hasFiles) {
+        const urls = await screenshotUploadRef.value.uploadAll();
+        if (urls.length > 0) {
+          data.screenshots = urls;
+        }
+      }
+      await updateFeedback(editingFeedback.value.id, data);
+      message.success('更新成功');
+      emit('success');
       await modalApi.close();
     }
   } catch {
-    message.error('创建失败');
+    message.error(isCreateMode.value ? '创建失败' : '更新失败');
   } finally {
     modalApi.unlock();
   }
@@ -188,7 +253,7 @@ const handleCreateAndContinue = async () => {
     return;
   }
   if (topValid.valid && bottomValid.valid) {
-    await handleCreate(true);
+    await handleSubmit(true);
   }
 };
 
@@ -199,14 +264,23 @@ const onCustomerSelected = (customer: Customer | null) => {
 
 // 暴露 API 给父组件
 defineExpose({
-  open: () => modalApi.open(),
+  openCreate: () => {
+    mode.value = 'create';
+    editingFeedback.value = null;
+    modalApi.open();
+  },
+  openEdit: (feedback: Feedback) => {
+    mode.value = 'edit';
+    editingFeedback.value = feedback;
+    modalApi.open();
+  },
   close: () => modalApi.close(),
 });
 </script>
 
 <template>
   <Modal>
-    <div class="feedback-create-layout">
+    <div class="feedback-modal-layout">
       <a-row :gutter="24">
         <!-- 左侧表单区域 -->
         <a-col :span="14">
@@ -219,7 +293,7 @@ defineExpose({
               <ScreenshotUpload ref="screenshotUploadRef" />
             </div>
             
-            <!-- 客户名称自动补全 -->
+            <!-- 客户名称 -->
             <div class="customer-field">
               <label class="customer-label">客户名称</label>
               <div class="customer-input">
@@ -237,7 +311,7 @@ defineExpose({
           </div>
         </a-col>
         
-        <!-- 右侧相似主题面板 -->
+        <!-- 右侧相似主题面板（创建和编辑模式都显示） -->
         <a-col :span="10">
           <SimilarTopicsPanel
             :search-title="currentTitle"
@@ -250,20 +324,25 @@ defineExpose({
     <template #footer>
       <div class="modal-footer-actions">
         <VbenButton @click="() => modalApi.close()">取消</VbenButton>
-        <VbenButton @click="handleCreateAndContinue">创建并继续</VbenButton>
-        <VbenButton type="primary" @click="() => modalApi.onConfirm?.()">创建</VbenButton>
+        <template v-if="isCreateMode">
+          <VbenButton @click="handleCreateAndContinue">创建并继续</VbenButton>
+          <VbenButton type="primary" @click="() => modalApi.onConfirm?.()">创建</VbenButton>
+        </template>
+        <template v-else>
+          <VbenButton type="primary" @click="() => modalApi.onConfirm?.()">保存</VbenButton>
+        </template>
       </div>
     </template>
   </Modal>
 </template>
 
 <style scoped>
-.feedback-create-layout {
+.feedback-modal-layout {
   padding: 0;
 }
 
 .left-content-area {
-  height: 600px;
+  max-height: 600px;
   overflow-y: auto;
   padding-right: 8px;
 }
@@ -277,11 +356,11 @@ defineExpose({
 .screenshot-upload-section :deep(.screenshot-upload-section) {
   display: flex;
   align-items: flex-start;
-  gap: 9px; /* 与标准表单字段的间距一致 */
+  gap: 9px;
 }
 
 .screenshot-upload-section :deep(.upload-label) {
-  width: 100px; /* 与标准表单 label 宽度一致 */
+  width: 100px;
   flex-shrink: 0;
   text-align: right;
   font-weight: 500;
@@ -303,7 +382,7 @@ defineExpose({
 /* 客户名称字段 - 与表单布局对齐 */
 .customer-field {
   display: flex;
-  align-items: flex-start;
+  align-items: center;  /* 垂直居中对齐 */
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -313,16 +392,21 @@ defineExpose({
   flex-shrink: 0;
   text-align: right;
   font-weight: 500;
-  padding-top: 6px;
   line-height: 1.5;
 }
 
-.customer-label::after {
-  content: ' *';
+.customer-label::before {
+  content: '* ';
   color: #ff4d4f;
 }
 
 .customer-input {
   flex: 1;
+}
+
+.customer-readonly {
+  display: inline-block;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
 }
 </style>
