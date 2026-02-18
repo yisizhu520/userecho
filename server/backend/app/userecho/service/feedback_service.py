@@ -77,9 +77,10 @@ class FeedbackService:
                     'images': [{'url': url, 'uploaded_at': timezone.now().isoformat()} for url in data.screenshots]
                 }
 
-            # 4. 生成 AI 摘要（失败不影响创建）
+            # 4. 生成 AI 摘要（仅长文本，失败不影响创建）
+            # 短文本（<=150字）无需 AI 压缩，直接用原文即可
             ai_summary = None
-            if generate_summary and data.content:
+            if generate_summary and data.content and len(data.content) > 150:
                 try:
                     ai_summary = await ai_client.generate_summary(data.content, max_length=20)
                 except Exception as e:

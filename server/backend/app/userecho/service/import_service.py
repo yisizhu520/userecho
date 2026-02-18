@@ -308,9 +308,9 @@ class ImportService:
                     # 反馈内容
                     content = str(row['反馈内容']).strip()
 
-                    # 生成 AI 摘要（可选）
+                    # 生成 AI 摘要（仅长文本 >150 字）
                     ai_summary = None
-                    if generate_summary:
+                    if generate_summary and len(content) > 150:
                         ai_summary = await ai_client.generate_summary(content, max_length=20)
 
                     # 创建反馈

@@ -102,15 +102,7 @@ export function useColumns(
       minWidth: 300,
       showOverflow: 'tooltip',
     },
-    {
-      field: 'ai_summary',
-      title: 'AI 摘要',
-      width: 200,
-      showOverflow: 'tooltip',
-      formatter({ cellValue }) {
-        return cellValue || '-';
-      },
-    },
+
     {
       field: 'images_metadata',
       title: '截图',
