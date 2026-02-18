@@ -156,6 +156,53 @@
 - 后端超过50行的代码改动，一定要执行 cd server && bash pre-commit.sh 命令，确保后端代码编译通过，没有error, 如果有错误自行修复，直到所有错误修复完成
 - 不要自动运行 npm run build, pnpm dev, pnpm build，除非主动让你执行
 
+### 后端依赖管理规范
+
+> "依赖管理不是儿戏，pyproject.toml 是唯一的真相来源。" - Linus
+
+**核心原则**：所有后端依赖必须声明在 `pyproject.toml` 中，使用 `uv` 统一管理
+
+#### 安装新依赖的正确流程
+
+1. **先更新 `pyproject.toml`**：
+   ```toml
+   # server/pyproject.toml
+   dependencies = [
+       # ... 其他依赖
+       "jieba>=0.42.1",  # 添加新依赖
+   ]
+   ```
+
+2. **执行 `uv sync` 安装**：
+   ```bash
+   cd server
+   uv sync
+   ```
+
+#### ❌ 禁止行为
+```bash
+# 禁止直接使用 pip install
+pip install jieba  # ❌ 依赖未记录到 pyproject.toml
+source .venv/Scripts/activate && pip install jieba  # ❌ 同样错误
+
+# 禁止使用系统 Python
+python -m pip install jieba  # ❌ 可能安装到系统 Python
+```
+
+#### ✅ 正确做法
+```bash
+# 1. 编辑 server/pyproject.toml，添加依赖
+# 2. 执行同步安装
+cd server
+uv sync
+```
+
+#### 快速检查清单
+- [ ] 新依赖是否已添加到 `pyproject.toml` 的 `dependencies` 列表？
+- [ ] 是否使用 `uv sync` 而非 `pip install`？
+- [ ] 依赖版本是否指定了最低版本（`>=x.y.z`）？
+- [ ] 是否避免了直接操作虚拟环境？
+
 ### 前端跨 Package 架构规范
 
 > "分层是为了解耦，不是为了制造障碍。" - Linus

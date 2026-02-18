@@ -189,16 +189,29 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         if board_ids and len(board_ids) > 0:
             query = query.where(self.model.board_id.in_(board_ids))
 
-        # 关键词搜索（搜索 title + description）
+        # 关键词搜索（搜索 title + description）- 中文分词后 OR 匹配
         if search_query:
+            import jieba
+
             from backend.common.log import log
 
-            log.info(f'[SEARCH_DEBUG] CRUD Layer - Applying keyword search filter: search_query={search_query!r}')
+            # 使用 jieba 分词，支持中文自动分词
+            # "睡眠模式" -> ["睡眠", "模式"]
+            keywords = [kw for kw in jieba.cut(search_query.strip()) if kw.strip() and len(kw.strip()) > 0]
+            # 过滤掉单字符（通常是停用词或无意义词）
+            keywords = [kw for kw in keywords if len(kw) > 1 or not kw.isalpha()]
+            log.info(f'[SEARCH_DEBUG] CRUD Layer - Applying keyword search filter (jieba): keywords={keywords!r}')
 
-            search_pattern = f'%{search_query}%'
-            query = query.where(
-                or_(self.model.title.ilike(search_pattern), self.model.description.ilike(search_pattern))
-            )
+            if keywords:
+                # 每个关键词构建一个 OR 条件：title LIKE '%kw%' OR description LIKE '%kw%'
+                keyword_conditions = []
+                for kw in keywords:
+                    search_pattern = f'%{kw}%'
+                    keyword_conditions.append(
+                        or_(self.model.title.ilike(search_pattern), self.model.description.ilike(search_pattern))
+                    )
+                # 所有关键词之间是 OR 关系
+                query = query.where(or_(*keyword_conditions))
         else:
             from backend.common.log import log
 
