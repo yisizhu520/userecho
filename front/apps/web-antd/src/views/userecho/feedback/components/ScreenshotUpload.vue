@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { PlusOutlined, LoadingOutlined } from '@ant-design/icons-vue';
-import { analyzeScreenshot, getScreenshotTaskStatus } from '#/api';
+import { uploadFeedbackImage } from '#/api';
+
+interface FileItem {
+  file: File;
+  previewUrl: string;
+}
 
 interface Props {
-  modelValue?: string[];
   maxCount?: number;
 }
 
@@ -14,94 +18,104 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: () => [],
   maxCount: 3,
 });
 
-const emit = defineEmits<Emits>();
+defineEmits<Emits>();
 
 const uploading = ref(false);
+const localFiles = ref<FileItem[]>([]);
 
-// 处理图片上传
-const handleBeforeUpload = async (file: File) => {
-  if (props.modelValue.length >= props.maxCount) {
+// 用于 a-upload 的 fileList（本地预览）
+const fileList = computed(() =>
+  localFiles.value.map((item, index) => ({
+    uid: String(index),
+    name: item.file.name,
+    status: 'done' as const,
+    url: item.previewUrl,
+  }))
+);
+
+// 处理图片选择（本地预览，不上传）
+const handleBeforeUpload = (file: File) => {
+  if (localFiles.value.length >= props.maxCount) {
     message.warning(`最多只能上传${props.maxCount}张截图`);
     return false;
   }
-  
+
+  // 创建本地预览 URL
+  const previewUrl = URL.createObjectURL(file);
+  localFiles.value.push({ file, previewUrl });
+
+  return false; // 阻止默认上传行为
+};
+
+// 移除图片
+const handleRemove = (file: { uid: string }) => {
+  const index = Number(file.uid);
+  if (localFiles.value[index]) {
+    // 释放预览 URL
+    URL.revokeObjectURL(localFiles.value[index].previewUrl);
+    localFiles.value.splice(index, 1);
+  }
+};
+
+// 上传所有图片并返回 URL 列表（供父组件调用）
+const uploadAll = async (): Promise<string[]> => {
+  if (localFiles.value.length === 0) {
+    return [];
+  }
+
+  uploading.value = true;
+  const urls: string[] = [];
+
   try {
-    uploading.value = true;
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    // 调用上传接口
-    const response = await analyzeScreenshot(formData);
-    
-    // 轮询获取上传结果
-    const taskId = response.task_id;
-    let pollCount = 0;
-    const maxPolls = 15;
-    
-    const pollUpload = async (): Promise<string | null> => {
-      pollCount++;
-      const status = await getScreenshotTaskStatus(taskId);
-      
-      if (status.state === 'SUCCESS' && status.result) {
-        return status.result.screenshot_url;
-      } else if (status.state === 'FAILURE') {
-        throw new Error(status.error || '上传失败');
-      } else if (pollCount < maxPolls) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return pollUpload();
-      } else {
-        throw new Error('上传超时');
-      }
-    };
-    
-    const screenshotUrl = await pollUpload();
-    if (screenshotUrl) {
-      emit('update:modelValue', [...props.modelValue, screenshotUrl]);
-      message.success('图片上传成功');
+    for (const item of localFiles.value) {
+      const result = await uploadFeedbackImage(item.file);
+      urls.push(result.url);
     }
-    
-    return false; // 阻止默认上传行为
+    return urls;
   } catch (error: any) {
     message.error(error.message || '图片上传失败');
-    return false;
+    throw error;
   } finally {
     uploading.value = false;
   }
 };
 
-// 移除已上传的截图
-const handleRemove = (file: any) => {
-  // 使用 URL 过滤而非索引，避免删除后索引错乱
-  const newList = props.modelValue.filter(url => url !== file.url);
-  emit('update:modelValue', newList);
+// 重置
+const reset = () => {
+  // 释放所有预览 URL
+  for (const item of localFiles.value) {
+    URL.revokeObjectURL(item.previewUrl);
+  }
+  localFiles.value = [];
 };
+
+// 暴露方法给父组件
+defineExpose({
+  uploadAll,
+  reset,
+  hasFiles: computed(() => localFiles.value.length > 0),
+});
 </script>
 
 <template>
   <div class="screenshot-upload-section">
-    <div class="upload-label">截图上传（最多{{ maxCount }}张）</div>
+    <div class="upload-label">截图（最多{{ maxCount }}张）</div>
     <div class="upload-content">
       <a-upload
-        :file-list="modelValue.map((url, index) => ({
-          uid: String(index),
-          name: `screenshot-${index + 1}.png`,
-          status: 'done',
-          url: url,
-        }))"
+        :file-list="fileList"
         list-type="picture-card"
         :before-upload="handleBeforeUpload"
         @remove="handleRemove"
         accept="image/png,image/jpeg,image/jpg,image/webp"
         :max-count="maxCount"
       >
-        <div v-if="modelValue.length < maxCount">
+        <div v-if="localFiles.length < maxCount">
           <loading-outlined v-if="uploading" />
           <plus-outlined v-else />
-          <div class="upload-text">上传图片</div>
+          <div class="upload-text">选择图片</div>
         </div>
       </a-upload>
     </div>
@@ -110,7 +124,7 @@ const handleRemove = (file: any) => {
 
 <style scoped>
 .screenshot-upload-section {
-  /* 移除原有的边框和间距，由父组件控制 */
+  /* 由父组件控制布局 */
 }
 
 .upload-label {

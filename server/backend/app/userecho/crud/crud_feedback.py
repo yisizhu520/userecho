@@ -400,6 +400,8 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         if submitter_id is not None:
             query = query.where(self.model.submitter_id == submitter_id)
 
+        # 默认按提交时间倒序排序（最新在前）
+        query = query.order_by(self.model.submitted_at.desc())
         query = query.offset(skip).limit(limit)
 
         result = await db.execute(query)

@@ -107,5 +107,26 @@ class CustomerService:
         """
         return await crud_customer.delete(db=db, tenant_id=tenant_id, id=customer_id, soft=True)
 
+    async def search_customers(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        query: str,
+        limit: int = 10,
+    ):
+        """
+        模糊搜索客户
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            query: 搜索关键词
+            limit: 返回数量上限
+
+        Returns:
+            匹配的客户列表
+        """
+        return await crud_customer.search_by_name(db=db, tenant_id=tenant_id, query=query, limit=limit)
+
 
 customer_service = CustomerService()

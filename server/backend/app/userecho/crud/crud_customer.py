@@ -33,5 +33,37 @@ class CRUDCustomer(TenantAwareCRUD[Customer]):
         result = await db.execute(query)
         return result.scalar_one_or_none()
 
+    async def search_by_name(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        query: str,
+        limit: int = 10,
+    ) -> list[Customer]:
+        """
+        模糊搜索客户名称
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            query: 搜索关键词
+            limit: 返回数量上限
+
+        Returns:
+            匹配的客户列表
+        """
+        stmt = (
+            select(self.model)
+            .where(
+                self.model.tenant_id == tenant_id,
+                self.model.name.ilike(f'%{query}%'),
+                self.model.deleted_at.is_(None),
+            )
+            .order_by(self.model.name)
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
 
 crud_customer = CRUDCustomer(Customer)

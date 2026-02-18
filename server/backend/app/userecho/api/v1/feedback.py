@@ -312,6 +312,66 @@ async def batch_generate_summary(
         return response_base.fail(res=CustomResponse(code=500, msg=f'批量生成摘要失败: {e!s}'))
 
 
+# ==================== 截图上传相关接口 ====================
+
+
+@router.post('/upload-image', summary='上传反馈截图')
+async def upload_feedback_image(
+    file: Annotated[UploadFile, File(description='图片文件（PNG/JPG/JPEG/WEBP，最大 10MB）')],
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    简单图片上传（用于手动创建反馈时添加截图）
+
+    与 /screenshot/analyze 不同，此接口：
+    - 不做 AI 智能识别
+    - 同步上传，直接返回 URL
+    - 用于手动创建反馈时附加截图
+    """
+    from backend.common.log import log
+
+    # 1. 验证文件
+    if not file.filename:
+        return response_base.fail(res=CustomResponse(code=400, msg='文件名不能为空'))
+
+    # 验证文件类型
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
+    file_ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
+    if file_ext not in allowed_extensions:
+        return response_base.fail(
+            res=CustomResponse(code=400, msg=f'不支持的文件格式，仅支持: {", ".join(allowed_extensions)}')
+        )
+
+    # 验证文件大小（10MB）
+    max_size = 10 * 1024 * 1024  # 10MB
+    content = await file.read()
+    file_size = len(content)
+
+    if file_size > max_size:
+        return response_base.fail(
+            res=CustomResponse(code=400, msg=f'文件过大（{file_size / 1024 / 1024:.1f}MB），最大支持 10MB')
+        )
+
+    try:
+        # 2. 上传到存储（使用已读取的内容，避免 UploadFile 状态问题）
+        from io import BytesIO
+
+        from backend.utils.storage import build_storage_path, storage
+
+        # 构建存储路径
+        path = build_storage_path(file, prefix=f'screenshots/{tenant_id}')
+
+        # 使用 BytesIO 包装内容上传
+        file_obj = BytesIO(content)
+        url = await storage.upload(file_obj, path, content_type=file.content_type)
+
+        log.info(f'Uploaded feedback image for tenant {tenant_id}: {url}')
+        return response_base.success(data={'url': url})
+    except Exception as e:
+        log.error(f'Failed to upload image for tenant {tenant_id}: {e}')
+        return response_base.fail(res=CustomResponse(code=500, msg=f'图片上传失败: {e!s}'))
+
+
 # ==================== 截图智能识别相关接口 ====================
 
 

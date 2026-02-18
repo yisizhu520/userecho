@@ -44,6 +44,13 @@ export async function getCustomerList(params: CustomerListParams) {
 }
 
 /**
+ * 搜索客户（模糊匹配）
+ */
+export async function searchCustomers(query: string, limit: number = 10) {
+  return requestClient.get<Customer[]>('/api/v1/app/customers/search', { params: { query, limit } });
+}
+
+/**
  * 创建客户
  */
 export async function createCustomer(data: CreateCustomerParams) {

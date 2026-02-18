@@ -32,6 +32,7 @@ export interface CreateFeedbackParams {
   board_id: string;
   customer_id?: string;
   customer_name: string;
+  customer_type?: string;
   content: string;
   source?: string;
   is_urgent?: boolean;
@@ -243,3 +244,15 @@ export async function getScreenshotTaskStatus(taskId: string) {
 export async function createFeedbackFromScreenshot(data: ScreenshotFeedbackCreateParams) {
   return requestClient.post<Feedback>('/api/v1/app/feedbacks/screenshot/create', data);
 }
+
+/**
+ * 上传反馈截图（同步，用于手动创建反馈）
+ */
+export async function uploadFeedbackImage(file: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return requestClient.post('/api/v1/app/feedbacks/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+}
+

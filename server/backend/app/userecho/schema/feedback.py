@@ -20,6 +20,7 @@ class FeedbackCreate(FeedbackBase):
     board_id: str = Field(description='看板ID (必填)')
     customer_id: str | None = Field(None, description='客户ID (可选，若未指定则根据 customer_name 自动创建)')
     customer_name: str = Field(description='客户名称 (必填)')
+    customer_type: str | None = Field(None, description='客户类型 (新建客户时使用): normal/paid/major/strategic')
     topic_id: str | None = Field(None, description='关联主题ID (手动关联)')
     screenshots: list[str] | None = Field(None, description='截图URL列表 (最多3张)')
 

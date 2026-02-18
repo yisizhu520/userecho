@@ -62,11 +62,11 @@ class FeedbackService:
                 customer = result.scalar_one_or_none()
 
                 if not customer:
-                    # 创建新客户
+                    # 创建新客户（使用请求中的 customer_type 或默认 'normal'）
                     customer = await crud_customer.create(
-                        db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type='normal'
+                        db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type=data.customer_type or 'normal'
                     )
-                    log.info(f'Auto-created customer {customer.id} for feedback: {data.customer_name}')
+                    log.info(f'Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or "normal"}')
 
                 customer_id = customer.id
 

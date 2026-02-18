@@ -5,10 +5,11 @@ import { useVbenForm } from '#/adapter/form';
 import { message } from 'ant-design-vue';
 import { createFeedback } from '#/api';
 import { useBoardStore } from '#/store';
-import type { CreateFeedbackParams } from '#/api';
+import type { CreateFeedbackParams, Customer } from '#/api';
 import { feedbackFormSchema } from '#/views/userecho/feedback/data';
 import ScreenshotUpload from './ScreenshotUpload.vue';
 import SimilarTopicsPanel from './SimilarTopicsPanel.vue';
+import CustomerAutoComplete from './CustomerAutoComplete.vue';
 
 interface Emits {
   (e: 'success', boardId: string): void;
@@ -17,15 +18,20 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const selectedTopicId = ref<string>('');
-const uploadedScreenshots = ref<string[]>([]);
+const screenshotUploadRef = ref<InstanceType<typeof ScreenshotUpload> | null>(null);
 const currentTitle = ref<string>('');
+
+// 客户信息
+const customerName = ref<string>('');
+const customerType = ref<string>('normal');
+const selectedCustomer = ref<Customer | null>(null);
 
 // localStorage key for remembering the last selected board
 const LAST_SELECTED_BOARD_KEY = 'feedback_create_last_board_id';
 
 // 将表单字段拆分为两组
 const topFormSchema = computed(() => feedbackFormSchema.slice(0, 2)); // 看板 + 反馈内容
-const bottomFormSchema = computed(() => feedbackFormSchema.slice(2)); // 客户信息等其余字段
+const bottomFormSchema = computed(() => feedbackFormSchema.slice(2)); // is_urgent 等其余字段
 
 // 监听表单值变化的回调
 const handleValuesChange = (values: Record<string, any>, changedFields: string[]) => {
@@ -55,9 +61,14 @@ const [Modal, modalApi] = useVbenModal({
   destroyOnClose: true,
   class: 'w-[1000px]',
   async onConfirm() {
-    // 验证两个表单
+    // 验证表单和客户名称
     const topValid = await topFormApi.validate();
     const bottomValid = await bottomFormApi.validate();
+    const customerValid = customerName.value.trim().length > 0;
+    if (!customerValid) {
+      message.warning('请输入客户名称');
+      return;
+    }
     if (topValid.valid && bottomValid.valid) {
       await handleCreate(false);
     }
@@ -67,8 +78,11 @@ const [Modal, modalApi] = useVbenModal({
       topFormApi.resetForm();
       bottomFormApi.resetForm();
       selectedTopicId.value = '';
-      uploadedScreenshots.value = [];
+      screenshotUploadRef.value?.reset();
       currentTitle.value = '';
+      customerName.value = '';
+      customerType.value = 'normal';
+      selectedCustomer.value = null;
       loadBoardList();
     }
   },
@@ -118,13 +132,24 @@ const handleCreate = async (continueCreating: boolean) => {
     const bottomData = await bottomFormApi.getValues();
     const data = { ...topData, ...bottomData } as CreateFeedbackParams;
     
+    // 添加客户信息
+    data.customer_name = customerName.value;
+    // 如果是新建客户（未选择已有客户），传递客户类型
+    if (!selectedCustomer.value) {
+      data.customer_type = customerType.value;
+    }
     
-    // 添加 Topic 关联和截图
+    // 添加 Topic 关联
     if (selectedTopicId.value) {
       data.topic_id = selectedTopicId.value;
     }
-    if (uploadedScreenshots.value.length > 0) {
-      data.screenshots = uploadedScreenshots.value;
+    
+    // 上传截图（在提交时才真正上传）
+    if (screenshotUploadRef.value?.hasFiles) {
+      const urls = await screenshotUploadRef.value.uploadAll();
+      if (urls.length > 0) {
+        data.screenshots = urls;
+      }
     }
     
     await createFeedback(data);
@@ -138,8 +163,11 @@ const handleCreate = async (continueCreating: boolean) => {
       topFormApi.resetForm();
       bottomFormApi.resetForm();
       selectedTopicId.value = '';
-      uploadedScreenshots.value = [];
+      screenshotUploadRef.value?.reset();
       currentTitle.value = '';
+      customerName.value = '';
+      customerType.value = 'normal';
+      selectedCustomer.value = null;
     } else {
       await modalApi.close();
     }
@@ -154,12 +182,20 @@ const handleCreate = async (continueCreating: boolean) => {
 const handleCreateAndContinue = async () => {
   const topValid = await topFormApi.validate();
   const bottomValid = await bottomFormApi.validate();
+  const customerValid = customerName.value.trim().length > 0;
+  if (!customerValid) {
+    message.warning('请输入客户名称');
+    return;
+  }
   if (topValid.valid && bottomValid.valid) {
     await handleCreate(true);
   }
 };
 
-
+// 客户选择回调
+const onCustomerSelected = (customer: Customer | null) => {
+  selectedCustomer.value = customer;
+};
 
 // 暴露 API 给父组件
 defineExpose({
@@ -180,10 +216,23 @@ defineExpose({
             
             <!-- 截图上传组件 -->
             <div class="screenshot-upload-section">
-              <ScreenshotUpload v-model="uploadedScreenshots" />
+              <ScreenshotUpload ref="screenshotUploadRef" />
             </div>
             
-            <!-- 底部表单：客户信息等其余字段 -->
+            <!-- 客户名称自动补全 -->
+            <div class="customer-field">
+              <label class="customer-label">客户名称</label>
+              <div class="customer-input">
+                <CustomerAutoComplete
+                  v-model="customerName"
+                  v-model:customer-type="customerType"
+                  placeholder="输入客户名称"
+                  @customer-selected="onCustomerSelected"
+                />
+              </div>
+            </div>
+            
+            <!-- 底部表单：紧急标记等 -->
             <BottomForm />
           </div>
         </a-col>
@@ -249,5 +298,31 @@ defineExpose({
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 0 0 0;
+}
+
+/* 客户名称字段 - 与表单布局对齐 */
+.customer-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.customer-label {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 500;
+  padding-top: 6px;
+  line-height: 1.5;
+}
+
+.customer-label::after {
+  content: ' *';
+  color: #ff4d4f;
+}
+
+.customer-input {
+  flex: 1;
 }
 </style>

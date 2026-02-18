@@ -209,15 +209,7 @@ export const feedbackFormSchema: VbenFormSchema[] = [
       style: { width: '100%' },
     },
   },
-  {
-    component: 'Input',
-    fieldName: 'customer_name',
-    label: '客户名称',
-    rules: z.string().min(1, '请输入客户名称'),
-    componentProps: {
-      placeholder: '输入客户名称',
-    },
-  },
+  // customer_name 字段由 CustomerAutoComplete 组件单独处理
   {
     component: 'Switch',
     fieldName: 'is_urgent',

@@ -26,6 +26,24 @@ async def get_customers(
     return response_base.success(data=customers_out)
 
 
+@router.get('/search', summary='搜索客户')
+async def search_customers(
+    db: CurrentSession,
+    query: str,
+    tenant_id: str = CurrentTenantId,
+    limit: int = 10,
+):
+    """
+    模糊搜索客户名称
+
+    - **query**: 搜索关键词
+    - **limit**: 返回数量上限（默认10）
+    """
+    customers = await customer_service.search_customers(db=db, tenant_id=tenant_id, query=query, limit=limit)
+    customers_out = [CustomerOut.model_validate(c) for c in customers]
+    return response_base.success(data=customers_out)
+
+
 @router.post('', summary='创建客户')
 async def create_customer(
     data: CustomerCreate,
