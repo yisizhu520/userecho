@@ -1,7 +1,7 @@
 # Canny 竞品功能对比分析
 
 > **调研日期:** 2025-12-30  
-> **调研目的:** 对比 Canny 与 UserEcho (Feedalyze) 的功能差距,明确后续开发方向
+> **调研目的:** 对比 Canny 与 UserEcho (userecho) 的功能差距,明确后续开发方向
 
 ---
 

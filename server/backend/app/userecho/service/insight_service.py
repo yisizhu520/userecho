@@ -860,7 +860,7 @@ class InsightService:
         else:
             email_content['insight'] = '本周暂无高优先级需求需要处理。'
 
-        subject = f'📊 Feedalyze 周度洞察简报 ({start_date.strftime("%m/%d")}-{end_date.strftime("%m/%d")})'
+        subject = f'📊 userecho 周度洞察简报 ({start_date.strftime("%m/%d")}-{end_date.strftime("%m/%d")})'
 
         try:
             await send_email(

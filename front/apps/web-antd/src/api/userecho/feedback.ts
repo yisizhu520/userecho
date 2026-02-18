@@ -31,9 +31,7 @@ export interface Feedback {
 export interface CreateFeedbackParams {
   board_id: string;
   customer_id?: string;
-  customer_name?: string;
-  anonymous_author?: string;
-  anonymous_source?: string;
+  customer_name: string;
   content: string;
   source?: string;
   is_urgent?: boolean;
@@ -91,7 +89,6 @@ export interface ImportPreviewResult {
 export interface ImportConfig {
   default_board_id?: string;
   default_customer_name?: string;
-  use_anonymous?: boolean;
 }
 
 /** 截图识别提取的数据 */
@@ -204,7 +201,6 @@ export async function importFeedbacksWithConfig(file: File, config: ImportConfig
   const params = new URLSearchParams();
   if (config.default_board_id) params.append('default_board_id', config.default_board_id);
   if (config.default_customer_name) params.append('default_customer_name', config.default_customer_name);
-  if (config.use_anonymous) params.append('use_anonymous', 'true');
 
   const queryString = params.toString();
   const url = queryString

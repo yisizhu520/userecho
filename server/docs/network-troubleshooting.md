@@ -24,19 +24,19 @@
 ```bash
 # 1. 启动本地 PostgreSQL（Docker）
 docker run -d \
-  --name feedalyze-postgres \
-  -e POSTGRES_USER=feedalyze \
-  -e POSTGRES_PASSWORD=feedalyze123 \
-  -e POSTGRES_DB=feedalyze \
+  --name userecho-postgres \
+  -e POSTGRES_USER=userecho \
+  -e POSTGRES_PASSWORD=userecho123 \
+  -e POSTGRES_DB=userecho \
   -p 5432:5432 \
   pgvector/pgvector:pg17
 
 # 2. 修改 .env
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_USER=feedalyze
-DATABASE_PASSWORD=feedalyze123
-DATABASE_SCHEMA=feedalyze
+DATABASE_USER=userecho
+DATABASE_PASSWORD=userecho123
+DATABASE_SCHEMA=userecho
 
 # 3. 运行迁移
 cd server

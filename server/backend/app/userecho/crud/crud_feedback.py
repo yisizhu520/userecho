@@ -309,6 +309,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         search_query: str | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
+        submitter_id: int | None = None,
     ) -> list[dict]:
         """
         获取反馈列表（包含关联的客户名和主题标题，支持关键词搜索）
@@ -325,6 +326,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             clustering_status: 过滤聚类状态（多选）
             board_ids: 过滤看板ID（多选）
             search_query: 搜索关键词（搜索 content 和 ai_summary）
+            submitter_id: 过滤提交者ID（用于"我的反馈"）
 
         Returns:
             反馈列表（包含 customer_name 和 topic_title）
@@ -393,6 +395,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             # date_to 包含当天结束时间
             date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
             query = query.where(self.model.submitted_at < date_to_dt)
+
+        # 过滤提交者（用于"我的反馈"模式）
+        if submitter_id is not None:
+            query = query.where(self.model.submitter_id == submitter_id)
 
         query = query.offset(skip).limit(limit)
 

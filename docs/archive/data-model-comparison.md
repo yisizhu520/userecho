@@ -1,4 +1,4 @@
-# Canny vs Feedalyze 数据模型深度对比分析
+# Canny vs userecho 数据模型深度对比分析
 
 > **调研目的**: 深入分析 Canny 的 Board-Post-Vote 架构,找出我们 Feedback-Topic 设计的缺陷与优化空间。
 
@@ -90,7 +90,7 @@ Tenant (公司)
 
 ---
 
-## 二、Feedalyze 当前数据模型
+## 二、userecho 当前数据模型
 
 ### 2.1 核心实体关系
 
@@ -139,7 +139,7 @@ Tenant (租户)
 
 ## 三、核心差异对比
 
-| 维度 | Canny (Board-Post-Vote) | Feedalyze (Feedback-Topic) | 影响 |
+| 维度 | Canny (Board-Post-Vote) | userecho (Feedback-Topic) | 影响 |
 |------|------------------------|---------------------------|------|
 | **数据来源** | 用户直接在公开门户提交 Post | Admin 导入/录入 Feedback,AI 聚类生成 Topic | 🔴 **致命差异** |
 | **聚合方式** | 用户手动搜索 + 投票已有 Post | AI 自动聚类相似 Feedback | 🟡 技术优势,但用户无感知 |
@@ -408,7 +408,7 @@ class Topic(MappedBase):
 
 ## 七、数据模型对比总结
 
-| 特性 | Canny | Feedalyze (现状) | Feedalyze (优化后) |
+| 特性 | Canny | userecho (现状) | userecho (优化后) |
 |------|-------|-----------------|-------------------|
 | 用户提交 | ✅ Post | ❌ 无 | ✅ Post |
 | 投票机制 | ✅ Vote | ❌ 无 | ✅ Vote |

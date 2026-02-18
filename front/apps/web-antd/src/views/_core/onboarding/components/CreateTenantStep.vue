@@ -173,7 +173,7 @@ async function handleSubmit() {
           @input="onSlugInput"
         >
           <template #addonAfter>
-            <span class="slug-suffix">.feedalyze.com</span>
+            <span class="slug-suffix">.userecho.com</span>
           </template>
         </Input>
 

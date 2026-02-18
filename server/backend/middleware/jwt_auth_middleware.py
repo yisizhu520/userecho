@@ -75,10 +75,11 @@ class JwtAuthMiddleware(AuthenticationBackend):
         try:
             user = await jwt_authentication(token)
 
-            # 自动注入 tenant_id 到上下文，供后续请求使用
+            # 自动注入 tenant_id 和 user_id 到上下文，供后续请求使用
             from backend.common.context import ctx
 
             ctx.tenant_id = user.tenant_id or 'default-tenant'
+            ctx.user_id = user.id
 
         except TokenError as exc:
             raise _AuthenticationError(code=exc.code, msg=exc.detail, headers=exc.headers)

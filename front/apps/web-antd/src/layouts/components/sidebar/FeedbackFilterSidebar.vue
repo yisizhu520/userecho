@@ -52,7 +52,7 @@ const emit = defineEmits<{
     </div>
     
     <div class="p-4 text-xs text-center text-gray-400">
-      Powered by Feedalyze
+      Powered by userecho
     </div>
   </div>
 </template>

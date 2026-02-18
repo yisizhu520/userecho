@@ -1,4 +1,4 @@
-# Feedalyze 数据库重构设计文档 v2
+# userecho 数据库重构设计文档 v2
 
 > **重构目标**: 采用 Board-Feedback-Vote 架构,对标 Canny,优化用户模型,简化数据结构。
 
@@ -669,7 +669,7 @@ WHERE array_length(screenshot_urls, 1) > 1;
 
 ### 6.2 与 Canny 对比
 
-| 特性 | Canny | Feedalyze (新设计) |
+| 特性 | Canny | userecho (新设计) |
 |------|-------|-------------------|
 | 用户模型 | 单一 User 表 | ✅ 单一 Users 表 + roles |
 | Board 访问控制 | Public/Private | ✅ Public/Private/Restricted |

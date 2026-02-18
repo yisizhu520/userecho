@@ -68,7 +68,7 @@
 *   **模式 B (且/或 切换器 - 独立视图)**: 类似 Discord/Slack 或此时的 Project 切换。
     *   组件: 下拉选择框 (Dropdown Select) 或 带有图标的列表项。
     *   *场景*: 如果 Board 之间隔离性很强 (例如 "To B 产品" 和 "To C 产品")。
-*   **推荐方案**: 采用 **Canny 风格 (Checkbox List)**，但在列表上方加一个 "Select All / Clear" 的快捷操作。这符合 Feedalyze 作为统一反馈平台的定位。
+*   **推荐方案**: 采用 **Canny 风格 (Checkbox List)**，但在列表上方加一个 "Select All / Clear" 的快捷操作。这符合 userecho 作为统一反馈平台的定位。
 
 **2. 筛选与视图 (Filters & Views)**
 *位置*: Boards 下方。
@@ -79,7 +79,7 @@
 
 **3. 底部操作 (Footer Actions)**
 *位置*: Sidebar 底部（可选）。
-*内容*: "Powered by Feedalyze" 或 页面级的快捷设置 (如 "Board Settings" 如果当前只选了一个 Board)。
+*内容*: "Powered by userecho" 或 页面级的快捷设置 (如 "Board Settings" 如果当前只选了一个 Board)。
 
 #### C. 内容区域 (Main Content)
 *   左对齐，留白适中。
@@ -105,7 +105,7 @@
 
 ## 6. 技术实现策略 (Technical Strategy)
 
-经代码库调研，Feedalyze 使用的 Vben Admin 5.0 框架原生支持 **混合导航 (Mixed Nav)** 模式，这与我们要实现的 "Top Nav + Left Sidebar" 布局完美契合。
+经代码库调研，userecho 使用的 Vben Admin 5.0 框架原生支持 **混合导航 (Mixed Nav)** 模式，这与我们要实现的 "Top Nav + Left Sidebar" 布局完美契合。
 
 *   **配置**: 修改 `preferences.ts` 将布局模式设置为 `mixed-nav`。
     *   这将自动把一级菜单（Feedback, Roadmap 等）置于顶部。

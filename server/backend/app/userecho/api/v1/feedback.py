@@ -40,6 +40,7 @@ async def get_feedbacks(
     search_mode: str = 'keyword',
     date_from: str | None = None,
     date_to: str | None = None,
+    creator_me: Annotated[bool, Query(description='是否只显示我录入的反馈')] = False,
 ):
     """
     获取反馈列表（支持过滤 + 双模式搜索）
@@ -53,6 +54,7 @@ async def get_feedbacks(
     - **board_ids**: 过滤看板ID（多选）
     - **date_from**: 起始日期（ISO格式，如 2026-01-01）
     - **date_to**: 结束日期（ISO格式，如 2026-01-31）
+    - **creator_me**: 是否只显示我录入的反馈
 
     搜索参数：
     - **search_query**: 搜索关键词（搜索反馈内容和AI摘要）
@@ -62,6 +64,13 @@ async def get_feedbacks(
 
     注意：搜索与过滤条件同时生效（AND关系）
     """
+    # 如果是"我的反馈"模式，获取当前用户ID
+    submitter_id = None
+    if creator_me:
+        from backend.common.security.jwt import get_current_user_id
+
+        submitter_id = get_current_user_id()
+
     feedbacks = await feedback_service.get_list(
         db=db,
         tenant_id=tenant_id,
@@ -77,6 +86,7 @@ async def get_feedbacks(
         search_mode=search_mode,
         date_from=date_from,
         date_to=date_to,
+        submitter_id=submitter_id,
     )
     # ✅ 关联查询返回字典（包含 customer_name, topic_title），已在 CRUD 层处理
     # 字典可以直接被 Pydantic 验证（FeedbackOut 支持 from_attributes）
@@ -91,8 +101,13 @@ async def create_feedback(
     tenant_id: str = CurrentTenantId,
 ):
     """创建反馈（自动生成 AI 摘要）"""
+    from backend.common.security.jwt import get_current_user_id
+
+    # 获取当前用户ID作为提交者
+    submitter_id = get_current_user_id()
+
     feedback = await feedback_service.create_with_ai_processing(
-        db=db, tenant_id=tenant_id, data=data, generate_summary=True
+        db=db, tenant_id=tenant_id, data=data, generate_summary=True, submitter_id=submitter_id
     )
     # ✅ Pydantic 自动将 ORM 对象转换为 FeedbackOut（排除 embedding）
     feedback_out = FeedbackOut.model_validate(feedback)
@@ -155,8 +170,7 @@ async def import_feedbacks(
     db: CurrentSession,
     file: Annotated[UploadFile, File()],
     default_board_id: Annotated[str | None, Query(description='默认看板ID（当Excel无看板列时使用）')] = None,
-    default_customer_name: Annotated[str | None, Query(description='默认客户名称（当Excel无客户列时使用）')] = None,
-    use_anonymous: Annotated[bool, Query(description='是否使用匿名（优先级高于default_customer_name）')] = False,
+    default_customer_name: Annotated[str | None, Query(description='默认客户名称（当Excel无客户列时使用，必填）')] = None,
     tenant_id: str = CurrentTenantId,
 ):
     """
@@ -169,7 +183,7 @@ async def import_feedbacks(
 
     可选列（可通过参数补全）:
     - 看板名称（或使用 default_board_id 参数）
-    - 客户名称（或使用 default_customer_name / use_anonymous）
+    - 客户名称（必须使用 default_customer_name 参数补充）
     - 客户类型
     - 提交时间
     - 是否紧急
@@ -177,7 +191,7 @@ async def import_feedbacks(
     from backend.common.log import log
 
     log.info(
-        f'Starting import for tenant {tenant_id}, board={default_board_id}, customer={default_customer_name}, anonymous={use_anonymous}'
+        f'Starting import for tenant {tenant_id}, board={default_board_id}, customer={default_customer_name}'
     )
 
     try:
@@ -187,7 +201,6 @@ async def import_feedbacks(
             file=file,
             default_board_id=default_board_id,
             default_customer_name=default_customer_name,
-            use_anonymous=use_anonymous,
             generate_summary=False,
         )
 

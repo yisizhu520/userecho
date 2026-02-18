@@ -1,90 +1,119 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>周度洞察简报</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc;">
+
+<body
+    style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+        style="background-color: #f8fafc;">
         <tr>
             <td align="center" style="padding: 40px 20px;">
-                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                    style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
                     <!-- 头部 -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 32px 40px; text-align: left;">
-                            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 24px; font-weight: 700;">📊 周度洞察简报</h1>
+                        <td
+                            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 32px 40px; text-align: left;">
+                            <h1 style="margin: 0 0 8px 0; color: #ffffff; font-size: 24px; font-weight: 700;">📊 周度洞察简报
+                            </h1>
                             <p style="margin: 0; color: rgba(255,255,255,0.8); font-size: 14px;">{{ date_range }}</p>
                         </td>
                     </tr>
-                    
+
                     <!-- 核心洞察 -->
                     <tr>
-                        <td style="padding: 24px 40px; background: linear-gradient(to right, #fffbeb, #fff7ed); border-bottom: 1px solid #fde68a;">
+                        <td
+                            style="padding: 24px 40px; background: linear-gradient(to right, #fffbeb, #fff7ed); border-bottom: 1px solid #fde68a;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
                                     <td width="48" valign="top">
-                                        <div style="width: 48px; height: 48px; background-color: #fef3c7; border-radius: 12px; text-align: center; line-height: 48px; font-size: 24px;">💡</div>
+                                        <div
+                                            style="width: 48px; height: 48px; background-color: #fef3c7; border-radius: 12px; text-align: center; line-height: 48px; font-size: 24px;">
+                                            💡</div>
                                     </td>
                                     <td style="padding-left: 16px;">
-                                        <p style="margin: 0 0 8px 0; color: #1f2937; font-weight: 600; font-size: 14px;">本周核心洞察</p>
-                                        <p style="margin: 0; color: #374151; font-size: 16px; line-height: 1.6;">{{ insight }}</p>
+                                        <p
+                                            style="margin: 0 0 8px 0; color: #1f2937; font-weight: 600; font-size: 14px;">
+                                            本周核心洞察</p>
+                                        <p style="margin: 0; color: #374151; font-size: 16px; line-height: 1.6;">{{
+                                            insight }}</p>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
-                    
+
                     <!-- 关键指标 -->
                     <tr>
                         <td style="padding: 32px 40px;">
                             <p style="margin: 0 0 16px 0; color: #1f2937; font-weight: 600; font-size: 14px;">
-                                <span style="display: inline-block; width: 4px; height: 16px; background-color: #6366f1; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>
+                                <span
+                                    style="display: inline-block; width: 4px; height: 16px; background-color: #6366f1; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>
                                 关键变化
                             </p>
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td width="33%" style="padding: 16px; background-color: #f9fafb; border-radius: 12px; text-align: center;">
+                                    <td width="33%"
+                                        style="padding: 16px; background-color: #f9fafb; border-radius: 12px; text-align: center;">
                                         <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 12px;">反馈量</p>
-                                        <p style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">{{ new_feedbacks_count }}</p>
-                                        <p style="margin: 4px 0 0 0; font-size: 12px; color: {% if change_percent >= 0 %}#10b981{% else %}#ef4444{% endif %};">
-                                            {% if change_percent >= 0 %}↑{% else %}↓{% endif %} {{ change_percent|abs }}% vs 上周
+                                        <p style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">{{
+                                            new_feedbacks_count }}</p>
+                                        <p
+                                            style="margin: 4px 0 0 0; font-size: 12px; color: {% if change_percent >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+                                            {% if change_percent >= 0 %}↑{% else %}↓{% endif %} {{ change_percent|abs
+                                            }}% vs 上周
                                         </p>
                                     </td>
                                     <td width="10"></td>
-                                    <td width="33%" style="padding: 16px; background-color: #f9fafb; border-radius: 12px; text-align: center;">
+                                    <td width="33%"
+                                        style="padding: 16px; background-color: #f9fafb; border-radius: 12px; text-align: center;">
                                         <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 12px;">新增需求</p>
-                                        <p style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">{{ new_topics_count }}</p>
+                                        <p style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">{{
+                                            new_topics_count }}</p>
                                         <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">个需求</p>
                                     </td>
                                     <td width="10"></td>
-                                    <td width="33%" style="padding: 16px; background-color: #f9fafb; border-radius: 12px; text-align: center;">
+                                    <td width="33%"
+                                        style="padding: 16px; background-color: #f9fafb; border-radius: 12px; text-align: center;">
                                         <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 12px;">已完成</p>
-                                        <p style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">{{ completed_count }}</p>
+                                        <p style="margin: 0; color: #111827; font-size: 28px; font-weight: 700;">{{
+                                            completed_count }}</p>
                                         <p style="margin: 4px 0 0 0; font-size: 12px; color: #10b981;">✓ 个需求</p>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
-                    
+
                     <!-- TOP 需求（如果有） -->
                     {% if top_topics %}
                     <tr>
                         <td style="padding: 0 40px 32px 40px;">
                             <p style="margin: 0 0 16px 0; color: #1f2937; font-weight: 600; font-size: 14px;">
-                                <span style="display: inline-block; width: 4px; height: 16px; background-color: #f59e0b; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>
+                                <span
+                                    style="display: inline-block; width: 4px; height: 16px; background-color: #f59e0b; border-radius: 2px; margin-right: 8px; vertical-align: middle;"></span>
                                 重点关注
                             </p>
                             {% for topic in top_topics[:3] %}
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 12px;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                                style="margin-bottom: 12px;">
                                 <tr>
-                                    <td style="padding: 16px; background-color: #fef3c7; border-radius: 12px; border: 1px solid #fde68a;">
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                    <td
+                                        style="padding: 16px; background-color: #fef3c7; border-radius: 12px; border: 1px solid #fde68a;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                            border="0">
                                             <tr>
                                                 <td>
-                                                    <p style="margin: 0 0 4px 0; color: #1f2937; font-weight: 600; font-size: 14px;">{{ topic.title }}</p>
-                                                    <p style="margin: 0; color: #6b7280; font-size: 12px;">影响 {{ topic.customer_count }} 位客户 · 优先级 {{ topic.score }}</p>
+                                                    <p
+                                                        style="margin: 0 0 4px 0; color: #1f2937; font-weight: 600; font-size: 14px;">
+                                                        {{ topic.title }}</p>
+                                                    <p style="margin: 0; color: #6b7280; font-size: 12px;">影响 {{
+                                                        topic.customer_count }} 位客户 · 优先级 {{ topic.score }}</p>
                                                 </td>
                                             </tr>
                                         </table>
@@ -95,12 +124,13 @@
                         </td>
                     </tr>
                     {% endif %}
-                    
+
                     <!-- 页脚 -->
                     <tr>
-                        <td style="padding: 24px 40px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
+                        <td
+                            style="padding: 24px 40px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
                             <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                                Generated by Feedalyze AI · 点击登录系统查看详情
+                                Generated by userecho AI · 点击登录系统查看详情
                             </p>
                         </td>
                     </tr>
@@ -109,4 +139,5 @@
         </tr>
     </table>
 </body>
+
 </html>

@@ -42,9 +42,7 @@ const currentFile = ref<File | null>(null);
 const importConfig = ref<ImportConfig>({
   default_board_id: undefined,
   default_customer_name: undefined,
-  use_anonymous: false,
 });
-const customerMode = ref<'anonymous' | 'single'>('anonymous');
 
 // 看板列表
 interface Board {
@@ -151,11 +149,7 @@ const doImport = async () => {
       config.default_board_id = importConfig.value.default_board_id;
     }
     if (previewResult.value?.missing_optional.includes('客户名称')) {
-      if (customerMode.value === 'anonymous') {
-        config.use_anonymous = true;
-      } else {
-        config.default_customer_name = importConfig.value.default_customer_name;
-      }
+      config.default_customer_name = importConfig.value.default_customer_name;
     }
     
     const result = await importFeedbacksWithConfig(currentFile.value, config);
@@ -189,9 +183,9 @@ const canImport = computed(() => {
     if (!importConfig.value.default_board_id) return false;
   }
   
-  // 如果缺少客户列且选择单一客户，必须填写名称
+  // 如果缺少客户列，必须填写默认客户名称
   if (previewResult.value.missing_optional.includes('客户名称')) {
-    if (customerMode.value === 'single' && !importConfig.value.default_customer_name) {
+    if (!importConfig.value.default_customer_name) {
       return false;
     }
   }
@@ -274,9 +268,7 @@ const handleReset = () => {
   importConfig.value = {
     default_board_id: undefined,
     default_customer_name: undefined,
-    use_anonymous: false,
   };
-  customerMode.value = 'anonymous';
 };
 
 /**
@@ -335,7 +327,7 @@ const statistics = computed(() => {
         <h4>📌 可选字段（可在上传后补全）：</h4>
         <ul>
           <li><strong>看板名称</strong>：反馈所属看板（缺失时可选择默认看板）</li>
-          <li><strong>客户名称</strong>：留空可选择匿名或统一客户</li>
+          <li><strong>客户名称</strong>：必须提供客户名称</li>
           <li><strong>客户类型</strong>、<strong>提交时间</strong>、<strong>是否紧急</strong></li>
         </ul>
 
@@ -405,21 +397,15 @@ const statistics = computed(() => {
               />
             </a-form-item>
 
-            <!-- 客户处理 -->
+            <!-- 客户名称 -->
             <a-form-item
               v-if="previewResult?.missing_optional.includes('客户名称')"
-              label="客户处理方式"
+              label="默认客户名称"
+              required
             >
-              <a-radio-group v-model:value="customerMode">
-                <a-radio value="anonymous">全部设为匿名反馈</a-radio>
-                <a-radio value="single">使用统一客户名称</a-radio>
-              </a-radio-group>
-              
               <a-input
-                v-if="customerMode === 'single'"
                 v-model:value="importConfig.default_customer_name"
-                placeholder="输入客户名称"
-                class="mt-2"
+                placeholder="输入客户名称（必填）"
               />
             </a-form-item>
           </a-form>

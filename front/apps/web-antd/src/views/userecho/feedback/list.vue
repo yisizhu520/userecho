@@ -7,6 +7,7 @@ import type {
 import type { Feedback } from '#/api';
 
 import { computed, onBeforeUnmount, ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { VbenButton } from '@vben/common-ui';
 import { $t } from '@vben/locales';
@@ -26,8 +27,14 @@ import FeedbackToolbar from './components/FeedbackToolbar.vue';
 import FeedbackCreateModal from './components/FeedbackCreateModal.vue';
 import FeedbackEditModal from './components/FeedbackEditModal.vue';
 import ClusteringProgressModal from './components/ClusteringProgressModal.vue';
+import ClusteringStatusBanner from './components/ClusteringStatusBanner.vue';
 
 import { useFilterStorage } from '#/composables/useFilterStorage';
+
+const route = useRoute();
+
+// 检测是否为"我的反馈"模式
+const isMyFeedbacksMode = computed(() => route.query.creator === 'me');
 
 /**
  * 响应式布局检测
@@ -130,6 +137,10 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
             queryParams.date_from = filterValues.value.date_range[0];
             queryParams.date_to = filterValues.value.date_range[1];
           }
+          // 支持"我的反馈"模式
+          if (isMyFeedbacksMode.value) {
+            queryParams.creator_me = true;
+          }
           
           const data = await getFeedbackList(queryParams);
 
@@ -169,8 +180,15 @@ watch(
 
 /**
  * 刷新表格
+ * @param boardId 可选，如果传入则确保该 board 在筛选条件中
  */
-function onRefresh() {
+function onRefresh(boardId?: string) {
+  // 如果传入了 boardId，且不在当前筛选条件中，则将其加入
+  if (boardId && filterValues.value.board_ids && !filterValues.value.board_ids.includes(boardId)) {
+    filterValues.value.board_ids = [...filterValues.value.board_ids, boardId];
+    // filterValues 的 watch 会自动触发刷新，无需手动调用
+    return;
+  }
   gridApi.query();
 }
 
@@ -202,6 +220,7 @@ function onActionClick({ code, row }: OnActionClickParams<Feedback>) {
  */
 const createModalRef = ref<InstanceType<typeof FeedbackCreateModal>>();
 const editModalRef = ref<InstanceType<typeof FeedbackEditModal>>();
+const clusteringBannerRef = ref<InstanceType<typeof ClusteringStatusBanner>>();
 
 /**
  * AI 聚类
@@ -287,6 +306,12 @@ onBeforeUnmount(() => {
           <span class="iconify lucide--menu mr-2" />
           筛选条件
         </VbenButton>
+        
+        <!-- 聚类状态横幅 -->
+        <ClusteringStatusBanner 
+          ref="clusteringBannerRef"
+          @trigger-clustering="handleTriggerClustering"
+        />
         
         <div class="feedback-grid-wrapper">
           <Grid>

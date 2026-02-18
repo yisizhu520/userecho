@@ -398,5 +398,109 @@ class DashboardService:
 
         return pending_decisions
 
+    @staticmethod
+    async def get_my_feedbacks(
+        db: AsyncSession,
+        tenant_id: str,
+        user_id: int,
+        limit: int = 10,
+    ) -> dict:
+        """
+        获取当前用户录入的反馈统计
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            user_id: 当前用户ID
+            limit: 最近更新列表的数量限制
+
+        Returns:
+            包含 summary 和 recent_updates 的字典
+        """
+        from sqlalchemy.orm import aliased
+
+        # 1. 统计摘要
+        # 我录入的反馈总数
+        submitted_query = select(func.count(Feedback.id)).where(
+            Feedback.tenant_id == tenant_id,
+            Feedback.deleted_at.is_(None),
+            Feedback.submitter_id == user_id,
+        )
+        submitted_count = await db.scalar(submitted_query) or 0
+
+        # 已进入排期的数量（关联的主题状态为 planned/in_progress）
+        in_progress_query = (
+            select(func.count(Feedback.id))
+            .join(Topic, Feedback.topic_id == Topic.id)
+            .where(
+                Feedback.tenant_id == tenant_id,
+                Feedback.deleted_at.is_(None),
+                Feedback.submitter_id == user_id,
+                Topic.status.in_(['planned', 'in_progress']),
+            )
+        )
+        in_progress_count = await db.scalar(in_progress_query) or 0
+
+        # 已完成的数量（关联的主题状态为 completed）
+        completed_query = (
+            select(func.count(Feedback.id))
+            .join(Topic, Feedback.topic_id == Topic.id)
+            .where(
+                Feedback.tenant_id == tenant_id,
+                Feedback.deleted_at.is_(None),
+                Feedback.submitter_id == user_id,
+                Topic.status == 'completed',
+            )
+        )
+        completed_count = await db.scalar(completed_query) or 0
+
+        # 2. 最近更新列表
+        TopicAlias = aliased(Topic)
+        recent_query = (
+            select(
+                Feedback.id.label('feedback_id'),
+                Feedback.content,
+                Feedback.updated_time,
+                Feedback.created_time,
+                TopicAlias.id.label('topic_id'),
+                TopicAlias.title.label('topic_title'),
+                TopicAlias.status.label('topic_status'),
+            )
+            .outerjoin(TopicAlias, Feedback.topic_id == TopicAlias.id)
+            .where(
+                Feedback.tenant_id == tenant_id,
+                Feedback.deleted_at.is_(None),
+                Feedback.submitter_id == user_id,
+            )
+            .order_by(
+                desc(func.coalesce(Feedback.updated_time, Feedback.created_time))
+            )
+            .limit(limit)
+        )
+
+        result = await db.execute(recent_query)
+        recent_rows = result.all()
+
+        recent_updates = [
+            {
+                'feedback_id': row.feedback_id,
+                'content_summary': (row.content[:50] + '...' if row.content and len(row.content) > 50 else row.content),
+                'topic_id': row.topic_id,
+                'topic_title': row.topic_title,
+                'topic_status': row.topic_status,
+                'updated_at': str(row.updated_time or row.created_time),
+            }
+            for row in recent_rows
+        ]
+
+        return {
+            'summary': {
+                'submitted_count': submitted_count,
+                'in_progress_count': in_progress_count,
+                'completed_count': completed_count,
+            },
+            'recent_updates': recent_updates,
+        }
+
 
 dashboard_service = DashboardService()

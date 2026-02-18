@@ -97,6 +97,68 @@ async def get_clustering_task_status(
     return response_base.success(data=data)
 
 
+@router.get('/status', summary='获取聚类状态概览')
+async def get_clustering_status(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    获取聚类状态概览
+
+    返回内容：
+    - pending_count: 待聚类反馈数量
+    - processing_count: 处理中反馈数量
+    - last_run_at: 上次聚类运行时间
+    - last_run_result: 上次聚类结果摘要
+    """
+    from sqlalchemy import func, select
+
+    from backend.app.userecho.model.feedback import Feedback
+
+    # 待聚类数量（pending 状态）
+    pending_query = select(func.count(Feedback.id)).where(
+        Feedback.tenant_id == tenant_id,
+        Feedback.deleted_at.is_(None),
+        Feedback.topic_id.is_(None),
+        Feedback.clustering_status == 'pending',
+    )
+    pending_count = await db.scalar(pending_query) or 0
+
+    # 处理中数量（processing 状态）
+    processing_query = select(func.count(Feedback.id)).where(
+        Feedback.tenant_id == tenant_id,
+        Feedback.deleted_at.is_(None),
+        Feedback.clustering_status == 'processing',
+    )
+    processing_count = await db.scalar(processing_query) or 0
+
+    # 获取最近一次聚类的时间（通过 clustering_metadata 中的 clustered_at）
+    last_clustered_query = (
+        select(Feedback.clustering_metadata)
+        .where(
+            Feedback.tenant_id == tenant_id,
+            Feedback.deleted_at.is_(None),
+            Feedback.clustering_status == 'clustered',
+            Feedback.clustering_metadata.is_not(None),
+        )
+        .order_by(Feedback.updated_time.desc())
+        .limit(1)
+    )
+    last_metadata = await db.scalar(last_clustered_query)
+
+    last_run_at = None
+    if last_metadata and isinstance(last_metadata, dict):
+        last_run_at = last_metadata.get('clustered_at')
+
+    return response_base.success(
+        data={
+            'pending_count': pending_count,
+            'processing_count': processing_count,
+            'last_run_at': last_run_at,
+        }
+    )
+
+
 @router.get('/suggestions/{feedback_id}', summary='获取聚类建议')
 async def get_clustering_suggestions(
     feedback_id: str,

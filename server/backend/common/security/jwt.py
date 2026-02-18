@@ -290,3 +290,25 @@ CurrentTenantId = Depends(get_current_tenant_id)
 
 # 超级管理员鉴权依赖注入
 DependsSuperUser = Depends(superuser_verify)
+
+
+def get_current_user_id() -> int:
+    """
+    从上下文获取当前用户 ID
+
+    在 JWT 认证成功后，user_id 会自动注入到 ctx
+    用于获取当前操作用户
+
+    :return: 用户 ID
+    :raises: AuthorizationError 如果用户信息缺失
+    """
+    from backend.common.context import ctx
+
+    user_id = ctx.user_id
+    if not user_id:
+        raise errors.AuthorizationError(msg='用户信息缺失')
+    return user_id
+
+
+# 当前用户 ID 依赖注入
+CurrentUserId = Depends(get_current_user_id)

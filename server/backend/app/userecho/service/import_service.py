@@ -131,7 +131,6 @@ class ImportService:
         file: UploadFile,
         default_board_id: str | None = None,
         default_customer_name: str | None = None,
-        use_anonymous: bool = False,
         generate_summary: bool = True,
     ) -> dict[str, Any]:
         """
@@ -142,8 +141,7 @@ class ImportService:
             tenant_id: 租户ID
             file: 上传的文件
             default_board_id: 默认看板ID（当 Excel 无看板列时使用）
-            default_customer_name: 默认客户名称（当 Excel 无客户列时使用）
-            use_anonymous: 是否使用匿名（优先级高于 default_customer_name）
+            default_customer_name: 默认客户名称（当 Excel 无客户列时必填）
             generate_summary: 是否生成 AI 摘要
 
         Returns:
@@ -260,10 +258,9 @@ class ImportService:
                         errors.append({'row': idx + 2, 'error': '看板未指定', 'content': str(row['反馈内容'])[:50]})
                         continue
 
-                    # 处理客户（优先 Excel 列，其次 default_customer_name，最后匿名）
+                    # 处理客户（优先 Excel 列，其次 default_customer_name）
                     has_customer_column = '客户名称' in df.columns
                     customer_id = None
-                    anonymous_author = None
 
                     if has_customer_column and pd.notna(row.get('客户名称')) and str(row['客户名称']).strip():
                         customer_name = str(row['客户名称']).strip()
@@ -275,13 +272,18 @@ class ImportService:
                             db=db, tenant_id=tenant_id, name=customer_name, customer_type=customer_type
                         )
                         customer_id = customer.id
-                    elif not use_anonymous and default_customer_name:
+                    elif default_customer_name:
                         customer = await self._get_or_create_customer(
                             db=db, tenant_id=tenant_id, name=default_customer_name, customer_type='normal'
                         )
                         customer_id = customer.id
                     else:
-                        anonymous_author = '匿名导入用户'
+                        errors.append({
+                            'row': idx + 2,
+                            'error': '客户名称未指定',
+                            'content': str(row['反馈内容'])[:50],
+                        })
+                        continue
 
                     # 解析提交时间
                     submitted_at = timezone.now()
@@ -320,7 +322,6 @@ class ImportService:
                         id=uuid4_str(),
                         board_id=board.id,
                         customer_id=customer_id,
-                        anonymous_author=anonymous_author,
                         content=content,
                         source='import',
                         is_urgent=is_urgent,

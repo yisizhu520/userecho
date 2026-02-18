@@ -79,3 +79,31 @@ async def quick_decision(
             'new_status': new_status,
         }
     )
+
+
+# ========================================
+# 我的反馈 API
+# ========================================
+
+
+@router.get('/my-feedbacks', summary='获取我录入的反馈统计')
+async def get_my_feedbacks(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+    limit: int = 10,
+):
+    """
+    获取当前用户录入的反馈统计
+
+    返回内容：
+    - summary: 统计摘要
+      - submitted_count: 我录入的反馈总数
+      - in_progress_count: 已进入排期的数量
+      - completed_count: 已完成的数量
+    - recent_updates: 最近更新的反馈列表
+    """
+    from backend.common.security.jwt import get_current_user_id
+
+    user_id = get_current_user_id()
+    stats = await dashboard_service.get_my_feedbacks(db, tenant_id, user_id, limit)
+    return response_base.success(data=stats)

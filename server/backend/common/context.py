@@ -21,6 +21,7 @@ class TypedContextProtocol(Protocol):
     permission: str | None
     language: str
     tenant_id: str | None
+    user_id: int | None  # 当前用户 ID
 
 
 class TypedContext(TypedContextProtocol, _Context):

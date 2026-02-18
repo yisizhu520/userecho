@@ -11,7 +11,7 @@ import ScreenshotUpload from './ScreenshotUpload.vue';
 import SimilarTopicsPanel from './SimilarTopicsPanel.vue';
 
 interface Emits {
-  (e: 'success'): void;
+  (e: 'success', boardId: string): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -20,14 +20,29 @@ const selectedTopicId = ref<string>('');
 const uploadedScreenshots = ref<string[]>([]);
 const currentTitle = ref<string>('');
 
+// localStorage key for remembering the last selected board
+const LAST_SELECTED_BOARD_KEY = 'feedback_create_last_board_id';
+
 // 将表单字段拆分为两组
 const topFormSchema = computed(() => feedbackFormSchema.slice(0, 2)); // 看板 + 反馈内容
 const bottomFormSchema = computed(() => feedbackFormSchema.slice(2)); // 客户信息等其余字段
+
+// 监听表单值变化的回调
+const handleValuesChange = (values: Record<string, any>, changedFields: string[]) => {
+  if (changedFields.includes('content')) {
+    currentTitle.value = values.content || '';
+  }
+  // 记住用户选择的看板
+  if (changedFields.includes('board_id') && values.board_id) {
+    localStorage.setItem(LAST_SELECTED_BOARD_KEY, values.board_id);
+  }
+};
 
 // 创建两个独立的表单实例
 const [TopForm, topFormApi] = useVbenForm({
   showDefaultActions: false,
   schema: topFormSchema.value,
+  handleValuesChange,
 });
 
 const [BottomForm, bottomFormApi] = useVbenForm({
@@ -80,6 +95,15 @@ const loadBoardList = async () => {
         },
       },
     ]);
+
+    // 智能选择默认看板
+    if (boardList.length > 0) {
+      const lastSelectedBoardId = localStorage.getItem(LAST_SELECTED_BOARD_KEY);
+      // 检查上次选择的看板是否仍然存在
+      const boardExists = lastSelectedBoardId && boardList.some((b: { value: string }) => b.value === lastSelectedBoardId);
+      const defaultBoardId = boardExists ? lastSelectedBoardId : boardList[0].value;
+      topFormApi.setValues({ board_id: defaultBoardId });
+    }
   } catch (error: any) {
     message.error('加载 Board 列表失败');
   }
@@ -94,11 +118,6 @@ const handleCreate = async (continueCreating: boolean) => {
     const bottomData = await bottomFormApi.getValues();
     const data = { ...topData, ...bottomData } as CreateFeedbackParams;
     
-    // 验证：客户名称和匿名作者至少填写一个
-    if (!data.customer_name && !data.anonymous_author) {
-      message.error('客户名称和匿名作者至少填写一个');
-      return;
-    }
     
     // 添加 Topic 关联和截图
     if (selectedTopicId.value) {
@@ -110,7 +129,7 @@ const handleCreate = async (continueCreating: boolean) => {
     
     await createFeedback(data);
     message.success('创建成功');
-    emit('success');
+    emit('success', data.board_id);
     // 刷新 Board 数量
     boardStore.forceRefresh();
     
@@ -140,12 +159,7 @@ const handleCreateAndContinue = async () => {
   }
 };
 
-// 监听表单值变化
-const handleValuesChange = (changedValues: any) => {
-  if (changedValues.content !== undefined) {
-    currentTitle.value = changedValues.content;
-  }
-};
+
 
 // 暴露 API 给父组件
 defineExpose({
@@ -162,7 +176,7 @@ defineExpose({
         <a-col :span="14">
           <div class="left-content-area">
             <!-- 顶部表单：看板 + 反馈内容 -->
-            <TopForm @values-change="handleValuesChange" />
+            <TopForm />
             
             <!-- 截图上传组件 -->
             <div class="screenshot-upload-section">

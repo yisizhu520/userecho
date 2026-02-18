@@ -71,3 +71,31 @@ export interface DashboardStats {
 export async function getDashboardStats() {
   return requestClient.get<DashboardStats>('/api/v1/app/dashboard/stats');
 }
+
+/**
+ * 我的反馈统计数据结构
+ */
+export interface MyFeedbacksStats {
+  summary: {
+    submitted_count: number;
+    in_progress_count: number;
+    completed_count: number;
+  };
+  recent_updates: Array<{
+    feedback_id: string;
+    content_summary: string;
+    topic_id: string | null;
+    topic_title: string | null;
+    topic_status: string | null;
+    updated_at: string;
+  }>;
+}
+
+/**
+ * 获取我录入的反馈统计
+ */
+export async function getMyFeedbacks(limit: number = 10) {
+  return requestClient.get<MyFeedbacksStats>(
+    `/api/v1/app/dashboard/my-feedbacks?limit=${limit}`,
+  );
+}

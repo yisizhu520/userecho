@@ -18,6 +18,7 @@ import { useUserStore } from '@vben/stores';
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
 import InsightsCard from './components/InsightsCard.vue';
+import MyFeedbacksCard from './components/MyFeedbacksCard.vue';
 import PendingDecisionsCard from './components/PendingDecisionsCard.vue';
 import TagDistributionChart from './components/TagDistributionChart.vue';
 import TopTopicsCard from './components/TopTopicsCard.vue';
@@ -179,7 +180,7 @@ onMounted(() => {
         </AnalysisChartCard>
       </div>
 
-      <!-- 右侧：快捷操作 + TOP 需求 -->
+      <!-- 右侧：快捷操作 + 我的反馈 + TOP 需求 -->
       <div class="w-full lg:w-2/5">
         <WorkbenchQuickNav
           :items="quickActions"
@@ -187,6 +188,10 @@ onMounted(() => {
           title="快捷操作"
           @click="navTo"
         />
+        
+        <!-- 我的反馈卡片 -->
+        <MyFeedbacksCard class="mt-5" />
+        
         <TopTopicsCard :topics="stats.top_topics" class="mt-5" />
       </div>
     </div>

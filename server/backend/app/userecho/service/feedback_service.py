@@ -23,6 +23,7 @@ class FeedbackService:
         tenant_id: str,
         data: FeedbackCreate,
         generate_summary: bool = True,
+        submitter_id: int | None = None,
     ):
         """
         创建反馈（自动生成 AI 摘要）
@@ -32,6 +33,7 @@ class FeedbackService:
             tenant_id: 租户ID
             data: 反馈创建数据
             generate_summary: 是否生成 AI 摘要
+            submitter_id: 提交者用户ID
 
         Returns:
             创建的反馈实例
@@ -94,14 +96,13 @@ class FeedbackService:
                 board_id=data.board_id,
                 customer_id=customer_id,
                 topic_id=data.topic_id,
-                anonymous_author=data.anonymous_author,
-                anonymous_source=data.anonymous_source,
                 content=data.content,
                 source=data.source,
                 is_urgent=data.is_urgent,
                 ai_summary=ai_summary,
                 images_metadata=images_metadata,
                 clustering_status=clustering_status,
+                submitter_id=submitter_id,
             )
 
             return feedback

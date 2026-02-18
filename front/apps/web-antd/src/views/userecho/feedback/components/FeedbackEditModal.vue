@@ -57,12 +57,6 @@ const [Modal, modalApi] = useVbenModal({
       modalApi.lock();
       const data = await formApi.getValues<UpdateFeedbackParams>();
       
-      // 验证：客户名称和匿名作者至少填写一个
-      if (!data.customer_name && !data.anonymous_author) {
-        message.error('客户名称和匿名作者至少填写一个');
-        modalApi.unlock();
-        return;
-      }
       
       try {
         await updateFeedback(props.feedbackId, data);

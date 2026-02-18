@@ -1,4 +1,4 @@
-# Feedalyze 最终完整数据库设计
+# userecho 最终完整数据库设计
 
 > **版本**: v6.0 - Final Complete  
 > **更新日期**: 2025-12-31  

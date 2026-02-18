@@ -116,7 +116,7 @@ export function useColumns(
       title: '客户',
       width: 120,
       formatter({ row }) {
-        return row.customer_name || row.anonymous_author || '-';
+        return row.customer_name || '-';
       },
     },
     {
@@ -213,26 +213,9 @@ export const feedbackFormSchema: VbenFormSchema[] = [
     component: 'Input',
     fieldName: 'customer_name',
     label: '客户名称',
-    rules: z.string().optional(),
+    rules: z.string().min(1, '请输入客户名称'),
     componentProps: {
-      placeholder: '输入客户名称（与匿名作者至少填一个）',
-    },
-  },
-  {
-    component: 'Input',
-    fieldName: 'anonymous_author',
-    label: '匿名作者',
-    rules: z.string().optional(),
-    componentProps: {
-      placeholder: '如：小红书用户@xxx（与客户名称至少填一个）',
-    },
-  },
-  {
-    component: 'Input',
-    fieldName: 'anonymous_source',
-    label: '来源平台',
-    componentProps: {
-      placeholder: '如：微信、小红书、知乎等',
+      placeholder: '输入客户名称',
     },
   },
   {

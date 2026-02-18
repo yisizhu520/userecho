@@ -18,12 +18,10 @@ class FeedbackCreate(FeedbackBase):
     """创建反馈参数"""
 
     board_id: str = Field(description='看板ID (必填)')
-    customer_id: str | None = Field(None, description='客户ID (与匿名作者二选一)')
-    customer_name: str | None = Field(None, description='客户名称 (若无 customer_id 则自动创建客户)')
+    customer_id: str | None = Field(None, description='客户ID (可选，若未指定则根据 customer_name 自动创建)')
+    customer_name: str = Field(description='客户名称 (必填)')
     topic_id: str | None = Field(None, description='关联主题ID (手动关联)')
     screenshots: list[str] | None = Field(None, description='截图URL列表 (最多3张)')
-    anonymous_author: str | None = Field(None, description='匿名作者名称 (与客户ID二选一)')
-    anonymous_source: str | None = Field(None, description='匿名来源平台 (如: 小红书, 微博)')
 
 
 class FeedbackUpdate(SchemaBase):
