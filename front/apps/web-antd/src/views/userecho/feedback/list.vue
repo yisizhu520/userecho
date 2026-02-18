@@ -53,6 +53,7 @@ const { state: filterValues } = useFilterStorage({
     has_topic: ['true', 'false'],
     clustering_status: [] as string[],
     board_ids: [] as string[],
+    date_range: null as [string, string] | null,
   },
 });
 
@@ -124,6 +125,10 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
           }
           if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
             queryParams.board_ids = filterValues.value.board_ids;
+          }
+          if (filterValues.value.date_range && filterValues.value.date_range.length === 2) {
+            queryParams.date_from = filterValues.value.date_range[0];
+            queryParams.date_to = filterValues.value.date_range[1];
           }
           
           const data = await getFeedbackList(queryParams);
@@ -266,6 +271,7 @@ onBeforeUnmount(() => {
           v-model:has-topic="filterValues.has_topic"
           v-model:clustering-status="filterValues.clustering_status"
           v-model:board-ids="filterValues.board_ids"
+          v-model:date-range="filterValues.date_range"
         />
       </div>
       
@@ -352,6 +358,7 @@ onBeforeUnmount(() => {
           v-model:has-topic="filterValues.has_topic"
           v-model:clustering-status="filterValues.clustering_status"
           v-model:board-ids="filterValues.board_ids"
+          v-model:date-range="filterValues.date_range"
         />
       </a-drawer>
     </div>

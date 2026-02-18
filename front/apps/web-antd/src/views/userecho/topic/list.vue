@@ -63,6 +63,7 @@ const { state: filterValues } = useFilterStorage({
     status: ['pending', 'planned', 'in_progress'],
     category: TOPIC_CATEGORIES.map((c) => c.value),
     board_ids: [] as string[],
+    date_range: null as [string, string] | null,
   },
 });
 
@@ -141,6 +142,10 @@ const gridOptions: VxeTableGridOptions<Topic> = {
           if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
             queryParams.board_ids = filterValues.value.board_ids;
           }
+          if (filterValues.value.date_range && filterValues.value.date_range.length === 2) {
+            queryParams.date_from = filterValues.value.date_range[0];
+            queryParams.date_to = filterValues.value.date_range[1];
+          }
           
           const data = await getTopicList(queryParams);
 
@@ -175,6 +180,7 @@ watch(
     filterValues.value.status,
     filterValues.value.category,
     filterValues.value.board_ids,
+    filterValues.value.date_range,
   ],
   () => {
     handleSearch();
@@ -316,6 +322,7 @@ onBeforeUnmount(() => {
           v-model:status="filterValues.status"
           v-model:category="filterValues.category"
           v-model:board-ids="filterValues.board_ids"
+          v-model:date-range="filterValues.date_range"
         />
       </div>
       
@@ -459,6 +466,7 @@ onBeforeUnmount(() => {
           v-model:status="filterValues.status"
           v-model:category="filterValues.category"
           v-model:board-ids="filterValues.board_ids"
+          v-model:date-range="filterValues.date_range"
         />
       </a-drawer>
     </div>

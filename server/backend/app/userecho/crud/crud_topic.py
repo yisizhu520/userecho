@@ -151,6 +151,8 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         sort_by: str = 'created_time',
         sort_order: str = 'desc',
         search_query: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
     ) -> list[Topic]:
         """
         获取主题列表（支持排序、过滤和关键词搜索）
@@ -201,6 +203,17 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             from backend.common.log import log
 
             log.info('[SEARCH_DEBUG] CRUD Layer - No search_query, skipping filter')
+
+        # 日期范围筛选（基于 created_time）
+        if date_from:
+            from datetime import datetime
+            date_from_dt = datetime.fromisoformat(date_from)
+            query = query.where(self.model.created_time >= date_from_dt)
+        if date_to:
+            from datetime import datetime, timedelta
+            # date_to 包含当天结束时间
+            date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
+            query = query.where(self.model.created_time < date_to_dt)
 
         # 添加排序
         sort_column = getattr(self.model, sort_by, self.model.created_time)

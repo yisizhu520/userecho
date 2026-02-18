@@ -7,6 +7,7 @@ interface Props {
   status?: string[];
   category?: string[];
   boardIds?: string[];
+  dateRange?: [string, string] | null;
 }
 
 defineProps<Props>();
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   'update:status': [value: string[]];
   'update:category': [value: string[]];
   'update:boardIds': [value: string[]];
+  'update:dateRange': [value: [string, string] | null];
   'search': [];
 }>();
 </script>
@@ -34,11 +36,13 @@ const emit = defineEmits<{
         :status="status"
         :category="category"
         :board-ids="boardIds"
+        :date-range="dateRange"
         @update:search-query="emit('update:searchQuery', $event)"
         @update:search-mode="emit('update:searchMode', $event)"
         @update:status="emit('update:status', $event)"
         @update:category="emit('update:category', $event)"
         @update:board-ids="emit('update:boardIds', $event)"
+        @update:date-range="emit('update:dateRange', $event)"
         @search="emit('search')"
       />
     </div>
@@ -58,3 +62,4 @@ const emit = defineEmits<{
   border-radius: 4px;
 }
 </style>
+

@@ -172,6 +172,8 @@ class TopicService:
         sort_order: str = 'desc',
         search_query: str | None = None,
         search_mode: str = 'keyword',
+        date_from: str | None = None,
+        date_to: str | None = None,
     ):
         """
         获取主题列表（支持排序、过滤和搜索）
@@ -188,6 +190,8 @@ class TopicService:
             sort_order: 排序方向
             search_query: 搜索关键词
             search_mode: 搜索模式（'keyword' | 'semantic'）
+            date_from: 起始日期
+            date_to: 结束日期
 
         Returns:
             主题列表
@@ -240,6 +244,8 @@ class TopicService:
             sort_by=sort_by,
             sort_order=sort_order,
             search_query=effective_search_query,
+            date_from=date_from,
+            date_to=date_to,
         )
 
     async def get_pending_count(

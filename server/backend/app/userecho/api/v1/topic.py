@@ -39,6 +39,8 @@ async def get_topics(
     sort_order: str = 'desc',
     search_query: str | None = None,  # ✅ 添加搜索参数
     search_mode: str = 'keyword',  # ✅ 添加搜索模式
+    date_from: str | None = None,
+    date_to: str | None = None,
 ):
     """
     获取主题列表（支持排序、过滤和双模式搜索）
@@ -49,6 +51,8 @@ async def get_topics(
     - **board_ids**: 过滤看板ID（多选）
     - **sort_by**: 排序字段 (created_time/feedback_count/total_score)
     - **sort_order**: 排序方向 (asc/desc)
+    - **date_from**: 起始日期（ISO格式，如 2026-01-01）
+    - **date_to**: 结束日期（ISO格式，如 2026-01-31）
 
     搜索参数：
     - **search_query**: 搜索关键词（搜索主题标题和描述）
@@ -80,6 +84,8 @@ async def get_topics(
         sort_order=sort_order,
         search_query=search_query,  # ✅ 传递搜索参数
         search_mode=search_mode,  # ✅ 传递搜索模式
+        date_from=date_from,
+        date_to=date_to,
     )
     # ✅ Pydantic 自动将 ORM 对象列表转换为 TopicOut 列表（排除 centroid）
     topics_out = [TopicOut.model_validate(topic) for topic in topics]

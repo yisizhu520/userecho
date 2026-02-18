@@ -8,6 +8,7 @@ interface Props {
   hasTopic?: string[];
   clusteringStatus?: string[];
   boardIds?: string[];
+  dateRange?: [string, string] | null;
 }
 
 defineProps<Props>();
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   'update:hasTopic': [value: string[]];
   'update:clusteringStatus': [value: string[]];
   'update:boardIds': [value: string[]];
+  'update:dateRange': [value: [string, string] | null];
   'search': [];
 }>();
 </script>
@@ -37,12 +39,14 @@ const emit = defineEmits<{
         :has-topic="hasTopic"
         :clustering-status="clusteringStatus"
         :board-ids="boardIds"
+        :date-range="dateRange"
         @update:search-query="emit('update:searchQuery', $event)"
         @update:search-mode="emit('update:searchMode', $event)"
         @update:is-urgent="emit('update:isUrgent', $event)"
         @update:has-topic="emit('update:hasTopic', $event)"
         @update:clustering-status="emit('update:clusteringStatus', $event)"
         @update:board-ids="emit('update:boardIds', $event)"
+        @update:date-range="emit('update:dateRange', $event)"
         @search="emit('search')"
       />
     </div>
@@ -62,3 +66,4 @@ const emit = defineEmits<{
   border-radius: 4px;
 }
 </style>
+

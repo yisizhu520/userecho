@@ -38,6 +38,8 @@ async def get_feedbacks(
     board_ids: Annotated[list[str] | None, Query()] = None,
     search_query: str | None = None,
     search_mode: str = 'keyword',
+    date_from: str | None = None,
+    date_to: str | None = None,
 ):
     """
     获取反馈列表（支持过滤 + 双模式搜索）
@@ -49,6 +51,8 @@ async def get_feedbacks(
     - **has_topic**: 过滤是否已聚类（多选，值: ['true', 'false']）
     - **clustering_status**: 过滤聚类状态（多选，值: ['pending', 'processing', 'clustered', 'failed']）
     - **board_ids**: 过滤看板ID（多选）
+    - **date_from**: 起始日期（ISO格式，如 2026-01-01）
+    - **date_to**: 结束日期（ISO格式，如 2026-01-31）
 
     搜索参数：
     - **search_query**: 搜索关键词（搜索反馈内容和AI摘要）
@@ -71,6 +75,8 @@ async def get_feedbacks(
         board_ids=board_ids,
         search_query=search_query,
         search_mode=search_mode,
+        date_from=date_from,
+        date_to=date_to,
     )
     # ✅ 关联查询返回字典（包含 customer_name, topic_title），已在 CRUD 层处理
     # 字典可以直接被 Pydantic 验证（FeedbackOut 支持 from_attributes）
