@@ -30,10 +30,8 @@ const hasImages = computed(() => imageList.value.length > 0);
               v-for="(img, idx) in imageList"
               :key="idx"
               :src="img.url"
-              :width="320"
-              :height="320"
               :preview="{ mask: false }"
-              class="preview-thumb"
+              :style="{ maxWidth: '320px', maxHeight: '320px', objectFit: 'contain' }"
             />
           </div>
         </a-image-preview-group>
@@ -87,6 +85,11 @@ const hasImages = computed(() => imageList.value.length > 0);
 
 .preview-thumb {
   border-radius: 4px;
-  object-fit: cover;
+}
+
+.preview-thumb :deep(img) {
+  max-width: 320px;
+  max-height: 320px;
+  object-fit: contain;
 }
 </style>
