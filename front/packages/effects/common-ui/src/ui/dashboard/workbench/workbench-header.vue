@@ -1,8 +1,16 @@
 <script lang="ts" setup>
 import { VbenAvatar } from '@vben-core/shadcn-ui';
 
+interface HeaderStats {
+  pendingTopics: number;
+  totalTopics: number;
+  weeklyFeedbacks: number;
+  totalFeedbacks: number;
+}
+
 interface Props {
   avatar?: string;
+  stats?: HeaderStats;
 }
 
 defineOptions({
@@ -11,6 +19,12 @@ defineOptions({
 
 withDefaults(defineProps<Props>(), {
   avatar: '',
+  stats: () => ({
+    pendingTopics: 0,
+    totalTopics: 0,
+    weeklyFeedbacks: 0,
+    totalFeedbacks: 0,
+  }),
 });
 </script>
 <template>
@@ -29,17 +43,17 @@ withDefaults(defineProps<Props>(), {
     </div>
     <div class="mt-4 flex flex-1 justify-end md:mt-0">
       <div class="flex flex-col justify-center text-right">
-        <span class="text-foreground/80"> 待办 </span>
-        <span class="text-2xl">2/10</span>
+        <span class="text-foreground/80"> 待处理 </span>
+        <span class="text-2xl">{{ stats?.pendingTopics ?? 0 }}/{{ stats?.totalTopics ?? 0 }}</span>
       </div>
 
       <div class="mx-12 flex flex-col justify-center text-right md:mx-16">
-        <span class="text-foreground/80"> 项目 </span>
-        <span class="text-2xl">8</span>
+        <span class="text-foreground/80"> 本周新增 </span>
+        <span class="text-2xl">{{ stats?.weeklyFeedbacks ?? 0 }}</span>
       </div>
       <div class="mr-4 flex flex-col justify-center text-right md:mr-10">
-        <span class="text-foreground/80"> 团队 </span>
-        <span class="text-2xl">300</span>
+        <span class="text-foreground/80"> 反馈总数 </span>
+        <span class="text-2xl">{{ stats?.totalFeedbacks ?? 0 }}</span>
       </div>
     </div>
   </div>

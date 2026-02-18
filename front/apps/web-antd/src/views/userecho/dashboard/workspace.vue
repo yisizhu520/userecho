@@ -66,6 +66,14 @@ const overviewItems = computed<AnalysisOverviewItem[]>(() => {
   ];
 });
 
+// 顶部面板统计数据
+const headerStats = computed(() => ({
+  pendingTopics: stats.value?.topic_stats.pending ?? 0,
+  totalTopics: stats.value?.topic_stats.total ?? 0,
+  weeklyFeedbacks: stats.value?.feedback_stats.weekly_count ?? 0,
+  totalFeedbacks: stats.value?.feedback_stats.total ?? 0,
+}));
+
 // 快捷操作
 const quickActions: WorkbenchQuickNavItem[] = [
   {
@@ -134,6 +142,7 @@ onMounted(() => {
     <!-- 欢迎头部 -->
     <WorkbenchHeader
       :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar"
+      :stats="headerStats"
     >
       <template #title>
         早安, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！
