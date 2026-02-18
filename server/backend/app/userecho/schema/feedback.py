@@ -47,6 +47,8 @@ class FeedbackOut(FeedbackBase):
     topic_title: str | None = Field(None, description='主题标题 (关联查询)')
     ai_summary: str | None = Field(None, description='AI生成摘要')
     ai_metadata: dict | None = Field(None, description='AI元数据')
+    images_metadata: dict | None = Field(None, description='截图元数据 {"images": [{"url": "...", "uploaded_at": "..."}]}')
+    clustering_status: str | None = Field(None, description='聚类状态: pending/processing/clustered/failed')
     submitted_at: datetime = Field(description='提交时间')
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')

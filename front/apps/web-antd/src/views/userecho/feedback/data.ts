@@ -112,6 +112,13 @@ export function useColumns(
       },
     },
     {
+      field: 'images_metadata',
+      title: '截图',
+      width: 80,
+      resizable: true,
+      slots: { default: 'screenshots' },
+    },
+    {
       field: 'customer_name',
       title: '客户',
       width: 120,

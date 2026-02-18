@@ -28,6 +28,7 @@ import FeedbackCreateModal from './components/FeedbackCreateModal.vue';
 import FeedbackEditModal from './components/FeedbackEditModal.vue';
 import ClusteringProgressModal from './components/ClusteringProgressModal.vue';
 import ClusteringStatusBanner from './components/ClusteringStatusBanner.vue';
+import ScreenshotCell from './components/ScreenshotCell.vue';
 
 import { useFilterStorage } from '#/composables/useFilterStorage';
 
@@ -352,6 +353,10 @@ onBeforeUnmount(() => {
           <template #urgent="{ row }">
             <a-tag v-if="row.is_urgent" color="red">紧急</a-tag>
             <a-tag v-else color="default">常规</a-tag>
+          </template>
+
+          <template #screenshots="{ row }">
+            <ScreenshotCell :images="row.images_metadata?.images" />
           </template>
         </Grid>
         </div>

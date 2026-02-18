@@ -25,6 +25,9 @@ export interface Feedback {
   created_time: string;
   updated_time: string;
   deleted_at?: string;
+  images_metadata?: {
+    images?: Array<{ url: string; uploaded_at?: string }>;
+  } | null;
 }
 
 /** 创建反馈参数 */
