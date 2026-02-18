@@ -4,7 +4,7 @@ import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
 import type { MenuRecordRaw } from '@vben/types';
 
-import { computed, onMounted, useSlots, watch } from 'vue';
+import { computed, inject, onMounted, useSlots, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useRefresh } from '@vben/hooks';
@@ -53,6 +53,21 @@ const {
 } = usePreferences();
 const accessStore = useAccessStore();
 const { refresh } = useRefresh();
+
+// 权限控制：通过 inject 获取权限检查函数（由 apps 层 provide）
+interface PreferencesAccess {
+  isAdmin: () => boolean;
+  isTenantAdmin: () => boolean;
+}
+
+const preferencesAccess = inject<PreferencesAccess>('preferencesAccess', {
+  isAdmin: () => false,
+  isTenantAdmin: () => false,
+});
+
+const hasPreferencesAccess = computed(
+  () => preferencesAccess.isAdmin() || preferencesAccess.isTenantAdmin(),
+);
 
 const sidebarTheme = computed(() => {
   const dark = isDark.value || preferences.theme.semiDarkSidebar;
@@ -392,7 +407,7 @@ const headerSlots = computed(() => {
         <slot v-if="accessStore.isLockScreen" name="lock-screen"></slot>
       </Transition>
 
-      <template v-if="preferencesButtonPosition.fixed">
+      <template v-if="preferencesButtonPosition.fixed && hasPreferencesAccess">
         <Preferences
           class="z-100 fixed bottom-20 right-0"
           @clear-preferences-and-logout="clearPreferencesAndLogout"

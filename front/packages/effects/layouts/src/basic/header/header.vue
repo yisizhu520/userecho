@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, useSlots } from 'vue';
+import { computed, inject, useSlots } from 'vue';
 
 import { useRefresh } from '@vben/hooks';
 import { RotateCw } from '@vben/icons';
@@ -39,6 +39,21 @@ const { globalSearchShortcutKey, preferencesButtonPosition } = usePreferences();
 const slots = useSlots();
 const { refresh } = useRefresh();
 
+// 权限控制：通过 inject 获取权限检查函数（由 apps 层 provide）
+interface PreferencesAccess {
+  isAdmin: () => boolean;
+  isTenantAdmin: () => boolean;
+}
+
+const preferencesAccess = inject<PreferencesAccess>('preferencesAccess', {
+  isAdmin: () => false,
+  isTenantAdmin: () => false,
+});
+
+const hasPreferencesAccess = computed(
+  () => preferencesAccess.isAdmin() || preferencesAccess.isTenantAdmin(),
+);
+
 const rightSlots = computed(() => {
   const list = [{ index: REFERENCE_VALUE + 100, name: 'user-dropdown' }];
   if (preferences.widget.globalSearch) {
@@ -48,7 +63,8 @@ const rightSlots = computed(() => {
     });
   }
 
-  if (preferencesButtonPosition.value.header) {
+  // 只有 admin 或 boss 才显示偏好设置按钮
+  if (preferencesButtonPosition.value.header && hasPreferencesAccess.value) {
     list.push({
       index: REFERENCE_VALUE + 10,
       name: 'preferences',

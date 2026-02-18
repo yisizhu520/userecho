@@ -14,7 +14,7 @@ import type {
 
 import type { SegmentedItem } from '@vben-core/shadcn-ui';
 
-import { computed, ref } from 'vue';
+import { computed, inject, ref, watchEffect } from 'vue';
 
 import { Copy, RotateCw } from '@vben/icons';
 import { $t, loadLocaleMessages } from '@vben/locales';
@@ -180,27 +180,48 @@ const { copy } = useClipboard({ legacy: true });
 
 const [Drawer] = useVbenDrawer();
 
-const activeTab = ref('appearance');
+// 权限控制：通过 inject 获取权限检查函数（由 apps 层 provide）
+interface PreferencesAccess {
+  isAdmin: () => boolean;
+  isTenantAdmin: () => boolean;
+}
+
+const preferencesAccess = inject<PreferencesAccess>('preferencesAccess', {
+  isAdmin: () => true, // 默认值，保证组件可用
+  isTenantAdmin: () => true,
+});
+
+const isAdmin = computed(() => preferencesAccess.isAdmin());
+const isTenantAdmin = computed(() => preferencesAccess.isTenantAdmin());
+
+const activeTab = ref('');
 
 const tabs = computed((): SegmentedItem[] => {
-  return [
-    {
-      label: $t('preferences.appearance'),
-      value: 'appearance',
-    },
-    {
-      label: $t('preferences.layout'),
-      value: 'layout',
-    },
-    {
-      label: $t('preferences.shortcutKeys.title'),
-      value: 'shortcutKey',
-    },
-    {
-      label: $t('preferences.general'),
-      value: 'general',
-    },
-  ];
+  const items: SegmentedItem[] = [];
+
+  // Admin 专属 Tabs
+  if (isAdmin.value) {
+    items.push(
+      { label: $t('preferences.appearance'), value: 'appearance' },
+      { label: $t('preferences.layout'), value: 'layout' },
+      { label: $t('preferences.shortcutKeys.title'), value: 'shortcutKey' },
+      { label: $t('preferences.general'), value: 'general' },
+    );
+  }
+
+  // Tenant Admin 专属 Tab
+  if (isTenantAdmin.value) {
+    items.push({ label: $t('preferences.clustering'), value: 'clustering' });
+  }
+
+  return items;
+});
+
+// 动态设置默认 activeTab 为第一个可用的 Tab
+watchEffect(() => {
+  if (tabs.value.length > 0 && !tabs.value.some((t) => t.value === activeTab.value)) {
+    activeTab.value = tabs.value[0]?.value as string;
+  }
 });
 
 const showBreadcrumbConfig = computed(() => {
@@ -278,10 +299,6 @@ async function handleReset() {
                 v-model:transition-name="transitionName"
                 v-model:transition-progress="transitionProgress"
               />
-            </Block>
-
-            <Block title="聚类策略">
-              <Clustering />
             </Block>
           </template>
           <template #appearance>
@@ -423,6 +440,12 @@ async function handleReset() {
                 v-model:shortcut-keys-lock-screen="shortcutKeysGlobalLockScreen"
                 v-model:shortcut-keys-logout="shortcutKeysGlobalLogout"
               />
+            </Block>
+          </template>
+
+          <template #clustering>
+            <Block :title="$t('preferences.clustering')">
+              <Clustering />
             </Block>
           </template>
         </VbenSegmented>

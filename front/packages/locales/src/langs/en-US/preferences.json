@@ -34,6 +34,7 @@
   "clearAndLogout": "Clear Cache & Logout",
   "mode": "Mode",
   "general": "General",
+  "clustering": "Clustering Strategy",
   "language": "Language",
   "dynamicTitle": "Dynamic Title",
   "watermark": "Watermark",

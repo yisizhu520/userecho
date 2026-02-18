@@ -34,6 +34,7 @@
   "clearAndLogout": "清空缓存 & 退出登录",
   "mode": "模式",
   "general": "通用",
+  "clustering": "聚类策略",
   "language": "语言",
   "dynamicTitle": "动态标题",
   "watermark": "水印",

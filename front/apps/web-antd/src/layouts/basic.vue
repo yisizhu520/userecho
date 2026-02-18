@@ -34,6 +34,12 @@ provide('clusteringAPI', {
   preview: previewClusteringConfig,
 });
 
+// Provide 权限检查函数给 preferences 组件使用
+provide('preferencesAccess', {
+  isAdmin: () => userStore.userRoles.includes('admin'),
+  isTenantAdmin: () => userStore.userRoles.includes('boss'),
+});
+
 const notifications = ref<NotificationItem[]>([
   {
     avatar: 'https://avatar.vercel.sh/vercel.svg?text=VB',
