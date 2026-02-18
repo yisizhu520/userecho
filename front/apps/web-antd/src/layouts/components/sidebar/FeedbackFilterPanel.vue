@@ -7,8 +7,7 @@ import type { Dayjs } from 'dayjs';
 
 interface Props {
   isUrgent?: string[];
-  hasTopic?: string[];
-  clusteringStatus?: string[];
+  derivedStatus?: string[];
   boardIds?: string[];
   dateRange?: [string, string] | null;
 }
@@ -17,8 +16,7 @@ defineProps<Props>();
 
 const emit = defineEmits<{
   'update:isUrgent': [value: string[]];
-  'update:hasTopic': [value: string[]];
-  'update:clusteringStatus': [value: string[]];
+  'update:derivedStatus': [value: string[]];
   'update:boardIds': [value: string[]];
   'update:dateRange': [value: [string, string] | null];
 }>();
@@ -200,49 +198,34 @@ watch(selectedDateKey, (key) => {
       </CheckboxGroup>
     </div>
 
-    <!-- 是否已归类 -->
+    <!-- 处理进度（派生状态） -->
     <div class="mb-4">
       <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        归类状态
+        处理进度
       </label>
       <CheckboxGroup
-        :value="hasTopic"
-        @update:value="(val: any) => emit('update:hasTopic', val)"
-        class="w-full"
-      >
-        <div class="flex flex-col gap-2">
-          <Checkbox value="true" class="ml-0">
-            <span class="text-sm">已归类</span>
-          </Checkbox>
-          <Checkbox value="false" class="ml-0">
-            <span class="text-sm">未归类</span>
-          </Checkbox>
-        </div>
-      </CheckboxGroup>
-    </div>
-
-    <!-- AI 状态 -->
-    <div class="mb-4">
-      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
-        AI 状态
-      </label>
-      <CheckboxGroup
-        :value="clusteringStatus"
-        @update:value="(val: any) => emit('update:clusteringStatus', val)"
+        :value="derivedStatus"
+        @update:value="(val: any) => emit('update:derivedStatus', val)"
         class="w-full"
       >
         <div class="flex flex-col gap-2">
           <Checkbox value="pending" class="ml-0">
             <span class="text-sm">待处理</span>
           </Checkbox>
-          <Checkbox value="processing" class="ml-0">
-            <span class="text-sm">处理中</span>
+          <Checkbox value="review" class="ml-0">
+            <span class="text-sm">待评审</span>
           </Checkbox>
-          <Checkbox value="clustered" class="ml-0">
-            <span class="text-sm">已处理</span>
+          <Checkbox value="planned" class="ml-0">
+            <span class="text-sm">已排期</span>
           </Checkbox>
-          <Checkbox value="failed" class="ml-0">
-            <span class="text-sm">失败</span>
+          <Checkbox value="in_progress" class="ml-0">
+            <span class="text-sm">开发中</span>
+          </Checkbox>
+          <Checkbox value="completed" class="ml-0">
+            <span class="text-sm">已解决</span>
+          </Checkbox>
+          <Checkbox value="ignored" class="ml-0">
+            <span class="text-sm">暂不处理</span>
           </Checkbox>
         </div>
       </CheckboxGroup>

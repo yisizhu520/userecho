@@ -303,8 +303,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         topic_id: str | None = None,
         customer_id: str | None = None,
         is_urgent: list[str] | None = None,
-        has_topic: list[str] | None = None,
-        clustering_status: list[str] | None = None,
+        derived_status: list[str] | None = None,
         board_ids: list[str] | None = None,
         search_query: str | None = None,
         date_from: str | None = None,
@@ -342,7 +341,12 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         TopicAlias = aliased(Topic)
 
         query = (
-            select(self.model, CustomerAlias.name.label('customer_name'), TopicAlias.title.label('topic_title'))
+            select(
+                self.model,
+                CustomerAlias.name.label('customer_name'),
+                TopicAlias.title.label('topic_title'),
+                TopicAlias.status.label('topic_status'),
+            )
             .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
             .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
             .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
@@ -360,19 +364,47 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             bool_values = [v.lower() == 'true' for v in is_urgent]
             query = query.where(self.model.is_urgent.in_(bool_values))
 
-        # 多选过滤：has_topic
-        if has_topic is not None and len(has_topic) > 0:
+        # 多选过滤：derived_status（派生状态筛选）
+        # 派生状态映射（简化版）：
+        # - pending: topic_id IS NULL（包含所有未归类的状态）
+        # - review: clustered + topic.status = 'pending'
+        # - planned: clustered + topic.status = 'planned'
+        # - in_progress: clustered + topic.status = 'in_progress'
+        # - completed: clustered + topic.status = 'completed'
+        # - ignored: clustered + topic.status = 'ignored'
+        if derived_status is not None and len(derived_status) > 0:
             conditions = []
-            for val in has_topic:
-                if val.lower() == 'true':
-                    conditions.append(self.model.topic_id.is_not(None))
-                else:
+            for status in derived_status:
+                if status == 'pending':
+                    # 待处理: 所有未归类到主题的反馈
                     conditions.append(self.model.topic_id.is_(None))
-            query = query.where(conditions[0]) if len(conditions) == 1 else query.where(or_(*conditions))
-
-        # 多选过滤：clustering_status
-        if clustering_status is not None and len(clustering_status) > 0:
-            query = query.where(self.model.clustering_status.in_(clustering_status))
+                elif status == 'review':
+                    conditions.append(
+                        (self.model.topic_id.is_not(None)) &
+                        (TopicAlias.status == 'pending')
+                    )
+                elif status == 'planned':
+                    conditions.append(
+                        (self.model.topic_id.is_not(None)) &
+                        (TopicAlias.status == 'planned')
+                    )
+                elif status == 'in_progress':
+                    conditions.append(
+                        (self.model.topic_id.is_not(None)) &
+                        (TopicAlias.status == 'in_progress')
+                    )
+                elif status == 'completed':
+                    conditions.append(
+                        (self.model.topic_id.is_not(None)) &
+                        (TopicAlias.status == 'completed')
+                    )
+                elif status == 'ignored':
+                    conditions.append(
+                        (self.model.topic_id.is_not(None)) &
+                        (TopicAlias.status == 'ignored')
+                    )
+            if conditions:
+                query = query.where(or_(*conditions))
 
         # 多选过滤：board_ids
         if board_ids is not None and len(board_ids) > 0:
@@ -414,6 +446,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 **{c.name: getattr(row[0], c.name) for c in row[0].__table__.columns if c.name != 'embedding'},
                 'customer_name': row.customer_name,
                 'topic_title': row.topic_title,
+                'topic_status': row.topic_status,
             }
             feedback_list.append(feedback_dict)
 

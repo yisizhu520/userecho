@@ -56,29 +56,18 @@ export const querySchema: VbenFormSchema[] = [
   },
   {
     component: 'Select',
-    fieldName: 'has_topic',
-    label: '是否已归类',
+    fieldName: 'derived_status',
+    label: '处理进度',
     componentProps: {
       allowClear: true,
+      mode: 'multiple',
       options: [
-        { label: '全部', value: '' },
-        { label: '已归类', value: true },
-        { label: '未归类', value: false },
-      ],
-    },
-  },
-  {
-    component: 'Select',
-    fieldName: 'clustering_status',
-    label: 'AI 状态',
-    componentProps: {
-      allowClear: true,
-      options: [
-        { label: '全部', value: '' },
         { label: '待处理', value: 'pending' },
-        { label: '处理中', value: 'processing' },
-        { label: '已处理', value: 'clustered' },
-        { label: '失败', value: 'failed' },
+        { label: '待评审', value: 'review' },
+        { label: '已排期', value: 'planned' },
+        { label: '开发中', value: 'in_progress' },
+        { label: '已解决', value: 'completed' },
+        { label: '暂不处理', value: 'ignored' },
       ],
     },
   },
@@ -125,10 +114,10 @@ export function useColumns(
       slots: { default: 'topic' },
     },
     {
-      field: 'clustering_status',
-      title: 'AI 状态',
-      width: 120,
-      slots: { default: 'clustering_status' },
+      field: 'derived_status',
+      title: '处理进度',
+      width: 100,
+      slots: { default: 'derived_status' },
     },
     {
       field: 'is_urgent',
@@ -143,8 +132,10 @@ export function useColumns(
       formatter({ cellValue }) {
         const sourceMap: Record<string, string> = {
           manual: '手动录入',
-          excel: 'Excel导入',
+          import: '批量导入',
+          excel: '批量导入',
           api: 'API接入',
+          screenshot: '截图识别',
         };
         return sourceMap[cellValue] || cellValue;
       },

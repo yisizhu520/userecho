@@ -57,8 +57,7 @@ const { state: filterValues } = useFilterStorage({
   defaultValue: {
     search_query: '',
     is_urgent: ['true', 'false'],
-    has_topic: ['true', 'false'],
-    clustering_status: [] as string[],
+    derived_status: [] as string[], // 空数组表示不筛选
     board_ids: [] as string[],
     date_range: null as [string, string] | null,
   },
@@ -124,11 +123,8 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
           if (filterValues.value.is_urgent && filterValues.value.is_urgent.length > 0) {
             queryParams.is_urgent = filterValues.value.is_urgent;
           }
-          if (filterValues.value.has_topic && filterValues.value.has_topic.length > 0) {
-            queryParams.has_topic = filterValues.value.has_topic;
-          }
-          if (filterValues.value.clustering_status && filterValues.value.clustering_status.length > 0) {
-            queryParams.clustering_status = filterValues.value.clustering_status;
+          if (filterValues.value.derived_status && filterValues.value.derived_status.length > 0) {
+            queryParams.derived_status = filterValues.value.derived_status;
           }
           if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
             queryParams.board_ids = filterValues.value.board_ids;
@@ -286,8 +282,7 @@ onBeforeUnmount(() => {
       <div v-if="!isMobile" class="feedback-sidebar">
         <FeedbackFilterSidebar
           v-model:is-urgent="filterValues.is_urgent"
-          v-model:has-topic="filterValues.has_topic"
-          v-model:clustering-status="filterValues.clustering_status"
+          v-model:derived-status="filterValues.derived_status"
           v-model:board-ids="filterValues.board_ids"
           v-model:date-range="filterValues.date_range"
         />
@@ -335,16 +330,19 @@ onBeforeUnmount(() => {
             <span v-else class="text-gray-400">未聚类</span>
           </template>
 
-          <template #clustering_status="{ row }">
-            <a-tag v-if="row.clustering_status === 'processing'" color="blue">处理中</a-tag>
-            <a-tag v-else-if="row.clustering_status === 'failed'" color="red">失败</a-tag>
-            <a-tag v-else-if="row.clustering_status === 'pending'" color="default">待处理</a-tag>
-            <a-tag
-              v-else-if="row.clustering_status === 'clustered'"
-              :color="row.topic_id ? 'green' : 'default'"
-            >
-              {{ row.topic_id ? '已归类' : '待观察' }}
-            </a-tag>
+          <template #derived_status="{ row }">
+            <!-- 待处理: 未归类到主题 (pending/processing/failed/clustered无topic) -->
+            <a-tag v-if="!row.topic_id" color="default">待处理</a-tag>
+            <!-- 待评审: clustered + topic.status = 'pending' -->
+            <a-tag v-else-if="row.topic_status === 'pending'" color="orange">待评审</a-tag>
+            <!-- 已排期: clustered + topic.status = 'planned' -->
+            <a-tag v-else-if="row.topic_status === 'planned'" color="purple">已排期</a-tag>
+            <!-- 开发中: clustered + topic.status = 'in_progress' -->
+            <a-tag v-else-if="row.topic_status === 'in_progress'" color="cyan">开发中</a-tag>
+            <!-- 已解决: clustered + topic.status = 'completed' -->
+            <a-tag v-else-if="row.topic_status === 'completed'" color="green">已解决</a-tag>
+            <!-- 暂不处理: clustered + topic.status = 'ignored' -->
+            <a-tag v-else-if="row.topic_status === 'ignored'" color="default">暂不处理</a-tag>
             <span v-else class="text-gray-400">-</span>
           </template>
 
@@ -380,8 +378,7 @@ onBeforeUnmount(() => {
       >
         <FeedbackFilterSidebar
           v-model:is-urgent="filterValues.is_urgent"
-          v-model:has-topic="filterValues.has_topic"
-          v-model:clustering-status="filterValues.clustering_status"
+          v-model:derived-status="filterValues.derived_status"
           v-model:board-ids="filterValues.board_ids"
           v-model:date-range="filterValues.date_range"
         />

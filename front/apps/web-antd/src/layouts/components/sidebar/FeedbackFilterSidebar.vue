@@ -5,8 +5,7 @@ interface Props {
   searchQuery?: string;
   searchMode?: 'keyword' | 'semantic';
   isUrgent?: string[];
-  hasTopic?: string[];
-  clusteringStatus?: string[];
+  derivedStatus?: string[];
   boardIds?: string[];
   dateRange?: [string, string] | null;
 }
@@ -17,8 +16,7 @@ const emit = defineEmits<{
   'update:searchQuery': [value: string];
   'update:searchMode': [value: 'keyword' | 'semantic'];
   'update:isUrgent': [value: string[]];
-  'update:hasTopic': [value: string[]];
-  'update:clusteringStatus': [value: string[]];
+  'update:derivedStatus': [value: string[]];
   'update:boardIds': [value: string[]];
   'update:dateRange': [value: [string, string] | null];
   'search': [];
@@ -36,15 +34,13 @@ const emit = defineEmits<{
         :search-query="searchQuery"
         :search-mode="searchMode"
         :is-urgent="isUrgent"
-        :has-topic="hasTopic"
-        :clustering-status="clusteringStatus"
+        :derived-status="derivedStatus"
         :board-ids="boardIds"
         :date-range="dateRange"
         @update:search-query="emit('update:searchQuery', $event)"
         @update:search-mode="emit('update:searchMode', $event)"
         @update:is-urgent="emit('update:isUrgent', $event)"
-        @update:has-topic="emit('update:hasTopic', $event)"
-        @update:clustering-status="emit('update:clusteringStatus', $event)"
+        @update:derived-status="emit('update:derivedStatus', $event)"
         @update:board-ids="emit('update:boardIds', $event)"
         @update:date-range="emit('update:dateRange', $event)"
         @search="emit('search')"

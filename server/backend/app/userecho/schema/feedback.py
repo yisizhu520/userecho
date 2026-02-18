@@ -45,6 +45,7 @@ class FeedbackOut(FeedbackBase):
     anonymous_source: str | None = Field(None, description='匿名来源')
     topic_id: str | None = Field(None, description='关联主题ID')
     topic_title: str | None = Field(None, description='主题标题 (关联查询)')
+    topic_status: str | None = Field(None, description='主题状态 (关联查询): pending/planned/in_progress/completed/ignored')
     ai_summary: str | None = Field(None, description='AI生成摘要')
     ai_metadata: dict | None = Field(None, description='AI元数据')
     images_metadata: dict | None = Field(None, description='截图元数据 {"images": [{"url": "...", "uploaded_at": "..."}]}')

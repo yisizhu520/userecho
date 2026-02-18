@@ -33,8 +33,7 @@ async def get_feedbacks(
     topic_id: str | None = None,
     customer_id: str | None = None,
     is_urgent: Annotated[list[str] | None, Query()] = None,
-    has_topic: Annotated[list[str] | None, Query()] = None,
-    clustering_status: Annotated[list[str] | None, Query()] = None,
+    derived_status: Annotated[list[str] | None, Query()] = None,
     board_ids: Annotated[list[str] | None, Query()] = None,
     search_query: str | None = None,
     search_mode: str = 'keyword',
@@ -49,8 +48,7 @@ async def get_feedbacks(
     - **topic_id**: 过滤主题ID
     - **customer_id**: 过滤客户ID
     - **is_urgent**: 过滤紧急程度（多选，值: ['true', 'false']）
-    - **has_topic**: 过滤是否已聚类（多选，值: ['true', 'false']）
-    - **clustering_status**: 过滤聚类状态（多选，值: ['pending', 'processing', 'clustered', 'failed']）
+    - **derived_status**: 过滤派生状态（多选，值: ['pending', 'processing', 'review', 'planned', 'in_progress', 'completed', 'ignored', 'unclassified', 'failed']）
     - **board_ids**: 过滤看板ID（多选）
     - **date_from**: 起始日期（ISO格式，如 2026-01-01）
     - **date_to**: 结束日期（ISO格式，如 2026-01-31）
@@ -79,8 +77,7 @@ async def get_feedbacks(
         topic_id=topic_id,
         customer_id=customer_id,
         is_urgent=is_urgent,
-        has_topic=has_topic,
-        clustering_status=clustering_status,
+        derived_status=derived_status,
         board_ids=board_ids,
         search_query=search_query,
         search_mode=search_mode,
