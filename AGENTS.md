@@ -378,4 +378,3 @@ log.warning('invalid data')
 - [ ] 是否清理了所有 `manual_*.sql` 补丁？
 - [ ] 是否在本地执行 `alembic check` 验证通过？
 - [ ] 是否使用了 Postgres 特有的 `IF EXISTS` 语法来确保健壮性？
-

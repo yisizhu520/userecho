@@ -16,6 +16,7 @@ from backend.app.userecho.schema.feedback import (
     ScreenshotFeedbackCreate,
 )
 from backend.app.userecho.service import feedback_service, import_service
+from backend.common.response.response_base import ResponseSchemaModel
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
@@ -194,9 +195,7 @@ async def import_feedbacks(
     """
     from backend.common.log import log
 
-    log.info(
-        f'Starting import for tenant {tenant_id}, board={default_board_id}, author_type={author_type}'
-    )
+    log.info(f'Starting import for tenant {tenant_id}, board={default_board_id}, author_type={author_type}')
 
     try:
         result = await import_service.import_excel(
@@ -527,7 +526,7 @@ async def create_feedback_from_screenshot(
     data: ScreenshotFeedbackCreate,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> ResponseSchemaModel[FeedbackOut]:
     """
     从截图识别结果创建反馈
 
@@ -547,7 +546,6 @@ async def create_feedback_from_screenshot(
     from backend.app.userecho.model.feedback import Feedback
     from backend.common.log import log
     from backend.database.db import uuid4_str
-    from backend.utils.ai_client import ai_client
     from backend.utils.timezone import timezone
 
     try:
@@ -573,7 +571,11 @@ async def create_feedback_from_screenshot(
 
                 if not customer:
                     customer = await crud_customer.create(
-                        db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type=data.customer_type or 'normal'
+                        db=db,
+                        tenant_id=tenant_id,
+                        id=uuid4_str(),
+                        name=data.customer_name,
+                        customer_type=data.customer_type or 'normal',
                     )
                     log.info(f'Auto-created customer {customer.id} for screenshot feedback: {data.customer_name}')
 
@@ -602,17 +604,16 @@ async def create_feedback_from_screenshot(
             submitted_at=timezone.now(),
         )
 
-        # 3. 生成 AI 摘要
-        try:
-            ai_summary = await ai_client.generate_summary(data.content, max_length=20)
-            feedback.ai_summary = ai_summary
-        except Exception as e:
-            log.warning(f'Failed to generate summary for screenshot feedback: {e}')
-
         # 4. 保存到数据库
         db.add(feedback)
         await db.commit()
         await db.refresh(feedback)
+
+        # 异步生成摘要（仅长文本）
+        if data.content and len(data.content) > 150:
+            from backend.app.task.tasks.userecho.tasks import generate_feedback_summary_task
+
+            generate_feedback_summary_task.delay(feedback_id=feedback.id, content=data.content, tenant_id=tenant_id)
 
         log.info(
             f'Created feedback from screenshot: id={feedback.id}, tenant={tenant_id}, author_type={data.author_type}'

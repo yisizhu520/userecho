@@ -220,10 +220,12 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         # 日期范围筛选（基于 created_time）
         if date_from:
             from datetime import datetime
+
             date_from_dt = datetime.fromisoformat(date_from)
             query = query.where(self.model.created_time >= date_from_dt)
         if date_to:
             from datetime import datetime, timedelta
+
             # date_to 包含当天结束时间
             date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
             query = query.where(self.model.created_time < date_to_dt)

@@ -844,7 +844,7 @@ class InsightService:
         # 准备邮件内容
         data = report_data.get('data', {})
         email_content = {
-            'date_range': f"{start_date.strftime('%Y年%m月%d日')} - {end_date.strftime('%Y年%m月%d日')}",
+            'date_range': f'{start_date.strftime("%Y年%m月%d日")} - {end_date.strftime("%Y年%m月%d日")}',
             'new_feedbacks_count': data.get('new_feedbacks_count', 0),
             'change_percent': data.get('change_percent', 0),
             'new_topics_count': data.get('new_topics_count', 0),
@@ -877,4 +877,3 @@ class InsightService:
 
 
 insight_service = InsightService()
-

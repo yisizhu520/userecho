@@ -289,4 +289,3 @@ export async function uploadFeedbackImage(file: File): Promise<{ url: string }> 
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 }
-

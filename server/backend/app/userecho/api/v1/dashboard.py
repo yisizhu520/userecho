@@ -9,7 +9,7 @@ from backend.app.userecho.crud.crud_topic import crud_topic
 from backend.app.userecho.service.dashboard_service import dashboard_service
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
-from backend.database.db import CurrentSession, CurrentSessionTransaction
+from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/dashboard', tags=['UserEcho - 工作台'])
 

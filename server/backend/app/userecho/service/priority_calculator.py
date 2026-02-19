@@ -4,7 +4,7 @@
 priority_score = feedback_count × 0.3 + urgent_ratio × 0.3 + strategic_match × 0.2 + recency × 0.2
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class PriorityCalculator:
@@ -181,10 +181,7 @@ class PriorityCalculator:
         # 匹配到任意一个关键词即得满分（二元判断）
         # 如果想要更细粒度，可以改为 len(matched) / len(keywords)
         max_score = self.WEIGHT_STRATEGIC_MATCH * 100
-        if matched_keywords:
-            strategic_score = max_score
-        else:
-            strategic_score = 0.0
+        strategic_score = max_score if matched_keywords else 0.0
 
         return matched_keywords, strategic_score
 

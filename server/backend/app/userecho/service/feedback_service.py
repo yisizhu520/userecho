@@ -60,19 +60,28 @@ class FeedbackService:
                 customer_id = data.customer_id
                 if data.customer_name and not customer_id:
                     from sqlalchemy import select
+
                     from backend.app.userecho.model.customer import Customer
 
                     query = select(Customer).where(
-                        Customer.tenant_id == tenant_id, Customer.name == data.customer_name, Customer.deleted_at.is_(None)
+                        Customer.tenant_id == tenant_id,
+                        Customer.name == data.customer_name,
+                        Customer.deleted_at.is_(None),
                     )
                     result = await db.execute(query)
                     customer = result.scalar_one_or_none()
 
                     if not customer:
                         customer = await crud_customer.create(
-                            db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type=data.customer_type or 'normal'
+                            db=db,
+                            tenant_id=tenant_id,
+                            id=uuid4_str(),
+                            name=data.customer_name,
+                            customer_type=data.customer_type or 'normal',
                         )
-                        log.info(f'Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or "normal"}')
+                        log.info(
+                            f'Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or "normal"}'
+                        )
 
                     customer_id = customer.id
             else:

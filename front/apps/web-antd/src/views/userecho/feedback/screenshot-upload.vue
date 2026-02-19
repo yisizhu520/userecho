@@ -146,12 +146,12 @@
                   />
                 </FormItem>
 
-                <div class="confidence-info">
-                  <span>AI 识别置信度:</span>
-                  <Progress
-                    :percent="Math.round(aiConfidence * 100)"
-                    :status="aiConfidence > 0.8 ? 'success' : aiConfidence > 0.5 ? 'normal' : 'exception'"
-                    :show-info="true"
+                <div class="analysis-status-alert">
+                  <Alert
+                    :type="confidenceInfo.color"
+                    :message="confidenceInfo.text"
+                    :description="confidenceInfo.desc"
+                    show-icon
                   />
                 </div>
 
@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
@@ -190,6 +190,7 @@ import {
   SelectOption,
   Radio,
   RadioGroup,
+  Alert,
 } from 'ant-design-vue'
 import {
   CloudUploadOutlined,
@@ -236,6 +237,29 @@ const loadBoards = async () => {
     boardsLoading.value = false
   }
 }
+
+// 计算置信度等级信息
+const confidenceInfo = computed(() => {
+  if (aiConfidence.value >= 0.9) {
+    return {
+      text: '识别精准',
+      desc: 'AI 对该识别结果非常有信心，请快速核对内容。',
+      color: 'success' as const,
+    }
+  } else if (aiConfidence.value >= 0.6) {
+    return {
+      text: '建议核对',
+      desc: '识别质量尚可，但建议您仔细检查“反馈内容”和“用户名称”。',
+      color: 'warning' as const,
+    }
+  } else {
+    return {
+      text: '识别质量较低',
+      desc: '由于截图较模糊或格式特殊，建议您根据左图手动修正提取信息。',
+      color: 'error' as const,
+    }
+  }
+})
 
 onMounted(() => {
   loadBoards()
@@ -647,22 +671,8 @@ const handleSubmit = async () => {
     }
   }
 
-  .confidence-info {
-    display: flex;
-    align-items: center;
+  .analysis-status-alert {
     margin-bottom: 24px;
-    padding: 12px;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-
-    span {
-      margin-right: 12px;
-      font-weight: 500;
-    }
-
-    .ant-progress {
-      flex: 1;
-    }
   }
 
   .form-actions {

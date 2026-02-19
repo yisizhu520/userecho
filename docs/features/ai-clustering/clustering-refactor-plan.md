@@ -685,5 +685,3 @@ async def find_similar_topics(
 **结论**：这是一个**简洁、实用、可靠**的方案，不是理论完美的方案，但能解决真实问题。
 
 > "Talk is cheap. Show me the code." - 下一步：执行第一阶段。
-
-

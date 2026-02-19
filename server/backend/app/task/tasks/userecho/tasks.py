@@ -221,3 +221,69 @@ def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week',
 
     # 运行异步任务
     return loop.run_until_complete(_async_run())
+
+
+@celery_app.task(
+    name='userecho.generate_feedback_summary',
+    bind=True,
+    max_retries=3,
+    default_retry_delay=10,
+    time_limit=60,  # 1分钟硬超时
+)
+def generate_feedback_summary_task(
+    self: Any,
+    feedback_id: str,
+    content: str,
+    tenant_id: str,
+) -> dict:
+    """
+    异步生成反馈摘要
+
+    Args:
+        self: Task 实例
+        feedback_id: 反馈ID
+        content: 反馈内容
+        tenant_id: 租户ID
+
+    Returns:
+        {
+            'feedback_id': str,
+            'summary': str
+        }
+    """
+    from backend.app.userecho.crud import crud_feedback
+    from backend.common.log import log
+    from backend.utils.ai_client import ai_client
+
+    async def _async_run() -> dict:
+        """异步执行摘要生成"""
+        try:
+            # 1. 生成摘要
+            log.info(f'[Task {self.request.id}] Generating summary for feedback {feedback_id} (tenant={tenant_id})')
+            # 限制摘要生成的最长内容，避免过长文本消耗过多 Token
+            summary = await ai_client.generate_summary(content, max_length=20)
+
+            # 2. 更新数据库
+            async with async_db_session() as db:
+                await crud_feedback.update(db=db, tenant_id=tenant_id, id=feedback_id, ai_summary=summary)
+
+            log.info(f'[Task {self.request.id}] Summary generated for feedback {feedback_id}: {summary}')
+
+            return {'feedback_id': feedback_id, 'summary': summary}
+
+        except Exception as e:
+            log.error(f'[Task {self.request.id}] Failed to generate summary for feedback {feedback_id}: {e}')
+            raise self.retry(exc=e)
+
+    # 手动管理 event loop（与其他任务相同模式）
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    # 运行异步任务
+    return loop.run_until_complete(_async_run())

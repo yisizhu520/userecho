@@ -33,4 +33,3 @@ psycopg.errors.UndefinedTable: relation "task_id_sequence" does not exist
 
 修复后，插入 `task_result` 时不应再出现 `nextval('task_id_sequence')`。
 如果你仍然看到该 SQL 片段，说明 worker 还在跑旧代码（或旧镜像没有更新）。
-

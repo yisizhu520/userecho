@@ -125,7 +125,6 @@ async def send_report_email(
     return response_base.success(msg='报告邮件发送成功')
 
 
-
 @router.get('/insights/task/{task_id}', summary='查询洞察生成任务状态')
 async def get_insight_task_status(
     task_id: str,

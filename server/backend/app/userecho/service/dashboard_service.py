@@ -472,9 +472,7 @@ class DashboardService:
                 Feedback.deleted_at.is_(None),
                 Feedback.submitter_id == user_id,
             )
-            .order_by(
-                desc(func.coalesce(Feedback.updated_time, Feedback.created_time))
-            )
+            .order_by(desc(func.coalesce(Feedback.updated_time, Feedback.created_time)))
             .limit(limit)
         )
 

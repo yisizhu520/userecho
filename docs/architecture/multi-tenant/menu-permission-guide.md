@@ -246,4 +246,3 @@ WHERE path LIKE '/app/settings%';
 - [租户配置系统设计](./tenant-config-system.md)
 - [角色权限设计](../../server/backend/docs/rbac.md)
 - [前端路由设计](../../docs/design/route-design.md)
-

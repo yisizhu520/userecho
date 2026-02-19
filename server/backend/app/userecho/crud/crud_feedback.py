@@ -379,30 +379,15 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                     # 待处理: 所有未归类到主题的反馈
                     conditions.append(self.model.topic_id.is_(None))
                 elif status == 'review':
-                    conditions.append(
-                        (self.model.topic_id.is_not(None)) &
-                        (TopicAlias.status == 'pending')
-                    )
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'pending'))
                 elif status == 'planned':
-                    conditions.append(
-                        (self.model.topic_id.is_not(None)) &
-                        (TopicAlias.status == 'planned')
-                    )
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'planned'))
                 elif status == 'in_progress':
-                    conditions.append(
-                        (self.model.topic_id.is_not(None)) &
-                        (TopicAlias.status == 'in_progress')
-                    )
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'in_progress'))
                 elif status == 'completed':
-                    conditions.append(
-                        (self.model.topic_id.is_not(None)) &
-                        (TopicAlias.status == 'completed')
-                    )
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'completed'))
                 elif status == 'ignored':
-                    conditions.append(
-                        (self.model.topic_id.is_not(None)) &
-                        (TopicAlias.status == 'ignored')
-                    )
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'ignored'))
             if conditions:
                 query = query.where(or_(*conditions))
 
@@ -420,10 +405,12 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         # 日期范围筛选（基于 submitted_at）
         if date_from:
             from datetime import datetime
+
             date_from_dt = datetime.fromisoformat(date_from)
             query = query.where(self.model.submitted_at >= date_from_dt)
         if date_to:
             from datetime import datetime, timedelta
+
             # date_to 包含当天结束时间
             date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
             query = query.where(self.model.submitted_at < date_to_dt)

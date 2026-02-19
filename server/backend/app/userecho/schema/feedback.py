@@ -25,8 +25,7 @@ class FeedbackCreate(FeedbackBase):
     board_id: str = Field(description='看板ID (必填)')
     # 来源类型枚举
     author_type: Literal['customer', 'external'] = Field(
-        default='customer',
-        description='来源类型: customer=内部客户, external=外部用户'
+        default='customer', description='来源类型: customer=内部客户, external=外部用户'
     )
     # 内部客户模式字段
     customer_id: str | None = Field(None, description='客户ID (可选，若未指定则根据 customer_name 自动创建)')
@@ -35,7 +34,9 @@ class FeedbackCreate(FeedbackBase):
     # 外部用户模式字段
     external_user_name: str | None = Field(None, description='外部用户名称 (external模式必填，用于回访)')
     external_contact: str | None = Field(None, description='外部用户联系方式 (可选，邮箱/手机等)')
-    source_platform: str | None = Field(None, description='来源平台 (external模式): wechat/xiaohongshu/appstore/weibo/other')
+    source_platform: str | None = Field(
+        None, description='来源平台 (external模式): wechat/xiaohongshu/appstore/weibo/other'
+    )
     # 公共字段
     topic_id: str | None = Field(None, description='关联主题ID (手动关联)')
     screenshots: list[str] | None = Field(None, description='截图URL列表 (最多3张)')
@@ -61,10 +62,14 @@ class FeedbackOut(FeedbackBase):
     anonymous_source: str | None = Field(None, description='匿名来源')
     topic_id: str | None = Field(None, description='关联主题ID')
     topic_title: str | None = Field(None, description='主题标题 (关联查询)')
-    topic_status: str | None = Field(None, description='主题状态 (关联查询): pending/planned/in_progress/completed/ignored')
+    topic_status: str | None = Field(
+        None, description='主题状态 (关联查询): pending/planned/in_progress/completed/ignored'
+    )
     ai_summary: str | None = Field(None, description='AI生成摘要')
     ai_metadata: dict | None = Field(None, description='AI元数据')
-    images_metadata: dict | None = Field(None, description='截图元数据 {"images": [{"url": "...", "uploaded_at": "..."}]}')
+    images_metadata: dict | None = Field(
+        None, description='截图元数据 {"images": [{"url": "...", "uploaded_at": "..."}]}'
+    )
     clustering_status: str | None = Field(None, description='聚类状态: pending/processing/clustered/failed')
     submitted_at: datetime = Field(description='提交时间')
     created_time: datetime = Field(description='创建时间')
@@ -133,15 +138,16 @@ class ScreenshotFeedbackCreate(SchemaBase):
     ai_confidence: float | None = Field(None, ge=0.0, le=1.0, description='AI 识别置信度')
     # 来源类型枚举
     author_type: Literal['customer', 'external'] = Field(
-        default='external',
-        description='来源类型: customer=内部客户, external=外部用户'
+        default='external', description='来源类型: customer=内部客户, external=外部用户'
     )
     # 内部客户模式字段
     customer_id: str | None = Field(None, description='客户ID')
     customer_name: str | None = Field(None, description='客户名称 (customer模式)')
     customer_type: str | None = Field(None, description='客户类型: normal/paid/major/strategic')
     # 外部用户模式字段
-    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] | None = Field(None, description='来源平台 (external模式)')
+    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] | None = Field(
+        None, description='来源平台 (external模式)'
+    )
     external_user_name: str | None = Field(None, description='外部用户名称 (external模式，用于回访)')
     external_contact: str | None = Field(None, description='外部用户联系方式 (可选)')
     source_user_id: str = Field(default='', description='平台用户 ID')

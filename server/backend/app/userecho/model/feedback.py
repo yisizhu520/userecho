@@ -30,7 +30,7 @@ class Feedback(MappedBase):
         Numeric(10, 2), default=None, comment='客户月收入（冗余字段，便于聚合）'
     )
     customer_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='客户类型（冗余字段）')
-    
+
     # 来源类型枚举（替代 is_anonymous）
     author_type: Mapped[str] = mapped_column(
         String(20), default='customer', index=True, comment='来源类型: customer=内部客户, external=外部用户'
@@ -38,7 +38,7 @@ class Feedback(MappedBase):
     # 外部用户信息（替代 anonymous_* 字段）
     external_user_name: Mapped[str | None] = mapped_column(String(100), default=None, comment='外部用户名称')
     external_contact: Mapped[str | None] = mapped_column(String(255), default=None, comment='外部用户联系方式')
-    
+
     topic_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey('topics.id', ondelete='SET NULL'), index=True, comment='关联主题ID'
     )
@@ -105,6 +105,6 @@ class Feedback(MappedBase):
     __table_args__ = (
         CheckConstraint(
             "(author_type = 'customer' AND customer_id IS NOT NULL) OR (author_type = 'external' AND external_user_name IS NOT NULL)",
-            name='chk_author_info'
+            name='chk_author_info',
         ),
     )

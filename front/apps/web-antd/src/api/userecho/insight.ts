@@ -206,4 +206,3 @@ export interface SendReportEmailRequest {
 export async function sendReportEmail(data: SendReportEmailRequest) {
   return requestClient.post('/api/v1/app/insights/report/send-email', data);
 }
-
