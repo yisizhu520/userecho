@@ -47,28 +47,41 @@ class FeedbackService:
             if not board:
                 raise ValueError(f'Board {data.board_id} not found for tenant {tenant_id}')
 
-            # 2. 处理客户名称（自动创建客户）
-            customer_id = data.customer_id
-            if data.customer_name and not customer_id:
-                # 根据客户名称查找或创建客户
-                from sqlalchemy import select
+            # 2. 根据 author_type 处理不同来源模式
+            customer_id = None
+            is_anonymous = False
+            anonymous_author = None
+            anonymous_source = None
+            source_platform = None
+            source_user_name = None
 
-                from backend.app.userecho.model.customer import Customer
+            if data.author_type == 'customer':
+                # 内部客户模式：关联或创建客户
+                customer_id = data.customer_id
+                if data.customer_name and not customer_id:
+                    from sqlalchemy import select
+                    from backend.app.userecho.model.customer import Customer
 
-                query = select(Customer).where(
-                    Customer.tenant_id == tenant_id, Customer.name == data.customer_name, Customer.deleted_at.is_(None)
-                )
-                result = await db.execute(query)
-                customer = result.scalar_one_or_none()
-
-                if not customer:
-                    # 创建新客户（使用请求中的 customer_type 或默认 'normal'）
-                    customer = await crud_customer.create(
-                        db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type=data.customer_type or 'normal'
+                    query = select(Customer).where(
+                        Customer.tenant_id == tenant_id, Customer.name == data.customer_name, Customer.deleted_at.is_(None)
                     )
-                    log.info(f'Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or "normal"}')
+                    result = await db.execute(query)
+                    customer = result.scalar_one_or_none()
 
-                customer_id = customer.id
+                    if not customer:
+                        customer = await crud_customer.create(
+                            db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type=data.customer_type or 'normal'
+                        )
+                        log.info(f'Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or "normal"}')
+
+                    customer_id = customer.id
+            else:
+                # 外部用户模式：存储外部用户信息，不入客户表
+                is_anonymous = True
+                anonymous_author = data.external_user_name
+                anonymous_source = data.source_platform
+                source_platform = data.source_platform
+                source_user_name = data.external_user_name
 
             # 3. 处理截图（存储到 images_metadata）
             images_metadata = None
@@ -78,7 +91,6 @@ class FeedbackService:
                 }
 
             # 4. 生成 AI 摘要（仅长文本，失败不影响创建）
-            # 短文本（<=150字）无需 AI 压缩，直接用原文即可
             ai_summary = None
             if generate_summary and data.content and len(data.content) > 150:
                 try:
@@ -104,6 +116,12 @@ class FeedbackService:
                 images_metadata=images_metadata,
                 clustering_status=clustering_status,
                 submitter_id=submitter_id,
+                # 外部用户模式字段
+                is_anonymous=is_anonymous,
+                anonymous_author=anonymous_author,
+                anonymous_source=anonymous_source,
+                source_platform=source_platform,
+                source_user_name=source_user_name,
             )
 
             return feedback

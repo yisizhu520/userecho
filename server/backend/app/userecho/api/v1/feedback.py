@@ -167,11 +167,18 @@ async def import_feedbacks(
     db: CurrentSession,
     file: Annotated[UploadFile, File()],
     default_board_id: Annotated[str | None, Query(description='默认看板ID（当Excel无看板列时使用）')] = None,
-    default_customer_name: Annotated[str | None, Query(description='默认客户名称（当Excel无客户列时使用，必填）')] = None,
+    author_type: Annotated[str, Query(description='来源类型: customer=内部客户, external=外部用户')] = 'customer',
+    default_customer_name: Annotated[str | None, Query(description='默认客户名称（customer模式必填）')] = None,
+    default_source_platform: Annotated[str | None, Query(description='默认来源平台（external模式）')] = None,
+    default_external_user_name: Annotated[str | None, Query(description='默认外部用户名称（external模式必填）')] = None,
     tenant_id: str = CurrentTenantId,
 ):
     """
     导入 Excel 文件
+
+    支持两种来源模式：
+    - author_type='customer': 内部客户模式，需要提供 default_customer_name
+    - author_type='external': 外部用户模式，需要提供 default_source_platform 和 default_external_user_name
 
     支持格式: .xlsx, .xls, .csv
 
@@ -180,7 +187,7 @@ async def import_feedbacks(
 
     可选列（可通过参数补全）:
     - 看板名称（或使用 default_board_id 参数）
-    - 客户名称（必须使用 default_customer_name 参数补充）
+    - 客户名称（customer 模式）
     - 客户类型
     - 提交时间
     - 是否紧急
@@ -188,7 +195,7 @@ async def import_feedbacks(
     from backend.common.log import log
 
     log.info(
-        f'Starting import for tenant {tenant_id}, board={default_board_id}, customer={default_customer_name}'
+        f'Starting import for tenant {tenant_id}, board={default_board_id}, author_type={author_type}'
     )
 
     try:
@@ -197,7 +204,10 @@ async def import_feedbacks(
             tenant_id=tenant_id,
             file=file,
             default_board_id=default_board_id,
+            author_type=author_type,
             default_customer_name=default_customer_name,
+            default_source_platform=default_source_platform,
+            default_external_user_name=default_external_user_name,
             generate_summary=False,
         )
 
@@ -521,54 +531,94 @@ async def create_feedback_from_screenshot(
     """
     从截图识别结果创建反馈
 
+    支持两种来源模式：
+    - author_type='customer': 内部客户模式，关联或创建客户
+    - author_type='external': 外部用户模式，存储来源信息但不入客户表
+
     字段说明：
     - content: 反馈内容（必填）
     - screenshot_url: 截图 URL（必填）
-    - source_platform: 来源平台（必填）
-    - source_user_name: 平台用户昵称
-    - source_user_id: 平台用户 ID
-    - ai_confidence: AI 识别置信度
-    - customer_id: 关联的客户 ID（可选，MVP 阶段通常为空）
+    - author_type: 来源类型（customer/external）
+    - customer_name: 客户名称（customer 模式必填）
+    - source_platform: 来源平台（external 模式必填）
+    - external_user_name: 外部用户名称（external 模式必填，用于回访）
     """
+    from backend.app.userecho.crud import crud_customer
     from backend.app.userecho.model.feedback import Feedback
     from backend.common.log import log
+    from backend.database.db import uuid4_str
     from backend.utils.ai_client import ai_client
     from backend.utils.timezone import timezone
 
     try:
-        # 1. 创建反馈记录
+        # 1. 根据 author_type 处理不同来源模式
+        customer_id = None
+        is_anonymous = False
+        anonymous_author = None
+        anonymous_source = None
+
+        if data.author_type == 'customer':
+            # 内部客户模式：关联或创建客户
+            customer_id = data.customer_id
+            if data.customer_name and not customer_id:
+                from sqlalchemy import select
+
+                from backend.app.userecho.model.customer import Customer
+
+                query = select(Customer).where(
+                    Customer.tenant_id == tenant_id, Customer.name == data.customer_name, Customer.deleted_at.is_(None)
+                )
+                result = await db.execute(query)
+                customer = result.scalar_one_or_none()
+
+                if not customer:
+                    customer = await crud_customer.create(
+                        db=db, tenant_id=tenant_id, id=uuid4_str(), name=data.customer_name, customer_type=data.customer_type or 'normal'
+                    )
+                    log.info(f'Auto-created customer {customer.id} for screenshot feedback: {data.customer_name}')
+
+                customer_id = customer.id
+        else:
+            # 外部用户模式：存储外部用户信息
+            is_anonymous = True
+            anonymous_author = data.external_user_name or '未知用户'
+            anonymous_source = data.source_platform
+
+        # 2. 创建反馈记录
         feedback = Feedback(
             tenant_id=tenant_id,
-            customer_id=data.customer_id,
-            anonymous_author=data.source_user_name or '匿名用户',
-            anonymous_source=data.source_platform,
+            board_id=data.board_id,
+            customer_id=customer_id,
+            is_anonymous=is_anonymous,
+            anonymous_author=anonymous_author,
+            anonymous_source=anonymous_source,
             content=data.content,
             source='screenshot',
             screenshot_url=data.screenshot_url,
             source_platform=data.source_platform,
-            source_user_name=data.source_user_name,
+            source_user_name=data.external_user_name,
             source_user_id=data.source_user_id,
             ai_confidence=data.ai_confidence,
             submitted_at=timezone.now(),
         )
 
-        # 2. 生成 AI 摘要
+        # 3. 生成 AI 摘要
         try:
             ai_summary = await ai_client.generate_summary(data.content, max_length=20)
             feedback.ai_summary = ai_summary
         except Exception as e:
             log.warning(f'Failed to generate summary for screenshot feedback: {e}')
 
-        # 3. 保存到数据库
+        # 4. 保存到数据库
         db.add(feedback)
         await db.commit()
         await db.refresh(feedback)
 
         log.info(
-            f'Created feedback from screenshot: id={feedback.id}, tenant={tenant_id}, platform={data.source_platform}'
+            f'Created feedback from screenshot: id={feedback.id}, tenant={tenant_id}, author_type={data.author_type}'
         )
 
-        # 4. 返回结果
+        # 5. 返回结果
         feedback_out = FeedbackOut.model_validate(feedback)
         return response_base.success(data=feedback_out)
 

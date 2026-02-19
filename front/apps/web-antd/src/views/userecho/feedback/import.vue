@@ -41,7 +41,10 @@ const previewResult = ref<ImportPreviewResult | null>(null);
 const currentFile = ref<File | null>(null);
 const importConfig = ref<ImportConfig>({
   default_board_id: undefined,
+  author_type: 'customer',
   default_customer_name: undefined,
+  default_source_platform: 'wechat',
+  default_external_user_name: undefined,
 });
 
 // 看板列表
@@ -144,12 +147,21 @@ const doImport = async () => {
   
   try {
     // 构建配置
-    const config: ImportConfig = {};
+    const config: ImportConfig = {
+      author_type: importConfig.value.author_type,
+    };
+    
     if (previewResult.value?.missing_optional.includes('看板名称')) {
       config.default_board_id = importConfig.value.default_board_id;
     }
+    
     if (previewResult.value?.missing_optional.includes('客户名称')) {
-      config.default_customer_name = importConfig.value.default_customer_name;
+      if (importConfig.value.author_type === 'customer') {
+        config.default_customer_name = importConfig.value.default_customer_name;
+      } else {
+        config.default_source_platform = importConfig.value.default_source_platform;
+        config.default_external_user_name = importConfig.value.default_external_user_name;
+      }
     }
     
     const result = await importFeedbacksWithConfig(currentFile.value, config);
@@ -183,10 +195,12 @@ const canImport = computed(() => {
     if (!importConfig.value.default_board_id) return false;
   }
   
-  // 如果缺少客户列，必须填写默认客户名称
+  // 如果缺少客户列，根据来源类型验证
   if (previewResult.value.missing_optional.includes('客户名称')) {
-    if (!importConfig.value.default_customer_name) {
-      return false;
+    if (importConfig.value.author_type === 'customer') {
+      if (!importConfig.value.default_customer_name) return false;
+    } else {
+      if (!importConfig.value.default_external_user_name) return false;
     }
   }
   
@@ -267,7 +281,10 @@ const handleReset = () => {
   uploadProgress.value = 0;
   importConfig.value = {
     default_board_id: undefined,
+    author_type: 'customer',
     default_customer_name: undefined,
+    default_source_platform: 'wechat',
+    default_external_user_name: undefined,
   };
 };
 
@@ -298,13 +315,14 @@ const statistics = computed(() => {
 
 <template>
   <div class="import-page">
-    <!-- 顶部导航 -->
+    <!-- 面包屑导航 -->
     <div class="page-header">
-      <VbenButton variant="ghost" @click="goToList">
-        <LeftOutlined />
-        返回列表
-      </VbenButton>
-      <h2 class="page-title">导入反馈数据</h2>
+      <a-breadcrumb>
+        <a-breadcrumb-item>
+          <router-link to="/app/feedback/list">反馈管理</router-link>
+        </a-breadcrumb-item>
+        <a-breadcrumb-item>批量导入</a-breadcrumb-item>
+      </a-breadcrumb>
     </div>
 
     <!-- 导入指南 -->
@@ -398,16 +416,43 @@ const statistics = computed(() => {
             </a-form-item>
 
             <!-- 客户名称 -->
-            <a-form-item
-              v-if="previewResult?.missing_optional.includes('客户名称')"
-              label="默认客户名称"
-              required
-            >
-              <a-input
-                v-model:value="importConfig.default_customer_name"
-                placeholder="输入客户名称（必填）"
-              />
-            </a-form-item>
+            <template v-if="previewResult?.missing_optional.includes('客户名称')">
+              <a-form-item label="来源类型" required>
+                <a-radio-group v-model:value="importConfig.author_type">
+                  <a-radio value="customer">内部客户</a-radio>
+                  <a-radio value="external">外部用户</a-radio>
+                </a-radio-group>
+              </a-form-item>
+              
+              <!-- 内部客户模式 -->
+              <template v-if="importConfig.author_type === 'customer'">
+                <a-form-item label="默认客户名称" required>
+                  <a-input
+                    v-model:value="importConfig.default_customer_name"
+                    placeholder="输入客户名称（必填）"
+                  />
+                </a-form-item>
+              </template>
+              
+              <!-- 外部用户模式 -->
+              <template v-else>
+                <a-form-item label="来源平台" required>
+                  <a-select v-model:value="importConfig.default_source_platform" style="width: 100%">
+                    <a-select-option value="wechat">微信</a-select-option>
+                    <a-select-option value="xiaohongshu">小红书</a-select-option>
+                    <a-select-option value="appstore">App Store</a-select-option>
+                    <a-select-option value="weibo">微博</a-select-option>
+                    <a-select-option value="other">其他</a-select-option>
+                  </a-select>
+                </a-form-item>
+                <a-form-item label="用户名称" required>
+                  <a-input
+                    v-model:value="importConfig.default_external_user_name"
+                    placeholder="外部用户名称（用于回访）"
+                  />
+                </a-form-item>
+              </template>
+            </template>
           </a-form>
 
           <div class="action-buttons mt-4">

@@ -33,14 +33,21 @@ export interface Feedback {
 /** 创建反馈参数 */
 export interface CreateFeedbackParams {
   board_id: string;
-  customer_id?: string;
-  customer_name: string;
-  customer_type?: string;
   content: string;
   source?: string;
   is_urgent?: boolean;
   topic_id?: string;
   screenshots?: string[];
+  // 来源类型枚举
+  author_type: 'customer' | 'external';
+  // 内部客户模式字段
+  customer_id?: string;
+  customer_name?: string;
+  customer_type?: string;
+  // 外部用户模式字段
+  external_user_name?: string;
+  external_contact?: string;
+  source_platform?: string;
 }
 
 /** 更新反馈参数 */
@@ -92,7 +99,12 @@ export interface ImportPreviewResult {
 /** 导入配置 */
 export interface ImportConfig {
   default_board_id?: string;
+  author_type: 'customer' | 'external';
+  // 内部客户模式
   default_customer_name?: string;
+  // 外部用户模式
+  default_source_platform?: string;
+  default_external_user_name?: string;
 }
 
 /** 截图识别提取的数据 */
@@ -126,14 +138,22 @@ export interface TaskStatusResponse {
 
 /** 从截图创建反馈参数 */
 export interface ScreenshotFeedbackCreateParams {
+  board_id: string;
   content: string;
   screenshot_url: string;
   source_type: 'screenshot';
-  source_platform: string;
-  source_user_name?: string;
-  source_user_id?: string;
   ai_confidence?: number;
+  // 来源类型枚举
+  author_type: 'customer' | 'external';
+  // 内部客户模式字段
   customer_id?: string | null;
+  customer_name?: string;
+  customer_type?: string;
+  // 外部用户模式字段
+  source_platform?: string;
+  external_user_name?: string;
+  external_contact?: string;
+  source_user_id?: string;
 }
 
 /**
@@ -204,7 +224,14 @@ export async function importFeedbacksWithConfig(file: File, config: ImportConfig
 
   const params = new URLSearchParams();
   if (config.default_board_id) params.append('default_board_id', config.default_board_id);
-  if (config.default_customer_name) params.append('default_customer_name', config.default_customer_name);
+  params.append('author_type', config.author_type);
+
+  if (config.author_type === 'customer') {
+    if (config.default_customer_name) params.append('default_customer_name', config.default_customer_name);
+  } else {
+    if (config.default_source_platform) params.append('default_source_platform', config.default_source_platform);
+    if (config.default_external_user_name) params.append('default_external_user_name', config.default_external_user_name);
+  }
 
   const queryString = params.toString();
   const url = queryString

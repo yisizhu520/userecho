@@ -15,32 +15,43 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    name: 'FeedbackList',
-    path: '/app/feedback/list',
-    component: () => import('#/views/userecho/feedback/list.vue'),
+    name: 'FeedbackManagement',
+    path: '/app/feedback',
     meta: {
       icon: 'lucide:inbox',
       order: 0,
       title: $t('page.userecho.feedback.list'),
     },
-  },
-  {
-    name: 'ScreenshotUpload',
-    path: '/app/feedback/screenshot',
-    component: () => import('#/views/userecho/feedback/screenshot-upload.vue'),
-    meta: {
-      hideInMenu: true,
-      title: '截图识别',
-    },
-  },
-  {
-    name: 'FeedbackImport',
-    path: '/app/feedback/import',
-    component: () => import('#/views/userecho/feedback/import.vue'),
-    meta: {
-      hideInMenu: true,
-      title: $t('page.userecho.feedback.import'),
-    },
+    redirect: '/app/feedback/list',
+    children: [
+      {
+        name: 'FeedbackList',
+        path: 'list',
+        component: () => import('#/views/userecho/feedback/list.vue'),
+        meta: {
+          hideInBreadcrumb: true,
+          title: $t('page.userecho.feedback.list'),
+        },
+      },
+      {
+        name: 'ScreenshotUpload',
+        path: 'screenshot',
+        component: () => import('#/views/userecho/feedback/screenshot-upload.vue'),
+        meta: {
+          hideInMenu: true,
+          title: '截图识别',
+        },
+      },
+      {
+        name: 'FeedbackImport',
+        path: 'import',
+        component: () => import('#/views/userecho/feedback/import.vue'),
+        meta: {
+          hideInMenu: true,
+          title: $t('page.userecho.feedback.import'),
+        },
+      },
+    ],
   },
   {
     name: 'AIDiscovery',

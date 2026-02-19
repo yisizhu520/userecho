@@ -130,7 +130,10 @@ class ImportService:
         tenant_id: str,
         file: UploadFile,
         default_board_id: str | None = None,
+        author_type: str = 'customer',
         default_customer_name: str | None = None,
+        default_source_platform: str | None = None,
+        default_external_user_name: str | None = None,
         generate_summary: bool = True,
     ) -> dict[str, Any]:
         """
@@ -141,7 +144,10 @@ class ImportService:
             tenant_id: 租户ID
             file: 上传的文件
             default_board_id: 默认看板ID（当 Excel 无看板列时使用）
-            default_customer_name: 默认客户名称（当 Excel 无客户列时必填）
+            author_type: 来源类型 (customer=内部客户, external=外部用户)
+            default_customer_name: 默认客户名称（customer 模式必填）
+            default_source_platform: 默认来源平台（external 模式）
+            default_external_user_name: 默认外部用户名称（external 模式必填）
             generate_summary: 是否生成 AI 摘要
 
         Returns:
@@ -258,32 +264,46 @@ class ImportService:
                         errors.append({'row': idx + 2, 'error': '看板未指定', 'content': str(row['反馈内容'])[:50]})
                         continue
 
-                    # 处理客户（优先 Excel 列，其次 default_customer_name）
+                    # 处理来源（根据 author_type 决定）
                     has_customer_column = '客户名称' in df.columns
                     customer_id = None
+                    is_anonymous = False
+                    anonymous_author = None
+                    anonymous_source = None
+                    source_platform = None
+                    source_user_name = None
 
-                    if has_customer_column and pd.notna(row.get('客户名称')) and str(row['客户名称']).strip():
-                        customer_name = str(row['客户名称']).strip()
-                        customer_type_raw = row.get('客户类型', 'normal')
-                        customer_type = self.CUSTOMER_TYPE_MAP.get(
-                            str(customer_type_raw).strip() if pd.notna(customer_type_raw) else 'normal', 'normal'
-                        )
-                        customer = await self._get_or_create_customer(
-                            db=db, tenant_id=tenant_id, name=customer_name, customer_type=customer_type
-                        )
-                        customer_id = customer.id
-                    elif default_customer_name:
-                        customer = await self._get_or_create_customer(
-                            db=db, tenant_id=tenant_id, name=default_customer_name, customer_type='normal'
-                        )
-                        customer_id = customer.id
+                    if author_type == 'customer':
+                        # 内部客户模式
+                        if has_customer_column and pd.notna(row.get('客户名称')) and str(row['客户名称']).strip():
+                            customer_name = str(row['客户名称']).strip()
+                            customer_type_raw = row.get('客户类型', 'normal')
+                            customer_type = self.CUSTOMER_TYPE_MAP.get(
+                                str(customer_type_raw).strip() if pd.notna(customer_type_raw) else 'normal', 'normal'
+                            )
+                            customer = await self._get_or_create_customer(
+                                db=db, tenant_id=tenant_id, name=customer_name, customer_type=customer_type
+                            )
+                            customer_id = customer.id
+                        elif default_customer_name:
+                            customer = await self._get_or_create_customer(
+                                db=db, tenant_id=tenant_id, name=default_customer_name, customer_type='normal'
+                            )
+                            customer_id = customer.id
+                        else:
+                            errors.append({
+                                'row': idx + 2,
+                                'error': '客户名称未指定',
+                                'content': str(row['反馈内容'])[:50],
+                            })
+                            continue
                     else:
-                        errors.append({
-                            'row': idx + 2,
-                            'error': '客户名称未指定',
-                            'content': str(row['反馈内容'])[:50],
-                        })
-                        continue
+                        # 外部用户模式
+                        is_anonymous = True
+                        anonymous_author = default_external_user_name or '未知用户'
+                        anonymous_source = default_source_platform or 'other'
+                        source_platform = default_source_platform or 'other'
+                        source_user_name = default_external_user_name
 
                     # 解析提交时间
                     submitted_at = timezone.now()
@@ -327,6 +347,12 @@ class ImportService:
                         is_urgent=is_urgent,
                         ai_summary=ai_summary,
                         submitted_at=submitted_at,
+                        # 外部用户模式字段
+                        is_anonymous=is_anonymous,
+                        anonymous_author=anonymous_author,
+                        anonymous_source=anonymous_source,
+                        source_platform=source_platform,
+                        source_user_name=source_user_name,
                     )
 
                     success_count += 1

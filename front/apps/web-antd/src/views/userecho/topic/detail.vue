@@ -150,12 +150,14 @@ onMounted(() => {
   </div>
 
   <div v-else-if="topic" class="topic-detail-page">
-    <!-- 顶部导航 -->
+    <!-- 面包屑导航 -->
     <div class="page-header">
-      <VbenButton variant="ghost" @click="() => router.push('/app/topic/list')">
-        <LeftOutlined />
-        返回列表
-      </VbenButton>
+      <a-breadcrumb>
+        <a-breadcrumb-item>
+          <router-link to="/app/topic/list">需求主题</router-link>
+        </a-breadcrumb-item>
+        <a-breadcrumb-item>主题详情</a-breadcrumb-item>
+      </a-breadcrumb>
     </div>
 
     <!-- 主题信息卡片 -->

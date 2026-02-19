@@ -1,5 +1,15 @@
 <template>
   <div class="screenshot-upload-page">
+    <!-- 面包屑导航 -->
+    <div class="page-header">
+      <a-breadcrumb>
+        <a-breadcrumb-item>
+          <router-link to="/app/feedback/list">反馈管理</router-link>
+        </a-breadcrumb-item>
+        <a-breadcrumb-item>截图识别</a-breadcrumb-item>
+      </a-breadcrumb>
+    </div>
+
     <Card title="截图智能识别" class="upload-card">
       <template v-if="!uploadedFile">
         <!-- 上传区域 -->
@@ -76,19 +86,57 @@
                 :rules="formRules"
                 layout="vertical"
               >
-                <FormItem label="来源平台" name="source_platform">
-                  <Select v-model:value="formData.source_platform" placeholder="选择平台">
-                    <SelectOption value="wechat">微信</SelectOption>
-                    <SelectOption value="xiaohongshu">小红书</SelectOption>
-                    <SelectOption value="appstore">App Store</SelectOption>
-                    <SelectOption value="weibo">微博</SelectOption>
-                    <SelectOption value="other">其他</SelectOption>
+                <FormItem label="目标看板" name="board_id">
+                  <Select
+                    v-model:value="formData.board_id"
+                    placeholder="选择目标看板"
+                    :loading="boardsLoading"
+                  >
+                    <SelectOption v-for="board in boards" :key="board.id" :value="board.id">
+                      {{ board.name }}
+                    </SelectOption>
                   </Select>
                 </FormItem>
 
-                <FormItem label="用户昵称" name="source_user_name">
-                  <Input v-model:value="formData.source_user_name" placeholder="平台用户昵称" />
+                <FormItem label="来源类型" name="author_type">
+                  <RadioGroup v-model:value="formData.author_type">
+                    <Radio value="customer">内部客户</Radio>
+                    <Radio value="external">外部用户</Radio>
+                  </RadioGroup>
                 </FormItem>
+
+                <!-- 内部客户模式 -->
+                <template v-if="formData.author_type === 'customer'">
+                  <FormItem label="客户名称" name="customer_name">
+                    <CustomerAutoComplete
+                      v-model="formData.customer_name"
+                      v-model:customer-type="formData.customer_type"
+                      placeholder="输入客户名称"
+                      @customer-selected="onCustomerSelected"
+                    />
+                  </FormItem>
+                </template>
+
+                <!-- 外部用户模式 -->
+                <template v-else>
+                  <FormItem label="来源平台" name="source_platform">
+                    <Select v-model:value="formData.source_platform" placeholder="选择平台">
+                      <SelectOption value="wechat">微信</SelectOption>
+                      <SelectOption value="xiaohongshu">小红书</SelectOption>
+                      <SelectOption value="appstore">App Store</SelectOption>
+                      <SelectOption value="weibo">微博</SelectOption>
+                      <SelectOption value="other">其他</SelectOption>
+                    </Select>
+                  </FormItem>
+
+                  <FormItem label="用户名称" name="external_user_name">
+                    <Input v-model:value="formData.external_user_name" placeholder="外部用户名称（用于回访）" />
+                  </FormItem>
+
+                  <FormItem label="联系方式">
+                    <Input v-model:value="formData.external_contact" placeholder="邮箱/手机（可选）" />
+                  </FormItem>
+                </template>
 
                 <FormItem label="反馈内容" name="content">
                   <Textarea
@@ -96,15 +144,6 @@
                     :rows="8"
                     placeholder="提取的反馈内容"
                   />
-                </FormItem>
-
-                <FormItem label="反馈类型">
-                  <RadioGroup v-model:value="formData.feedback_type">
-                    <Radio value="bug">Bug</Radio>
-                    <Radio value="feature">功能需求</Radio>
-                    <Radio value="complaint">投诉</Radio>
-                    <Radio value="other">其他</Radio>
-                  </RadioGroup>
                 </FormItem>
 
                 <div class="confidence-info">
@@ -132,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
@@ -158,6 +197,9 @@ import {
   SyncOutlined,
 } from '@ant-design/icons-vue'
 import { analyzeScreenshot, createFeedbackFromScreenshot, getScreenshotTaskStatus, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
+import { getBoardList, type Board } from '#/api/userecho/board'
+import CustomerAutoComplete from './components/CustomerAutoComplete.vue'
+import type { Customer } from '#/api'
 
 const router = useRouter()
 const fileInputRef = ref<HTMLInputElement>()
@@ -175,18 +217,89 @@ const screenshotUrl = ref('')
 const analysisResult = ref<any>(null)
 const aiConfidence = ref(0)
 
-// 表单数据
-const formData = reactive({
-  content: '',
-  source_platform: 'wechat',
-  source_user_name: '',
-  source_user_id: '',
-  feedback_type: 'other',
+// 看板列表
+const boards = ref<Board[]>([])
+const boardsLoading = ref(false)
+
+// 加载看板列表
+const loadBoards = async () => {
+  try {
+    boardsLoading.value = true
+    boards.value = await getBoardList()
+    // 默认选中第一个看板
+    if (boards.value.length > 0 && !formData.board_id) {
+      formData.board_id = boards.value[0].id
+    }
+  } catch (error) {
+    console.error('加载看板列表失败', error)
+  } finally {
+    boardsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadBoards()
 })
 
+// 表单数据
+const formData = reactive({
+  board_id: '',
+  author_type: 'external' as 'customer' | 'external',
+  // 内部客户模式
+  customer_name: '',
+  customer_type: 'normal',
+  // 外部用户模式
+  source_platform: 'wechat',
+  external_user_name: '',
+  external_contact: '',
+  source_user_id: '',
+  // 公共
+  content: '',
+})
+
+// 客户选择回调
+const selectedCustomer = ref<Customer | null>(null)
+const onCustomerSelected = (customer: Customer | null) => {
+  selectedCustomer.value = customer
+}
+
 const formRules: any = {
+  board_id: [{ required: true, message: '请选择目标看板', trigger: 'change' }],
   content: [{ required: true, message: '请输入反馈内容', trigger: 'blur' }],
-  source_platform: [{ required: true, message: '请选择来源平台', trigger: 'change' }],
+  author_type: [{ required: true, message: '请选择来源类型', trigger: 'change' }],
+  customer_name: [{ 
+    required: true, 
+    message: '请输入客户名称', 
+    trigger: 'blur',
+    validator: (_rule: any, value: string) => {
+      if (formData.author_type === 'customer' && !value) {
+        return Promise.reject('请输入客户名称')
+      }
+      return Promise.resolve()
+    }
+  }],
+  source_platform: [{ 
+    required: true, 
+    message: '请选择来源平台', 
+    trigger: 'change',
+    validator: (_rule: any, value: string) => {
+      if (formData.author_type === 'external' && !value) {
+        return Promise.reject('请选择来源平台')
+      }
+      return Promise.resolve()
+    }
+  }],
+  external_user_name: [{ 
+    required: true, 
+    message: '请输入用户名称', 
+    trigger: 'blur',
+    validator: (_rule: any, value: string) => {
+      if (formData.author_type === 'external' && !value) {
+        return Promise.reject('请输入用户名称')
+      }
+      return Promise.resolve()
+    }
+  }],
 }
 
 const isCreating = ref(false)
@@ -364,11 +477,16 @@ const resetUpload = () => {
   screenshotUrl.value = ''
   analysisResult.value = null
   uploadProgress.value = 0
-  formData.content = ''
+  // 恢复表单默认值（保留 board_id）
+  formData.author_type = 'external'
+  formData.customer_name = ''
+  formData.customer_type = 'normal'
   formData.source_platform = 'wechat'
-  formData.source_user_name = ''
+  formData.external_user_name = ''
+  formData.external_contact = ''
   formData.source_user_id = ''
-  formData.feedback_type = 'other'
+  formData.content = ''
+  selectedCustomer.value = null
 }
 
 // 重新识别
@@ -383,17 +501,40 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
 
+    // 根据来源类型进行额外验证
+    if (formData.author_type === 'customer' && !formData.customer_name.trim()) {
+      message.warning('请输入客户名称')
+      return
+    }
+    if (formData.author_type === 'external' && !formData.external_user_name.trim()) {
+      message.warning('请输入用户名称')
+      return
+    }
+
     isCreating.value = true
 
     const payload: ScreenshotFeedbackCreateParams = {
+      board_id: formData.board_id,
       content: formData.content,
       screenshot_url: screenshotUrl.value,
       source_type: 'screenshot',
-      source_platform: formData.source_platform as any,
-      source_user_name: formData.source_user_name,
-      source_user_id: formData.source_user_id,
+      author_type: formData.author_type,
       ai_confidence: aiConfidence.value,
-      customer_id: null, // MVP 阶段不关联客户
+    }
+
+    if (formData.author_type === 'customer') {
+      // 内部客户模式
+      payload.customer_name = formData.customer_name
+      payload.customer_type = formData.customer_type
+      if (selectedCustomer.value) {
+        payload.customer_id = selectedCustomer.value.id
+      }
+    } else {
+      // 外部用户模式
+      payload.source_platform = formData.source_platform as any
+      payload.external_user_name = formData.external_user_name
+      payload.external_contact = formData.external_contact || undefined
+      payload.source_user_id = formData.source_user_id || undefined
     }
 
     await createFeedbackFromScreenshot(payload)
@@ -415,6 +556,11 @@ const handleSubmit = async () => {
 <style scoped lang="less">
 .screenshot-upload-page {
   padding: 24px;
+}
+
+.page-header {
+  max-width: 1200px;
+  margin: 0 auto 24px;
 }
 
 .upload-card {

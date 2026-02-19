@@ -15,12 +15,28 @@ class FeedbackBase(SchemaBase):
 
 
 class FeedbackCreate(FeedbackBase):
-    """创建反馈参数"""
+    """创建反馈参数
+
+    支持两种来源模式：
+    1. 内部客户模式 (author_type='customer')：customer_name 必填，关联到 customers 表
+    2. 外部用户模式 (author_type='external')：external_user_name 必填，不入客户表
+    """
 
     board_id: str = Field(description='看板ID (必填)')
+    # 来源类型枚举
+    author_type: Literal['customer', 'external'] = Field(
+        default='customer',
+        description='来源类型: customer=内部客户, external=外部用户'
+    )
+    # 内部客户模式字段
     customer_id: str | None = Field(None, description='客户ID (可选，若未指定则根据 customer_name 自动创建)')
-    customer_name: str = Field(description='客户名称 (必填)')
+    customer_name: str | None = Field(None, description='客户名称 (customer模式必填)')
     customer_type: str | None = Field(None, description='客户类型 (新建客户时使用): normal/paid/major/strategic')
+    # 外部用户模式字段
+    external_user_name: str | None = Field(None, description='外部用户名称 (external模式必填，用于回访)')
+    external_contact: str | None = Field(None, description='外部用户联系方式 (可选，邮箱/手机等)')
+    source_platform: str | None = Field(None, description='来源平台 (external模式): wechat/xiaohongshu/appstore/weibo/other')
+    # 公共字段
     topic_id: str | None = Field(None, description='关联主题ID (手动关联)')
     screenshots: list[str] | None = Field(None, description='截图URL列表 (最多3张)')
 
@@ -103,13 +119,29 @@ class ScreenshotAnalyzeResponse(SchemaBase):
 
 
 class ScreenshotFeedbackCreate(SchemaBase):
-    """从截图创建反馈"""
+    """从截图创建反馈
 
+    支持两种来源模式：
+    1. 内部客户模式 (author_type='customer')：customer_name 必填
+    2. 外部用户模式 (author_type='external')：source_platform + external_user_name 必填
+    """
+
+    board_id: str = Field(description='目标看板 ID（必填）')
     content: str = Field(description='反馈内容')
     screenshot_url: str = Field(description='截图 URL')
     source_type: Literal['screenshot'] = Field(default='screenshot', description='来源类型')
-    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] = Field(description='来源平台')
-    source_user_name: str = Field(default='', description='平台用户昵称')
-    source_user_id: str = Field(default='', description='平台用户 ID')
     ai_confidence: float | None = Field(None, ge=0.0, le=1.0, description='AI 识别置信度')
-    customer_id: str | None = Field(None, description='关联的客户 ID（可选）')
+    # 来源类型枚举
+    author_type: Literal['customer', 'external'] = Field(
+        default='external',
+        description='来源类型: customer=内部客户, external=外部用户'
+    )
+    # 内部客户模式字段
+    customer_id: str | None = Field(None, description='客户ID')
+    customer_name: str | None = Field(None, description='客户名称 (customer模式)')
+    customer_type: str | None = Field(None, description='客户类型: normal/paid/major/strategic')
+    # 外部用户模式字段
+    source_platform: Literal['wechat', 'xiaohongshu', 'appstore', 'weibo', 'other'] | None = Field(None, description='来源平台 (external模式)')
+    external_user_name: str | None = Field(None, description='外部用户名称 (external模式，用于回访)')
+    external_contact: str | None = Field(None, description='外部用户联系方式 (可选)')
+    source_user_id: str = Field(default='', description='平台用户 ID')

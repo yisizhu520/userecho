@@ -33,6 +33,13 @@ const customerName = ref<string>('');
 const customerType = ref<string>('normal');
 const selectedCustomer = ref<Customer | null>(null);
 
+// 来源类型
+const authorType = ref<'customer' | 'external'>('customer');
+// 外部用户信息
+const sourcePlatform = ref<string>('wechat');
+const externalUserName = ref<string>('');
+const externalContact = ref<string>('');
+
 // localStorage key for remembering the last selected board
 const LAST_SELECTED_BOARD_KEY = 'feedback_create_last_board_id';
 
@@ -75,12 +82,18 @@ const [Modal, modalApi] = useVbenModal({
     const topValid = await topFormApi.validate();
     const bottomValid = await bottomFormApi.validate();
     
-    // 创建模式需要验证客户名称
+    // 创建模式验证来源信息
     if (isCreateMode.value) {
-      const customerValid = customerName.value.trim().length > 0;
-      if (!customerValid) {
-        message.warning('请输入客户名称');
-        return;
+      if (authorType.value === 'customer') {
+        if (!customerName.value.trim()) {
+          message.warning('请输入客户名称');
+          return;
+        }
+      } else {
+        if (!externalUserName.value.trim()) {
+          message.warning('请输入用户名称');
+          return;
+        }
       }
     }
     
@@ -95,9 +108,14 @@ const [Modal, modalApi] = useVbenModal({
       selectedTopicId.value = '';
       screenshotUploadRef.value?.reset();
       currentTitle.value = '';
+      // 重置来源信息
+      authorType.value = 'customer';
       customerName.value = '';
       customerType.value = 'normal';
       selectedCustomer.value = null;
+      sourcePlatform.value = 'wechat';
+      externalUserName.value = '';
+      externalContact.value = '';
       loadBoardList();
       
       // 编辑模式：填充初始数据
@@ -171,10 +189,20 @@ const handleSubmit = async (continueCreating: boolean) => {
       // 创建模式
       const data = { ...topData, ...bottomData } as CreateFeedbackParams;
       
-      // 添加客户信息
-      data.customer_name = customerName.value;
-      if (!selectedCustomer.value) {
-        data.customer_type = customerType.value;
+      // 设置来源类型
+      data.author_type = authorType.value;
+      
+      if (authorType.value === 'customer') {
+        // 内部客户模式
+        data.customer_name = customerName.value;
+        if (!selectedCustomer.value) {
+          data.customer_type = customerType.value;
+        }
+      } else {
+        // 外部用户模式
+        data.external_user_name = externalUserName.value;
+        data.external_contact = externalContact.value || undefined;
+        data.source_platform = sourcePlatform.value;
       }
       
       // 添加 Topic 关联
@@ -202,9 +230,13 @@ const handleSubmit = async (continueCreating: boolean) => {
         selectedTopicId.value = '';
         screenshotUploadRef.value?.reset();
         currentTitle.value = '';
+        authorType.value = 'customer';
         customerName.value = '';
         customerType.value = 'normal';
         selectedCustomer.value = null;
+        sourcePlatform.value = 'wechat';
+        externalUserName.value = '';
+        externalContact.value = '';
       } else {
         await modalApi.close();
       }
@@ -247,11 +279,20 @@ const handleSubmit = async (continueCreating: boolean) => {
 const handleCreateAndContinue = async () => {
   const topValid = await topFormApi.validate();
   const bottomValid = await bottomFormApi.validate();
-  const customerValid = customerName.value.trim().length > 0;
-  if (!customerValid) {
-    message.warning('请输入客户名称');
-    return;
+  
+  // 根据来源类型验证
+  if (authorType.value === 'customer') {
+    if (!customerName.value.trim()) {
+      message.warning('请输入客户名称');
+      return;
+    }
+  } else {
+    if (!externalUserName.value.trim()) {
+      message.warning('请输入用户名称');
+      return;
+    }
   }
+  
   if (topValid.valid && bottomValid.valid) {
     await handleSubmit(true);
   }
@@ -293,18 +334,59 @@ defineExpose({
               <ScreenshotUpload ref="screenshotUploadRef" />
             </div>
             
-            <!-- 客户名称 -->
-            <div class="customer-field">
-              <label class="customer-label">客户名称</label>
-              <div class="customer-input">
-                <CustomerAutoComplete
-                  v-model="customerName"
-                  v-model:customer-type="customerType"
-                  placeholder="输入客户名称"
-                  @customer-selected="onCustomerSelected"
-                />
+            <!-- 来源类型选择 -->
+            <div class="author-type-field">
+              <label class="field-label">来源类型</label>
+              <div class="field-input">
+                <a-radio-group v-model:value="authorType">
+                  <a-radio value="customer">内部客户</a-radio>
+                  <a-radio value="external">外部用户</a-radio>
+                </a-radio-group>
               </div>
             </div>
+            
+            <!-- 内部客户模式 -->
+            <template v-if="authorType === 'customer'">
+              <div class="customer-field">
+                <label class="customer-label">客户名称</label>
+                <div class="customer-input">
+                  <CustomerAutoComplete
+                    v-model="customerName"
+                    v-model:customer-type="customerType"
+                    placeholder="输入客户名称"
+                    @customer-selected="onCustomerSelected"
+                  />
+                </div>
+              </div>
+            </template>
+            
+            <!-- 外部用户模式 -->
+            <template v-else>
+              <div class="external-user-field">
+                <label class="field-label">来源平台</label>
+                <div class="field-input">
+                  <a-select v-model:value="sourcePlatform" style="width: 100%">
+                    <a-select-option value="wechat">微信</a-select-option>
+                    <a-select-option value="xiaohongshu">小红书</a-select-option>
+                    <a-select-option value="appstore">App Store</a-select-option>
+                    <a-select-option value="weibo">微博</a-select-option>
+                    <a-select-option value="other">其他</a-select-option>
+                  </a-select>
+                </div>
+              </div>
+              <div class="external-user-field">
+                <label class="field-label required">用户名称</label>
+                <div class="field-input">
+                  <a-input v-model:value="externalUserName" placeholder="外部用户名称（用于回访）" />
+                </div>
+              </div>
+              <div class="external-user-field">
+                <label class="field-label">联系方式</label>
+                <div class="field-input">
+                  <a-input v-model:value="externalContact" placeholder="邮箱/手机（可选）" />
+                </div>
+              </div>
+            </template>
             
             <!-- 底部表单：紧急标记等 -->
             <BottomForm />
@@ -408,5 +490,38 @@ defineExpose({
   display: inline-block;
   line-height: 1.5;
   color: hsl(var(--foreground));
+}
+
+/* 来源类型字段 */
+.author-type-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* 外部用户字段 */
+.external-user-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.field-label {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.field-label.required::before {
+  content: '* ';
+  color: #ff4d4f;
+}
+
+.field-input {
+  flex: 1;
 }
 </style>
