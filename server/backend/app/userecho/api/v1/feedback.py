@@ -553,9 +553,9 @@ async def create_feedback_from_screenshot(
     try:
         # 1. 根据 author_type 处理不同来源模式
         customer_id = None
-        is_anonymous = False
-        anonymous_author = None
-        anonymous_source = None
+        author_type_val = 'customer'
+        external_user_name = None
+        external_contact = None
 
         if data.author_type == 'customer':
             # 内部客户模式：关联或创建客户
@@ -580,18 +580,18 @@ async def create_feedback_from_screenshot(
                 customer_id = customer.id
         else:
             # 外部用户模式：存储外部用户信息
-            is_anonymous = True
-            anonymous_author = data.external_user_name or '未知用户'
-            anonymous_source = data.source_platform
+            author_type_val = 'external'
+            external_user_name = data.external_user_name or '未知用户'
+            external_contact = data.external_contact
 
         # 2. 创建反馈记录
         feedback = Feedback(
             tenant_id=tenant_id,
             board_id=data.board_id,
             customer_id=customer_id,
-            is_anonymous=is_anonymous,
-            anonymous_author=anonymous_author,
-            anonymous_source=anonymous_source,
+            author_type=author_type_val,
+            external_user_name=external_user_name,
+            external_contact=external_contact,
             content=data.content,
             source='screenshot',
             screenshot_url=data.screenshot_url,

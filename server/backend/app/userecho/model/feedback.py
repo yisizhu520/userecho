@@ -30,11 +30,15 @@ class Feedback(MappedBase):
         Numeric(10, 2), default=None, comment='客户月收入（冗余字段，便于聚合）'
     )
     customer_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='客户类型（冗余字段）')
-    # 匿名反馈（支持更完整的匿名信息）
-    is_anonymous: Mapped[bool] = mapped_column(default=False, comment='是否匿名反馈')
-    anonymous_author: Mapped[str | None] = mapped_column(String(100), default=None, comment='匿名作者名称')
-    anonymous_email: Mapped[str | None] = mapped_column(String(255), default=None, comment='匿名作者邮箱')
-    anonymous_source: Mapped[str | None] = mapped_column(String(50), default=None, comment='匿名来源平台')
+    
+    # 来源类型枚举（替代 is_anonymous）
+    author_type: Mapped[str] = mapped_column(
+        String(20), default='customer', index=True, comment='来源类型: customer=内部客户, external=外部用户'
+    )
+    # 外部用户信息（替代 anonymous_* 字段）
+    external_user_name: Mapped[str | None] = mapped_column(String(100), default=None, comment='外部用户名称')
+    external_contact: Mapped[str | None] = mapped_column(String(255), default=None, comment='外部用户联系方式')
+    
     topic_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey('topics.id', ondelete='SET NULL'), index=True, comment='关联主题ID'
     )
@@ -99,5 +103,8 @@ class Feedback(MappedBase):
     )
 
     __table_args__ = (
-        CheckConstraint('customer_id IS NOT NULL OR anonymous_author IS NOT NULL', name='chk_author_exists'),
+        CheckConstraint(
+            "(author_type = 'customer' AND customer_id IS NOT NULL) OR (author_type = 'external' AND external_user_name IS NOT NULL)",
+            name='chk_author_info'
+        ),
     )

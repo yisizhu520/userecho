@@ -267,9 +267,9 @@ class ImportService:
                     # 处理来源（根据 author_type 决定）
                     has_customer_column = '客户名称' in df.columns
                     customer_id = None
-                    is_anonymous = False
-                    anonymous_author = None
-                    anonymous_source = None
+                    author_type_val = 'customer'
+                    external_user_name = None
+                    external_contact = None
                     source_platform = None
                     source_user_name = None
 
@@ -299,9 +299,9 @@ class ImportService:
                             continue
                     else:
                         # 外部用户模式
-                        is_anonymous = True
-                        anonymous_author = default_external_user_name or '未知用户'
-                        anonymous_source = default_source_platform or 'other'
+                        author_type_val = 'external'
+                        external_user_name = default_external_user_name or '未知用户'
+                        external_contact = None
                         source_platform = default_source_platform or 'other'
                         source_user_name = default_external_user_name
 
@@ -347,10 +347,10 @@ class ImportService:
                         is_urgent=is_urgent,
                         ai_summary=ai_summary,
                         submitted_at=submitted_at,
-                        # 外部用户模式字段
-                        is_anonymous=is_anonymous,
-                        anonymous_author=anonymous_author,
-                        anonymous_source=anonymous_source,
+                        # 来源类型和外部用户字段
+                        author_type=author_type_val,
+                        external_user_name=external_user_name,
+                        external_contact=external_contact,
                         source_platform=source_platform,
                         source_user_name=source_user_name,
                     )

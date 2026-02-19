@@ -29,7 +29,7 @@ export const useBoardStore = defineStore('board', () => {
         try {
             loading.value = true;
             const response = await getBoardList();
-            boards.value = response.boards || [];
+            boards.value = response || [];
             lastRefreshTime.value = Date.now();
         } catch (error) {
             console.error('Failed to refresh boards:', error);

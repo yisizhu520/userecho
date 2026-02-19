@@ -49,9 +49,9 @@ class FeedbackService:
 
             # 2. 根据 author_type 处理不同来源模式
             customer_id = None
-            is_anonymous = False
-            anonymous_author = None
-            anonymous_source = None
+            author_type = 'customer'
+            external_user_name = None
+            external_contact = None
             source_platform = None
             source_user_name = None
 
@@ -77,9 +77,9 @@ class FeedbackService:
                     customer_id = customer.id
             else:
                 # 外部用户模式：存储外部用户信息，不入客户表
-                is_anonymous = True
-                anonymous_author = data.external_user_name
-                anonymous_source = data.source_platform
+                author_type = 'external'
+                external_user_name = data.external_user_name
+                external_contact = data.external_contact
                 source_platform = data.source_platform
                 source_user_name = data.external_user_name
 
@@ -116,10 +116,10 @@ class FeedbackService:
                 images_metadata=images_metadata,
                 clustering_status=clustering_status,
                 submitter_id=submitter_id,
-                # 外部用户模式字段
-                is_anonymous=is_anonymous,
-                anonymous_author=anonymous_author,
-                anonymous_source=anonymous_source,
+                # 来源类型和外部用户字段
+                author_type=author_type,
+                external_user_name=external_user_name,
+                external_contact=external_contact,
                 source_platform=source_platform,
                 source_user_name=source_user_name,
             )

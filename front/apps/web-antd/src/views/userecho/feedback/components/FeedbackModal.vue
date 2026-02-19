@@ -224,17 +224,31 @@ const handleSubmit = async (continueCreating: boolean) => {
       boardStore.forceRefresh();
       
       if (continueCreating) {
+        // 保存当前选择的看板和来源类型
+        const savedBoardId = data.board_id;
+        const savedAuthorType = authorType.value;
+        const savedSourcePlatform = sourcePlatform.value;
+        
         // 重置表单但保持弹窗打开
         topFormApi.resetForm();
         bottomFormApi.resetForm();
         selectedTopicId.value = '';
         screenshotUploadRef.value?.reset();
         currentTitle.value = '';
-        authorType.value = 'customer';
+        
+        // 恢复看板选择
+        topFormApi.setValues({ board_id: savedBoardId });
+        
+        // 恢复来源类型
+        authorType.value = savedAuthorType;
+        if (savedAuthorType === 'external') {
+          sourcePlatform.value = savedSourcePlatform;
+        }
+        
+        // 重置来源信息的具体内容
         customerName.value = '';
         customerType.value = 'normal';
         selectedCustomer.value = null;
-        sourcePlatform.value = 'wechat';
         externalUserName.value = '';
         externalContact.value = '';
       } else {
