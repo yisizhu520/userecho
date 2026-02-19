@@ -152,7 +152,7 @@ export function useColumns(
       title: $t('common.table.operation'),
       align: 'center',
       fixed: 'right',
-      width: 150,
+      width: 100,
       cellRender: {
         attrs: {
           nameField: 'content',
@@ -160,9 +160,15 @@ export function useColumns(
         },
         name: 'CellOperation',
         options: [
-          'edit',
+          {
+            code: 'edit',
+            icon: 'lucide:edit',
+            text: '',
+          },
           {
             code: 'delete',
+            icon: 'lucide:trash-2',
+            text: '',
             popconfirm: {
               title: '确认删除此反馈？',
             },

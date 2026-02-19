@@ -51,14 +51,14 @@
         "import": "导入反馈"
       },
       "topic": {
-        "list": "需求库",
-        "detail": "主题详情"
+        "list": "需求池",
+        "detail": "议题详情"
       },
       "customer": {
         "title": "客户管理"
       },
       "discovery": {
-        "title": "待决策中心"
+        "title": "待审议题"
       },
       "settings": {
         "title": "设置",

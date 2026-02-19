@@ -63,31 +63,63 @@ function confidenceOf(t: Topic) {
 
 function qualityLabel(t: Topic) {
   const c = confidenceOf(t);
-  if (t.is_noise) return '噪声/低质量';
-  if (c >= 0.8) return '高置信';
-  if (c >= 0.6) return '中等';
+  if (t.is_noise) return '噪声';
+  if (c >= 0.8) return '可放心采纳';
+  if (c >= 0.6) return '中等可信';
   return '待验证';
 }
 
 function qualityColor(t: Topic) {
   const c = confidenceOf(t);
   if (t.is_noise) return 'default';
-  if (c >= 0.8) return 'green';
-  if (c >= 0.6) return 'blue';
-  return 'orange';
+  if (c >= 0.8) return 'success';
+  if (c >= 0.6) return 'processing';
+  return 'warning';
+}
+
+/** AI 识别可信度图标 */
+function qualityIcon(t: Topic) {
+  const c = confidenceOf(t);
+  if (t.is_noise) return 'lucide--ban';
+  if (c >= 0.8) return 'lucide--shield-check';
+  if (c >= 0.6) return 'lucide--circle-check';
+  return 'lucide--circle-help';
+}
+
+/** 状态中文化 */
+function statusLabel(status: string) {
+  const map: Record<string, string> = {
+    pending: '待审核',
+    ignored: '已忽略',
+    planned: '已采纳',
+    done: '已完成',
+    completed: '已完成',
+  };
+  return map[status] || status;
+}
+
+/** 状态图标 */
+function statusIcon(status: string) {
+  const map: Record<string, string> = {
+    pending: 'lucide--clock',
+    ignored: 'lucide--eye-off',
+    planned: 'lucide--check-circle',
+    done: 'lucide--circle-check-big',
+    completed: 'lucide--circle-check-big',
+  };
+  return map[status] || 'lucide--circle';
 }
 
 async function confirmTopic(t: Topic) {
   Modal.confirm({
-    title: '确认主题',
-    content: `确认将「${t.title}」加入计划？`,
-    okText: '确认',
+    title: '采纳议题',
+    content: `确认采纳「${t.title}」作为正式议题？`,
+    okText: '确认采纳',
     cancelText: '取消',
     async onOk() {
       await updateTopicStatus(t.id, { status: 'planned', reason: 'AI发现中心确认' });
-      message.success('已加入计划');
+      message.success('已采纳为正式议题');
       await refresh();
-      // 更新 badge 数量
       await topicStore.refreshPendingCount();
     },
   });
@@ -95,16 +127,15 @@ async function confirmTopic(t: Topic) {
 
 async function ignoreTopic(t: Topic) {
   Modal.confirm({
-    title: '忽略主题',
-    content: `忽略「${t.title}」？（仍可在主题列表中查看）`,
-    okText: '忽略',
+    title: '忽略议题',
+    content: `确定忽略「${t.title}」吗？此议题不会删除，仍可在归档中查看。`,
+    okText: '确定忽略',
     okType: 'danger',
     cancelText: '取消',
     async onOk() {
       await updateTopicStatus(t.id, { status: 'ignored', reason: 'AI发现中心忽略' });
       message.success('已忽略');
       await refresh();
-      // 更新 badge 数量
       await topicStore.refreshPendingCount();
     },
   });
@@ -117,52 +148,61 @@ onMounted(() => {
 
 <template>
   <div class="discovery-page">
-    <div class="header">
-      <div class="title">
-        <div class="kicker">AI 发现中心</div>
-        <div class="headline">把噪声挡在门外，把价值推到你面前</div>
+    <!-- 紧凑 Header：标题 + 统计 + 操作按钮同行 -->
+    <div class="compact-header">
+      <div class="header-left">
+        <div class="title-section">
+          <span class="kicker">AI 发现中心</span>
+          <h1 class="headline">把噪声挡在门外，把价值推到你面前</h1>
+        </div>
+        <div class="stats-inline">
+          <div class="stat-chip pending">
+            <span class="stat-icon iconify lucide--clock" />
+            <span class="stat-num">{{ stats.pending }}</span>
+            <span class="stat-text">待确认</span>
+          </div>
+          <div class="stat-chip ignored">
+            <span class="stat-icon iconify lucide--eye-off" />
+            <span class="stat-num">{{ stats.ignored }}</span>
+            <span class="stat-text">已忽略</span>
+          </div>
+          <div class="stat-chip total">
+            <span class="stat-icon iconify lucide--sparkles" />
+            <span class="stat-num">{{ stats.all }}</span>
+            <span class="stat-text">AI 识别总数</span>
+          </div>
+          <div class="stat-chip feedback">
+            <span class="stat-icon iconify lucide--message-square" />
+            <span class="stat-num">{{ stats.totalFeedback }}</span>
+            <span class="stat-text">条相关反馈</span>
+          </div>
+        </div>
       </div>
-
-      <div class="actions">
-        <VbenButton variant="outline" @click="refresh" :loading="loading">
+      <div class="header-actions">
+        <VbenButton variant="outline" size="sm" @click="refresh" :loading="loading">
           <span class="iconify lucide--refresh-cw" />
           刷新
         </VbenButton>
-        <VbenButton type="primary" @click="() => router.push('/app/topic/list')">
+        <VbenButton size="sm" @click="() => router.push('/app/topic/list')">
           <span class="iconify lucide--lightbulb" />
           进入主题列表
         </VbenButton>
       </div>
     </div>
 
-    <a-card class="hero" :bordered="false">
-      <div class="hero-inner">
-        <div class="stat">
-          <div class="stat-label">待确认主题</div>
-          <div class="stat-value">{{ stats.pending }}</div>
-          <div class="stat-hint">覆盖反馈 {{ stats.totalFeedback }} 条</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">已忽略</div>
-          <div class="stat-value">{{ stats.ignored }}</div>
-          <div class="stat-hint">可随时回看</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">AI 生成总数</div>
-          <div class="stat-value">{{ stats.all }}</div>
-          <div class="stat-hint">仅展示 ai_generated=true</div>
-        </div>
-      </div>
-    </a-card>
-
+    <!-- 列表面板 -->
     <a-card :bordered="false" class="panel">
       <div class="toolbar">
         <a-input
           v-model:value="query"
           allowClear
-          placeholder="搜索主题标题…"
-          style="max-width: 360px"
-        />
+          placeholder="搜索议题标题…"
+          style="max-width: 280px"
+        >
+          <template #prefix>
+            <span class="iconify lucide--search" style="opacity: 0.4" />
+          </template>
+        </a-input>
 
         <a-segmented
           v-model:value="view"
@@ -175,7 +215,7 @@ onMounted(() => {
 
         <a-space>
           <span class="muted">显示噪声</span>
-          <a-switch v-model:checked="showNoise" />
+          <a-switch v-model:checked="showNoise" size="small" />
         </a-space>
       </div>
 
@@ -183,41 +223,54 @@ onMounted(() => {
         :loading="loading"
         :data-source="filteredTopics"
         item-layout="horizontal"
-        class="list"
+        class="topic-list"
+        :locale="{ emptyText: '暂无待审议题，继续收集反馈吧 🎉' }"
       >
         <template #renderItem="{ item }">
-          <a-list-item class="row">
-            <template #actions>
-              <a-space>
-                <a-button type="link" @click="router.push(`/app/topic/detail/${item.id}`)">查看</a-button>
-                <a-button v-if="item.status === 'pending'" type="primary" @click="confirmTopic(item)">确认</a-button>
-                <a-button v-if="item.status === 'pending'" danger @click="ignoreTopic(item)">忽略</a-button>
-              </a-space>
-            </template>
-
-            <a-list-item-meta>
-              <template #title>
-                <div class="row-title">
-                  <span class="name" @click="router.push(`/app/topic/detail/${item.id}`)">{{ item.title }}</span>
-                  <a-tag :color="qualityColor(item)" class="ml-2">{{ qualityLabel(item) }}</a-tag>
-                  <a-tag v-if="item.is_noise" color="default" class="ml-2">建议隐藏</a-tag>
-                </div>
-              </template>
-              <template #description>
-                <div class="row-desc">
-                  <span class="chip">
-                    <span class="iconify lucide--message-square" />
-                    {{ item.feedback_count }} 条反馈
-                  </span>
-                  <span class="chip">
-                    <span class="iconify lucide--sparkles" />
-                    置信度 {{ Math.round(confidenceOf(item) * 100) }}%
-                  </span>
-                  <span class="muted">状态：{{ item.status }}</span>
-                </div>
-              </template>
-            </a-list-item-meta>
-          </a-list-item>
+          <div class="topic-row">
+            <div class="topic-main" @click="router.push(`/app/topic/detail/${item.id}`)">
+              <div class="topic-title">
+                <span class="topic-name">{{ item.title }}</span>
+                <a-tag v-if="item.is_noise" size="small">建议隐藏</a-tag>
+              </div>
+              <div class="topic-meta">
+                <span class="meta-item">
+                  <span class="iconify lucide--message-square" />
+                  {{ item.feedback_count }} 条反馈
+                </span>
+                <span :class="['meta-item', 'status-tag', `status-${item.status}`]">
+                  <span :class="['iconify', statusIcon(item.status)]" />
+                  {{ statusLabel(item.status) }}
+                </span>
+              </div>
+            </div>
+            <div class="topic-actions">
+              <a-button type="text" size="small" @click.stop="router.push(`/app/topic/detail/${item.id}`)">
+                <span class="iconify lucide--eye" />
+                查看
+              </a-button>
+              <a-button 
+                v-if="item.status === 'pending'" 
+                type="primary" 
+                size="small"
+                ghost
+                @click.stop="confirmTopic(item)"
+              >
+                <span class="iconify lucide--check" />
+                采纳
+              </a-button>
+              <a-button 
+                v-if="item.status === 'pending'" 
+                danger 
+                size="small"
+                ghost
+                @click.stop="ignoreTopic(item)"
+              >
+                <span class="iconify lucide--x" />
+                忽略
+              </a-button>
+            </div>
+          </div>
         </template>
       </a-list>
     </a-card>
@@ -226,83 +279,110 @@ onMounted(() => {
 
 <style scoped>
 .discovery-page {
-  padding: 24px;
+  padding: 20px 24px;
 }
 
-.header {
+/* ===== 紧凑 Header ===== */
+.compact-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   margin-bottom: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(82, 196, 26, 0.06) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.title-section {
+  margin-bottom: 12px;
 }
 
 .kicker {
-  font-size: 12px;
-  letter-spacing: 0.18em;
+  font-size: 11px;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(0, 0, 0, 0.45);
+  font-weight: 500;
 }
 
 .headline {
-  font-size: 24px;
-  font-weight: 650;
-  line-height: 1.2;
-  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 4px 0 0;
+  color: rgba(0, 0, 0, 0.85);
 }
 
-.actions {
+/* 统计卡片横向紧凑 */
+.stats-inline {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.hero {
-  margin-bottom: 16px;
-  background: radial-gradient(1200px 600px at 15% 0%, rgba(24, 144, 255, 0.18), rgba(255, 255, 255, 0)),
-    radial-gradient(900px 520px at 85% 10%, rgba(82, 196, 26, 0.12), rgba(255, 255, 255, 0));
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.hero-inner {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stat {
-  padding: 14px 14px 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.stat-label {
-  color: rgba(0, 0, 0, 0.55);
   font-size: 13px;
+  transition: all 0.2s;
 }
 
-.stat-value {
-  font-size: 28px;
+.stat-chip:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.stat-num {
   font-weight: 700;
-  margin-top: 6px;
+  font-size: 15px;
 }
 
-.stat-hint {
-  margin-top: 6px;
-  color: rgba(0, 0, 0, 0.45);
+.stat-text {
+  color: rgba(0, 0, 0, 0.55);
   font-size: 12px;
 }
 
+/* 数值颜色语义化 */
+.stat-chip.pending .stat-num { color: #f59e0b; }
+.stat-chip.ignored .stat-num { color: #6b7280; }
+.stat-chip.total .stat-num { color: #10b981; }
+.stat-chip.feedback .stat-num { color: #3b82f6; }
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ===== 面板 ===== */
 .panel {
   border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
 }
 
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .muted {
@@ -310,39 +390,126 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.row {
-  padding: 10px 4px;
+/* ===== 议题列表 ===== */
+.topic-list :deep(.ant-list-item) {
+  padding: 0;
+  border-bottom: none;
 }
 
-.row-title {
+.topic-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
 }
 
-.name {
+.topic-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.topic-row:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.topic-main {
+  flex: 1;
+  min-width: 0;
   cursor: pointer;
-  font-weight: 650;
 }
 
-.row-desc {
+.topic-title {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 6px;
 }
 
-.chip {
+.topic-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.85);
+  transition: color 0.15s;
+}
+
+.topic-main:hover .topic-name {
+  color: #1890ff;
+}
+
+.topic-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  gap: 4px;
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.65);
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.meta-item .iconify {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* 状态标签 */
+.status-tag {
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.status-tag .iconify {
+  font-size: 13px;
+  opacity: 1;
+}
+
+.status-pending {
+  color: #fa8c16;
+  background: rgba(250, 140, 22, 0.1);
+}
+
+.status-ignored {
+  color: #8c8c8c;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.status-planned {
+  color: #52c41a;
+  background: rgba(82, 196, 26, 0.1);
+}
+
+.status-done {
+  color: #1890ff;
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.status-completed {
+  color: #1890ff;
+  background: rgba(24, 144, 255, 0.1);
+}
+
+/* 操作按钮 */
+.topic-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.topic-actions .ant-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topic-actions .iconify {
+  font-size: 14px;
 }
 </style>

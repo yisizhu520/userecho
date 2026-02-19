@@ -88,6 +88,38 @@ class CustomerService:
         """
         return await crud_customer.get_multi(db=db, tenant_id=tenant_id, skip=skip, limit=limit)
 
+    async def get_list_with_total(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        skip: int = 0,
+        limit: int = 20,
+        search: str | None = None,
+        customer_type: str | None = None,
+    ) -> tuple[list, int]:
+        """
+        获取客户列表（带总数，支持搜索筛选）
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            skip: 跳过数量
+            limit: 返回数量
+            search: 搜索关键词
+            customer_type: 客户类型筛选
+
+        Returns:
+            (客户列表, 总数)
+        """
+        return await crud_customer.get_multi_with_total(
+            db=db,
+            tenant_id=tenant_id,
+            skip=skip,
+            limit=limit,
+            search=search,
+            customer_type=customer_type,
+        )
+
     async def delete_customer(
         self,
         db: AsyncSession,

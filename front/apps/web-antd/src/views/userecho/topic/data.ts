@@ -15,9 +15,9 @@ export const querySchema: VbenFormSchema[] = [
   {
     component: 'Input',
     fieldName: 'search_query',
-    label: '主题搜索',
+    label: '议题搜索',
     componentProps: {
-      placeholder: '搜索主题标题或描述（按 Enter 搜索）',
+      placeholder: '搜索议题标题或描述（按 Enter 搜索）',
       allowClear: true,
     },
   },
@@ -45,7 +45,7 @@ export const querySchema: VbenFormSchema[] = [
   {
     component: 'Select',
     fieldName: 'status',
-    label: '主题状态',
+    label: '议题状态',
     componentProps: {
       allowClear: true,
       options: TOPIC_STATUSES,
@@ -55,7 +55,7 @@ export const querySchema: VbenFormSchema[] = [
   {
     component: 'Select',
     fieldName: 'category',
-    label: '主题分类',
+    label: '议题分类',
     componentProps: {
       allowClear: true,
       options: TOPIC_CATEGORIES,
@@ -84,7 +84,7 @@ export function useColumns(
     },
     {
       field: 'title',
-      title: '主题标题',
+      title: '议题标题',
       minWidth: 250,
       showOverflow: 'tooltip',
       slots: { default: 'title' },
@@ -133,7 +133,7 @@ export function useColumns(
       title: $t('common.table.operation'),
       align: 'center',
       fixed: 'right',
-      width: 180,
+      width: 120,
       cellRender: {
         attrs: {
           nameField: 'title',
@@ -143,14 +143,20 @@ export function useColumns(
         options: [
           {
             code: 'detail',
-            text: '详情',
             icon: 'lucide:eye',
+            text: '',
           },
-          'edit',
+          {
+            code: 'edit',
+            icon: 'lucide:edit',
+            text: '',
+          },
           {
             code: 'delete',
+            icon: 'lucide:trash-2',
+            text: '',
             popconfirm: {
-              title: '确认删除此主题？',
+              title: '确认删除此议题？',
             },
           },
         ],
@@ -159,7 +165,7 @@ export function useColumns(
   ];
 }
 
-/** 新建/编辑主题表单 */
+/** 新建/编辑议题表单 */
 export const topicFormSchema: VbenFormSchema[] = [
   {
     component: 'Select',
@@ -176,11 +182,11 @@ export const topicFormSchema: VbenFormSchema[] = [
   {
     component: 'Input',
     fieldName: 'title',
-    label: '主题标题',
-    rules: z.string().min(1, '请输入主题标题').max(100, '标题长度不能超过100字'),
+    label: '议题标题',
+    rules: z.string().min(1, '请输入议题标题').max(100, '标题长度不能超过100字'),
     formItemClass: 'col-span-12',
     componentProps: {
-      placeholder: '输入需求主题标题，建议15字以内',
+      placeholder: '输入需求议题标题，建议15字以内',
       maxlength: 100,
       showCount: true,
       style: { width: '100%' },
@@ -189,11 +195,11 @@ export const topicFormSchema: VbenFormSchema[] = [
   {
     component: 'Textarea',
     fieldName: 'description',
-    label: '主题描述',
+    label: '议题描述',
     formItemClass: 'col-span-12',
     componentProps: {
       rows: 4,
-      placeholder: '详细描述此需求主题...',
+      placeholder: '详细描述此需求议题...',
       maxlength: 500,
       showCount: true,
       style: { width: '100%' },
@@ -202,7 +208,7 @@ export const topicFormSchema: VbenFormSchema[] = [
   {
     component: 'Select',
     fieldName: 'category',
-    label: '主题分类',
+    label: '议题分类',
     rules: 'selectRequired',
     formItemClass: 'col-span-6',
     componentProps: {
@@ -215,7 +221,7 @@ export const topicFormSchema: VbenFormSchema[] = [
   {
     component: 'Select',
     fieldName: 'status',
-    label: '主题状态',
+    label: '议题状态',
     formItemClass: 'col-span-6',
     componentProps: {
       options: TOPIC_STATUSES,

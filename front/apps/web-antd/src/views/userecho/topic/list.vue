@@ -272,7 +272,7 @@ const [EditForm, editFormApi] = useVbenForm({
 const editTopicId = ref<string>('');
 
 const [editModal, editModalApi] = useVbenModal({
-  title: '编辑主题',
+  title: '编辑议题',
   destroyOnClose: true,
   async onConfirm() {
     const { valid } = await editFormApi.validate();
@@ -316,7 +316,7 @@ const [AddForm, addFormApi] = useVbenForm({
 });
 
 const [addModal, addModalApi] = useVbenModal({
-  title: '新建主题',
+  title: '新建议题',
   destroyOnClose: true,
   async onConfirm() {
     const { valid } = await addFormApi.validate();
@@ -422,7 +422,7 @@ onBeforeUnmount(() => {
             
             <VbenButton @click="() => addModalApi.open()">
               <MaterialSymbolsAdd class="size-5" />
-              手动创建主题
+              手动创建议题
             </VbenButton>
           <VbenButton variant="outline" @click="() => router.push('/app/feedback/list')">
             <span class="iconify lucide--inbox" />
@@ -430,7 +430,7 @@ onBeforeUnmount(() => {
           </VbenButton>
           </template>
 
-          <!-- 主题标题（带 AI 标识） -->
+          <!-- 议题标题（带 AI 标识） -->
           <template #title="{ row }">
             <div class="topic-title">
               <span>{{ row.title }}</span>

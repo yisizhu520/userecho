@@ -17,13 +17,29 @@ async def get_customers(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 20,
+    search: str | None = None,
+    customer_type: str | None = None,
 ):
-    """获取客户列表"""
-    customers = await customer_service.get_list(db=db, tenant_id=tenant_id, skip=skip, limit=limit)
+    """
+    获取客户列表（支持搜索和筛选）
+
+    - **skip**: 跳过数量（分页用）
+    - **limit**: 返回数量上限
+    - **search**: 搜索关键词（模糊匹配客户名称）
+    - **customer_type**: 客户类型筛选 (normal/paid/major/strategic)
+    """
+    customers, total = await customer_service.get_list_with_total(
+        db=db,
+        tenant_id=tenant_id,
+        skip=skip,
+        limit=limit,
+        search=search,
+        customer_type=customer_type,
+    )
     # 转换为 Pydantic schema
     customers_out = [CustomerOut.model_validate(c) for c in customers]
-    return response_base.success(data=customers_out)
+    return response_base.success(data={'items': customers_out, 'total': total})
 
 
 @router.get('/search', summary='搜索客户')
@@ -58,7 +74,7 @@ async def create_customer(
     - **business_value**: 商业价值权重 (1-10)
     """
     customer = await customer_service.create_customer(db=db, tenant_id=tenant_id, data=data)
-    return response_base.success(data=customer)
+    return response_base.success(data=CustomerOut.model_validate(customer))
 
 
 @router.put('/{customer_id}', summary='更新客户')
@@ -72,7 +88,7 @@ async def update_customer(
     customer = await customer_service.update_customer(db=db, tenant_id=tenant_id, customer_id=customer_id, data=data)
     if not customer:
         return response_base.fail(res=CustomResponse(code=400, msg='客户不存在'))
-    return response_base.success(data=customer)
+    return response_base.success(data=CustomerOut.model_validate(customer))
 
 
 @router.delete('/{customer_id}', summary='删除客户')

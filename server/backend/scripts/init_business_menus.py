@@ -97,7 +97,7 @@ async def init_business_menus() -> None:
                 'display': 0,  # 隐藏菜单
             },
             {
-                'title': '待决策中心',
+                'title': '待审议题',
                 'name': 'AIDiscovery',
                 'path': '/app/ai/discovery',
                 'component': '/userecho/discovery/index',
@@ -106,7 +106,7 @@ async def init_business_menus() -> None:
                 'sort': 104,
             },
             {
-                'title': '需求主题',
+                'title': '需求池',
                 'name': 'TopicList',
                 'path': '/app/topic/list',
                 'component': '/userecho/topic/list',
@@ -115,7 +115,7 @@ async def init_business_menus() -> None:
                 'sort': 105,
             },
             {
-                'title': '主题详情',
+                'title': '议题详情',
                 'name': 'TopicDetail',
                 'path': '/app/topic/detail/:id',
                 'component': '/userecho/topic/detail',
@@ -250,14 +250,14 @@ async def init_business_menus() -> None:
         print('\n📝 创建的资源：')
         print(
             '   - 9 个顶级菜单（工作台、反馈列表、截图识别[隐藏]、导入反馈[隐藏]、'
-            '待决策中心、需求主题、主题详情[隐藏]、客户管理、洞察报告）'
+            '待审议题、需求池、议题详情[隐藏]、客户管理、洞察报告）'
         )
         print('   - 4 个业务角色（PM、CS、开发、老板）')
         print('\n💡 菜单结构（扁平化展示）：')
         print('   📊 工作台')
         print('   📋 反馈列表')
-        print('   ✨ 待决策中心')
-        print('   💡 需求主题')
+        print('   ✨ 待审议题')
+        print('   💡 需求池')
         print('   👥 客户管理')
         print('   📊 洞察报告')
         print('\n💡 设置功能已移至导航栏右侧偏好设置区域')

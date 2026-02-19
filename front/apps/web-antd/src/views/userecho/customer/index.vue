@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type {
-  OnActionClickParams,
   VxeTableGridOptions,
 } from '#/adapter/vxe-table';
 import type {
@@ -9,13 +8,17 @@ import type {
   UpdateCustomerParams,
 } from '#/api';
 
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { MaterialSymbolsAdd } from '@vben/icons';
 import { $t } from '@vben/locales';
 
-import { message } from 'ant-design-vue';
+import { message, Input, Select, Space, Tooltip, Drawer, Descriptions } from 'ant-design-vue';
+import { SearchOutlined } from '@ant-design/icons-vue';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -26,7 +29,44 @@ import {
   updateCustomer,
   deleteCustomer,
   CUSTOMER_TYPES,
+  BUSINESS_VALUE_LEVELS,
 } from '#/api';
+
+// 配置 dayjs 相对时间
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
+
+// 搜索筛选状态
+const searchValue = ref('');
+const filterType = ref<string | undefined>(undefined);
+
+// 客户详情抽屉
+const detailDrawerVisible = ref(false);
+const selectedCustomer = ref<Customer | null>(null);
+
+/**
+ * 获取客户类型配置
+ */
+function getCustomerTypeConfig(type: string) {
+  return CUSTOMER_TYPES.find((t) => t.value === type) || CUSTOMER_TYPES[0]!;
+}
+
+/**
+ * 获取商业价值等级配置
+ */
+function getBusinessValueLevel(value: number) {
+  return BUSINESS_VALUE_LEVELS.find(
+    (level) => value >= level.min && value <= level.max
+  ) || BUSINESS_VALUE_LEVELS[0]!;
+}
+
+/**
+ * 格式化相对时间
+ */
+function formatRelativeTime(time: string | null | undefined) {
+  if (!time) return '-';
+  return dayjs(time).fromNow();
+}
 
 /**
  * 表格配置
@@ -34,9 +74,6 @@ import {
 const gridOptions: VxeTableGridOptions<Customer> = {
   rowConfig: {
     keyField: 'id',
-  },
-  checkboxConfig: {
-    highlight: true,
   },
   height: 'auto',
   exportConfig: {},
@@ -51,6 +88,11 @@ const gridOptions: VxeTableGridOptions<Customer> = {
     custom: true,
     zoom: true,
   },
+  pagerConfig: {
+    enabled: true,
+    pageSize: 20,
+    pageSizes: [10, 20, 50, 100],
+  },
   columns: [
     {
       field: 'seq',
@@ -64,6 +106,7 @@ const gridOptions: VxeTableGridOptions<Customer> = {
       title: '客户名称',
       minWidth: 200,
       fixed: 'left',
+      slots: { default: 'name' },
     },
     {
       field: 'customer_type',
@@ -74,28 +117,30 @@ const gridOptions: VxeTableGridOptions<Customer> = {
     {
       field: 'business_value',
       title: '商业价值',
-      width: 120,
+      width: 100,
       sortable: true,
       slots: { default: 'business_value' },
     },
     {
       field: 'created_time',
       title: '创建时间',
-      width: 168,
+      width: 120,
       sortable: true,
+      slots: { default: 'created_time' },
     },
     {
       field: 'updated_time',
       title: '更新时间',
-      width: 168,
+      width: 120,
       sortable: true,
+      slots: { default: 'updated_time' },
     },
     {
       field: 'operation',
       title: $t('common.table.operation'),
       align: 'center',
       fixed: 'right',
-      width: 120,
+      width: 100,
       cellRender: {
         attrs: {
           nameField: 'name',
@@ -103,9 +148,15 @@ const gridOptions: VxeTableGridOptions<Customer> = {
         },
         name: 'CellOperation',
         options: [
-          'edit',
+          {
+            code: 'edit',
+            icon: 'lucide:edit',
+            text: '',
+          },
           {
             code: 'delete',
+            icon: 'lucide:trash-2',
+            text: '',
             popconfirm: {
               title: '确认删除此客户？删除后关联的反馈将变为匿名',
             },
@@ -120,11 +171,12 @@ const gridOptions: VxeTableGridOptions<Customer> = {
         const data = await getCustomerList({
           skip: (page.currentPage - 1) * page.pageSize,
           limit: page.pageSize,
+          search: searchValue.value || undefined,
+          customer_type: filterType.value || undefined,
         });
-        // vxe-table 期望的返回格式（根据全局 response 配置）
         return {
-          items: data,           // 数据数组
-          total: data.length,    // 当前查询到的记录数
+          items: data.items,
+          total: data.total,
         };
       },
     },
@@ -138,9 +190,30 @@ function onRefresh() {
 }
 
 /**
+ * 搜索和筛选处理
+ */
+function onSearch() {
+  gridApi.query();
+}
+
+function onReset() {
+  searchValue.value = '';
+  filterType.value = undefined;
+  gridApi.query();
+}
+
+/**
+ * 显示客户详情
+ */
+function showCustomerDetail(customer: Customer) {
+  selectedCustomer.value = customer;
+  detailDrawerVisible.value = true;
+}
+
+/**
  * 操作按钮点击事件
  */
-function onActionClick({ code, row }: OnActionClickParams<Customer>) {
+function onActionClick({ code, row }: { code: string; row: Customer }) {
   switch (code) {
     case 'edit': {
       editCustomerId.value = row.id;
@@ -281,44 +354,140 @@ const [addModal, addModalApi] = useVbenModal({
   },
 });
 
-/**
- * 获取客户类型配置
- */
-function getCustomerTypeConfig(type: string) {
-  return CUSTOMER_TYPES.find((t) => t.value === type) || CUSTOMER_TYPES[0]!;
-}
+// 客户类型选项（用于筛选下拉框）
+const typeOptions = computed(() => [
+  { value: '', label: '全部类型' },
+  ...CUSTOMER_TYPES.map((t) => ({ value: t.value, label: t.label })),
+]);
 </script>
 
 <template>
-  <div>
+  <div class="customer-page">
     <Grid>
       <template #toolbar-actions>
-        <VbenButton @click="() => addModalApi.open()">
-          <MaterialSymbolsAdd class="size-5" />
-          新建客户
-        </VbenButton>
+        <Space :size="12">
+          <VbenButton @click="() => addModalApi.open()">
+            <MaterialSymbolsAdd class="size-5" />
+            新建客户
+          </VbenButton>
+          
+          <!-- 搜索筛选区域 -->
+          <Input
+            v-model:value="searchValue"
+            placeholder="搜索客户名称"
+            style="width: 200px"
+            allow-clear
+            @press-enter="onSearch"
+          >
+            <template #prefix>
+              <SearchOutlined class="text-gray-400" />
+            </template>
+          </Input>
+          
+          <Select
+            v-model:value="filterType"
+            :options="typeOptions"
+            placeholder="客户类型"
+            style="width: 140px"
+            allow-clear
+            @change="onSearch"
+          />
+          
+          <VbenButton variant="outline" @click="onReset">
+            重置
+          </VbenButton>
+        </Space>
+      </template>
+
+      <!-- 客户名称（可点击查看详情） -->
+      <template #name="{ row }">
+        <a 
+          class="customer-name-link"
+          @click="showCustomerDetail(row)"
+        >
+          {{ row.name }}
+        </a>
       </template>
 
       <!-- 客户类型 -->
       <template #customer_type="{ row }">
         <a-tag 
-          :color="getCustomerTypeConfig(row.customer_type).business_value >= 5 ? 'gold' : 'blue'"
+          :color="getCustomerTypeConfig(row.customer_type).color"
+          :style="{ borderColor: getCustomerTypeConfig(row.customer_type).color }"
         >
           {{ getCustomerTypeConfig(row.customer_type).label }}
         </a-tag>
       </template>
 
-      <!-- 商业价值 -->
+      <!-- 商业价值（语义标签） -->
       <template #business_value="{ row }">
-        <a-rate 
-          :value="row.business_value" 
-          :count="10" 
-          disabled 
-          style="font-size: 14px"
-        />
-        <span class="ml-2">{{ row.business_value }}</span>
+        <Tooltip :title="`商业价值分: ${row.business_value}/10`">
+          <span 
+            class="business-value-tag"
+            :style="{
+              color: getBusinessValueLevel(row.business_value).color,
+              backgroundColor: getBusinessValueLevel(row.business_value).bgColor,
+            }"
+          >
+            {{ getBusinessValueLevel(row.business_value).label }}
+          </span>
+        </Tooltip>
       </template>
+
+      <!-- 创建时间（相对时间） -->
+      <template #created_time="{ row }">
+        <Tooltip :title="row.created_time">
+          <span class="text-gray-500">{{ formatRelativeTime(row.created_time) }}</span>
+        </Tooltip>
+      </template>
+
+      <!-- 更新时间（相对时间） -->
+      <template #updated_time="{ row }">
+        <Tooltip :title="row.updated_time">
+          <span class="text-gray-500">{{ formatRelativeTime(row.updated_time) }}</span>
+        </Tooltip>
+      </template>
+
+
     </Grid>
+
+    <!-- 客户详情抽屉 -->
+    <Drawer
+      v-model:open="detailDrawerVisible"
+      title="客户详情"
+      :width="400"
+    >
+      <template v-if="selectedCustomer">
+        <Descriptions :column="1" bordered size="small">
+          <a-descriptions-item label="客户名称">
+            {{ selectedCustomer.name }}
+          </a-descriptions-item>
+          <a-descriptions-item label="客户类型">
+            <a-tag :color="getCustomerTypeConfig(selectedCustomer.customer_type).color">
+              {{ getCustomerTypeConfig(selectedCustomer.customer_type).label }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="商业价值">
+            <span 
+              class="business-value-tag"
+              :style="{
+                color: getBusinessValueLevel(selectedCustomer.business_value).color,
+                backgroundColor: getBusinessValueLevel(selectedCustomer.business_value).bgColor,
+              }"
+            >
+              {{ getBusinessValueLevel(selectedCustomer.business_value).label }}
+            </span>
+            <span class="ml-2 text-gray-400">({{ selectedCustomer.business_value }}/10)</span>
+          </a-descriptions-item>
+          <a-descriptions-item label="创建时间">
+            {{ selectedCustomer.created_time || '-' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="更新时间">
+            {{ selectedCustomer.updated_time || '-' }}
+          </a-descriptions-item>
+        </Descriptions>
+      </template>
+    </Drawer>
 
     <!-- 编辑弹窗 -->
     <editModal>
@@ -333,5 +502,46 @@ function getCustomerTypeConfig(type: string) {
 </template>
 
 <style scoped>
-/* 自定义样式 */
+.customer-page {
+  height: 100%;
+}
+
+.customer-name-link {
+  color: var(--ant-color-primary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.customer-name-link:hover {
+  color: var(--ant-color-primary-hover);
+  text-decoration: underline;
+}
+
+.business-value-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-blue-500 {
+  color: #3b82f6;
+}
+
+.text-red-500 {
+  color: #ef4444;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
 </style>

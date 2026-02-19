@@ -34,13 +34,21 @@ export interface UpdateCustomerParams {
 export interface CustomerListParams {
   skip?: number;
   limit?: number;
+  search?: string;
+  customer_type?: string;
+}
+
+/** 客户列表响应 */
+export interface CustomerListResponse {
+  items: Customer[];
+  total: number;
 }
 
 /**
  * 获取客户列表
  */
 export async function getCustomerList(params: CustomerListParams) {
-  return requestClient.get<Customer[]>('/api/v1/app/customers', { params });
+  return requestClient.get<CustomerListResponse>('/api/v1/app/customers', { params });
 }
 
 /**
@@ -73,8 +81,17 @@ export async function deleteCustomer(id: string) {
 
 /** 客户类型选项 */
 export const CUSTOMER_TYPES = [
-  { value: 'normal', label: '普通客户', business_value: 1 },
-  { value: 'paid', label: '付费客户', business_value: 3 },
-  { value: 'major', label: '大客户', business_value: 5 },
-  { value: 'strategic', label: '战略客户', business_value: 10 },
+  { value: 'normal', label: '普通客户', business_value: 1, color: '#8c8c8c' },
+  { value: 'paid', label: '付费客户', business_value: 3, color: '#1677ff' },
+  { value: 'major', label: '大客户', business_value: 5, color: '#faad14' },
+  { value: 'strategic', label: '战略客户', business_value: 10, color: '#722ed1' },
 ];
+
+/** 商业价值等级配置 */
+export const BUSINESS_VALUE_LEVELS = [
+  { min: 1, max: 2, label: '低', color: '#8c8c8c', bgColor: 'rgba(140, 140, 140, 0.1)' },
+  { min: 3, max: 4, label: '中', color: '#1677ff', bgColor: 'rgba(22, 119, 255, 0.1)' },
+  { min: 5, max: 7, label: '高', color: '#faad14', bgColor: 'rgba(250, 173, 20, 0.1)' },
+  { min: 8, max: 10, label: '核心', color: '#722ed1', bgColor: 'rgba(114, 46, 209, 0.15)' },
+];
+
