@@ -29,6 +29,8 @@ class TopicBase(SchemaBase):
 class TopicCreate(TopicBase):
     """创建主题参数"""
 
+    board_id: str | None = Field(None, description='所属看板ID')
+
 
 class TopicUpdate(SchemaBase):
     """更新主题参数"""
@@ -37,6 +39,7 @@ class TopicUpdate(SchemaBase):
     category: str | None = Field(None, description='分类')
     status: str | None = Field(None, description='状态')
     description: str | None = Field(None, description='详细描述')
+    board_id: str | None = Field(None, description='所属看板ID')
 
 
 class TopicOut(TopicBase):
@@ -44,6 +47,7 @@ class TopicOut(TopicBase):
 
     id: str = Field(description='主题ID')
     tenant_id: str = Field(description='租户ID')
+    board_id: str | None = Field(None, description='所属看板ID')
     ai_generated: bool = Field(description='是否AI生成')
     ai_confidence: float | None = Field(None, description='AI置信度 (0-1)')
     feedback_count: int = Field(description='关联反馈数量')

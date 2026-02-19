@@ -134,6 +134,7 @@ class TopicService:
             category=data.category,
             status=data.status,
             description=data.description,
+            board_id=data.board_id,  # 传递看板ID
             ai_generated=False,  # 手动创建的主题
         )
 

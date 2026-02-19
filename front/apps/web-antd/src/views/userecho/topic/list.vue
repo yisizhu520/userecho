@@ -10,6 +10,12 @@ import type {
 } from '#/api';
 
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 import { useRouter } from 'vue-router';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
@@ -22,6 +28,7 @@ import {
   getTopicList,
   createTopic,
   updateTopic,
+  deleteTopic,
 } from '#/api';
 import { getBoardList } from '#/api/userecho/board';
 import { TOPIC_CATEGORIES } from '#/api';
@@ -33,6 +40,7 @@ import {
   useColumns,
 } from '#/views/userecho/topic/data';
 import { useFilterStorage } from '#/composables/useFilterStorage';
+import { useBoardStore } from '#/store';
 import TopicFilterSidebar from '#/layouts/components/sidebar/TopicFilterSidebar.vue';
 
 const router = useRouter();
@@ -84,13 +92,46 @@ const initBoardSelection = async () => {
 };
 
 /**
- * 优先级颜色计算
+ * Board Store
  */
-function getPriorityColor(score: number): string {
-  if (score >= 15) return 'red';
-  if (score >= 10) return 'orange';
-  if (score >= 5) return 'blue';
-  return 'gray';
+const boardStore = useBoardStore();
+
+// 获取看板名称
+function getBoardName(boardId: string | undefined): string {
+  if (!boardId) return '-';
+  const board = boardStore.boards.find(b => b.id === boardId);
+  return board?.name || '-';
+}
+
+/**
+ * 优先级配置计算
+ */
+function getPriorityConfig(score: number): { label: string; color: string; icon: string } {
+  if (score >= 15) return { label: '紧急', color: 'red', icon: '🔴' };
+  if (score >= 10) return { label: '高', color: 'orange', icon: '🟠' };
+  if (score >= 5) return { label: '中', color: 'blue', icon: '🔵' };
+  return { label: '低', color: 'default', icon: '⚪' };
+}
+
+/**
+ * 格式化相对时间
+ */
+function formatRelativeTime(dateStr: string): string {
+  const date = dayjs(dateStr);
+  const now = dayjs();
+  const diffDays = now.diff(date, 'day');
+  
+  if (diffDays < 1) {
+    return date.fromNow(); // 几小时前
+  } else if (diffDays < 7) {
+    return date.fromNow(); // 几天前
+  } else if (diffDays < 30) {
+    return `${Math.floor(diffDays / 7)}周前`;
+  } else if (diffDays < 365) {
+    return `${Math.floor(diffDays / 30)}个月前`;
+  } else {
+    return date.format('YYYY-MM-DD');
+  }
 }
 
 
@@ -195,7 +236,7 @@ function onRefresh() {
 /**
  * 操作按钮点击事件
  */
-function onActionClick({ code, row }: OnActionClickParams<Topic>) {
+async function onActionClick({ code, row }: OnActionClickParams<Topic>) {
   switch (code) {
     case 'detail': {
       router.push(`/app/topic/detail/${row.id}`);
@@ -207,8 +248,13 @@ function onActionClick({ code, row }: OnActionClickParams<Topic>) {
       break;
     }
     case 'delete': {
-      // TODO: 实现删除逻辑
-      message.info('删除功能待实现');
+      try {
+        await deleteTopic(row.id);
+        message.success('删除成功');
+        onRefresh();
+      } catch {
+        message.error('删除失败');
+      }
       break;
     }
   }
@@ -220,6 +266,7 @@ function onActionClick({ code, row }: OnActionClickParams<Topic>) {
 const [EditForm, editFormApi] = useVbenForm({
   showDefaultActions: false,
   schema: topicFormSchema,
+  wrapperClass: 'grid grid-cols-12',
 });
 
 const editTopicId = ref<string>('');
@@ -244,10 +291,14 @@ const [editModal, editModalApi] = useVbenModal({
       }
     }
   },
-  onOpenChange(isOpen) {
+  async onOpenChange(isOpen) {
     if (isOpen) {
       const data = editModalApi.getData<any>();
       editFormApi.resetForm();
+      // 加载看板列表
+      await boardStore.refreshBoards();
+      const boardOptions = boardStore.boards.map((b) => ({ label: b.name, value: b.id }));
+      editFormApi.updateSchema([{ fieldName: 'board_id', componentProps: { options: boardOptions } }]);
       if (data) {
         editFormApi.setValues(data);
       }
@@ -261,6 +312,7 @@ const [editModal, editModalApi] = useVbenModal({
 const [AddForm, addFormApi] = useVbenForm({
   showDefaultActions: false,
   schema: topicFormSchema,
+  wrapperClass: 'grid grid-cols-12',
 });
 
 const [addModal, addModalApi] = useVbenModal({
@@ -283,14 +335,26 @@ const [addModal, addModalApi] = useVbenModal({
       }
     }
   },
-  onOpenChange(isOpen) {
+  async onOpenChange(isOpen) {
     if (isOpen) {
       addFormApi.resetForm();
+      // 加载看板列表
+      await boardStore.refreshBoards();
+      const boardOptions = boardStore.boards.map((b) => ({ label: b.name, value: b.id }));
+      addFormApi.updateSchema([{ fieldName: 'board_id', componentProps: { options: boardOptions } }]);
+      // 默认选中当前筛选的看板（如果有且只有一个）
+      if (filterValues.value.board_ids?.length === 1) {
+        addFormApi.setValues({ board_id: filterValues.value.board_ids[0] });
+      } else if (boardOptions.length > 0) {
+        addFormApi.setValues({ board_id: boardOptions[0].value });
+      }
     }
   },
 });
 
 onMounted(() => {
+  // 初始化看板数据，确保看板列能正确显示
+  boardStore.refreshBoards();
   // 初始化看板选中
   initBoardSelection();
 
@@ -394,10 +458,16 @@ onBeforeUnmount(() => {
           <!-- 优先级评分 -->
           <template #priority_score="{ row }">
             <div class="priority-score-cell">
-              <!-- 已有评分：显示总分徽章 -->
-              <a-popover v-if="row.priority_score" title="评分详情">
+              <!-- 已有评分：显示语义化标签 -->
+              <a-popover v-if="row.priority_score" title="优先级详情">
                 <template #content>
-                  <div class="w-48">
+                  <div class="w-52">
+                    <div class="mb-3 flex items-center justify-between">
+                      <span class="text-gray-500">综合评分：</span>
+                      <span class="text-lg font-bold" :style="{ color: getPriorityConfig(row.priority_score.total_score).color === 'red' ? '#f5222d' : getPriorityConfig(row.priority_score.total_score).color === 'orange' ? '#fa8c16' : '#1890ff' }">
+                        {{ row.priority_score.total_score.toFixed(1) }} 分
+                      </span>
+                    </div>
                     <div v-if="row.priority_score.details?.strategic_keywords_matched?.length" class="mb-2">
                       <div class="text-xs text-gray-500 mb-1">战略匹配:</div>
                       <div class="flex flex-wrap gap-1">
@@ -419,17 +489,15 @@ onBeforeUnmount(() => {
                   </div>
                 </template>
                 <a-tag
-                  :color="getPriorityColor(row.priority_score.total_score)"
-                  style="font-size: 14px; font-weight: bold; cursor: pointer"
+                  :color="getPriorityConfig(row.priority_score.total_score).color"
+                  style="cursor: pointer"
                   @click.stop="router.push(`/app/topic/detail/${row.id}`)"
                 >
-                  {{ row.priority_score.total_score.toFixed(1) }}
+                  {{ getPriorityConfig(row.priority_score.total_score).icon }} {{ getPriorityConfig(row.priority_score.total_score).label }}
                 </a-tag>
               </a-popover>
-              <!-- 未评分：提示去评分 -->
-              <span v-else style="color: #999; font-size: 12px">
-                未评分
-              </span>
+              <!-- 未评分：显示灰色标签 -->
+              <a-tag v-else color="default">⚪ 待评估</a-tag>
             </div>
           </template>
 
@@ -443,12 +511,19 @@ onBeforeUnmount(() => {
           />
           </template>
 
-          <!-- AI 生成标识 -->
-          <template #ai_generated="{ row }">
-            <a-tag v-if="row.ai_generated" color="purple">
-              <span class="iconify lucide--sparkles" /> AI
+          <!-- 看板 -->
+          <template #board="{ row }">
+            <a-tag v-if="row.board_id" color="geekblue">
+              {{ getBoardName(row.board_id) }}
             </a-tag>
-            <a-tag v-else color="default">手动</a-tag>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
+          <!-- 创建时间（相对时间） -->
+          <template #created_time="{ row }">
+            <a-tooltip :title="dayjs(row.created_time).format('YYYY-MM-DD HH:mm:ss')">
+              <span class="text-gray-500">{{ formatRelativeTime(row.created_time) }}</span>
+            </a-tooltip>
           </template>
           </Grid>
         </div>

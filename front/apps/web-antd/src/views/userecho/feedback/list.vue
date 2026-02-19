@@ -7,6 +7,12 @@ import type {
 import type { Feedback } from '#/api';
 
 import { computed, onBeforeUnmount, ref, onMounted, watch } from 'vue';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 import { useRoute } from 'vue-router';
 
 import { VbenButton } from '@vben/common-ui';
@@ -82,6 +88,27 @@ const initBoardSelection = async () => {
     console.error('Failed to init board selection:', error);
   }
 };
+
+/**
+ * 格式化相对时间
+ */
+function formatRelativeTime(dateStr: string): string {
+  const date = dayjs(dateStr);
+  const now = dayjs();
+  const diffDays = now.diff(date, 'day');
+  
+  if (diffDays < 1) {
+    return date.fromNow();
+  } else if (diffDays < 7) {
+    return date.fromNow();
+  } else if (diffDays < 30) {
+    return `${Math.floor(diffDays / 7)}周前`;
+  } else if (diffDays < 365) {
+    return `${Math.floor(diffDays / 30)}个月前`;
+  } else {
+    return date.format('YYYY-MM-DD');
+  }
+}
 
 /**
  * 表格配置
@@ -353,6 +380,12 @@ onBeforeUnmount(() => {
 
           <template #screenshots="{ row }">
             <ScreenshotCell :images="row.images_metadata?.images" />
+          </template>
+
+          <template #submitted_at="{ row }">
+            <a-tooltip :title="dayjs(row.submitted_at).format('YYYY-MM-DD HH:mm:ss')">
+              <span class="text-gray-500">{{ formatRelativeTime(row.submitted_at) }}</span>
+            </a-tooltip>
           </template>
         </Grid>
         </div>

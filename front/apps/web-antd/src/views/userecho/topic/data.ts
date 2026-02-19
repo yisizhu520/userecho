@@ -78,9 +78,8 @@ export function useColumns(
   return [
     {
       field: 'seq',
-      title: $t('common.table.id'),
+      title: '#',
       type: 'seq',
-      fixed: 'left',
       width: 50,
     },
     {
@@ -93,55 +92,48 @@ export function useColumns(
     {
       field: 'category',
       title: '分类',
-      width: 120,
+      width: 100,
       slots: { default: 'category' },
     },
     {
       field: 'status',
       title: '状态',
-      width: 120,
+      width: 100,
       slots: { default: 'status' },
     },
     {
       field: 'priority_score',
       title: '优先级',
-      width: 120,
+      width: 90,
       sortable: true,
       slots: { default: 'priority_score' },
     },
     {
       field: 'feedback_count',
-      title: '反馈数量',
-      width: 100,
+      title: '反馈数',
+      width: 80,
       sortable: true,
       slots: { default: 'feedback_count' },
     },
     {
-      field: 'ai_generated',
-      title: 'AI 生成',
+      field: 'board_id',
+      title: '看板',
       width: 100,
-      slots: { default: 'ai_generated' },
-    },
-    {
-      field: 'ai_confidence',
-      title: 'AI 置信度',
-      width: 120,
-      formatter({ cellValue }) {
-        return cellValue ? `${(cellValue * 100).toFixed(0)}%` : '-';
-      },
+      slots: { default: 'board' },
     },
     {
       field: 'created_time',
       title: '创建时间',
-      width: 168,
+      width: 100,
       sortable: true,
+      slots: { default: 'created_time' },
     },
     {
       field: 'operation',
       title: $t('common.table.operation'),
       align: 'center',
       fixed: 'right',
-      width: 150,
+      width: 180,
       cellRender: {
         attrs: {
           nameField: 'title',
@@ -151,7 +143,7 @@ export function useColumns(
         options: [
           {
             code: 'detail',
-            text: '查看详情',
+            text: '详情',
             icon: 'lucide:eye',
           },
           'edit',
@@ -170,14 +162,41 @@ export function useColumns(
 /** 新建/编辑主题表单 */
 export const topicFormSchema: VbenFormSchema[] = [
   {
+    component: 'Select',
+    fieldName: 'board_id',
+    label: '所属看板',
+    rules: 'selectRequired',
+    formItemClass: 'col-span-12',
+    componentProps: {
+      placeholder: '选择看板',
+      options: [],  // 动态加载
+      style: { width: '100%' },
+    },
+  },
+  {
     component: 'Input',
     fieldName: 'title',
     label: '主题标题',
     rules: z.string().min(1, '请输入主题标题').max(100, '标题长度不能超过100字'),
+    formItemClass: 'col-span-12',
     componentProps: {
       placeholder: '输入需求主题标题，建议15字以内',
       maxlength: 100,
       showCount: true,
+      style: { width: '100%' },
+    },
+  },
+  {
+    component: 'Textarea',
+    fieldName: 'description',
+    label: '主题描述',
+    formItemClass: 'col-span-12',
+    componentProps: {
+      rows: 4,
+      placeholder: '详细描述此需求主题...',
+      maxlength: 500,
+      showCount: true,
+      style: { width: '100%' },
     },
   },
   {
@@ -185,9 +204,11 @@ export const topicFormSchema: VbenFormSchema[] = [
     fieldName: 'category',
     label: '主题分类',
     rules: 'selectRequired',
+    formItemClass: 'col-span-6',
     componentProps: {
       options: TOPIC_CATEGORIES,
       placeholder: '选择分类',
+      style: { width: '100%' },
     },
     defaultValue: 'feature',
   },
@@ -195,22 +216,13 @@ export const topicFormSchema: VbenFormSchema[] = [
     component: 'Select',
     fieldName: 'status',
     label: '主题状态',
+    formItemClass: 'col-span-6',
     componentProps: {
       options: TOPIC_STATUSES,
       placeholder: '选择状态',
+      style: { width: '100%' },
     },
     defaultValue: 'pending',
-  },
-  {
-    component: 'Textarea',
-    fieldName: 'description',
-    label: '主题描述',
-    componentProps: {
-      rows: 4,
-      placeholder: '详细描述此需求主题...',
-      maxlength: 500,
-      showCount: true,
-    },
   },
 ];
 

@@ -10,6 +10,7 @@ import { requestClient } from '#/api/request';
 export interface Topic {
   id: string;
   tenant_id: string;
+  board_id?: string;
   title: string;
   category: string;
   status: string;
@@ -65,6 +66,7 @@ export interface CreateTopicParams {
   category?: string;
   status?: string;
   description?: string;
+  board_id?: string;
 }
 
 /** 更新主题参数 */
@@ -73,6 +75,7 @@ export interface UpdateTopicParams {
   category?: string;
   status?: string;
   description?: string;
+  board_id?: string;
 }
 
 /** 主题列表查询参数 */
@@ -134,6 +137,13 @@ export async function updateTopicStatus(id: string, data: UpdateTopicStatusParam
  */
 export async function getPendingTopicCount() {
   return requestClient.get<{ count: number }>('/api/v1/app/topics/stats/pending-count');
+}
+
+/**
+ * 删除主题
+ */
+export async function deleteTopic(id: string) {
+  return requestClient.delete(`/api/v1/app/topics/${id}`);
 }
 
 /** 主题分类选项 */

@@ -143,8 +143,9 @@ export function useColumns(
     {
       field: 'submitted_at',
       title: '提交时间',
-      width: 168,
+      width: 100,
       sortable: true,
+      slots: { default: 'submitted_at' },
     },
     {
       field: 'operation',

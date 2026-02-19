@@ -189,3 +189,18 @@ async def update_topic_status(
     # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut
     topic_out = TopicOut.model_validate(topic)
     return response_base.success(data=topic_out, res=CustomResponse(code=200, msg='状态更新成功'))
+
+
+@router.delete('/{topic_id}', summary='删除主题')
+async def delete_topic(
+    topic_id: str,
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """删除主题（软删除）"""
+    from backend.app.userecho.crud import crud_topic
+
+    success = await crud_topic.delete(db=db, tenant_id=tenant_id, id=topic_id, soft=True)
+    if not success:
+        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
+    return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
