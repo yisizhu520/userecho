@@ -36,6 +36,24 @@ export interface DashboardStats {
     completed: number;
     weekly_count: number;
   };
+  customer_stats: {
+    total: number;
+    new_count: number;
+    active_7d: number;
+    type_distribution: Array<{
+      type: string;
+      name: string;
+      count: number;
+    }>;
+    total_mrr: number;
+    top_customers: Array<{
+      id: string;
+      name: string;
+      customer_type: string;
+      mrr: number;
+      feedback_count: number;
+    }>;
+  };
   urgent_topics: Array<{
     id: string;
     title: string;

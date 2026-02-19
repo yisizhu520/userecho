@@ -2,6 +2,7 @@ import asyncio
 import os
 import pathlib
 import uuid
+from typing import Any
 
 from backend.app.task.celery import celery_app
 from backend.app.userecho.service.clustering_service import clustering_service

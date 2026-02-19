@@ -8,6 +8,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.model.feedback import Feedback
+from backend.app.userecho.model.customer import Customer
 from backend.app.userecho.model.topic import Topic
 from backend.common.log import log
 
@@ -40,6 +41,8 @@ class DashboardService:
             tag_distribution = await DashboardService._get_tag_distribution(db, tenant_id)
             # 新增：待决策主题（带 MVP 优先级评分）
             pending_decisions = await DashboardService._get_pending_decisions(db, tenant_id)
+            # 新增：客户统计
+            customer_stats = await DashboardService._get_customer_stats(db, tenant_id, week_ago)
 
             return {
                 'feedback_stats': feedback_stats,
@@ -49,6 +52,7 @@ class DashboardService:
                 'top_topics': top_topics,
                 'weekly_trend': weekly_trend,
                 'tag_distribution': tag_distribution,
+                'customer_stats': customer_stats,
             }
         except Exception as e:
             log.error(f'Failed to get dashboard stats for tenant {tenant_id}: {e}')
@@ -133,6 +137,136 @@ class DashboardService:
             'pending': pending,
             'completed': completed,
             'weekly_count': weekly_count,
+            'weekly_count': weekly_count,
+        }
+
+    @staticmethod
+    async def _get_customer_stats(
+        db: AsyncSession,
+        tenant_id: str,
+        week_ago: datetime,
+    ) -> dict:
+        """获取客户统计"""
+        # 总客户数
+        total_query = select(func.count(Customer.id)).where(
+            Customer.tenant_id == tenant_id,
+            Customer.deleted_at.is_(None),
+        )
+        total = await db.scalar(total_query) or 0
+
+        # 本周新增客户
+        new_query = select(func.count(Customer.id)).where(
+            Customer.tenant_id == tenant_id,
+            Customer.deleted_at.is_(None),
+            Customer.created_time >= week_ago,
+        )
+        new_count = await db.scalar(new_query) or 0
+
+        # 活跃客户（本周提交过反馈的客户）
+        active_query = select(func.count(func.distinct(Feedback.customer_id))).where(
+            Feedback.tenant_id == tenant_id,
+            Feedback.deleted_at.is_(None),
+            Feedback.created_time >= week_ago,
+            Feedback.author_type == 'customer',
+        )
+        active_count = await db.scalar(active_query) or 0
+
+        # 客户类型分布
+        type_dist_query = (
+            select(
+                Customer.customer_type,
+                func.count(Customer.id).label('count'),
+            )
+            .where(
+                Customer.tenant_id == tenant_id,
+                Customer.deleted_at.is_(None),
+            )
+            .group_by(Customer.customer_type)
+            .order_by(desc(func.count(Customer.id)))
+        )
+        type_dist_result = await db.execute(type_dist_query)
+        type_dist_rows = type_dist_result.all()
+
+        type_name_map = {
+            'strategic': '战略客户',
+            'vip': 'VIP客户',
+            'paid': '付费客户',
+            'normal': '普通客户',
+        }
+        type_distribution = [
+            {
+                'type': row.customer_type,
+                'name': type_name_map.get(row.customer_type, row.customer_type),
+                'count': row.count,
+            }
+            for row in type_dist_rows
+        ]
+
+        # MRR 总额
+        mrr_query = select(func.sum(Customer.mrr)).where(
+            Customer.tenant_id == tenant_id,
+            Customer.deleted_at.is_(None),
+            Customer.mrr.isnot(None),
+        )
+        total_mrr = await db.scalar(mrr_query) or 0
+
+        # 高价值客户 Top 5（按 MRR 排序）
+        top_customers_query = (
+            select(
+                Customer.id,
+                Customer.name,
+                Customer.company_name,
+                Customer.customer_type,
+                Customer.mrr,
+            )
+            .where(
+                Customer.tenant_id == tenant_id,
+                Customer.deleted_at.is_(None),
+                Customer.mrr.isnot(None),
+                Customer.mrr > 0,
+            )
+            .order_by(desc(Customer.mrr))
+            .limit(5)
+        )
+        top_customers_result = await db.execute(top_customers_query)
+        top_customers_rows = top_customers_result.all()
+
+        # 获取这些客户的反馈数量
+        top_customer_ids = [row.id for row in top_customers_rows]
+        feedback_counts: dict[str, int] = {}
+        if top_customer_ids:
+            feedback_count_query = (
+                select(
+                    Feedback.customer_id,
+                    func.count(Feedback.id).label('count'),
+                )
+                .where(
+                    Feedback.customer_id.in_(top_customer_ids),
+                    Feedback.deleted_at.is_(None),
+                )
+                .group_by(Feedback.customer_id)
+            )
+            fc_result = await db.execute(feedback_count_query)
+            feedback_counts = {row.customer_id: row.count for row in fc_result.all()}
+
+        top_customers = [
+            {
+                'id': row.id,
+                'name': row.company_name or row.name,
+                'customer_type': row.customer_type,
+                'mrr': float(row.mrr) if row.mrr else 0,
+                'feedback_count': feedback_counts.get(row.id, 0),
+            }
+            for row in top_customers_rows
+        ]
+
+        return {
+            'total': total,
+            'new_count': new_count,
+            'active_7d': active_count,
+            'type_distribution': type_distribution,
+            'total_mrr': float(total_mrr) if total_mrr else 0,
+            'top_customers': top_customers,
         }
 
     @staticmethod

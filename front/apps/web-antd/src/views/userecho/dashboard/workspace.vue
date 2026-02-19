@@ -17,6 +17,7 @@ import { useUserStore } from '@vben/stores';
 
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
+import CustomerStatsCard from './components/CustomerStatsCard.vue';
 import InsightsCard from './components/InsightsCard.vue';
 import MyFeedbacksCard from './components/MyFeedbacksCard.vue';
 import PendingDecisionsCard from './components/PendingDecisionsCard.vue';
@@ -59,10 +60,10 @@ const overviewItems = computed<AnalysisOverviewItem[]>(() => {
     },
     {
       icon: SvgBellIcon,
-      title: '已完成',
-      totalTitle: '需求数',
-      totalValue: stats.value.topic_stats.completed,
-      value: stats.value.topic_stats.total,
+      title: '总客户',
+      totalTitle: '本周活跃',
+      totalValue: stats.value.customer_stats.active_7d,
+      value: stats.value.customer_stats.total,
     },
   ];
 });
@@ -192,11 +193,22 @@ onMounted(() => {
         <!-- 我的反馈卡片 -->
         <MyFeedbacksCard class="mt-5" />
         
+        <!-- 客户统计卡片 -->
+        <CustomerStatsCard
+          :total="stats.customer_stats?.total ?? 0"
+          :new-count="stats.customer_stats?.new_count ?? 0"
+          :active7d="stats.customer_stats?.active_7d ?? 0"
+          :type-distribution="stats.customer_stats?.type_distribution ?? []"
+          :total-mrr="stats.customer_stats?.total_mrr ?? 0"
+          :top-customers="stats.customer_stats?.top_customers ?? []"
+          class="mt-5"
+        />
+        
         <TopTopicsCard :topics="stats.top_topics" class="mt-5" />
       </div>
     </div>
 
     <!-- AI 洞察区域 -->
-    <InsightsCard v-if="!loading" />
+    <!-- <InsightsCard v-if="!loading" /> -->
   </div>
 </template>
