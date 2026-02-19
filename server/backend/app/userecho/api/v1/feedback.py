@@ -16,9 +16,8 @@ from backend.app.userecho.schema.feedback import (
     ScreenshotFeedbackCreate,
 )
 from backend.app.userecho.service import feedback_service, import_service
-from backend.common.response.response_base import ResponseSchemaModel
 from backend.common.response.response_code import CustomResponse
-from backend.common.response.response_schema import response_base
+from backend.common.response.response_schema import ResponseSchemaModel, response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 

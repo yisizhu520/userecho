@@ -290,9 +290,15 @@ class ClusteringService:
                     similarity_factor = max(0.0, min(1.0, (avg_similarity - threshold) / (1 - threshold)))
                     confidence = float(min(1.0, 0.2 + 0.8 * size_factor * similarity_factor))
 
+                    # 从 Feedback 推断 board_id（取出现频率最高的）
+                    from collections import Counter
+                    board_ids = [f.board_id for f in cluster_feedbacks if f.board_id]
+                    inferred_board_id = Counter(board_ids).most_common(1)[0][0] if board_ids else None
+
                     topic = await crud_topic.create(
                         db=db,
                         tenant_id=tenant_id,
+                        board_id=inferred_board_id,
                         title=topic_data['title'],
                         category=topic_data['category'],
                         ai_generated=True,

@@ -28,12 +28,12 @@ export const querySchema: VbenFormSchema[] = [
     defaultValue: 'keyword',
     componentProps: {
       options: [
-        { 
-          label: '关键词 ⚡', 
+        {
+          label: '关键词 ⚡',
           value: 'keyword',
         },
-        { 
-          label: '语义理解 🤖', 
+        {
+          label: '语义理解 🤖',
           value: 'semantic',
         },
       ],
@@ -115,13 +115,6 @@ export function useColumns(
       width: 100,
       sortable: true,
       slots: { default: 'feedback_count' },
-    },
-    {
-      field: 'priority_score',
-      title: '优先级',
-      width: 100,
-      sortable: true,
-      slots: { default: 'priority_score' },
     },
     {
       field: 'ai_generated',
