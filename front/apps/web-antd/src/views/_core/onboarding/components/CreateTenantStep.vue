@@ -18,6 +18,8 @@ import {
   message,
   Typography,
 } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+// @ts-ignore
 import { debounce } from 'lodash-es';
 
 import { useOnboardingStore } from '#/store';
@@ -42,7 +44,7 @@ const slugSuggestion = ref<string | null>(null);
 const isSlugManuallyEdited = ref(false);
 
 // 验证规则
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [
     { required: true, message: '请输入公司或团队名称', trigger: 'blur' },
     { min: 2, max: 100, message: '名称长度应在 2-100 个字符之间', trigger: 'blur' },

@@ -74,7 +74,7 @@ const [BottomForm, bottomFormApi] = useVbenForm({
 const modalTitle = computed(() => isCreateMode.value ? '新建反馈' : '编辑反馈');
 
 const [Modal, modalApi] = useVbenModal({
-  title: modalTitle,
+  title: modalTitle as any,
   destroyOnClose: true,
   class: 'w-[1000px]',
   async onConfirm() {

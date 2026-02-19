@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Checkbox, CheckboxGroup, RangePicker, Select } from 'ant-design-vue';
 import { ref, onMounted, watch } from 'vue';
-import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type BoardApi } from '#/api';
+import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type Board } from '#/api';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 
@@ -22,14 +22,14 @@ const emit = defineEmits<{
 }>();
 
 // Board 列表
-const boards = ref<BoardApi.Board[]>([]);
+const boards = ref<Board[]>([]);
 const boardsLoading = ref(false);
 
 async function loadBoards() {
   try {
     boardsLoading.value = true;
     const response = await getBoardList();
-    boards.value = response.boards || [];
+    boards.value = response || [];
   } catch (error) {
     console.error('Failed to load boards:', error);
   } finally {
@@ -45,7 +45,7 @@ onMounted(() => {
 const selectedDateKey = ref<string>('all');
 
 // 自定义日期范围值
-const customDateRange = ref<[Dayjs, Dayjs] | null>(null);
+const customDateRange = ref<any>(null);
 
 // 相对日期选项
 const dateRangeOptions = [
@@ -244,7 +244,7 @@ watch(selectedDateKey, (key) => {
         size="small"
         class="w-full"
         :options="dateRangeOptions"
-        @change="handleQuickDateClick"
+        @change="(value: any) => handleQuickDateClick(value as string)"
       />
       <!-- 自定义日期范围（仅当选择“自定义范围”时显示） -->
       <RangePicker
@@ -253,7 +253,7 @@ watch(selectedDateKey, (key) => {
         size="small"
         class="w-full mt-2"
         :placeholder="['开始日期', '结束日期']"
-        @change="handleCustomDateChange"
+        @change="(value: any) => handleCustomDateChange(value as [Dayjs, Dayjs] | null)"
       />
     </div>
   </div>

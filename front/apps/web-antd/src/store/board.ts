@@ -5,11 +5,11 @@
  */
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getBoardList, type BoardApi } from '#/api';
+import { getBoardList, type Board } from '#/api';
 
 export const useBoardStore = defineStore('board', () => {
     // 状态
-    const boards = ref<BoardApi.Board[]>([]);
+    const boards = ref<Board[]>([]);
     const loading = ref(false);
     const lastRefreshTime = ref<number>(0);
 

@@ -12,6 +12,12 @@ import Antd from 'ant-design-vue';
 
 import { $t, setupI18n } from '#/locales';
 
+import dayjs from 'dayjs';
+import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+
+// 配置 dayjs 插件
+dayjs.extend(quarterOfYear);
+
 import { initComponentAdapter } from './adapter/component';
 import { initSetupVbenForm } from './adapter/form';
 import App from './app.vue';

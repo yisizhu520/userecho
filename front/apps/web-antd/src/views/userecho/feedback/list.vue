@@ -333,8 +333,8 @@ onBeforeUnmount(() => {
           <template #derived_status="{ row }">
             <!-- 待处理: 未归类到主题 (pending/processing/failed/clustered无topic) -->
             <a-tag v-if="!row.topic_id" color="default">待处理</a-tag>
-            <!-- 待评审: clustered + topic.status = 'pending' -->
-            <a-tag v-else-if="row.topic_status === 'pending'" color="orange">待评审</a-tag>
+            <!-- 待评审: clustered + topic.status = 'review' -->
+            <a-tag v-else-if="row.topic_status === 'review'" color="orange">待评审</a-tag>
             <!-- 已排期: clustered + topic.status = 'planned' -->
             <a-tag v-else-if="row.topic_status === 'planned'" color="purple">已排期</a-tag>
             <!-- 开发中: clustered + topic.status = 'in_progress' -->

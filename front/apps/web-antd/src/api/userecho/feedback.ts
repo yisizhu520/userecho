@@ -8,12 +8,14 @@ import { requestClient } from '#/api/request';
 export interface Feedback {
   id: string;
   tenant_id: string;
+  board_id?: string;
   customer_id?: string;
   customer_name?: string;
   anonymous_author?: string;
   anonymous_source?: string;
   topic_id?: string;
   topic_title?: string;
+  topic_status?: 'review' | 'planned' | 'in_progress' | 'completed' | 'ignored';
   content: string;
   source: string;
   ai_summary?: string;
@@ -53,8 +55,10 @@ export interface CreateFeedbackParams {
 /** 更新反馈参数 */
 export interface UpdateFeedbackParams {
   content?: string;
-  topic_id?: string;
+  topic_id?: string | null;
   is_urgent?: boolean;
+  screenshots?: string[];
+  customer_name?: string;
 }
 
 /** 反馈列表查询参数 */

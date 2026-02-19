@@ -31,3 +31,10 @@ export async function getBoardList(): Promise<Board[]> {
     const response = await requestClient.get<BoardListResponse>('/api/v1/app/boards');
     return response.boards || [];
 }
+
+/**
+ * Board API 命名空间（用于兼容旧代码）
+ */
+export const BoardApi = {
+    getBoardList,
+};

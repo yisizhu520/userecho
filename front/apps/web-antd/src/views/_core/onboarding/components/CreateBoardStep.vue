@@ -20,6 +20,7 @@ import {
   RadioGroup,
   Typography,
 } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 
 import { useOnboardingStore } from '#/store';
 
@@ -52,7 +53,7 @@ const accessModeOptions = [
 ];
 
 // 验证规则
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [
     { required: true, message: '请输入看板名称', trigger: 'blur' },
     {

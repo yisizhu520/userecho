@@ -410,9 +410,8 @@ const processFile = async (file: File) => {
             // 填充表单
             formData.content = status.result.extracted.content || ''
             formData.source_platform = status.result.extracted.platform || 'wechat'
-            formData.source_user_name = status.result.extracted.user_name || ''
+            formData.external_user_name = status.result.extracted.user_name || ''
             formData.source_user_id = status.result.extracted.user_id || ''
-            formData.feedback_type = status.result.extracted.feedback_type || 'other'
 
             message.success('识别成功，请确认信息后提交')
           } else {

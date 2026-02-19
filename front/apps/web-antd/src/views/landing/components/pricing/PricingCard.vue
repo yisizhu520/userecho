@@ -16,7 +16,7 @@ const isDark = computed(() => theme.value === 'dark');
 const displayPrice = computed(() => {
   if (props.tier.isFree) return '免费';
   if (props.tier.id === 'enterprise') return '联系销售';
-  return `¥${props.tier.price}`;
+  return `¥${props.billingPeriod === 'monthly' ? props.tier.monthlyPrice : Math.round(props.tier.yearlyPrice / 12)}`;
 });
 
 const pricePeriod = computed(() => {

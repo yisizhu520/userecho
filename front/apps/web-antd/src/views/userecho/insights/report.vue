@@ -248,7 +248,7 @@ onUnmounted(() => {
           <Select.Option value="this_week">本周</Select.Option>
           <Select.Option value="this_month">本月</Select.Option>
         </Select>
-        <VbenButton variant="ghost" size="small" @click="() => loadReport(true)" :loading="loading">
+        <VbenButton variant="ghost" size="sm" @click="() => loadReport(true)" :loading="loading">
           <span class="iconify lucide--refresh-cw mr-1" />
           重新生成
         </VbenButton>
@@ -256,12 +256,12 @@ onUnmounted(() => {
       
       <div class="flex items-center gap-2">
         <Tooltip title="下载图片">
-          <VbenButton variant="outline" size="small" @click="exportAsImage" :disabled="loading || !reportData">
+          <VbenButton variant="outline" size="sm" @click="exportAsImage" :disabled="loading || !reportData">
             <span class="iconify lucide--image-down" />
           </VbenButton>
         </Tooltip>
         <Tooltip title="发送邮件">
-          <VbenButton variant="outline" size="small" @click="showEmailModal" :disabled="loading || !reportData">
+          <VbenButton variant="outline" size="sm" @click="showEmailModal" :disabled="loading || !reportData">
             <span class="iconify lucide--mail" />
           </VbenButton>
         </Tooltip>
@@ -376,14 +376,14 @@ onUnmounted(() => {
             <!-- 快捷操作按钮 -->
             <div class="flex items-center gap-2">
               <VbenButton 
-                size="small" 
+                size="sm" 
                 type="primary"
                 @click.stop="handleConfirmTopic(topic.id)"
               >
                 确认排期
               </VbenButton>
               <VbenButton 
-                size="small" 
+                size="sm" 
                 variant="outline"
                 @click.stop="router.push(`/app/topic/detail/${topic.id}`)"
               >

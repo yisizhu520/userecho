@@ -50,7 +50,7 @@ const doSearch = useDebounceFn(async (query: string) => {
     const customers = await searchCustomers(query, 10);
     
     // 构建选项列表
-    const customerOptions = customers.map((c) => ({
+    const customerOptions: { value: string; label: string; customer?: Customer }[] = customers.map((c) => ({
       value: c.name,
       label: `${c.name} (${CUSTOMER_TYPES.find((t) => t.value === c.customer_type)?.label || '普通客户'})`,
       customer: c,
@@ -125,7 +125,7 @@ const typeOptions = computed(() => CUSTOMER_TYPES.map((t) => ({
       :placeholder="placeholder"
       style="width: 100%"
       @search="onSearch"
-      @select="onSelect"
+      @select="(value: any, option: any) => onSelect(value, option)"
     >
       <template #option="{ label }">
         <span>{{ label }}</span>
@@ -140,7 +140,7 @@ const typeOptions = computed(() => CUSTOMER_TYPES.map((t) => ({
         :options="typeOptions"
         size="small"
         style="width: 120px"
-        @change="onTypeChange"
+        @change="(value: any) => onTypeChange(value as string)"
       />
     </div>
   </div>

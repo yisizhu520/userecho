@@ -34,7 +34,7 @@ onMounted(() => {
 const selectedDateKey = ref<string>('all');
 
 // 自定义日期范围值
-const customDateRange = ref<[Dayjs, Dayjs] | null>(null);
+const customDateRange = ref<any>(null);
 
 // 相对日期选项
 const dateRangeOptions = [
@@ -241,7 +241,7 @@ watch(selectedDateKey, (key) => {
         size="small"
         class="w-full"
         :options="dateRangeOptions"
-        @change="handleQuickDateClick"
+        @change="(value: any) => handleQuickDateClick(value as string)"
       />
       <!-- 自定义日期范围（仅当选择“自定义范围”时显示） -->
       <RangePicker
@@ -250,7 +250,7 @@ watch(selectedDateKey, (key) => {
         size="small"
         class="w-full mt-2"
         :placeholder="['开始日期', '结束日期']"
-        @change="handleCustomDateChange"
+        @change="(value: any) => handleCustomDateChange(value as [Dayjs, Dayjs] | null)"
       />
     </div>
   </div>

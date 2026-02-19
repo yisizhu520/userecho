@@ -15,7 +15,7 @@
           'border-blue-500 bg-blue-50 dark:bg-blue-950': selectedPreset === key,
           'border-gray-200 hover:border-blue-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800': selectedPreset !== key
         }"
-        @click="selectedPreset = key"
+        @click="selectedPreset = key as string"
       >
         <div class="flex items-center">
           <input

@@ -59,7 +59,7 @@ onMounted(async () => {
   try {
     const response = await getBoardList();
     // getBoardList 返回 { boards, total }，需要提取 boards 数组
-    boardList.value = (response.boards || []).map((b: any) => ({ id: b.id, name: b.name }));
+    boardList.value = (response || []).map((b: any) => ({ id: b.id, name: b.name }));
   } catch (e) {
     console.error('Failed to load boards:', e);
   }

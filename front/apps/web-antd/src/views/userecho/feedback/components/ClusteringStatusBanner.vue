@@ -104,11 +104,11 @@ defineExpose({ refresh });
         <a-button 
           size="small" 
           type="primary"
-          :loading="status?.processing_count > 0"
-          :disabled="status?.processing_count > 0"
+          :loading="(status?.processing_count ?? 0) > 0"
+          :disabled="(status?.processing_count ?? 0) > 0"
           @click="handleTrigger"
         >
-          {{ status?.processing_count ? '处理中...' : '立即处理' }}
+          {{ (status?.processing_count ?? 0) > 0 ? '处理中...' : '立即处理' }}
         </a-button>
       </template>
     </a-alert>

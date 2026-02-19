@@ -73,8 +73,8 @@ const { state: filterValues } = useFilterStorage({
 const initBoardSelection = async () => {
   try {
     const response = await getBoardList();
-    const boards = response.boards || [];
-    if (boards.length > 0 && (filterValues.value?.board_ids?.length ?? 0) === 0) {
+    const boards = response || [];
+    if (boards.length > 0 && filterValues.value && (filterValues.value.board_ids?.length ?? 0) === 0) {
       // 只有在没有存储值时才默认选中第一个
       filterValues.value.board_ids = [boards[0].id];
     }
