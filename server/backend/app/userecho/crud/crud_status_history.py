@@ -71,14 +71,28 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
         Returns:
             状态历史列表（按时间倒序）
         """
+        from backend.app.admin.model.user import User
+
         query = (
-            select(self.model)
+            select(self.model, User.nickname.label('changed_by_name'))
+            .outerjoin(User, self.model.changed_by == User.id)
             .where(self.model.tenant_id == tenant_id, self.model.topic_id == topic_id)
             .order_by(self.model.changed_at.desc())
             .limit(limit)
         )
         result = await db.execute(query)
-        return list(result.scalars().all())
+        
+        history_list = []
+        for history, changed_by_name in result.all():
+            # 将 SQLAlchemy 对象转换为字典并附加 changed_by_name
+            # 使用 __dict__ 可能包含内部状态，使用 vars 或手动构建比较安全
+            # 或者直接依赖 Pydantic 从 attributes 读取（如果 history 对象上能动态 setattr）
+            # 最稳妥：转字典
+            h_dict = {c.name: getattr(history, c.name) for c in history.__table__.columns}
+            h_dict['changed_by_name'] = changed_by_name
+            history_list.append(h_dict)
+            
+        return history_list
 
 
 crud_status_history = CRUDStatusHistory(StatusHistory)
