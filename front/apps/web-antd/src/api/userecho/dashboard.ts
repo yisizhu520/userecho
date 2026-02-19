@@ -81,6 +81,20 @@ export interface DashboardStats {
     feedback_count: number;
     avg_priority_score: number | null;
   }>;
+  conversion_funnel: {
+    total_feedbacks: number;
+    clustered: number;
+    pending_review: number;
+    planned: number;
+    in_progress: number;
+    completed: number;
+    conversion_rates: {
+      clustering_rate: number;
+      review_rate: number;
+      planning_rate: number;
+      completion_rate: number;
+    };
+  };
 }
 
 /**

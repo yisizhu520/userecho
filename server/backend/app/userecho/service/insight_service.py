@@ -43,8 +43,9 @@ class InsightService:
         策略：
         1. 检查缓存（是否已生成过）
         2. 根据类型调用对应方法
-        3. 持久化结果到 insights 表
-        4. 返回结构化数据
+        3. 对于 weekly_report：无缓存时触发异步任务，返回 task_id
+        4. 持久化结果到 insights 表
+        5. 返回结构化数据
 
         Args:
             db: 数据库会话
@@ -54,7 +55,7 @@ class InsightService:
             force_refresh: 是否强制刷新
 
         Returns:
-            洞察内容（dict）
+            洞察内容（dict）或任务信息 {'status': 'generating', 'task_id': '...'}
         """
         start_time = time.time()
 
@@ -70,22 +71,31 @@ class InsightService:
                 log.info(f'Using cached insight: {insight_type} for tenant {tenant_id}')
                 return cached.content
 
-        # 3. 根据类型生成洞察
+        # 3. weekly_report 特殊处理：触发异步任务
+        if insight_type == 'weekly_report':
+            from backend.app.task.celery import celery_app
+
+            async_result = celery_app.send_task(
+                name='userecho.generate_insight_report',
+                args=[tenant_id, time_range, 'markdown'],
+            )
+            log.info(f'Triggered async weekly_report generation for tenant {tenant_id}, task_id={async_result.id}')
+            return {'status': 'generating', 'task_id': async_result.id}
+
+        # 4. 其他类型：同步生成
         if insight_type == 'priority_suggestion':
             content = await self._generate_priority_suggestions(db, tenant_id)
         elif insight_type == 'high_risk':
             content = await self._identify_high_risk_topics(db, tenant_id)
-        elif insight_type == 'weekly_report':
-            content = await self._generate_weekly_report(db, tenant_id, start_date, end_date)
         elif insight_type == 'sentiment_trend':
             content = await self._calculate_sentiment_trend(db, tenant_id, start_date, end_date)
         else:
             raise ValueError(f'Unknown insight_type: {insight_type}')
 
-        # 4. 计算执行时间
+        # 5. 计算执行时间
         execution_time_ms = int((time.time() - start_time) * 1000)
 
-        # 5. 持久化（数据库只存储日期，不存储时间）
+        # 6. 持久化（数据库只存储日期，不存储时间）
         await crud_insight.create_insight(
             db=db,
             tenant_id=tenant_id,

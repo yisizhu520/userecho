@@ -83,10 +83,16 @@ async function loadReport(forceRefresh = false) {
     } else {
       // 优先使用缓存
       const result = await getInsight('weekly_report', timeRange.value, false);
-      if (result) {
+      
+      // 检查是否返回了任务 ID（无缓存，触发异步生成）
+      if (result.status === 'generating' && result.task_id) {
+        loadingTip.value = '正在生成报告...';
+        await pollTaskStatus(result.task_id);
+      } else {
+        // 缓存命中，直接使用
         reportData.value = result as unknown as WeeklyReportResponse;
+        loading.value = false;
       }
-      loading.value = false;
     }
   } catch (error) {
     console.error('Failed to load report:', error);

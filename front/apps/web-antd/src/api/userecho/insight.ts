@@ -109,6 +109,12 @@ export interface TaskResponse {
   task_id: string;
 }
 
+// 异步生成中的响应
+export interface AsyncGeneratingResponse {
+  status: 'generating';
+  task_id: string;
+}
+
 // 任务状态响应
 export interface TaskStatusResponse {
   task_id: string;
@@ -140,13 +146,37 @@ export interface DashboardInsights {
 
 /**
  * 获取单个洞察
+ * 
+ * 返回类型：
+ * - weekly_report: 可能返回 WeeklyReportResponse（缓存命中）或 AsyncGeneratingResponse（无缓存，触发异步生成）
+ * - 其他类型: 直接返回对应的响应类型
  */
+export async function getInsight(
+  insightType: 'weekly_report',
+  timeRange?: TimeRange,
+  forceRefresh?: boolean,
+): Promise<WeeklyReportResponse | AsyncGeneratingResponse>;
+export async function getInsight(
+  insightType: 'priority_suggestion',
+  timeRange?: TimeRange,
+  forceRefresh?: boolean,
+): Promise<PrioritySuggestionsResponse>;
+export async function getInsight(
+  insightType: 'high_risk',
+  timeRange?: TimeRange,
+  forceRefresh?: boolean,
+): Promise<HighRiskResponse>;
+export async function getInsight(
+  insightType: 'sentiment_trend',
+  timeRange?: TimeRange,
+  forceRefresh?: boolean,
+): Promise<SentimentTrendResponse>;
 export async function getInsight(
   insightType: InsightType,
   timeRange: TimeRange = 'this_week',
   forceRefresh: boolean = false,
 ) {
-  return requestClient.get<any>(`/api/v1/app/insights/${insightType}`, {
+  return requestClient.get(`/api/v1/app/insights/${insightType}`, {
     params: {
       time_range: timeRange,
       force_refresh: forceRefresh,

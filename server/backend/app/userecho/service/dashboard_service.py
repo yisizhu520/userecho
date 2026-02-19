@@ -43,6 +43,8 @@ class DashboardService:
             pending_decisions = await DashboardService._get_pending_decisions(db, tenant_id)
             # 新增：客户统计
             customer_stats = await DashboardService._get_customer_stats(db, tenant_id, week_ago)
+            # 新增：需求转化漏斗
+            conversion_funnel = await DashboardService._get_conversion_funnel(db, tenant_id)
 
             return {
                 'feedback_stats': feedback_stats,
@@ -53,6 +55,7 @@ class DashboardService:
                 'weekly_trend': weekly_trend,
                 'tag_distribution': tag_distribution,
                 'customer_stats': customer_stats,
+                'conversion_funnel': conversion_funnel,
             }
         except Exception as e:
             log.error(f'Failed to get dashboard stats for tenant {tenant_id}: {e}')
@@ -632,6 +635,75 @@ class DashboardService:
                 'completed_count': completed_count,
             },
             'recent_updates': recent_updates,
+        }
+
+    @staticmethod
+    async def _get_conversion_funnel(
+        db: AsyncSession,
+        tenant_id: str,
+    ) -> dict:
+        """
+        获取需求转化漏斗数据
+        
+        流程：总反馈 → 已聚类 → 待审 → 已排期 → 进行中 → 已完成
+        """
+        # 1. 总反馈数
+        total_feedbacks_query = select(func.count(Feedback.id)).where(
+            Feedback.tenant_id == tenant_id,
+            Feedback.deleted_at.is_(None),
+        )
+        total_feedbacks = await db.scalar(total_feedbacks_query) or 0
+
+        # 2. 已聚类反馈数（有 topic_id）
+        clustered_query = select(func.count(Feedback.id)).where(
+            Feedback.tenant_id == tenant_id,
+            Feedback.deleted_at.is_(None),
+            Feedback.topic_id.isnot(None),
+        )
+        clustered = await db.scalar(clustered_query) or 0
+
+        # 3. 按议题状态统计
+        status_query = (
+            select(
+                Topic.status,
+                func.count(Topic.id).label('count'),
+            )
+            .where(
+                Topic.tenant_id == tenant_id,
+                Topic.deleted_at.is_(None),
+            )
+            .group_by(Topic.status)
+        )
+        status_result = await db.execute(status_query)
+        status_counts = {row.status: row.count for row in status_result.all()}
+
+        pending_review = status_counts.get('pending', 0)
+        planned = status_counts.get('planned', 0)
+        in_progress = status_counts.get('in_progress', 0)
+        completed = status_counts.get('completed', 0)
+
+        # 4. 计算转化率
+        def safe_rate(numerator: int, denominator: int) -> float:
+            return round((numerator / denominator * 100), 1) if denominator > 0 else 0.0
+
+        clustering_rate = safe_rate(clustered, total_feedbacks)
+        review_rate = safe_rate(pending_review + planned + in_progress + completed, clustered)
+        planning_rate = safe_rate(planned + in_progress + completed, pending_review + planned + in_progress + completed)
+        completion_rate = safe_rate(completed, planned + in_progress + completed)
+
+        return {
+            'total_feedbacks': total_feedbacks,
+            'clustered': clustered,
+            'pending_review': pending_review,
+            'planned': planned,
+            'in_progress': in_progress,
+            'completed': completed,
+            'conversion_rates': {
+                'clustering_rate': clustering_rate,
+                'review_rate': review_rate,
+                'planning_rate': planning_rate,
+                'completion_rate': completion_rate,
+            },
         }
 
 

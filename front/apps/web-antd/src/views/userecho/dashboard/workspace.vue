@@ -17,6 +17,7 @@ import { useUserStore } from '@vben/stores';
 
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
+import ConversionFunnelCard from './components/ConversionFunnelCard.vue';
 import CustomerStatsCard from './components/CustomerStatsCard.vue';
 import InsightsCard from './components/InsightsCard.vue';
 import MyFeedbacksCard from './components/MyFeedbacksCard.vue';
@@ -91,6 +92,12 @@ const quickActions: WorkbenchQuickNavItem[] = [
     url: '/app/feedback/list',
   },
   {
+    color: '#8b5cf6',
+    icon: 'lucide:scan',
+    title: '截图识别',
+    url: '/app/feedback/screenshot-upload',
+  },
+  {
     color: '#e18525',
     icon: 'lucide:lightbulb',
     title: '查看需求',
@@ -101,6 +108,12 @@ const quickActions: WorkbenchQuickNavItem[] = [
     icon: 'lucide:users',
     title: '客户管理',
     url: '/app/customer',
+  },
+  {
+    color: '#0ea5e9',
+    icon: 'lucide:file-bar-chart',
+    title: '洞察报告',
+    url: '/app/insights/report',
   },
 ];
 
@@ -179,6 +192,9 @@ onMounted(() => {
         <AnalysisChartCard class="mt-5" title="需求标签分布">
           <TagDistributionChart :data="stats.tag_distribution" />
         </AnalysisChartCard>
+        
+        <!-- 需求转化漏斗 -->
+        <ConversionFunnelCard :data="stats.conversion_funnel" class="mt-5" />
       </div>
 
       <!-- 右侧：快捷操作 + 我的反馈 + TOP 需求 -->
