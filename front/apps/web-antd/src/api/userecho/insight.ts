@@ -236,3 +236,30 @@ export interface SendReportEmailRequest {
 export async function sendReportEmail(data: SendReportEmailRequest) {
   return requestClient.post('/api/v1/app/insights/report/send-email', data);
 }
+
+// 报告时间段
+export interface ReportPeriod {
+  period_key: string;    // 唯一标识：2026-W02 或 2026-01
+  start_date: string;    // 开始日期：2026-01-06
+  end_date: string;      // 结束日期：2026-01-12
+  label: string;         // 显示标签：本周 / 上周 / 12月第4周
+  sub_label: string;     // 副标签：1/6 - 1/12
+  has_cache: boolean;    // 是否有缓存
+  is_current: boolean;   // 是否当前周期
+  time_range: string;    // 用于查询报告的时间范围参数
+}
+
+/**
+ * 获取报告时间段列表
+ */
+export async function getReportPeriods(
+  periodType: 'week' | 'month' = 'week',
+  limit: number = 12,
+) {
+  return requestClient.get<ReportPeriod[]>('/api/v1/app/insights/report/periods', {
+    params: {
+      period_type: periodType,
+      limit,
+    },
+  });
+}

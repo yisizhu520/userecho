@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Query
+from sqlalchemy import select
 
 from backend.app.task.celery import celery_app
 from backend.app.userecho.crud.crud_insight import crud_insight
@@ -13,6 +14,117 @@ from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter()
+
+
+@router.get('/insights/report/periods', summary='获取报告时间段列表')
+async def get_report_periods(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+    period_type: Annotated[str, Query(description='周期类型：week | month')] = 'week',
+    limit: Annotated[int, Query(ge=1, le=52)] = 12,
+):
+    """
+    返回可选择的时间段列表
+
+    用于左侧时间线导航，显示最近 N 周或 N 月，并标记哪些已有缓存
+    """
+    from datetime import date, datetime, timedelta
+
+    from sqlalchemy import distinct
+
+    from backend.app.userecho.model.insight import Insight
+
+    today = date.today()
+    periods: list[dict] = []
+
+    if period_type == 'week':
+        # 计算最近 N 周
+        # ISO 周：周一为一周开始
+        current_week_start = today - timedelta(days=today.weekday())
+
+        for i in range(limit):
+            week_start = current_week_start - timedelta(weeks=i)
+            week_end = week_start + timedelta(days=6)
+            iso_year, iso_week, _ = week_start.isocalendar()
+            period_key = f'{iso_year}-W{iso_week:02d}'
+
+            # 生成标签
+            if i == 0:
+                label = '本周'
+            elif i == 1:
+                label = '上周'
+            else:
+                label = f'{week_start.month}月第{(week_start.day - 1) // 7 + 1}周'
+
+            sub_label = f'{week_start.month}/{week_start.day} - {week_end.month}/{week_end.day}'
+
+            periods.append({
+                'period_key': period_key,
+                'start_date': week_start.isoformat(),
+                'end_date': week_end.isoformat(),
+                'label': label,
+                'sub_label': sub_label,
+                'is_current': i == 0,
+                'time_range': f'{iso_year}-W{iso_week:02d}',  # 用于查询报告
+            })
+    else:
+        # 计算最近 N 月
+        current_month_start = today.replace(day=1)
+
+        for i in range(limit):
+            # 计算第 i 个月
+            year = current_month_start.year
+            month = current_month_start.month - i
+            while month <= 0:
+                month += 12
+                year -= 1
+
+            month_start = date(year, month, 1)
+            # 计算月末
+            if month == 12:
+                month_end = date(year + 1, 1, 1) - timedelta(days=1)
+            else:
+                month_end = date(year, month + 1, 1) - timedelta(days=1)
+
+            period_key = f'{year}-{month:02d}'
+
+            # 生成标签
+            if i == 0:
+                label = '本月'
+            elif i == 1:
+                label = '上月'
+            else:
+                label = f'{year}年{month}月'
+
+            sub_label = f'{month_start.month}/{month_start.day} - {month_end.month}/{month_end.day}'
+
+            periods.append({
+                'period_key': period_key,
+                'start_date': month_start.isoformat(),
+                'end_date': month_end.isoformat(),
+                'label': label,
+                'sub_label': sub_label,
+                'is_current': i == 0,
+                'time_range': f'{year}-{month:02d}',  # 用于查询报告
+            })
+
+    # 查询已缓存的报告
+    cached_query = (
+        select(distinct(Insight.time_range))
+        .where(
+            Insight.tenant_id == tenant_id,
+            Insight.insight_type == 'weekly_report',
+            Insight.status == 'active',
+        )
+    )
+    result = await db.execute(cached_query)
+    cached_ranges = {row[0] for row in result.all()}
+
+    # 标记缓存状态
+    for period in periods:
+        period['has_cache'] = period['time_range'] in cached_ranges
+
+    return response_base.success(data=periods)
 
 
 @router.get('/insights/{insight_type}', summary='获取指定类型的洞察')

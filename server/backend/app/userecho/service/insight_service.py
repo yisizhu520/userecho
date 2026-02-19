@@ -65,10 +65,11 @@ class InsightService:
         # 2. 检查缓存
         if not force_refresh:
             cached = await crud_insight.get_cached_insight(
-                db, tenant_id, insight_type, time_range, start_date, end_date
+                db, tenant_id, insight_type, time_range, start_date.date(), end_date.date()
             )
             if cached:
                 log.info(f'Using cached insight: {insight_type} for tenant {tenant_id}')
+                return cached.content
                 return cached.content
 
         # 3. weekly_report 特殊处理：触发异步任务
@@ -113,10 +114,48 @@ class InsightService:
         return content
 
     def _parse_time_range(self, time_range: str) -> tuple[datetime, datetime]:
-        """解析时间范围"""
+        """
+        解析时间范围
+
+        支持的格式：
+        - this_week: 本周一到今天
+        - this_month: 本月1号到今天
+        - 2026-W02: ISO 周格式（特定周的周一到周日）
+        - 2026-01: 月份格式（特定月的1号到月末）
+        """
+        import re
+
         now = datetime.now()
         today = now.date()
 
+        # ISO 周格式：2026-W02
+        iso_week_match = re.match(r'^(\d{4})-W(\d{2})$', time_range)
+        if iso_week_match:
+            year = int(iso_week_match.group(1))
+            week = int(iso_week_match.group(2))
+            # 计算该周的周一
+            start_date = datetime.strptime(f'{year}-W{week}-1', '%G-W%V-%u').date()
+            end_date = start_date + timedelta(days=6)
+            start_datetime = datetime.combine(start_date, datetime.min.time())
+            end_datetime = datetime.combine(end_date, datetime.max.time())
+            return start_datetime, end_datetime
+
+        # 月份格式：2026-01
+        month_match = re.match(r'^(\d{4})-(\d{2})$', time_range)
+        if month_match:
+            year = int(month_match.group(1))
+            month = int(month_match.group(2))
+            start_date = date(year, month, 1)
+            # 计算月末
+            if month == 12:
+                end_date = date(year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = date(year, month + 1, 1) - timedelta(days=1)
+            start_datetime = datetime.combine(start_date, datetime.min.time())
+            end_datetime = datetime.combine(end_date, datetime.max.time())
+            return start_datetime, end_datetime
+
+        # 相对时间范围
         if time_range == 'this_week':
             # 本周一到今天
             start_date = today - timedelta(days=today.weekday())

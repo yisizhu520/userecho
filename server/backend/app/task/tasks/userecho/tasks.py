@@ -162,9 +162,12 @@ def analyze_screenshot_task(
     time_limit=300,  # 5分钟硬超时
     soft_time_limit=270,  # 4.5分钟软超时
 )
-def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week', format: str = 'markdown'):
+async def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week', format: str = 'markdown'):
     """
     按需生成洞察报告（用户触发）
+
+    使用 celery-aio-pool 的 AsyncIOPool，任务可以直接定义为 async def，
+    celery-aio-pool 会自动管理事件循环。
 
     Args:
         tenant_id: 租户ID
@@ -174,54 +177,55 @@ def generate_insight_report(self, tenant_id: str, time_range: str = 'this_week',
     Returns:
         生成的报告内容
     """
+    from backend.app.userecho.crud.crud_insight import crud_insight
     from backend.app.userecho.service.insight_service import insight_service
     from backend.common.log import log
 
-    async def _async_run():
-        """异步执行报告生成"""
-        try:
-            # 更新任务状态为进行中
-            self.update_state(state='PROGRESS', meta={'current': 0, 'total': 100, 'status': '正在生成报告...'})
-
-            async with async_db_session() as db:
-                log.info(f'[Task {self.request.id}] Starting insight report generation for tenant: {tenant_id}')
-
-                # 生成洞察（使用缓存，避免重复生成）
-                content = await insight_service.generate_insight(
-                    db=db,
-                    tenant_id=tenant_id,
-                    insight_type='weekly_report',
-                    time_range=time_range,
-                    force_refresh=False,  # 默认使用缓存，用户可通过"重新生成"按钮强制刷新
-                )
-
-                log.info(f'[Task {self.request.id}] Completed insight report generation for tenant: {tenant_id}')
-
-                # 返回结果 - 同时返回 markdown 和 结构化数据
-                return {
-                    'markdown': content.get('markdown', ''),
-                    'data': content.get('data', {}),
-                    'generated_at': content.get('generated_at', ''),
-                    'format': format,
-                    'status': 'success',
-                }
-
-        except Exception as e:
-            log.error(f'[Task {self.request.id}] Failed to generate insight report for tenant {tenant_id}: {e}')
-            raise
-
-    # 手动管理 event loop（与其他任务相同模式）
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # 更新任务状态为进行中
+        self.update_state(state='PROGRESS', meta={'current': 0, 'total': 100, 'status': '正在生成报告...'})
 
-    # 运行异步任务
-    return loop.run_until_complete(_async_run())
+        async with async_db_session() as db:
+            log.info(f'[Task {self.request.id}] Starting insight report generation for tenant: {tenant_id}')
+
+            # 生成洞察（直接调用内部方法，避免触发新的异步任务）
+            start_date, end_date = insight_service._parse_time_range(time_range)
+            content = await insight_service._generate_weekly_report(
+                db=db,
+                tenant_id=tenant_id,
+                start_date=start_date,
+                end_date=end_date,
+            )
+
+            # 持久化到缓存
+            await crud_insight.create_insight(
+                db=db,
+                tenant_id=tenant_id,
+                insight_type='weekly_report',
+                time_range=time_range,
+                start_date=start_date.date(),
+                end_date=end_date.date(),
+                content=content,
+                generated_by='hybrid',
+                execution_time_ms=0,
+            )
+
+            await db.commit()
+
+            log.info(f'[Task {self.request.id}] Completed insight report generation for tenant: {tenant_id}')
+
+            # 返回结果 - 同时返回 markdown 和 结构化数据
+            return {
+                'markdown': content.get('markdown', ''),
+                'data': content.get('data', {}),
+                'generated_at': content.get('generated_at', ''),
+                'format': format,
+                'status': 'success',
+            }
+
+    except Exception as e:
+        log.error(f'[Task {self.request.id}] Failed to generate insight report for tenant {tenant_id}: {e}')
+        raise
 
 
 @celery_app.task(
