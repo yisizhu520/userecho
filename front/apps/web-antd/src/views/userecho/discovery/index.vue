@@ -280,6 +280,8 @@ onMounted(() => {
 <style scoped>
 .discovery-page {
   padding: 20px 24px;
+  background: hsl(var(--background));
+  min-height: 100%;
 }
 
 /* ===== 紧凑 Header ===== */

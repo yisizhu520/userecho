@@ -75,7 +75,7 @@ const gridOptions: VxeTableGridOptions<Customer> = {
   rowConfig: {
     keyField: 'id',
   },
-  height: 'auto',
+  height: '100%',
   exportConfig: {},
   printConfig: {},
   toolbarConfig: {
@@ -87,11 +87,6 @@ const gridOptions: VxeTableGridOptions<Customer> = {
     },
     custom: true,
     zoom: true,
-  },
-  pagerConfig: {
-    enabled: true,
-    pageSize: 20,
-    pageSizes: [10, 20, 50, 100],
   },
   columns: [
     {
@@ -503,7 +498,12 @@ const typeOptions = computed(() => [
 
 <style scoped>
 .customer-page {
-  height: 100%;
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px;
+  background: hsl(var(--background));
 }
 
 .customer-name-link {
