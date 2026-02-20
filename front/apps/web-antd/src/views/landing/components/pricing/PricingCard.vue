@@ -42,6 +42,14 @@ const savings = computed(() => {
   return null;
 });
 
+// 滚动到联系区域
+const scrollToContact = () => {
+  const contactSection = document.getElementById('contact');
+  if (contactSection) {
+    contactSection.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
 const cardClass = computed(() => ({
   'pricing-card': true,
   'recommended': props.tier.isRecommended,
@@ -77,7 +85,7 @@ const cardClass = computed(() => ({
     </div>
 
     <!-- CTA 按钮 -->
-    <button class="cta-button" :class="{ primary: tier.isRecommended }">
+    <button class="cta-button" :class="{ primary: tier.isRecommended }" @click="scrollToContact">
       {{ tier.ctaText }}
       <svg v-if="tier.id !== 'enterprise'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M5 12h14M12 5l7 7-7 7"/>

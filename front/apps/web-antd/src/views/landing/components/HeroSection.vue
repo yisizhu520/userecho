@@ -29,6 +29,14 @@ const handleTryDemo = () => {
   window.open('https://demo.huixiang.app', '_blank');
 };
 
+// 滚动到联系区域
+const scrollToContact = () => {
+  const contactSection = document.getElementById('contact');
+  if (contactSection) {
+    contactSection.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
 // Make STAGE_CONFIG available to template
 const stageConfig = {
   INGEST: { label: '收集反馈', icon: '📥', color: '#60a5fa' },
@@ -947,8 +955,8 @@ onUnmounted(() => {
         </p>
 
         <div class="hero-actions">
-          <button class="btn-primary" @click="emit('getStarted')">
-            <span>开始使用</span>
+          <button class="btn-primary" @click="scrollToContact">
+            <span>免费试用</span>
             <svg
               width="16"
               height="16"
@@ -977,6 +985,15 @@ onUnmounted(() => {
             </svg>
             <span>在线体验</span>
           </button>
+        </div>
+
+        <!-- 限时福利提示 -->
+        <div class="promo-banner">
+          <span class="promo-fire">🔥</span>
+          <span class="promo-text">
+            限时福利：前 100 名用户<strong>免费体验3个月</strong>专业版
+            <span class="promo-highlight">（已有 16 家团队加入，仅剩 84 个名额）</span>
+          </span>
         </div>
 
         <div class="hero-features">
@@ -1248,6 +1265,44 @@ onUnmounted(() => {
 .btn-secondary:hover {
   background: var(--lp-bg-card-hover);
   border-color: var(--lp-accent-cyan);
+}
+
+/* 限时福利提示 */
+.promo-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  margin-top: 0.5rem;
+}
+
+.promo-fire {
+  font-size: 1.25rem;
+  animation: fire-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes fire-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.promo-text {
+  font-size: 0.95rem;
+  color: var(--lp-text-secondary);
+  line-height: 1.5;
+}
+
+.promo-text strong {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.promo-highlight {
+  color: var(--lp-text-tertiary);
+  font-size: 0.85rem;
 }
 
 .hero-features {

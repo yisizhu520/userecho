@@ -102,7 +102,7 @@ export const pricingTiers: PricingTier[] = [
     isRecommended: false,
     isFree: false,
     features: getStarterFeatures(),
-    ctaText: '立即订阅',
+    ctaText: '免费试用',
   },
   {
     id: 'standard',
@@ -113,7 +113,7 @@ export const pricingTiers: PricingTier[] = [
     isRecommended: true,
     isFree: false,
     features: getStandardFeatures(),
-    ctaText: '立即订阅',
+    ctaText: '免费试用',
   },
   {
     id: 'pro',
@@ -124,7 +124,7 @@ export const pricingTiers: PricingTier[] = [
     isRecommended: false,
     isFree: false,
     features: getProFeatures(),
-    ctaText: '立即订阅',
+    ctaText: '免费试用',
   },
   {
     id: 'enterprise',
