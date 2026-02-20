@@ -38,6 +38,34 @@ const coreRoutes: RouteRecordRaw[] = [
     path: '/',
   },
   /**
+   * 服务条款页面
+   */
+  {
+    component: () => import('#/views/_core/legal/terms-of-service.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: '服务条款 - 回响',
+    },
+    name: 'TermsOfService',
+    path: '/terms-of-service',
+  },
+  /**
+   * 隐私政策页面
+   */
+  {
+    component: () => import('#/views/_core/legal/privacy-policy.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: '隐私政策 - 回响',
+    },
+    name: 'PrivacyPolicy',
+    path: '/privacy-policy',
+  },
+  /**
    * 应用主路由
    * 使用基础布局，作为所有工作台页面的父级容器
    */

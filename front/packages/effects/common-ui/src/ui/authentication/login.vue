@@ -133,13 +133,10 @@ defineExpose({
       </span>
     </div>
     <p class="mb-3 text-gray-500">
-      点击继续，即表示我同意 fba 的条款、
-      <a
-        href="https://fastapi-practices.github.io/fastapi_best_architecture_docs/privacy-policy.html"
-      >
-        隐私政策
-      </a>
-      和 cookie 政策
+      点击继续，即表示我同意回响的
+      <a href="/terms-of-service" class="vben-link">服务条款</a>
+      和
+      <a href="/privacy-policy" class="vben-link">隐私政策</a>
     </p>
     <VbenButton
       :class="{
