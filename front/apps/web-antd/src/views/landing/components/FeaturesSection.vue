@@ -69,7 +69,7 @@ onMounted(() => {
           全能的<span class="title-gradient">反馈分析</span>工具
         </h2>
         <p class="section-subtitle">
-          四大核心能力，让产品决策更加智能高效
+          四大核心能力，让业务决策更加智能高效
         </p>
       </div>
 

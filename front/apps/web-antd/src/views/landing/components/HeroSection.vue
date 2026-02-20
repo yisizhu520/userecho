@@ -11,7 +11,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   title: '用户反馈的',
   subtitle: 'AI 智能引擎',
-  description: '10倍速度洞察需求 | 产品经理的决策外脑',
+  description: '10倍速度洞察需求 | 团队的智能决策助手',
 });
 
 const emit = defineEmits<{
@@ -943,7 +943,7 @@ onUnmounted(() => {
         <p class="hero-description">
           <span class="desc-main">10倍速度洞察需求</span>
           <span class="desc-divider"> — </span>
-          <span class="desc-sub">产品经理的决策外脑</span>
+          <span class="desc-sub">团队的智能决策助手</span>
         </p>
 
         <div class="hero-actions">

@@ -96,7 +96,7 @@ export const pricingTiers: PricingTier[] = [
   {
     id: 'starter',
     name: '启航版',
-    tagline: '适合个人产品经理与初创团队快速上手',
+    tagline: '适合个人用户与初创团队快速上手',
     monthlyPrice: 99,
     yearlyPrice: 799,
     isRecommended: false,

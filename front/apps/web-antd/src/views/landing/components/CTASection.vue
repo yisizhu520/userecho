@@ -6,8 +6,8 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  title: '准备好提升产品决策效率了吗？',
-  subtitle: '加入数千名产品经理的行列，开始使用 AI 驱动的反馈分析',
+  title: '准备好提升决策效率了吗？',
+  subtitle: '加入数千家团队的行列，开始使用 AI 驱动的反馈分析',
   ctaText: '免费开始使用',
 });
 

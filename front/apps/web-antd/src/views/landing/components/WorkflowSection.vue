@@ -31,7 +31,7 @@ const steps = ref([
   {
     number: '04',
     title: '智能决策',
-    description: '基于数据驱动做出产品决策，优先处理高价值需求',
+    description: '基于数据驱动做出业务决策，优先处理高价值需求',
     icon: '🎯',
     color: 'var(--lp-primary-700)',
   },
