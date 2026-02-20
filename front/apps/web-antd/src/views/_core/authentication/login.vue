@@ -10,7 +10,7 @@ import { useAccessStore } from '@vben/stores';
 
 import { Image } from 'ant-design-vue';
 
-import OAuth2Login from '#/plugins/oauth2/views/login.vue';
+
 import { useAuthStore } from '#/store';
 
 defineOptions({ name: 'Login' });
@@ -173,10 +173,11 @@ onUnmounted(() => {
   <AuthenticationLogin
     :form-schema="formSchema"
     :loading="authStore.loginLoading"
+    :show-code-login="false"
+    :show-qrcode-login="false"
+    :show-third-party-login="false"
     @submit="authStore.authLogin"
   >
-    <template #third-party-login>
-      <OAuth2Login />
-    </template>
+
   </AuthenticationLogin>
 </template>
