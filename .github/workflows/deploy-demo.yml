@@ -1,0 +1,65 @@
+name: Build and Deploy Demo Environment
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'front/**'
+      - 'server/**'
+      - 'docker-compose.demo.yml'
+      - 'Dockerfile.demo'
+      - 'deploy/monolith/**'
+      - '.github/workflows/deploy-demo.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Image: ghcr.io/username/repo
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-deploy-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=demo
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push monolithic demo image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.demo
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=monolith-demo
+          cache-to: type=gha,mode=max,scope=monolith-demo
+
+      - name: Trigger Dokploy Demo Deployment
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_DEMO_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "x-github-event: registry_package" \
+            --fail --silent --show-error

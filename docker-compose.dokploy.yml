@@ -1,0 +1,65 @@
+# Dokploy 部署专用 docker-compose
+# 单一镜像 (Monolithic) 部署
+# 包含：Nginx + FastAPI + Celery Worker + Celery Beat
+
+networks:
+  fba_network:
+    driver: bridge
+
+volumes:
+  fba_logs:
+  fba_static:
+  fba_static_upload:
+
+
+services:
+  # ============================================
+  # Monolithic App Service
+  # ============================================
+  fba_monolith:
+    image: ghcr.io/${GITHUB_REPOSITORY}:master
+    container_name: fba_monolith
+    restart: always
+    ports:
+      - "80:80"
+      # - "8001:8001" # API Direct Access (Optional)
+    environment:
+      - TZ=Asia/Shanghai
+      - ENVIRONMENT=${ENVIRONMENT:-prod}
+
+      # Database
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+
+      # Redis
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-0}
+
+      # RabbitMQ (Celery Broker)
+      - CELERY_RABBITMQ_HOST=${CELERY_RABBITMQ_HOST}
+      - CELERY_RABBITMQ_PORT=${CELERY_RABBITMQ_PORT:-5672}
+      - CELERY_RABBITMQ_USERNAME=${CELERY_RABBITMQ_USERNAME}
+      - CELERY_RABBITMQ_PASSWORD=${CELERY_RABBITMQ_PASSWORD}
+      - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:-1}
+
+      # Secrets
+      - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
+      - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY}
+
+    volumes:
+      - fba_logs:/var/log/fba
+      - fba_static:/fba/backend/app/static
+      - fba_static_upload:/fba/backend/static/upload
+    networks:
+      - fba_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/api/v1/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

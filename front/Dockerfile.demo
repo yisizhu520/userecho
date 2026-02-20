@@ -1,0 +1,22 @@
+# Demo 环境专用 Dockerfile
+# 使用 .env.demo 配置构建前端
+
+FROM guergeiro/pnpm:lts-latest-slim AS build
+
+WORKDIR /fba_ui
+
+COPY . .
+
+# 构建 Demo 版本（使用 .env.demo 配置）
+RUN pnpm install \
+    && pnpm build:demo
+
+FROM nginx
+
+COPY scripts/deploy/nginx.conf /etc/nginx/nginx.conf
+
+COPY --from=build /fba_ui/apps/web-antd/dist /var/www/fba_ui
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

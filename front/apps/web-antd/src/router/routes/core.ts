@@ -121,6 +121,21 @@ const coreRoutes: RouteRecordRaw[] = [
     name: 'Onboarding',
     path: '/onboarding',
   },
+  /**
+   * Demo 欢迎页
+   * 演示环境角色选择入口
+   */
+  {
+    component: () => import('#/views/demo/DemoWelcome.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      title: '回响-演示',
+    },
+    name: 'DemoWelcome',
+    path: '/demo',
+  },
 ];
 
 export { coreRoutes, fallbackNotFoundRoute };

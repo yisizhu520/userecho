@@ -14,6 +14,7 @@ from backend.app.userecho.crud import crud_feedback
 from backend.app.userecho.service import clustering_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
+from backend.common.security.depends import DependsTurnstile
 from backend.common.security.jwt import CurrentTenantId
 from backend.core.conf import settings
 from backend.database.db import CurrentSession
@@ -22,7 +23,7 @@ from backend.utils.ai_client import ai_client
 router = APIRouter(prefix='/clustering', tags=['UserEcho - AI聚类'])
 
 
-@router.post('/trigger', summary='触发聚类任务')
+@router.post('/trigger', summary='触发聚类任务', dependencies=[DependsTurnstile])
 async def trigger_clustering(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -159,7 +160,7 @@ async def get_clustering_status(
     )
 
 
-@router.get('/suggestions/{feedback_id}', summary='获取聚类建议')
+@router.get('/suggestions/{feedback_id}', summary='获取聚类建议', dependencies=[DependsTurnstile])
 async def get_clustering_suggestions(
     feedback_id: str,
     db: CurrentSession,

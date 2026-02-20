@@ -1,0 +1,76 @@
+# Demo 演示环境专用 docker-compose
+# 单一镜像 (Monolithic) 部署
+# 特性：DEMO_MODE 启用、Turnstile 保护、禁用注册、每日数据重置
+
+networks:
+  demo_network:
+    driver: bridge
+
+volumes:
+  demo_logs:
+  demo_static:
+  demo_static_upload:
+
+
+services:
+  # ============================================
+  # Demo Monolithic App Service
+  # ============================================
+  demo_monolith:
+    image: ghcr.io/${GITHUB_REPOSITORY}:demo
+    container_name: demo_monolith
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      - TZ=Asia/Shanghai
+
+      # ======= Demo 模式配置 =======
+      - DEMO_MODE=true
+      - ENVIRONMENT=demo
+      - ALLOW_REGISTRATION=false
+
+      # ======= Turnstile 配置 =======
+      - TURNSTILE_ENABLED=${TURNSTILE_ENABLED:-true}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY}
+
+      # ======= 数据重置配置 =======
+      - DEMO_DATA_RESET_ENABLED=${DEMO_DATA_RESET_ENABLED:-true}
+      - DEMO_DATA_RESET_CRON=${DEMO_DATA_RESET_CRON:-0 2 * * *}
+
+      # ======= 数据库配置 =======
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+
+      # ======= Redis配置 =======
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DATABASE=${REDIS_DATABASE:-1}
+
+      # ======= RabbitMQ 配置 =======
+      - CELERY_RABBITMQ_HOST=${CELERY_RABBITMQ_HOST}
+      - CELERY_RABBITMQ_PORT=${CELERY_RABBITMQ_PORT:-5672}
+      - CELERY_RABBITMQ_USERNAME=${CELERY_RABBITMQ_USERNAME}
+      - CELERY_RABBITMQ_PASSWORD=${CELERY_RABBITMQ_PASSWORD}
+      - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:-2}
+
+      # ======= 安全密钥 =======
+      - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
+      - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY}
+
+    volumes:
+      - demo_logs:/var/log/fba
+      - demo_static:/fba/backend/app/static
+      - demo_static_upload:/fba/backend/static/upload
+    networks:
+      - demo_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80/api/v1/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

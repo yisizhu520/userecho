@@ -24,6 +24,11 @@ const animationId = ref<number>();
 
 const isDark = computed(() => theme.value === 'dark');
 
+// 跳转到演示环境
+const handleTryDemo = () => {
+  window.open('https://demo.huixiang.app', '_blank');
+};
+
 // Make STAGE_CONFIG available to template
 const stageConfig = {
   INGEST: { label: '收集反馈', icon: '📥', color: '#60a5fa' },
@@ -957,16 +962,20 @@ onUnmounted(() => {
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>
-          <button class="btn-secondary">
+          <button class="btn-secondary" @click="handleTryDemo">
             <svg
               width="18"
               height="18"
               viewBox="0 0 24 24"
-              fill="currentColor"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             >
-              <path d="M8 5v14l11-7z" />
+              <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            <span>观看演示</span>
+            <span>在线体验</span>
           </button>
         </div>
 

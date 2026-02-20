@@ -18,6 +18,7 @@ from backend.app.userecho.schema.feedback import (
 from backend.app.userecho.service import feedback_service, import_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import ResponseSchemaModel, response_base
+from backend.common.security.depends import DependsTurnstile
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
@@ -246,7 +247,7 @@ async def download_template():
         )
 
 
-@router.post('/batch-generate-summary', summary='批量生成 AI 摘要')
+@router.post('/batch-generate-summary', summary='批量生成 AI 摘要', dependencies=[DependsTurnstile])
 async def batch_generate_summary(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -380,7 +381,7 @@ async def upload_feedback_image(
 # ==================== 截图智能识别相关接口 ====================
 
 
-@router.post('/screenshot/analyze', summary='截图智能识别（异步）')
+@router.post('/screenshot/analyze', summary='截图智能识别（异步）', dependencies=[DependsTurnstile])
 async def analyze_screenshot(
     file: Annotated[UploadFile, File(description='截图文件（PNG/JPG/JPEG/WEBP，最大 10MB）')],
     tenant_id: str = CurrentTenantId,

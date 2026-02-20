@@ -191,6 +191,15 @@ class Settings(BaseSettings):
         ('GET', f'{FASTAPI_API_V1_PATH}/auth/captcha'),
         ('POST', f'{FASTAPI_API_V1_PATH}/auth/refresh'),
     }
+    ALLOW_REGISTRATION: bool = True  # Demo 模式下设为 False
+
+    # Cloudflare Turnstile 人机验证
+    TURNSTILE_ENABLED: bool = False
+    TURNSTILE_SECRET_KEY: str = ''
+
+    # Demo 数据重置
+    DEMO_DATA_RESET_ENABLED: bool = False
+    DEMO_DATA_RESET_CRON: str = '0 2 * * *'  # 每日凌晨 2 点
 
     # IP 定位配置
     IP_LOCATION_PARSE: Literal['online', 'offline', 'false'] = 'offline'
