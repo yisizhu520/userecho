@@ -46,6 +46,7 @@
     "dayjs": "catalog:",
     "html2canvas": "^1.4.1",
     "lodash-es": "catalog:",
+    "lucide-vue-next": "catalog:",
     "mitt": "^3.0.1",
     "pinia": "catalog:",
     "socket.io-client": "^4.8.1",
