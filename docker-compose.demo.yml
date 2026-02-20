@@ -17,7 +17,7 @@ services:
   # Demo Monolithic App Service
   # ============================================
   demo_monolith:
-    image: ghcr.io/${GITHUB_REPOSITORY}:demo
+    image: ghcr.io/yisizhu520/userecho:demo
     container_name: demo_monolith
     restart: always
     ports:

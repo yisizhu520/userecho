@@ -17,7 +17,7 @@ services:
   # Monolithic App Service
   # ============================================
   fba_monolith:
-    image: ghcr.io/${GITHUB_REPOSITORY}:master
+    image: ghcr.io/yisizhu520/userecho:master
     container_name: fba_monolith
     restart: always
     ports:
