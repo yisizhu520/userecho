@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Target, Headphones, Settings, ChevronUp } from 'lucide-vue-next';
 import { requestClient } from '#/api/request';
-import { useAccessStore } from '#/store';
+import { useAccessStore } from '@vben/stores';
 
 const accessStore = useAccessStore();
 const expanded = ref(false);

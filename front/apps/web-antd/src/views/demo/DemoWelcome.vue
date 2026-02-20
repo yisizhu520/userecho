@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Target, Headphones, Settings } from 'lucide-vue-next';
 import { requestClient } from '#/api/request';
-import { useAccessStore } from '#/store';
+import { useAccessStore } from '@vben/stores';
 
 const router = useRouter();
 const accessStore = useAccessStore();
