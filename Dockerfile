@@ -7,12 +7,9 @@
 FROM guergeiro/pnpm:lts-latest-slim AS frontend-builder
 WORKDIR /app/front
 
-# Cache dependencies
-COPY front/package.json front/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-# Build
+# Copy source code and install dependencies
 COPY front/ .
+RUN pnpm install --frozen-lockfile
 # 设置构建缓存目录以加速后续构建
 RUN --mount=type=cache,target=/app/front/node_modules/.cache \
     pnpm build:antd
