@@ -24,7 +24,7 @@ const fallbackNotFoundRoute: RouteRecordRaw = {
 const coreRoutes: RouteRecordRaw[] = [
   /**
    * Landing Page
-   * 产品落地页，无需登录即可访问
+   * 产品落地页，无需登录即可访问，作为网站根路径
    */
   {
     component: () => import('#/views/landing/index.vue'),
@@ -35,22 +35,21 @@ const coreRoutes: RouteRecordRaw[] = [
       title: '回响 - AI 驱动的用户反馈智能分析平台',
     },
     name: 'Landing',
-    path: '/landing',
+    path: '/',
   },
   /**
-   * 根路由
-   * 使用基础布局，作为所有页面的父级容器，子级就不必配置BasicLayout。
-   * 此路由必须存在，且不应修改
+   * 应用主路由
+   * 使用基础布局，作为所有工作台页面的父级容器
    */
   {
     component: BasicLayout,
     meta: {
       hideInBreadcrumb: true,
-      title: 'Root',
+      title: 'App',
     },
-    name: 'Root',
-    path: '/',
-    redirect: preferences.app.defaultHomePath,
+    name: 'App',
+    path: '/app',
+    redirect: '/app/dashboard/workspace',
     children: [],
   },
   {

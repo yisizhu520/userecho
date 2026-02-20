@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAccessStore } from '@vben/stores';
 import { useLandingTheme } from '#/composables/useLandingTheme';
 
 interface Props {
@@ -16,10 +17,12 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const accessStore = useAccessStore();
 const { theme, toggleTheme } = useLandingTheme();
 const isScrolled = ref(false);
 
 const isDark = computed(() => theme.value === 'dark');
+const isLoggedIn = computed(() => !!accessStore.accessToken);
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > props.showOnScroll;
@@ -27,6 +30,10 @@ const handleScroll = () => {
 
 const handleGetStarted = () => {
   emit('getStarted');
+};
+
+const handleGoToWorkspace = () => {
+  router.push('/app');
 };
 
 onMounted(() => {
@@ -41,7 +48,7 @@ onUnmounted(() => {
 <template>
   <nav class="navbar" :class="{ 'navbar-scrolled': isScrolled }">
     <div class="navbar-container">
-      <div class="navbar-brand" @click="router.push('/landing')">
+      <div class="navbar-brand" @click="router.push('/')">
         <img
           src="https://wu-clan.github.io/picx-images-hosting/logo/fba.png"
           alt="回响"
@@ -72,12 +79,21 @@ onUnmounted(() => {
             <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
         </button>
-        <button class="btn-login" @click="router.push('/auth/login')">
-          登录
-        </button>
-        <button class="btn-primary" @click="handleGetStarted">
-          免费试用
-        </button>
+        <!-- 已登录：显示进入工作台按钮 -->
+        <template v-if="isLoggedIn">
+          <button class="btn-primary" @click="handleGoToWorkspace">
+            进入工作台
+          </button>
+        </template>
+        <!-- 未登录：显示登录和免费试用按钮 -->
+        <template v-else>
+          <button class="btn-login" @click="router.push('/auth/login')">
+            登录
+          </button>
+          <button class="btn-primary" @click="handleGetStarted">
+            免费试用
+          </button>
+        </template>
       </div>
     </div>
   </nav>

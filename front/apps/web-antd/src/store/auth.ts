@@ -76,7 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
         } else {
           // 跳转到根路径，让路由守卫处理动态路由加载和重定向
           // 避免直接跳转到动态路由导致 404
-          onSuccess ? await onSuccess?.() : await router.push('/');
+          onSuccess ? await onSuccess?.() : await router.push('/app');
         }
 
         // 初始化WebSocket连接
@@ -133,8 +133,8 @@ export const useAuthStore = defineStore('auth', () => {
       path: LOGIN_PATH,
       query: redirect
         ? {
-            redirect: encodeURIComponent(router.currentRoute.value.fullPath),
-          }
+          redirect: encodeURIComponent(router.currentRoute.value.fullPath),
+        }
         : {},
     });
   }

@@ -139,15 +139,7 @@ class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
                 elif role_type == 'business':
                     has_business_role = True
 
-        # 首页路径逻辑
-        if is_superuser:
-            # 超级管理员 → 系统管理页
-            data['homePath'] = '/admin/system/user'
-        elif has_system_role and not has_business_role:
-            # 纯系统角色 → 系统管理页
-            data['homePath'] = '/admin/system/user'
-        else:
-            # 业务角色或混合角色 → 工作台
-            data['homePath'] = '/app/dashboard/workspace'
+        # 首页路径 - 统一跳转到工作台
+        data['homePath'] = '/app/dashboard/workspace'
 
         return data

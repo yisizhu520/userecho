@@ -29,7 +29,8 @@ async function generateAccessible(
   // 生成路由
   const accessibleRoutes = await generateRoutes(mode, options);
 
-  const root = router.getRoutes().find((item) => item.path === '/');
+  const root = router.getRoutes().find((item) => item.path === '/app') ||
+    router.getRoutes().find((item) => item.path === '/');
 
   // 获取已有的路由名称列表
   const names = root?.children?.map((item) => item.name) ?? [];
@@ -42,6 +43,22 @@ async function generateAccessible(
       if (route.children && route.children.length > 0) {
         delete route.component;
       }
+
+      // 当父路由不是 '/' 时，需要将所有绝对路径转换为相对路径
+      // Vue Router 要求子路由使用相对路径才能正确拼接父路由
+      // 示例：父路由 /app + 子路由 /app/dashboard -> 子路由应为 dashboard
+      //       父路由 /app + 子路由 /admin/xxx -> 子路由应为 admin/xxx
+      const rootPath = root.path;
+      if (rootPath !== '/' && route.path.startsWith('/')) {
+        if (route.path.startsWith(`${rootPath}/`)) {
+          // 去掉父路由前缀（包括斜杠）
+          route.path = route.path.slice(rootPath.length + 1);
+        } else {
+          // 其他绝对路径只去掉开头的 /
+          route.path = route.path.slice(1);
+        }
+      }
+
       // 根据router name判断，如果路由已经存在，则不再添加
       if (names?.includes(route.name)) {
         // 找到已存在的路由索引并更新，不更新会造成切换用户时，一级目录未更新，homePath 在二级目录导致的404问题
