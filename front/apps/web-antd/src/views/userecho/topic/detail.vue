@@ -83,6 +83,26 @@ const categoryConfig = computed(() => getCategoryConfig(topic.value?.category ??
 const hasUrgentFeedback = computed(() => feedbacks.value.some((f: any) => f.is_urgent));
 
 /**
+ * 状态流转规则（与后端 status_machine.py 保持一致）
+ */
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  pending: ['planned', 'ignored'],
+  planned: ['pending', 'in_progress', 'ignored'],
+  in_progress: ['planned', 'completed'],
+  completed: [],  // 终态，不可变更
+  ignored: ['pending', 'planned'],
+};
+
+/**
+ * 检查是否允许流转到目标状态
+ */
+const isTransitionAllowed = (targetStatus: string): boolean => {
+  const current = topic.value?.status;
+  if (!current || current === targetStatus) return false;
+  return STATUS_TRANSITIONS[current]?.includes(targetStatus) ?? false;
+};
+
+/**
  * 状态更新
  */
 const [StatusForm, statusFormApi] = useVbenForm({
@@ -401,7 +421,7 @@ onMounted(() => {
                 <div class="quick-actions">
                   <VbenButton 
                     class="action-btn planned"
-                    :disabled="topic.status === 'planned'"
+                    :disabled="!isTransitionAllowed('planned')"
                     @click="() => handleQuickStatusUpdate('planned')"
                   >
                     <ClockCircleOutlined /> 计划中
@@ -409,7 +429,7 @@ onMounted(() => {
                   
                   <VbenButton 
                     class="action-btn in-progress"
-                    :disabled="topic.status === 'in_progress'"
+                    :disabled="!isTransitionAllowed('in_progress')"
                     @click="() => handleQuickStatusUpdate('in_progress')"
                   >
                     <ThunderboltOutlined /> 进行中
@@ -418,7 +438,7 @@ onMounted(() => {
                   <VbenButton 
                      color="success"
                      class="action-btn completed"
-                     :disabled="topic.status === 'completed'"
+                     :disabled="!isTransitionAllowed('completed')"
                      @click="() => handleQuickStatusUpdate('completed')"
                   >
                     <CheckCircleOutlined /> 已完成
@@ -427,7 +447,7 @@ onMounted(() => {
                   <VbenButton 
                     danger
                     class="action-btn ignored"
-                    :disabled="topic.status === 'ignored'"
+                    :disabled="!isTransitionAllowed('ignored')"
                     @click="() => handleQuickStatusUpdate('ignored')"
                   >
                     <CloseCircleOutlined /> 忽略

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.crud import crud_priority_score, crud_status_history, crud_topic
 from backend.app.userecho.schema.topic import TopicCreate, TopicStatusUpdateParam, TopicUpdate
+from backend.app.userecho.service.status_machine import TopicStatusMachine
 from backend.common.log import log
 from backend.database.db import uuid4_str
 
@@ -87,6 +88,9 @@ class TopicService:
 
             old_status = topic.status
             new_status = data.status
+
+            # 状态机校验：非法流转直接拒绝
+            TopicStatusMachine.validate_transition(old_status, new_status)
 
             # 更新状态
             topic = await crud_topic.update_status(db, tenant_id, topic_id, new_status)
