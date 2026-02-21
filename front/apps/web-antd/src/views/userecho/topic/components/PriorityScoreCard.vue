@@ -273,12 +273,13 @@ watch(
               <InfoCircleOutlined class="info-icon" />
             </a-tooltip>
           </div>
-          <a-radio-group v-model:value="scoreForm.dev_cost" button-style="solid" size="small" class="cost-radio">
-            <a-radio-button :value="1">1天</a-radio-button>
-            <a-radio-button :value="3">3天</a-radio-button>
-            <a-radio-button :value="5">5天</a-radio-button>
-            <a-radio-button :value="10">10+</a-radio-button>
-          </a-radio-group>
+          <a-slider 
+            v-model:value="scoreForm.dev_cost" 
+            :min="1" 
+            :max="10" 
+            :step="1"
+            :marks="{ 1: '1天', 3: '3天', 5: '5天', 10: '10+' }"
+          />
           <div v-if="aiSuggestion" class="ai-hint">
             <span class="icon">🤖</span>
             <span>AI 建议: {{ aiSuggestion.dev_cost.reason }}</span>
@@ -480,13 +481,7 @@ watch(
   cursor: help;
 }
 
-.cost-radio {
-  display: flex;
-}
-.cost-radio :deep(.ant-radio-button-wrapper) {
-  flex: 1;
-  text-align: center;
-}
+
 
 .ai-hint {
   margin-top: 6px;
