@@ -385,3 +385,121 @@ log.warning('invalid data')
 - [ ] 是否清理了所有 `manual_*.sql` 补丁？
 - [ ] 是否在本地执行 `alembic check` 验证通过？
 - [ ] 是否使用了 Postgres 特有的 `IF EXISTS` 语法来确保健壮性？
+
+### 数据库迁移脚本执行（Windows 环境）
+
+> "工具要为人服务，不是折磨人。" - Linus
+
+#### 核心问题
+
+在 Windows 环境下，`uv run alembic` 会出现 `Failed to canonicalize script path` 错误。这是 `uv` 的已知问题。
+
+#### ✅ 推荐解决方案
+
+**方案 1: 使用便捷脚本（最简单）**
+
+项目已提供 `server/db_migrate.py` 脚本：
+
+```bash
+cd server
+
+# 检查迁移链
+python db_migrate.py check
+
+# 查看当前版本
+python db_migrate.py current
+
+# 升级到最新版本
+python db_migrate.py upgrade head
+
+# 升级一个版本
+python db_migrate.py upgrade +1
+
+# 回滚一个版本
+python db_migrate.py downgrade -1
+```
+
+**方案 2: 使用虚拟环境 Python**
+
+```bash
+cd server
+
+# 检查迁移链
+cd backend && ../.venv/Scripts/python.exe -m alembic check
+
+# 升级数据库
+cd backend && ../.venv/Scripts/python.exe -m alembic upgrade head
+```
+
+**方案 3: 在 PowerShell 中激活虚拟环境**
+
+```powershell
+# 激活虚拟环境
+.\.venv\Scripts\Activate.ps1
+
+# 进入 backend 目录
+cd backend
+
+# 使用 python -m alembic
+python -m alembic check
+python -m alembic upgrade head
+```
+
+#### ❌ 禁止行为
+
+```bash
+# 禁止在 Git Bash 中使用 uv run
+uv run alembic check  # ❌ Windows 下路径解析失败
+
+# 禁止在错误目录执行
+cd server && python -m alembic check  # ❌ alembic.ini 在 backend 目录
+
+# 禁止使用系统 Python
+python -m alembic check  # ❌ 可能没有安装 alembic
+```
+
+#### 完整升级流程
+
+```bash
+cd server
+
+# 1. 检查迁移链完整性
+python db_migrate.py check
+
+# 2. 查看当前版本
+python db_migrate.py current
+
+# 3. 备份数据库（重要！）
+pg_dump -U postgres -d userecho > backup.sql
+
+# 4. 执行升级
+python db_migrate.py upgrade head
+
+# 5. 验证结果
+python db_migrate.py check
+```
+
+#### 常见问题
+
+1. **`Failed to canonicalize script path`**
+   - 原因: `uv run` 在 Windows 下的路径问题
+   - 解决: 使用 `python db_migrate.py` 或虚拟环境 Python
+
+2. **`No 'script_location' key found`**
+   - 原因: 不在正确的目录下执行
+   - 解决: 确保在 `server/backend` 目录下，或使用 `db_migrate.py`
+
+3. **`Multiple head revisions`**
+   - 原因: 迁移链分叉
+   - 解决: 检查并删除造成分叉的迁移文件，确保只有一个 head
+
+4. **`No module named alembic`**
+   - 原因: 使用了系统 Python
+   - 解决: 使用虚拟环境 Python 或先执行 `uv sync`
+
+#### 快速检查清单
+
+- [ ] 是否使用 `python db_migrate.py` 而非 `uv run`？
+- [ ] 升级前是否备份数据库？
+- [ ] 是否在执行前检查迁移链完整性？
+- [ ] 是否验证了升级结果？
