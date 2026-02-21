@@ -54,7 +54,7 @@ onMounted(async () => {
     <!-- 品牌标识 -->
     <div class="brand-header">
       <div class="brand-logo">
-        <span class="logo-icon">📊</span>
+        <img src="/logo.png" alt="回响 Logo" class="logo-icon" />
         <span class="logo-text">回响</span>
       </div>
       <p class="brand-subtitle">AI 驱动的用户反馈智能分析平台</p>
@@ -112,7 +112,9 @@ onMounted(async () => {
 }
 
 .logo-icon {
-  font-size: 40px;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .logo-text {

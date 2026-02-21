@@ -6,7 +6,7 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       badgeType: 'dot',
-      icon: 'https://wu-clan.github.io/picx-images-hosting/logo/fba.png',
+      icon: '/logo.png',
       order: 9998,
       title: '项目',
     },

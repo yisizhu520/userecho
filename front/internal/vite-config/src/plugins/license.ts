@@ -33,7 +33,7 @@ async function viteLicensePlugin(
   * Vben Admin
   * Version: ${version}
   * Author: vben
-  * Copyright (C) 2024 Vben
+  * Copyright (C) 2026 回响
   * License: MIT License
   * Description: ${description}
   * Date Created: ${date}

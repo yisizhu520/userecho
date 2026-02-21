@@ -50,7 +50,7 @@ onUnmounted(() => {
     <div class="navbar-container">
       <div class="navbar-brand" @click="router.push('/')">
         <img
-          src="https://wu-clan.github.io/picx-images-hosting/logo/fba.png"
+          src="/logo.png"
           alt="回响"
           class="navbar-logo"
         />
