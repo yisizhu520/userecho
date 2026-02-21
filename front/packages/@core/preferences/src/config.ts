@@ -39,9 +39,9 @@ const defaultPreferences: Preferences = {
     styleType: 'normal',
   },
   copyright: {
-    companyName: 'Vben',
-    companySiteLink: 'https://www.vben.pro',
-    date: '2024',
+    companyName: '回响',
+    companySiteLink: 'https://userecho.app',
+    date: '2026',
     enable: true,
     icp: '',
     icpLink: '',
