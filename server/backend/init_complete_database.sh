@@ -72,6 +72,9 @@ activate_venv() {
     if [ -f "$VENV_PATH/Scripts/activate" ]; then
         # Windows Git Bash
         source "$VENV_PATH/Scripts/activate"
+        # 强制将虚拟环境的 Scripts 目录加入 PATH，确保在子进程中也能正确找到 python
+        VENV_SCRIPTS="$(cd "$VENV_PATH/Scripts" && pwd)"
+        export PATH="$VENV_SCRIPTS:$PATH"
     elif [ -f "$VENV_PATH/bin/activate" ]; then
         # Linux/Mac
         source "$VENV_PATH/bin/activate"
@@ -79,6 +82,9 @@ activate_venv() {
         print_error "无法找到虚拟环境激活脚本"
         exit 1
     fi
+    
+    # 验证 python 是否正确
+    print_info "使用 Python: $(which python)"
     
     print_success "虚拟环境已激活"
 }

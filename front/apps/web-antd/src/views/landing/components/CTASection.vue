@@ -63,9 +63,9 @@ const handleSubmit = async () => {
             <span class="cta-badge-text">🔥 限时福利</span>
           </div>
 
-          <h2 class="cta-title">前 100 名用户免费体验3个月</h2>
+          <h2 class="cta-title">前 20 名用户免费体验3个月</h2>
           <p class="cta-subtitle">
-            已有 16 家团队加入，仅剩 <strong>84</strong> 个名额
+            <br />已有 11 家团队加入，仅剩 <strong>9</strong> 个名额
           </p>
         </div>
 
@@ -133,18 +133,9 @@ const handleSubmit = async () => {
           <!-- 右侧：微信二维码 -->
           <div class="wechat-wrapper">
             <h3 class="wechat-title">扫码添加微信</h3>
-            <div class="qrcode-placeholder">
-              <!-- 占位图 - 后续替换为真实二维码 -->
+            <div class="qrcode-wrapper">
               <div class="qrcode-box">
-                <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                  <rect width="120" height="120" rx="8" fill="currentColor" opacity="0.1"/>
-                  <rect x="20" y="20" width="30" height="30" rx="4" fill="currentColor" opacity="0.3"/>
-                  <rect x="70" y="20" width="30" height="30" rx="4" fill="currentColor" opacity="0.3"/>
-                  <rect x="20" y="70" width="30" height="30" rx="4" fill="currentColor" opacity="0.3"/>
-                  <rect x="55" y="55" width="10" height="10" fill="currentColor" opacity="0.5"/>
-                  <rect x="70" y="70" width="30" height="30" rx="4" fill="currentColor" opacity="0.2"/>
-                </svg>
-                <span class="qrcode-hint">微信二维码</span>
+                <img src="/qrcode.jpg" alt="微信二维码" class="qrcode-image" />
               </div>
             </div>
             <p class="wechat-desc">添加客服微信，获取专属服务</p>
@@ -443,25 +434,46 @@ const handleSubmit = async () => {
   margin-bottom: 1.25rem;
 }
 
-.qrcode-placeholder {
-  margin-bottom: 1rem;
+.qrcode-wrapper {
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
 }
 
 .qrcode-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
   padding: 1rem;
-  background: var(--lp-bg-card);
-  border: 2px dashed var(--lp-border-default);
-  border-radius: 12px;
-  color: var(--lp-text-muted);
+  background: #fff;
+  border: 1px solid var(--lp-border-default);
+  border-radius: 20px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
-.qrcode-hint {
-  font-size: 0.75rem;
-  color: var(--lp-text-muted);
+.qrcode-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.qrcode-image {
+  width: 220px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+  .qrcode-image {
+    width: 180px;
+  }
 }
 
 .wechat-desc {

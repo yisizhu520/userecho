@@ -991,8 +991,9 @@ onUnmounted(() => {
         <div class="promo-banner">
           <span class="promo-fire">🔥</span>
           <span class="promo-text">
-            限时福利：前 100 名用户<strong>免费体验3个月</strong>专业版
-            <span class="promo-highlight">（已有 16 家团队加入，仅剩 84 个名额）</span>
+            限时福利：前 20 名用户<strong>免费体验3个月</strong>专业版
+            <br />
+            <span class="promo-highlight">（已有 11 家团队加入，仅剩 9 个名额）</span>
           </span>
         </div>
 
