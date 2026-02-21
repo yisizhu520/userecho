@@ -1,0 +1,59 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added table 'reply_templates'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_reply_templates_category' on '('category',)'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_reply_templates_is_active' on '('is_active',)'
+INFO  [alembic.autogenerate.compare] Detected added index 'ix_reply_templates_tenant_id' on '('tenant_id',)'
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_config_id_seq' as owned by integer column 'sys_config(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_data_rule_id_seq' as owned by integer column 'sys_data_rule(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_data_scope_id_seq' as owned by integer column 'sys_data_scope(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_data_scope_rule_id_seq' as owned by integer column 'sys_data_scope_rule(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_menu_id_seq' as owned by integer column 'sys_menu(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'task_set_result_id_seq' as owned by integer column 'task_set_result(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_user_password_history_id_seq' as owned by integer column 'sys_user_password_history(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_user_role_id_seq' as owned by integer column 'sys_user_role(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_user_social_id_seq' as owned by integer column 'sys_user_social(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'task_result_id_seq' as owned by integer column 'task_result(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'gen_column_id_seq' as owned by integer column 'gen_column(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_login_log_id_seq' as owned by integer column 'sys_login_log(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_dict_type_id_seq' as owned by integer column 'sys_dict_type(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'gen_business_id_seq' as owned by integer column 'gen_business(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_opera_log_id_seq' as owned by integer column 'sys_opera_log(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_role_menu_id_seq' as owned by integer column 'sys_role_menu(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_dict_data_id_seq' as owned by integer column 'sys_dict_data(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'task_scheduler_id_seq' as owned by integer column 'task_scheduler(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_role_data_scope_id_seq' as owned by integer column 'sys_role_data_scope(id)', assuming SERIAL and omitting
+INFO  [alembic.ddl.postgresql] Detected sequence named 'sys_notice_id_seq' as owned by integer column 'sys_notice(id)', assuming SERIAL and omitting
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_config.id'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_config.config_key'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_config.config_value'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_config.config_type'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_config.description'
+INFO  [alembic.autogenerate.compare] Detected removed column 'credits_config.created_at'
+INFO  [alembic.autogenerate.compare] Detected removed column 'credits_config.updated_at'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.id'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.tenant_id'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.user_id'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.operation_type'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.credits_cost'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.description'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.extra_data'
+INFO  [alembic.autogenerate.compare] Detected NOT NULL on column 'credits_usage_log.created_at'
+INFO  [alembic.autogenerate.compare] Detected server default on column 'credits_usage_log.created_at'
+INFO  [alembic.autogenerate.compare] Detected column comment 'credits_usage_log.created_at'
+INFO  [alembic.autogenerate.compare] Detected server default on column 'feedbacks.author_type'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.id'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.tenant_id'
+INFO  [alembic.autogenerate.compare] Detected server default on column 'tenant_credits.plan_type'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.plan_type'
+INFO  [alembic.autogenerate.compare] Detected server default on column 'tenant_credits.monthly_quota'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.monthly_quota'
+INFO  [alembic.autogenerate.compare] Detected server default on column 'tenant_credits.current_balance'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.current_balance'
+INFO  [alembic.autogenerate.compare] Detected server default on column 'tenant_credits.total_used'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.total_used'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.last_refresh_at'
+INFO  [alembic.autogenerate.compare] Detected column comment 'tenant_credits.next_refresh_at'
+INFO  [alembic.autogenerate.compare] Detected removed column 'tenant_credits.created_at'
+INFO  [alembic.autogenerate.compare] Detected removed column 'tenant_credits.updated_at'
+Generating D:\workspace\indie\userecho\server\backend\alembic\versions\2026-01-14-08_54_43-008f26350dd0_add_reply_template.py ...  done

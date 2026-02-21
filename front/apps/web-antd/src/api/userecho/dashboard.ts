@@ -131,3 +131,32 @@ export async function getMyFeedbacks(limit: number = 10) {
     `/api/v1/app/dashboard/my-feedbacks?limit=${limit}`,
   );
 }
+
+/**
+ * 通知统计数据结构
+ */
+export interface NotificationStats {
+  total_notifications: number;
+  pending_count: number;
+  generated_count: number;
+  sent_count: number;
+  generation_rate: number;
+  notification_rate: number;
+  recent_notifications: Array<{
+    id: string;
+    recipient_name: string;
+    topic_title: string;
+    notified_at: string | null;
+    status: string;
+  }>;
+}
+
+/**
+ * 获取通知统计数据
+ */
+export async function getNotificationStats() {
+  return requestClient.get<NotificationStats>(
+    '/api/v1/app/dashboard/notification-stats',
+  );
+}
+

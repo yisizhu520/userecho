@@ -5,11 +5,14 @@ from .feedback import Feedback
 from .insight import Insight
 from .manual_adjustment import ManualAdjustment
 from .priority_score import PriorityScore
+from .reply_template import ReplyTemplate
 from .status_history import StatusHistory
+from .system_notification import SystemNotification
 from .tenant import Tenant
 from .tenant_config import TenantConfig
 from .tenant_user import TenantUser, TenantUserRole
 from .topic import Topic
+from .topic_notification import TopicNotification
 
 __all__ = [
     'Board',
@@ -21,11 +24,16 @@ __all__ = [
     'Insight',
     'ManualAdjustment',
     'PriorityScore',
+    'ReplyTemplate',
     'StatusHistory',
+    'SystemNotification',
     'Tenant',
     'TenantConfig',
     'TenantCredits',
     'TenantUser',
     'TenantUserRole',
     'Topic',
+    'TopicNotification',
 ]
+
+

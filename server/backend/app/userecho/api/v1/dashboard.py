@@ -107,3 +107,90 @@ async def get_my_feedbacks(
     user_id = get_current_user_id()
     stats = await dashboard_service.get_my_feedbacks(db, tenant_id, user_id, limit)
     return response_base.success(data=stats)
+
+
+# ========================================
+# 通知统计 API
+# ========================================
+
+
+@router.get('/notification-stats', summary='获取通知统计数据')
+async def get_notification_stats(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    获取通知闭环统计数据
+
+    返回内容：
+    - total_notifications: 总通知数
+    - pending_count: 待生成数
+    - generated_count: 已生成数
+    - sent_count: 已通知数
+    - generation_rate: 生成率 (已生成/总数)
+    - notification_rate: 通知率 (已通知/总数)
+    - recent_notifications: 最近通知列表
+    """
+    from sqlalchemy import func, select
+
+    from backend.app.userecho.model.topic_notification import TopicNotification
+
+    # 统计各状态数量
+    status_query = (
+        select(
+            TopicNotification.status,
+            func.count().label('count'),
+        )
+        .where(TopicNotification.tenant_id == tenant_id)
+        .group_by(TopicNotification.status)
+    )
+    result = await db.execute(status_query)
+    status_counts = {row.status: row.count for row in result.all()}
+
+    total = sum(status_counts.values())
+    pending = status_counts.get('pending', 0)
+    generated = status_counts.get('generated', 0)
+    copied = status_counts.get('copied', 0)
+    sent = status_counts.get('sent', 0)
+
+    # 计算比率
+    generation_rate = ((generated + copied + sent) / total * 100) if total > 0 else 0
+    notification_rate = ((copied + sent) / total * 100) if total > 0 else 0
+
+    # 最近通知
+    from backend.app.userecho.model.topic import Topic
+
+    recent_query = (
+        select(TopicNotification, Topic.title)
+        .outerjoin(Topic, TopicNotification.topic_id == Topic.id)
+        .where(
+            TopicNotification.tenant_id == tenant_id,
+            TopicNotification.status.in_(['copied', 'sent']),
+        )
+        .order_by(TopicNotification.notified_at.desc())
+        .limit(5)
+    )
+    recent_result = await db.execute(recent_query)
+    recent_notifications = [
+        {
+            'id': row[0].id,
+            'recipient_name': row[0].recipient_name,
+            'topic_title': row[1] or '未知议题',
+            'notified_at': row[0].notified_at.isoformat() if row[0].notified_at else None,
+            'status': row[0].status,
+        }
+        for row in recent_result.all()
+    ]
+
+    return response_base.success(
+        data={
+            'total_notifications': total,
+            'pending_count': pending,
+            'generated_count': generated,
+            'sent_count': copied + sent,
+            'generation_rate': round(generation_rate, 1),
+            'notification_rate': round(notification_rate, 1),
+            'recent_notifications': recent_notifications,
+        }
+    )
+

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { NotificationItem } from '@vben/layouts';
 
-import { computed, provide, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
 import { useWatermark } from '@vben/hooks';
@@ -21,6 +21,10 @@ import {
   getClusteringPresets,
   previewClusteringConfig,
   updateClusteringPreset,
+  getSystemNotifications,
+  markAllNotificationsAsRead,
+  clearAllNotifications,
+  markNotificationAsRead,
 } from '#/api';
 import { router } from '#/router';
 import { useAuthStore } from '#/store';
@@ -40,41 +44,51 @@ provide('preferencesAccess', {
   isTenantAdmin: () => userStore.userRoles.includes('boss'),
 });
 
-const notifications = ref<NotificationItem[]>([
-  {
-    avatar: 'https://avatar.vercel.sh/vercel.svg?text=VB',
-    date: '3小时前',
-    isRead: true,
-    message: '描述信息描述信息描述信息',
-    title: '收到了 14 份新周报',
-  },
-  {
-    avatar: 'https://avatar.vercel.sh/1',
-    date: '刚刚',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '朱偏右 回复了你',
-  },
-  {
-    avatar: 'https://avatar.vercel.sh/1',
-    date: '2024-01-01',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '曲丽丽 评论了你',
-  },
-  {
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '代办提醒',
-  },
-]);
-
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
+
+// 系统通知数据
+const notifications = ref<NotificationItem[]>([]);
+const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null);
+
+// 加载系统通知
+async function loadNotifications() {
+  try {
+    const result = await getSystemNotifications();
+    notifications.value = result.items.map((item) => ({
+      avatar: item.avatar || 'https://avatar.vercel.sh/notification.svg?text=N',
+      date: item.date || '',
+      isRead: item.is_read,
+      message: item.message,
+      title: item.title,
+      // 扩展字段用于点击跳转
+      actionUrl: item.action_url,
+      id: item.id,
+    }));
+  } catch {
+    // 静默处理错误，不打断用户
+  }
+}
+
+// 处理通知点击
+async function handleNotificationClick(item: NotificationItem & { actionUrl?: string; id?: string }) {
+  // 标记为已读
+  if (item.id && !item.isRead) {
+    try {
+      await markNotificationAsRead(item.id);
+      item.isRead = true;
+    } catch {
+      // 静默处理
+    }
+  }
+  // 跳转到目标页面
+  if (item.actionUrl) {
+    router.push(item.actionUrl);
+  }
+}
+
 const showDot = computed(() =>
   notifications.value.some((item) => !item.isRead),
 );
@@ -97,13 +111,49 @@ async function handleLogout() {
   await authStore.logout(false);
 }
 
-function handleNoticeClear() {
-  notifications.value = [];
+async function handleNoticeClear() {
+  try {
+    await clearAllNotifications();
+    notifications.value = [];
+  } catch {
+    // 静默处理
+  }
 }
 
-function handleMakeAll() {
-  notifications.value.forEach((item) => (item.isRead = true));
+async function handleMakeAll() {
+  try {
+    await markAllNotificationsAsRead();
+    notifications.value.forEach((item) => (item.isRead = true));
+  } catch {
+    // 静默处理
+  }
 }
+
+// 启动轮询
+function startPolling() {
+  // 每 60 秒刷新一次
+  pollingTimer.value = setInterval(loadNotifications, 60000);
+}
+
+// 停止轮询
+function stopPolling() {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value);
+    pollingTimer.value = null;
+  }
+}
+
+// 组件挂载时加载通知并启动轮询
+onMounted(() => {
+  loadNotifications();
+  startPolling();
+});
+
+// 组件卸载时停止轮询
+onUnmounted(() => {
+  stopPolling();
+});
+
 watch(
   () => preferences.app.watermark,
   async (enable) => {

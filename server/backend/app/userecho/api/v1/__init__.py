@@ -10,8 +10,10 @@ from . import (
     insight,
     onboarding,
     priority,
+    system_notification,
     tenant_config,
     topic,
+    topic_notification,
 )
 
 __all__ = [
@@ -24,6 +26,9 @@ __all__ = [
     'insight',
     'onboarding',
     'priority',
+    'system_notification',
     'tenant_config',
     'topic',
+    'topic_notification',
 ]
+

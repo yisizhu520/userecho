@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TopicDetail, UpdateTopicStatusParams } from '#/api';
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 import { VbenButton, useVbenModal } from '@vben/common-ui';
@@ -16,6 +16,7 @@ import {
   CloseCircleOutlined,
   UserOutlined,
   LinkOutlined,
+  BellOutlined,
 } from '@ant-design/icons-vue';
 
 import { useVbenForm } from '#/adapter/form';
@@ -25,6 +26,7 @@ import {
 } from '#/api';
 import { getStatusConfig, getCategoryConfig, categoryIcons, statusFormSchema } from '#/views/userecho/topic/data';
 import PriorityScoreCard from './components/PriorityScoreCard.vue';
+import NotificationPanel from './components/NotificationPanel.vue';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -35,6 +37,13 @@ dayjs.locale('zh-cn');
 const router = useRouter();
 const route = useRoute();
 const topicId = route.params.id as string;
+
+// Tab 相关
+const activeTab = ref('feedbacks');
+const tabFromQuery = route.query.tab as string;
+if (tabFromQuery) {
+  activeTab.value = tabFromQuery;
+}
 
 /**
  * 数据加载
@@ -235,54 +244,79 @@ onMounted(() => {
           </div>
         </a-card>
 
-        <!-- 关联反馈列表 -->
-        <a-card :title="`📝 关联反馈 (${feedbacks.length})`" class="feedbacks-card mb-4" :bordered="false">
-          <a-table
-            :columns="feedbackColumns"
-            :data-source="feedbacks"
-            :pagination="{ pageSize: 10 }"
-            :row-key="(record: any) => record.id"
-            size="middle"
-          >
-             <template #bodyCell="{ column, record }">
-                <template v-if="column.dataIndex === 'content'">
-                   <span v-if="record.is_urgent" style="color: #ff4d4f; margin-right: 4px;">[紧急]</span>
-                   {{ record.content }}
-                </template>
-             </template>
-          </a-table>
-        </a-card>
-        
-        <!-- 状态变更历史 -->
-        <a-card title="📊 状态变更历史" class="history-card" :bordered="false">
-          <a-timeline v-if="statusHistory.length > 0">
-            <a-timeline-item
-              v-for="history in statusHistory"
-              :key="history.id"
-              :color="getStatusConfig(history.to_status).color"
+        <!-- Tab 切换区域 -->
+        <a-tabs v-model:activeKey="activeTab" class="detail-tabs">
+          <!-- 关联反馈 Tab -->
+          <a-tab-pane key="feedbacks" :tab="`📝 关联反馈 (${feedbacks.length})`">
+            <a-table
+              :columns="feedbackColumns"
+              :data-source="feedbacks"
+              :pagination="{ pageSize: 10 }"
+              :row-key="(record: any) => record.id"
+              size="middle"
             >
-              <div class="history-item">
-                <div class="history-title">
-                  <a-tag :color="getStatusConfig(history.from_status).color" size="small">
-                    {{ getStatusConfig(history.from_status).label }}
-                  </a-tag>
-                  <span class="history-arrow">→</span>
-                  <a-tag :color="getStatusConfig(history.to_status).color" size="small">
-                    {{ getStatusConfig(history.to_status).label }}
-                  </a-tag>
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.dataIndex === 'content'">
+                  <span v-if="record.is_urgent" style="color: #ff4d4f; margin-right: 4px;">[紧急]</span>
+                  {{ record.content }}
+                </template>
+              </template>
+            </a-table>
+          </a-tab-pane>
+
+          <!-- 通知反馈人 Tab -->
+          <a-tab-pane key="notify">
+            <template #tab>
+              <span>
+                <BellOutlined />
+                通知反馈人
+                <a-badge
+                  v-if="topic.status === 'completed'"
+                  :count="feedbacks.length"
+                  :number-style="{ backgroundColor: '#52c41a' }"
+                  style="margin-left: 6px;"
+                />
+              </span>
+            </template>
+            <NotificationPanel
+              :topic-id="topicId"
+              :topic-title="topic.title"
+              :topic-status="topic.status"
+              @refresh="loadTopicDetail"
+            />
+          </a-tab-pane>
+
+          <!-- 状态历史 Tab -->
+          <a-tab-pane key="history" tab="📊 状态历史">
+            <a-timeline v-if="statusHistory.length > 0">
+              <a-timeline-item
+                v-for="history in statusHistory"
+                :key="history.id"
+                :color="getStatusConfig(history.to_status).color"
+              >
+                <div class="history-item">
+                  <div class="history-title">
+                    <a-tag :color="getStatusConfig(history.from_status).color" size="small">
+                      {{ getStatusConfig(history.from_status).label }}
+                    </a-tag>
+                    <span class="history-arrow">→</span>
+                    <a-tag :color="getStatusConfig(history.to_status).color" size="small">
+                      {{ getStatusConfig(history.to_status).label }}
+                    </a-tag>
+                  </div>
+                  <div class="history-meta">
+                    <span>{{ history.changed_at }}</span>
+                    <span v-if="history.changed_by_name" class="ml-2">操作人: {{ history.changed_by_name }}</span>
+                  </div>
+                  <div v-if="history.reason" class="history-reason">
+                    原因: {{ history.reason }}
+                  </div>
                 </div>
-                <div class="history-meta">
-                  <span>{{ history.changed_at }}</span>
-                  <span v-if="history.changed_by_name" class="ml-2">操作人: {{ history.changed_by_name }}</span>
-                </div>
-                <div v-if="history.reason" class="history-reason">
-                  原因: {{ history.reason }}
-                </div>
-              </div>
-            </a-timeline-item>
-          </a-timeline>
-          <a-empty v-else description="暂无状态变更记录" />
-        </a-card>
+              </a-timeline-item>
+            </a-timeline>
+            <a-empty v-else description="暂无状态变更记录" />
+          </a-tab-pane>
+        </a-tabs>
 
       </a-col>
 
@@ -542,4 +576,15 @@ onMounted(() => {
   background: #f5f5f5;
   border-radius: 4px;
 }
+
+.detail-tabs {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.detail-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
 </style>
+
