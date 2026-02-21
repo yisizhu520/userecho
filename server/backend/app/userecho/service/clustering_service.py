@@ -390,6 +390,33 @@ class ClusteringService:
                 f'Topic creation completed for tenant {tenant_id}: {len(created_topics)} created, {len(failed_topics)} failed'
             )
 
+            # 记录积分消耗
+            try:
+                from backend.app.userecho.service.credits_service import credits_service
+
+                # 聚类操作消耗
+                await credits_service.consume(
+                    db=db,
+                    tenant_id=tenant_id,
+                    operation_type='clustering',
+                    count=1,
+                    description=f'AI 聚类：{len(valid_feedbacks)} 条反馈 → {len(created_topics)} 个主题',
+                    extra_data={'feedbacks_count': len(valid_feedbacks), 'topics_created': len(created_topics)},
+                )
+
+                # Embedding 操作消耗（仅记录新生成的）
+                if feedbacks_need_embedding:
+                    await credits_service.consume(
+                        db=db,
+                        tenant_id=tenant_id,
+                        operation_type='embedding',
+                        count=len(feedbacks_need_embedding),
+                        description=f'向量化：{len(feedbacks_need_embedding)} 条反馈',
+                        extra_data={'source': 'clustering'},
+                    )
+            except Exception as e:
+                log.warning(f'Failed to record credits usage for tenant {tenant_id}: {e}')
+
             return {
                 'status': 'completed',
                 'feedbacks_count': len(valid_feedbacks),

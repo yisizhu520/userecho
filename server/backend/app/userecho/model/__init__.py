@@ -1,4 +1,5 @@
 from .board import Board
+from .credits import CreditsConfig, CreditsOperationType, CreditsUsageLog, TenantCredits
 from .customer import Customer
 from .feedback import Feedback
 from .insight import Insight
@@ -12,6 +13,9 @@ from .topic import Topic
 
 __all__ = [
     'Board',
+    'CreditsConfig',
+    'CreditsOperationType',
+    'CreditsUsageLog',
     'Customer',
     'Feedback',
     'Insight',
@@ -20,6 +24,7 @@ __all__ = [
     'StatusHistory',
     'Tenant',
     'TenantConfig',
+    'TenantCredits',
     'TenantUser',
     'TenantUserRole',
     'Topic',

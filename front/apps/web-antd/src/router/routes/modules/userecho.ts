@@ -110,6 +110,27 @@ const routes: RouteRecordRaw[] = [
       title: '洞察报告',
     },
   },
+  {
+    name: 'Settings',
+    path: '/app/settings',
+    meta: {
+      icon: 'lucide:settings',
+      order: 99,
+      title: '系统设置',
+    },
+    redirect: '/app/settings/credits',
+    children: [
+      {
+        name: 'CreditsConfig',
+        path: 'credits',
+        component: () => import('#/views/userecho/settings/credits-config.vue'),
+        meta: {
+          icon: 'lucide:coins',
+          title: '积分配置',
+        },
+      },
+    ],
+  },
 ];
 
 export default routes;

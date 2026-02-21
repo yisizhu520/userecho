@@ -123,6 +123,22 @@ def analyze_screenshot_task(
             extracted_data = await ai_client.analyze_screenshot(screenshot_url)
             log.info(f'[Task {self.request.id}] Analysis completed: confidence={extracted_data.get("confidence", 0)}')
 
+            # 4. 记录积分消耗
+            try:
+                from backend.app.userecho.service.credits_service import credits_service
+
+                async with async_db_session() as db:
+                    await credits_service.consume(
+                        db=db,
+                        tenant_id=tenant_id,
+                        operation_type='screenshot',
+                        count=1,
+                        description='截图识别',
+                        extra_data={'confidence': extracted_data.get('confidence', 0)},
+                    )
+            except Exception as e:
+                log.warning(f'Failed to record credits for screenshot task: {e}')
+
             return {
                 'screenshot_url': screenshot_url,
                 'extracted': extracted_data,
@@ -273,6 +289,22 @@ def generate_feedback_summary_task(
                 await crud_feedback.update(db=db, tenant_id=tenant_id, id=feedback_id, ai_summary=summary)
 
             log.info(f'[Task {self.request.id}] Summary generated for feedback {feedback_id}: {summary}')
+
+            # 记录积分消耗
+            try:
+                from backend.app.userecho.service.credits_service import credits_service
+
+                async with async_db_session() as db:
+                    await credits_service.consume(
+                        db=db,
+                        tenant_id=tenant_id,
+                        operation_type='summary',
+                        count=1,
+                        description='AI 摘要生成',
+                        extra_data={'feedback_id': feedback_id},
+                    )
+            except Exception as e:
+                log.warning(f'Failed to record credits for summary task: {e}')
 
             return {'feedback_id': feedback_id, 'summary': summary}
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from backend.app.admin.api.v1.auth import router as auth_router
+from backend.app.admin.api.v1.credits import router as credits_router
 from backend.app.admin.api.v1.demo import router as demo_router
 from backend.app.admin.api.v1.log import router as log_router
 from backend.app.admin.api.v1.monitor import router as monitor_router
@@ -14,4 +15,4 @@ v1.include_router(sys_router)
 v1.include_router(log_router)
 v1.include_router(monitor_router)
 v1.include_router(demo_router)
-
+v1.include_router(credits_router)
