@@ -5,7 +5,7 @@ import { ref, computed, onMounted } from 'vue';
 
 import { VbenButton, VbenLoading } from '@vben/common-ui';
 
-import { message, Modal, Tooltip, Tag, Drawer, Input, Select, Switch } from 'ant-design-vue';
+import { message, Modal, Tooltip, Tag, Drawer, Input, Select, Switch, Table } from 'ant-design-vue';
 import {
   SendOutlined,
   CopyOutlined,
@@ -179,6 +179,35 @@ const handleBatchGenerate = () => {
   });
 };
 
+// 表格列定义
+const columns = [
+  {
+    title: '用户',
+    dataIndex: 'user',
+    key: 'user',
+    width: 250,
+  },
+  {
+    title: '反馈内容',
+    dataIndex: 'feedback_content',
+    key: 'feedback',
+    ellipsis: true,
+  },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    key: 'status',
+    width: 100,
+    align: 'center',
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 200,
+    align: 'center',
+  },
+];
+
 // 是否显示操作提示
 const showCompletedHint = computed(() => props.topicStatus === 'completed' && stats.value.pending > 0);
 
@@ -228,81 +257,85 @@ onMounted(() => {
       <span>需求「{{ topicTitle }}」已完成，请通知以下用户</span>
     </div>
 
-    <!-- 加载状态 -->
-    <VbenLoading v-if="loading" spinning />
+    <!-- 通知列表表格 -->
+    <Table
+      class="mt-4"
+      :columns="columns"
+      :data-source="notifications"
+      :loading="loading"
+      :pagination="{ pageSize: 10 }"
+      row-key="id"
+      size="middle"
+    >
+      <template #bodyCell="{ column, record }">
+        <!-- 用户列 -->
+        <template v-if="column.key === 'user'">
+           <div class="user-info">
+              <div class="user-avatar">
+                <UserOutlined />
+              </div>
+              <div class="user-detail">
+                <div class="user-name">
+                  {{ record.recipient_name }}
+                  <Tag
+                    v-if="record.customer_tier"
+                    :color="tierConfig[record.customer_tier]?.color"
+                    size="small"
+                    style="margin-left: 4px;"
+                  >
+                    {{ tierConfig[record.customer_tier]?.label }}
+                  </Tag>
+                </div>
+                <div class="user-meta">
+                  <span v-if="record.customer_company" style="margin-right: 8px;">{{ record.customer_company }}</span>
+                  <span v-if="record.recipient_contact">{{ record.recipient_contact }}</span>
+                </div>
+              </div>
+           </div>
+        </template>
 
-    <!-- 用户列表 -->
-    <div v-else-if="notifications.length > 0" class="notification-list">
-      <div
-        v-for="item in notifications"
-        :key="item.id"
-        class="notification-item"
-        :class="{ 'is-sent': item.status === 'sent' }"
-      >
-        <div class="user-info">
-          <div class="user-avatar">
-            <UserOutlined />
-          </div>
-          <div class="user-detail">
-            <div class="user-name">
-              {{ item.recipient_name }}
-              <Tag
-                v-if="item.customer_tier"
-                :color="tierConfig[item.customer_tier]?.color"
+        <!-- 反馈内容列 -->
+        <template v-if="column.key === 'feedback'">
+           <Tooltip :title="record.feedback_content">
+             <span class="preview-text">
+               {{ record.feedback_summary || record.feedback_content }}
+             </span>
+           </Tooltip>
+        </template>
+
+        <!-- 状态列 -->
+        <template v-if="column.key === 'status'">
+           <Tag :color="statusConfig[record.status]?.color">
+             {{ statusConfig[record.status]?.label }}
+           </Tag>
+        </template>
+
+        <!-- 操作列 -->
+        <template v-if="column.key === 'action'">
+           <div class="item-actions">
+              <VbenButton
+                variant="link"
                 size="small"
+                @click="openGenerateDrawer(record)"
+                style="text-decoration: underline;"
               >
-                {{ tierConfig[item.customer_tier]?.label }}
-              </Tag>
-            </div>
-            <div class="user-meta">
-              <span v-if="item.customer_company">{{ item.customer_company }}</span>
-              <span v-if="item.recipient_contact" class="contact">
-                {{ item.recipient_contact }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="feedback-preview">
-          <Tooltip :title="item.feedback_content">
-            <span class="preview-text">
-              {{ item.feedback_summary || item.feedback_content?.slice(0, 50) }}...
-            </span>
-          </Tooltip>
-        </div>
-
-        <div class="item-status">
-          <Tag :color="statusConfig[item.status]?.color">
-            {{ statusConfig[item.status]?.label }}
-          </Tag>
-        </div>
-
-        <div class="item-actions">
-          <Tooltip title="生成/编辑回复">
-            <VbenButton
-              variant="ghost"
-              size="small"
-              @click="openGenerateDrawer(item)"
-            >
-              <RobotOutlined />
-            </VbenButton>
-          </Tooltip>
-          <Tooltip v-if="item.ai_reply" title="标记已通知">
-            <VbenButton
-              variant="ghost"
-              size="small"
-              :disabled="item.status === 'sent'"
-              @click="handleMarkSent(item)"
-            >
-              <SendOutlined />
-            </VbenButton>
-          </Tooltip>
-        </div>
-      </div>
-    </div>
-
-    <!-- 空状态 -->
-    <a-empty v-else description="暂无待通知用户" />
+                {{ record.status === 'sent' ? '查看回复' : (record.ai_reply ? '修改回复' : '回复') }}
+              </VbenButton>
+              
+              <VbenButton
+                v-if="record.ai_reply && record.status !== 'sent'"
+                variant="link"
+                size="small"
+                color="success"
+                @click="handleMarkSent(record)"
+                style="text-decoration: underline;"
+              >
+                标记已通知
+              </VbenButton>
+           </div>
+        </template>
+      </template>
+    </Table>
 
     <!-- 生成回复抽屉 -->
     <Drawer
@@ -345,11 +378,11 @@ onMounted(() => {
             <div class="options-row">
               <div class="option-item">
                 <label>语气风格</label>
-                <Select v-model:value="replyTone" :options="toneOptions" style="width: 140px" />
+                <Select v-model:value="replyTone" :options="toneOptions" style="width: 140px" :disabled="currentNotification.status === 'sent'" />
               </div>
               <div class="option-item">
                 <label>输出语言</label>
-                <Select v-model:value="replyLanguage" style="width: 140px">
+                <Select v-model:value="replyLanguage" style="width: 140px" :disabled="currentNotification.status === 'sent'">
                   <a-select-option value="zh-CN">中文</a-select-option>
                   <a-select-option value="en-US">English</a-select-option>
                 </Select>
@@ -361,6 +394,7 @@ onMounted(() => {
                 v-model:value="customContext"
                 :rows="2"
                 placeholder="例如：强调新功能的使用方式"
+                :disabled="currentNotification.status === 'sent'"
               />
             </div>
           </div>
@@ -369,10 +403,11 @@ onMounted(() => {
           <div class="generate-action">
             <VbenButton
               :loading="generating"
+              :disabled="currentNotification.status === 'sent'"
               block
               @click="handleGenerateReply"
             >
-              <RobotOutlined /> {{ generatedReply ? '重新生成' : '生成回复' }}
+              <RobotOutlined /> {{ generatedReply ? (currentNotification.status === 'sent' ? '不可编辑 (已通知)' : '重新生成') : '生成回复' }}
             </VbenButton>
           </div>
 

@@ -342,13 +342,7 @@ onMounted(() => {
             <template #tab>
               <span>
                 <BellOutlined />
-                通知反馈人
-                <a-badge
-                  v-if="topic.status === 'completed'"
-                  :count="feedbacks.length"
-                  :number-style="{ backgroundColor: '#52c41a' }"
-                  style="margin-left: 6px;"
-                />
+                通知反馈人 ({{ feedbacks.length || 0 }})
               </span>
             </template>
             <NotificationPanel
