@@ -63,12 +63,10 @@ function transformComponent(
   component: VNode,
   route: RouteLocationNormalizedLoadedGeneric,
 ) {
-  // 组件视图未找到，如果有设置后备视图，则返回后备视图，如果没有，则抛出错误
+  // 组件视图未找到，返回原始 component（即使是 undefined/null）
+  // 让 Vue 自己处理空组件，避免在 Transition 期间导致 vnode 为 null 的错误
   if (!component) {
-    console.error(
-      'Component view not found，please check the route configuration',
-    );
-    return undefined;
+    return component;
   }
 
   const routeName = route.name as string;

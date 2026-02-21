@@ -44,7 +44,7 @@ function goToDetail(topicId: string) {
 
 <template>
   <Card title="TOP 需求主题" class="w-full">
-    <div v-if="topics.length === 0" class="text-center text-gray-400 py-8">
+    <div v-if="!topics || topics.length === 0" class="text-center text-gray-400 py-8">
       暂无需求主题
     </div>
     <div v-else class="space-y-3">

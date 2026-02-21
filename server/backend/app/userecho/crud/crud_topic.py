@@ -76,18 +76,23 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             包含 topic 和 feedbacks 的字典，或 None
         """
         from backend.app.userecho.model.feedback import Feedback
-
         from backend.app.userecho.model.customer import Customer
+        from backend.app.admin.model.user import User
 
         # 获取主题
         topic = await self.get_by_id(db, tenant_id, topic_id)
         if not topic:
             return None
 
-        # 获取关联反馈（关联查询 Customer 获取 name）
+        # 获取关联反馈（关联查询 Customer 和 User）
         query = (
-            select(Feedback, Customer.name.label('customer_name'))
+            select(
+                Feedback, 
+                Customer.name.label('customer_name'),
+                User.username.label('submitter_name')
+            )
             .outerjoin(Customer, Feedback.customer_id == Customer.id)
+            .outerjoin(User, Feedback.submitter_id == User.id)
             .where(
                 Feedback.tenant_id == tenant_id,
                 Feedback.topic_id == topic_id,
@@ -97,27 +102,11 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         result = await db.execute(query)
         rows = result.all()
 
-        # 手动将 customer_name 注入到 Feedback 对象中（或者转换为字典）
-        # 由于 Pydantic model (FeedbackOut) 支持 from_attributes=True，
-        # 我们可以尝试直接设置属性，但这里 Feedback 是 SQLAlchemy 对象。
-        # 更稳妥的方式是构造一个包含所需字段的字典列表，或者利用 SQLAlchemy 的行对象特性。
-        # 这里的 rows 是 [(Feedback, customer_name), ...]
-        
         feedbacks = []
-        for feedback_obj, customer_name in rows:
-            # 临时将 customer_name 附加到对象上，或者由于 FeedbackOut 定义了 customer_name 字段，
-            # 我们可以直接 setattr，因为 SQLAlchemy 对象通常是动态的。
-            # 但更规范的做法可能是让 Service 层处理，或者在这里返回字典。
-            # 考虑到 api/v1/topic.py 中使用了 FeedbackOut.model_validate(fb)，
-            # 这里最好让 fb 看起来像是有 customer_name 属性的对象。
-            
-            # SQLAlchemy 模型实例直接 setattr 可能会被当做模型字段处理而报错，或者被忽略。
-            # 为了安全起见，我们可以在 API 层处理转换，或者在这里就返回 dict。
-            # 查看 api/v1/topic.py: detail['feedbacks'] 被用于 model_validate
-            # 如果我们返回 dict，model_validate 支持 dict。
-            
+        for feedback_obj, customer_name, submitter_name in rows:
             fb_dict = {c.name: getattr(feedback_obj, c.name) for c in feedback_obj.__table__.columns}
             fb_dict['customer_name'] = customer_name
+            fb_dict['submitter_name'] = submitter_name
             feedbacks.append(fb_dict)
 
         return {'topic': topic, 'feedbacks': feedbacks}

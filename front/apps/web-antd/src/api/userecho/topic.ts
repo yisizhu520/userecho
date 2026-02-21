@@ -146,6 +146,22 @@ export async function deleteTopic(id: string) {
   return requestClient.delete(`/api/v1/app/topics/${id}`);
 }
 
+/**
+ * 关联反馈到主题
+ */
+export async function linkFeedbacksToTopic(topicId: string, feedbackIds: string[]) {
+  return requestClient.post<{ count: number }>(`/api/v1/app/topics/${topicId}/feedbacks`, {
+    feedback_ids: feedbackIds,
+  });
+}
+
+/**
+ * 从主题移除反馈关联
+ */
+export async function unlinkFeedbackFromTopic(topicId: string, feedbackId: string) {
+  return requestClient.delete(`/api/v1/app/topics/${topicId}/feedbacks/${feedbackId}`);
+}
+
 /** 主题分类选项 */
 export const TOPIC_CATEGORIES = [
   { value: 'bug', label: 'Bug' },

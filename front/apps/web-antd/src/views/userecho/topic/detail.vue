@@ -17,16 +17,19 @@ import {
   UserOutlined,
   LinkOutlined,
   BellOutlined,
+  DisconnectOutlined,
 } from '@ant-design/icons-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import {
   getTopicDetail,
   updateTopicStatus,
+  unlinkFeedbackFromTopic,
 } from '#/api';
 import { getStatusConfig, getCategoryConfig, categoryIcons, statusFormSchema } from '#/views/userecho/topic/data';
 import PriorityScoreCard from './components/PriorityScoreCard.vue';
 import NotificationPanel from './components/NotificationPanel.vue';
+import LinkFeedbackModal from './components/LinkFeedbackModal.vue';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -137,6 +140,27 @@ const handleQuickStatusUpdate = (status: string) => {
 };
 
 /**
+ * 关联反馈弹窗
+ */
+const [LinkModal, linkModalApi] = useVbenModal({
+    connectedComponent: LinkFeedbackModal,
+});
+
+/**
+ * 移除反馈关联
+ */
+const handleUnlinkFeedback = async (feedbackId: string) => {
+    try {
+        await unlinkFeedbackFromTopic(topicId, feedbackId);
+        message.success('已移除关联');
+        // 重新加载详情
+        await loadTopicDetail();
+    } catch (error) {
+        message.error('移除失败');
+    }
+};
+
+/**
  * 反馈表格列
  */
 const feedbackColumns = [
@@ -145,10 +169,18 @@ const feedbackColumns = [
     dataIndex: 'content',
     ellipsis: true,
   },
-    {
-    title: '来源',
-    dataIndex: 'source_info', 
-    width: 200,
+  {
+    title: '提交人',
+    dataIndex: 'submitter_name',
+    width: 120,
+    customRender: ({ record }: any) => {
+      return record.submitter_name || '-';
+    }
+  },
+  {
+    title: '客户名称',
+    dataIndex: 'customer_name',
+    width: 150,
     customRender: ({ record }: any) => {
       // 优先显示客户名称
       if (record.customer_name) {
@@ -156,29 +188,27 @@ const feedbackColumns = [
       }
       // 其次显示外部用户信息
       if (record.external_user_name) {
-        const platform = record.source_platform ? `(${record.source_platform})` : '';
-        return `${record.external_user_name} ${platform}`;
+        return record.external_user_name;
       }
       // 再次显示匿名作者
       if (record.anonymous_author) {
          return `${record.anonymous_author} (匿名)`;
       }
-      
-      // 最后显示来源类型
-      const sourceMap: Record<string, string> = {
-        'manual': '手动创建',
-        'import': '批量导入',
-        'api': 'API提交'
-      };
-      return sourceMap[record.source] || record.source || '未知来源';
+      return '-';
     }
   },
   {
     title: '提交时间',
     dataIndex: 'submitted_at',
-    width: 180,
-    customRender: ({ text }: any) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
+    width: 120,
+    customRender: ({ text }: any) => dayjs(text).fromNow(),
   },
+  {
+    title: '操作',
+    key: 'action',
+    width: 100,
+    align: 'center',
+  }
 ];
 
 /**
@@ -246,6 +276,19 @@ onMounted(() => {
 
         <!-- Tab 切换区域 -->
         <a-tabs v-model:activeKey="activeTab" class="detail-tabs">
+          <template #tabBarExtraContent>
+             <a-button 
+               v-if="activeTab === 'feedbacks'" 
+               type="primary" 
+               size="small"
+               @click="linkModalApi.open()"
+               style="display: flex; align-items: center; gap: 6px;"
+             >
+               <LinkOutlined />
+               <span>关联现有反馈</span>
+             </a-button>
+          </template>
+
           <!-- 关联反馈 Tab -->
           <a-tab-pane key="feedbacks" :tab="`📝 关联反馈 (${feedbacks.length})`">
             <a-table
@@ -259,6 +302,16 @@ onMounted(() => {
                 <template v-if="column.dataIndex === 'content'">
                   <span v-if="record.is_urgent" style="color: #ff4d4f; margin-right: 4px;">[紧急]</span>
                   {{ record.content }}
+                </template>
+                <template v-if="column.key === 'action'">
+                    <a-popconfirm
+                        title="确定要移除该反馈关联吗？"
+                        @confirm="handleUnlinkFeedback(record.id)"
+                    >
+                        <a-button type="link" danger size="small">
+                            <DisconnectOutlined /> 移除
+                        </a-button>
+                    </a-popconfirm>
                 </template>
               </template>
             </a-table>
@@ -390,6 +443,8 @@ onMounted(() => {
     <statusModal>
       <StatusForm />
     </statusModal>
+    
+    <LinkModal :topic-id="topicId" @success="loadTopicDetail" />
   </div>
 
   <a-empty v-else description="主题不存在" />

@@ -108,6 +108,14 @@ export function useColumns(
       },
     },
     {
+      field: 'submitter_name',
+      title: '提交人',
+      width: 120,
+      formatter({ row }) {
+        return row.submitter_name || '-';
+      },
+    },
+    {
       field: 'topic_title',
       title: '所属主题',
       width: 150,

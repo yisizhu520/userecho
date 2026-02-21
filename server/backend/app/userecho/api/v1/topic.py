@@ -9,6 +9,7 @@ from backend.app.userecho.schema.topic import (
     TopicOut,
     TopicStatusUpdateParam,
     TopicUpdate,
+    TopicFeedbackLinkBatch,
 )
 from backend.app.userecho.service import topic_service
 from backend.common.log import log  # ✅ 添加日志导入
@@ -204,3 +205,37 @@ async def delete_topic(
     if not success:
         return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
     return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
+
+
+@router.post('/{topic_id}/feedbacks', summary='关联反馈到主题')
+async def link_feedbacks(
+    topic_id: str,
+    data: TopicFeedbackLinkBatch,
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    手动关联现有反馈到主题
+    """
+    count = await topic_service.link_feedbacks(
+        db=db, tenant_id=tenant_id, topic_id=topic_id, feedback_ids=data.feedback_ids
+    )
+    return response_base.success(data={'count': count}, res=CustomResponse(code=200, msg=f'成功关联 {count} 条反馈'))
+
+
+@router.delete('/{topic_id}/feedbacks/{feedback_id}', summary='移除反馈关联')
+async def unlink_feedback(
+    topic_id: str,
+    feedback_id: str,
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    从主题移除反馈（解除关联，不会删除反馈）
+    """
+    success = await topic_service.unlink_feedback(
+        db=db, tenant_id=tenant_id, topic_id=topic_id, feedback_id=feedback_id
+    )
+    if not success:
+        return response_base.fail(res=CustomResponse(code=400, msg='关联移除失败，可能是ID不匹配'))
+    return response_base.success(res=CustomResponse(code=200, msg='关联已移除'))

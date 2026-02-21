@@ -7,11 +7,43 @@ const router = useRouter();
 const loading = ref(false);
 const stats = ref<MyFeedbacksStats | null>(null);
 
+// 标准化 API 返回的数据，确保所有值都是 primitive 类型
+const normalizeData = (data: any): MyFeedbacksStats | null => {
+  if (!data) return null;
+  
+  try {
+    // 确保 summary 字段存在且为数字
+    const summary = {
+      submitted_count: Number(data.summary?.submitted_count ?? 0),
+      in_progress_count: Number(data.summary?.in_progress_count ?? 0),
+      completed_count: Number(data.summary?.completed_count ?? 0),
+    };
+
+    // 确保 recent_updates 是一个数组，且每个元素的字段都是 primitive
+    const recent_updates = Array.isArray(data.recent_updates)
+      ? data.recent_updates.map((item: any) => ({
+          feedback_id: String(item.feedback_id ?? ''),
+          content_summary: String(item.content_summary ?? ''),
+          topic_id: item.topic_id ? String(item.topic_id) : null,
+          topic_title: item.topic_title ? String(item.topic_title) : null,
+          topic_status: item.topic_status ? String(item.topic_status) : null,
+          updated_at: String(item.updated_at ?? ''),
+        }))
+      : [];
+
+    return { summary, recent_updates };
+  } catch (e) {
+    console.error('normalizeData failed:', e, 'original data:', data);
+    return null;
+  }
+};
+
 // 加载数据
 const loadData = async () => {
   loading.value = true;
   try {
-    stats.value = await getMyFeedbacks(5);
+    const rawData = await getMyFeedbacks(5);
+    stats.value = normalizeData(rawData);
   } catch (error) {
     console.error('Failed to load my feedbacks:', error);
   } finally {
@@ -80,19 +112,19 @@ defineExpose({ refresh });
       </a-button>
     </template>
 
-    <template v-if="stats">
+    <template v-if="stats && stats.summary">
       <!-- 统计摘要 -->
       <div class="stats-row">
         <div class="stat-item">
-          <span class="stat-value">{{ stats.summary.submitted_count }}</span>
+          <span class="stat-value">{{ stats.summary.submitted_count ?? 0 }}</span>
           <span class="stat-label">已录入</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value in-progress">{{ stats.summary.in_progress_count }}</span>
+          <span class="stat-value in-progress">{{ stats.summary.in_progress_count ?? 0 }}</span>
           <span class="stat-label">处理中</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value completed">{{ stats.summary.completed_count }}</span>
+          <span class="stat-value completed">{{ stats.summary.completed_count ?? 0 }}</span>
           <span class="stat-label">已完成</span>
         </div>
       </div>
@@ -103,7 +135,7 @@ defineExpose({ refresh });
       <div class="recent-title">最近更新</div>
       
       <a-list
-        v-if="stats.recent_updates.length > 0"
+        v-if="stats.recent_updates && stats.recent_updates.length > 0"
         :data-source="stats.recent_updates"
         size="small"
         :split="false"
@@ -114,14 +146,14 @@ defineExpose({ refresh });
               <div class="content-text">{{ item.content_summary }}</div>
               <div class="update-meta">
                 <a-tag 
-                  v-if="item.topic_status" 
-                  :color="statusColorMap[item.topic_status]"
+                  v-if="item && item.topic_status" 
+                  :color="statusColorMap[item.topic_status] || 'default'"
                   size="small"
                   class="status-tag"
-                  @click="goToTopic(item.topic_id)"
+                  @click="item.topic_id ? goToTopic(item.topic_id) : null"
                   style="cursor: pointer"
                 >
-                  {{ item.topic_title || statusNameMap[item.topic_status] }}
+                  {{ item.topic_title || statusNameMap[item.topic_status] || '未知状态' }}
                 </a-tag>
                 <span v-else class="muted">待聚类</span>
                 <span class="update-time">{{ formatTime(item.updated_at) }}</span>

@@ -103,6 +103,25 @@ class TopicService:
                     reason=data.reason,
                 )
 
+                # 当状态变更为 completed 时，自动创建通知记录
+                if old_status != 'completed' and new_status == 'completed':
+                    from backend.app.userecho.service.notification_service import (
+                        notification_service,
+                    )
+
+                    try:
+                        created_count = await notification_service.create_notifications_for_topic(
+                            db=db, tenant_id=tenant_id, topic_id=topic_id
+                        )
+                        log.info(
+                            f'Auto-created {created_count} notification records for topic {topic_id}'
+                        )
+                    except Exception as e:
+                        log.error(
+                            f'Failed to auto-create notifications for topic {topic_id}: {e}'
+                        )
+                        # 不抛出异常，避免影响状态更新的主流程
+
             return topic
 
         except Exception as e:
@@ -265,6 +284,80 @@ class TopicService:
             待确认主题数量
         """
         return await crud_topic.count(db=db, tenant_id=tenant_id, status='pending')
+
+    async def link_feedbacks(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        topic_id: str,
+        feedback_ids: list[str],
+    ) -> int:
+        """
+        批量关联反馈到主题
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            topic_id: 主题ID
+            feedback_ids: 反馈ID列表
+
+        Returns:
+            关联成功的数量
+        """
+        from backend.app.userecho.crud import crud_feedback
+
+        # 验证主题是否存在
+        topic = await crud_topic.get_by_id(db, tenant_id, topic_id)
+        if not topic:
+            return 0
+
+        # 批量更新反馈的 topic_id
+        count = await crud_feedback.batch_update_topic(
+            db=db,
+            tenant_id=tenant_id,
+            feedback_ids=feedback_ids,
+            topic_id=topic_id,
+        )
+        return count
+
+    async def unlink_feedback(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        topic_id: str,
+        feedback_id: str,
+    ) -> bool:
+        """
+        从主题移除反馈关联
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+            topic_id: 主题ID
+            feedback_id: 反馈ID
+
+        Returns:
+            是否成功移除
+        """
+        from backend.app.userecho.crud import crud_feedback
+
+        # 验证该反馈是否确实属于该主题
+        feedback = await crud_feedback.get_by_id(db, tenant_id, feedback_id)
+        if not feedback or feedback.topic_id != topic_id:
+            return False
+
+        # 更新 topic_id 为 None
+        # 使用 batch_update_clustering 更新 topic_id=None
+        # 注意: 这里借用 batch_update_clustering 因为它支持 atomic update，
+        # 并将 clustering_status 重置为 'pending'，以便将来可能重新聚类
+        await crud_feedback.batch_update_clustering(
+            db=db,
+            tenant_id=tenant_id,
+            feedback_ids=[feedback_id],
+            clustering_status='pending',
+            topic_id=None,
+        )
+        return True
 
 
 topic_service = TopicService()

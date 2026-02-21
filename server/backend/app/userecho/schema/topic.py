@@ -84,4 +84,10 @@ class TopicStatusUpdateParam(SchemaBase):
     reason: str | None = Field(None, description='变更原因')
 
 
+class TopicFeedbackLinkBatch(SchemaBase):
+    """批量关联反馈参数"""
+
+    feedback_ids: list[str] = Field(description='反馈ID列表')
+
+
 # 前向引用将在 __init__.py 中统一解析（确保所有 schema 类加载后再执行 model_rebuild）

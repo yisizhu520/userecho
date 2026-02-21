@@ -134,13 +134,13 @@ function goToDetail(topicId: string) {
           </Tooltip>
 
           <Tooltip title="紧急反馈占比">
-            <span class="flex items-center gap-1" :class="decision.urgent_ratio > 0.3 ? 'text-red-500' : ''">
+            <span class="flex items-center gap-1" :class="(decision.urgent_ratio ?? 0) > 0.3 ? 'text-red-500' : ''">
               <span class="iconify lucide--flame" />
-              紧急 {{ Math.round(decision.urgent_ratio * 100) }}%
+              紧急 {{ Math.round((decision.urgent_ratio ?? 0) * 100) }}%
             </span>
           </Tooltip>
 
-          <Tooltip v-if="decision.strategic_keywords_matched.length > 0" title="命中战略关键词">
+          <Tooltip v-if="Array.isArray(decision.strategic_keywords_matched) && decision.strategic_keywords_matched.length > 0" title="命中战略关键词">
             <span class="flex items-center gap-1 text-purple-500">
               <span class="iconify lucide--star" />
               {{ decision.strategic_keywords_matched.join('、') }}
@@ -161,10 +161,10 @@ function goToDetail(topicId: string) {
             </span>
           </Tooltip>
 
-          <Tooltip v-if="decision.total_mrr > 0" title="关联 MRR">
+          <Tooltip v-if="(decision.total_mrr ?? 0) > 0" title="关联 MRR">
             <span class="flex items-center gap-1 text-green-500">
               <span class="iconify lucide--dollar-sign" />
-              ¥{{ decision.total_mrr.toLocaleString() }}
+              ¥{{ Number(decision.total_mrr ?? 0).toLocaleString() }}
             </span>
           </Tooltip>
         </div>

@@ -27,6 +27,7 @@ type EchartsThemeType = 'dark' | 'light' | null;
 function useEcharts(chartRef: Ref<EchartsUIType>) {
   let chartInstance: echarts.ECharts | null = null;
   let cacheOptions: EChartsOption = {};
+  let isUnmounted = false;
 
   const { isDark } = usePreferences();
   const { height, width } = useWindowSize();
@@ -43,6 +44,7 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   });
 
   const initCharts = (t?: EchartsThemeType) => {
+    if (isUnmounted) return;
     const el = chartRef?.value?.$el;
     if (!el) {
       return;
@@ -62,14 +64,30 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
       ...getOptions.value,
     };
     return new Promise((resolve) => {
+      if (isUnmounted) {
+        resolve(null);
+        return;
+      }
       if (chartRef.value?.offsetHeight === 0) {
         useTimeoutFn(async () => {
+          if (isUnmounted) {
+            resolve(null);
+            return;
+          }
           resolve(await renderEcharts(currentOptions));
         }, 30);
         return;
       }
       nextTick(() => {
+        if (isUnmounted) {
+          resolve(null);
+          return;
+        }
         useTimeoutFn(() => {
+          if (isUnmounted) {
+            resolve(null);
+            return;
+          }
           if (!chartInstance) {
             const instance = initCharts();
             if (!instance) return;
@@ -83,6 +101,7 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   };
 
   function resize() {
+    if (isUnmounted) return;
     chartInstance?.resize({
       animation: {
         duration: 300,
@@ -92,12 +111,14 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   }
 
   watch([width, height], () => {
+    if (isUnmounted) return;
     resizeHandler?.();
   });
 
   useResizeObserver(chartRef as never, resizeHandler);
 
   watch(isDark, () => {
+    if (isUnmounted) return;
     if (chartInstance) {
       chartInstance.dispose();
       initCharts();
@@ -107,6 +128,8 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   });
 
   tryOnUnmounted(() => {
+    // 标记为已卸载，阻止所有后续的异步操作
+    isUnmounted = true;
     // 销毁实例，释放资源
     chartInstance?.dispose();
   });

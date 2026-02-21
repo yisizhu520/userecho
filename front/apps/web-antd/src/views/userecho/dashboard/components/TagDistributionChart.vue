@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
@@ -21,6 +21,7 @@ const props = defineProps<Props>();
 
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
+const isUnmounted = ref(false);
 
 // 标签颜色映射
 const categoryColors: Record<string, string> = {
@@ -32,6 +33,9 @@ const categoryColors: Record<string, string> = {
 };
 
 function renderChart() {
+  // 防止组件卸载后继续渲染
+  if (isUnmounted.value) return;
+  
   if (!props.data || props.data.length === 0) {
     return;
   }
@@ -94,6 +98,10 @@ function renderChart() {
 
 onMounted(() => {
   renderChart();
+});
+
+onBeforeUnmount(() => {
+  isUnmounted.value = true;
 });
 
 watch(() => props.data, renderChart, { deep: true });

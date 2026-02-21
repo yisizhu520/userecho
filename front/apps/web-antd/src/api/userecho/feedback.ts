@@ -13,6 +13,8 @@ export interface Feedback {
   customer_name?: string;
   anonymous_author?: string;
   anonymous_source?: string;
+  submitter_id?: number;
+  submitter_name?: string;
   topic_id?: string;
   topic_title?: string;
   topic_status?: 'review' | 'planned' | 'in_progress' | 'completed' | 'ignored';

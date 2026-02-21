@@ -335,6 +335,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         from backend.app.userecho.model.customer import Customer
         from backend.app.userecho.model.topic import Topic
+        from backend.app.admin.model.user import User
 
         # 使用左连接查询
         CustomerAlias = aliased(Customer)
@@ -346,9 +347,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 CustomerAlias.name.label('customer_name'),
                 TopicAlias.title.label('topic_title'),
                 TopicAlias.status.label('topic_status'),
+                User.username.label('submitter_name'),
             )
             .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
             .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
+            .outerjoin(User, self.model.submitter_id == User.id)
             .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
         )
 
@@ -434,6 +437,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 'customer_name': row.customer_name,
                 'topic_title': row.topic_title,
                 'topic_status': row.topic_status,
+                'submitter_name': row.submitter_name,
             }
             feedback_list.append(feedback_dict)
 
