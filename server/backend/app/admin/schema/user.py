@@ -109,6 +109,10 @@ class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
     dept: str | None = Field(None, description='部门名称')
     roles: list[str] = Field(description='角色名称列表')
     homePath: str = Field(description='用户首页路径')
+    tenantPermissions: list[str] = Field(default_factory=list, description='租户权限码列表')
+    userType: str | None = Field(None, description='用户类型: admin, staff, business, hybrid')
+    hasSystemRole: bool | None = Field(None, description='是否有系统角色')
+    hasBusinessRole: bool | None = Field(None, description='是否有业务角色')
 
     @model_validator(mode='before')
     @classmethod

@@ -141,8 +141,22 @@ function setupAccessGuard(router: Router) {
       // 优先使用 query 中的 redirect
       redirectPath = from.query.redirect as string;
     } else if (to.path === '/app' || to.path === preferences.app.defaultHomePath) {
-      // 如果访问 /app 或默认首页，重定向到用户首页或系统默认首页
-      redirectPath = userInfo.homePath || preferences.app.defaultHomePath;
+      // 根据用户类型智能重定向
+      const userType = userInfo.userType;
+
+      if (userType === 'admin') {
+        // 超级管理员 → 系统管理首页
+        redirectPath = '/admin/system/user';
+      } else if (userType === 'staff') {
+        // 系统管理员 → 系统管理首页
+        redirectPath = '/admin/system/user';
+      } else if (userType === 'hybrid') {
+        // 混合用户 → 默认业务工作台（可切换到系统管理）
+        redirectPath = '/app/dashboard/workspace';
+      } else {
+        // 业务用户 → 业务工作台
+        redirectPath = userInfo.homePath || '/app/dashboard/workspace';
+      }
     } else {
       // 其他情况，跳转到目标路径
       redirectPath = to.fullPath;

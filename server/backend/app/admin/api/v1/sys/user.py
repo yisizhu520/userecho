@@ -23,9 +23,55 @@ router = APIRouter()
 
 
 @router.get('/me', summary='获取当前用户信息', dependencies=[DependsJwtAuth])
-async def get_current_user(request: Request) -> ResponseSchemaModel[GetCurrentUserInfoWithRelationDetail]:
+async def get_current_user(request: Request, db: CurrentSession) -> ResponseSchemaModel[GetCurrentUserInfoWithRelationDetail]:
+    from backend.common.log import log
     data = request.user.model_dump()
+
+    # 获取用户的租户权限码（用于前端业务菜单渲染）
+    tenant_permissions: list[str] = []
+    tenant_id = request.user.tenant_id
+    log.info(f'Getting tenant permissions for user {request.user.id}, tenant_id: {tenant_id}')
+    if tenant_id:
+        from backend.app.userecho.service.tenant_member_service import tenant_member_service
+        tenant_permissions = await tenant_member_service.get_user_permission_codes(db, tenant_id, request.user.id)
+        log.info(f'Got tenant permissions: {tenant_permissions}')
+
+    data['tenantPermissions'] = tenant_permissions
+
+    # 判断用户类型（用于前端智能路由重定向）
+    user = request.user
+    
+    # 检查是否有系统角色
+    has_system_role = user.is_staff or user.is_superuser or any(
+        getattr(role, 'role_type', 'business') == 'system' 
+        for role in (user.roles or [])
+    )
+    
+    # 检查是否有业务角色（通过 tenant_id 判断）
+    has_business_role = tenant_id is not None
+    
+    # 确定用户类型
+    if user.is_superuser:
+        user_type = 'admin'  # 超级管理员
+        has_system_role = True
+        has_business_role = True  # 超级管理员可以访问所有功能
+    elif has_system_role and has_business_role:
+        user_type = 'hybrid'  # 混合用户（既有系统角色又有业务角色）
+    elif has_system_role:
+        user_type = 'staff'  # 系统管理员
+    elif has_business_role:
+        user_type = 'business'  # 业务用户
+    else:
+        user_type = 'unknown'  # 未知类型（通常不应该出现）
+    
+    data['userType'] = user_type
+    data['hasSystemRole'] = has_system_role
+    data['hasBusinessRole'] = has_business_role
+    
+    log.info(f'Returning data with userType: {user_type}, hasSystemRole: {has_system_role}, hasBusinessRole: {has_business_role}')
     return response_base.success(data=data)
+
+
 
 
 @router.get('/{pk}', summary='获取用户信息', dependencies=[DependsJwtAuth])

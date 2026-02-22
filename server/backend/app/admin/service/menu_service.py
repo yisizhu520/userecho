@@ -52,44 +52,58 @@ class MenuService:
     @staticmethod
     async def get_sidebar(*, db: AsyncSession, request: Request) -> list[dict[str, Any] | None]:
         """
-        获取用户的菜单侧边栏（增强版 - 支持角色类型过滤）
+        获取用户的系统菜单侧边栏
+
+        改造说明：
+        - 此接口仅返回系统后台菜单 (/admin/*)
+        - 业务菜单 (/app/*) 由前端根据租户权限码动态渲染
 
         :param db: 数据库会话
         :param request: FastAPI 请求对象
-        :return:
+        :return: 系统菜单树
         """
         menu_data = None
 
-        # 1. 超级管理员：看所有菜单
+        # 1. 超级管理员：看所有系统菜单
         if request.user.is_superuser:
             menu_data = await menu_dao.get_sidebar(db, None)
+            # 过滤只保留系统菜单
+            if menu_data:
+                menu_data = [m for m in menu_data if MenuService._is_system_menu(m)]
         else:
-            # 2. 普通用户：根据角色类型过滤菜单
+            # 2. 普通用户：根据系统角色获取菜单
             roles = request.user.roles
             menu_ids = set()
 
             if roles:
-                # 判断用户的角色类型
-                has_system_role = any(getattr(role, 'role_type', 'business') == 'system' for role in roles)
-                has_business_role = any(getattr(role, 'role_type', 'business') == 'business' for role in roles)
+                # 只处理系统角色 (role_type='system')
+                system_roles = [r for r in roles if getattr(r, 'role_type', 'business') == 'system']
 
-                # 收集菜单 ID
-                for role in roles:
+                # 收集系统角色关联的菜单 ID
+                for role in system_roles:
                     menu_ids.update(menu.id for menu in role.menus)
 
-                # 获取菜单数据
-                menu_data = await menu_dao.get_sidebar(db, list(menu_ids))
-
-                # 根据角色类型过滤菜单
-                if menu_data:
-                    menu_data = MenuService._filter_menus_by_role_type(menu_data, has_system_role, has_business_role)
-            else:
-                menu_data = []
+                if menu_ids:
+                    # 获取菜单数据
+                    menu_data = await menu_dao.get_sidebar(db, list(menu_ids))
+                    # 过滤只保留系统菜单
+                    if menu_data:
+                        menu_data = [m for m in menu_data if MenuService._is_system_menu(m)]
 
         if menu_data:
             return get_vben5_tree_data(menu_data)
 
         return []
+
+    @staticmethod
+    def _is_system_menu(menu: Menu) -> bool:
+        """判断是否为系统菜单"""
+        path = menu.path or ''
+        # 空路径或根路径保留（用于目录结构）
+        if not path or path == '/':
+            return True
+        # 只保留 /admin/* 菜单
+        return path.startswith(MenuService.SYSTEM_PREFIX)
 
     @staticmethod
     def _filter_menus_by_role_type(menus: Sequence[Menu], has_system_role: bool, has_business_role: bool) -> list[Menu]:

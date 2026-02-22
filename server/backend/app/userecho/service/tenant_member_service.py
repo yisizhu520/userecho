@@ -46,6 +46,26 @@ class TenantMemberService:
         return list(all_permissions)
 
     @staticmethod
+    async def get_user_permission_codes(db: AsyncSession, tenant_id: str, user_id: int) -> list[str]:
+        """
+        获取用户在指定租户内的权限代码列表
+
+        通过 user_id 查询，用于用户信息接口返回租户权限码
+
+        :param db: 数据库会话
+        :param tenant_id: 租户 ID
+        :param user_id: 用户 ID
+        :return: 权限代码列表
+        """
+        # 先查找用户对应的租户成员
+        member = await tenant_member_dao.get_by_user_id(db, tenant_id, user_id)
+        if not member:
+            return []
+
+        # 获取成员的权限码
+        return await TenantMemberService.get_member_permissions(db, member.id)
+
+    @staticmethod
     async def create(
         db: AsyncSession,
         *,

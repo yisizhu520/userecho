@@ -12,6 +12,8 @@ import { getAllMenusApi } from '#/api';
 import { BasicLayout, IFrameView } from '#/layouts';
 import { $t } from '#/locales';
 
+import { getBusinessMenus } from './business-menus';
+
 const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
 
 async function generateAccess(options: GenerateMenuAndRoutesOptions) {
@@ -34,7 +36,15 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
         content: `${$t('common.loadingMenu')}...`,
         duration: 1.5,
       });
-      return await getAllMenusApi();
+
+      // 1. 获取后端系统菜单 (/admin/*)
+      const backendMenus = await getAllMenusApi();
+
+      // 2. 获取前端业务菜单 (/app/*) - 根据租户权限过滤
+      const businessMenus = getBusinessMenus();
+
+      // 3. 合并菜单：业务菜单在前，系统菜单在后
+      return [...businessMenus, ...backendMenus];
     },
     // 可以指定没有权限跳转403页面
     forbiddenComponent,

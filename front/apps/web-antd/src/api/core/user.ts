@@ -11,6 +11,14 @@ export interface MyUserInfo extends UserInfo {
   phone?: string;
   dept?: string;
   last_login_time: string;
+  /** 租户权限码列表（用于业务菜单权限控制） */
+  tenantPermissions?: string[];
+  /** 用户类型：admin=超级管理员, staff=系统管理员, business=业务用户, hybrid=混合用户 */
+  userType?: 'admin' | 'staff' | 'business' | 'hybrid';
+  /** 是否有系统角色（可访问 /admin/*） */
+  hasSystemRole?: boolean;
+  /** 是否有业务角色（可访问 /app/*） */
+  hasBusinessRole?: boolean;
 }
 
 export interface SysUserResult {

@@ -18,6 +18,8 @@ class TenantPermission(MappedBase):
     name: Mapped[str] = mapped_column(String(64), comment='权限名称')
     code: Mapped[str] = mapped_column(String(64), unique=True, comment='权限代码，如 feedback:view')
     type: Mapped[str] = mapped_column(String(20), default='module', comment='类型: module, action')
+    menu_path: Mapped[str | None] = mapped_column(String(256), default=None, comment='关联的菜单路径，如 /app/feedback')
+    menu_icon: Mapped[str | None] = mapped_column(String(64), default=None, comment='菜单图标，如 lucide:inbox')
     sort: Mapped[int] = mapped_column(default=0, comment='排序')
 
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')

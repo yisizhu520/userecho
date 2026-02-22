@@ -1,0 +1,238 @@
+Traceback (most recent call last):
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 550, in _prepare_and_execute
+    self._rows = deque(await prepared_stmt.fetch(*parameters))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 177, in fetch
+    data = await self.__bind_execute(args, 0, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 268, in __bind_execute
+    data, status, _ = await self.__do_execute(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 257, in __do_execute
+    return await executor(protocol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 205, in bind_execute
+asyncpg.exceptions.UniqueViolationError: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 585, in execute
+    self._adapt_connection.await_(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 563, in _prepare_and_execute
+    self._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 513, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.IntegrityError: <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\workspace\indie\userecho\server\backend\scripts\set_boss_as_admin_debug.py", line 75, in set_boss_as_admin
+    await tenant_member_dao.set_member_roles(
+  File "D:\workspace\indie\userecho\server\backend\app\userecho\crud\crud_tenant_member.py", line 79, in set_member_roles
+    await db.flush()
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 787, in flush
+    await greenlet_spawn(self.sync_session.flush, objects=objects)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 203, in greenlet_spawn
+    result = context.switch(value)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4331, in flush
+    self._flush(objects)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4466, in _flush
+    with util.safe_reraise():
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4427, in _flush
+    flush_context.execute()
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 1233, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 585, in execute
+    self._adapt_connection.await_(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 563, in _prepare_and_execute
+    self._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 513, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+[SQL: INSERT INTO tenant_user_roles (id, tenant_user_id, role_id, assigned_by, assigned_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::BIGINT, $5::TIMESTAMP WITH TIME ZONE)]
+[parameters: ('c318d077-0a8d-4c51-97a3-cda4203daf71', '4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4', 'cc90beaf-5161-44bb-b02a-2f2353f9aaec', 8, datetime.datetime(2026, 1, 15, 23, 56, 49, 428402, tzinfo=zoneinfo.ZoneInfo(key='Asia/Shanghai')))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+Traceback (most recent call last):
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 550, in _prepare_and_execute
+    self._rows = deque(await prepared_stmt.fetch(*parameters))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 177, in fetch
+    data = await self.__bind_execute(args, 0, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 268, in __bind_execute
+    data, status, _ = await self.__do_execute(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 257, in __do_execute
+    return await executor(protocol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 205, in bind_execute
+asyncpg.exceptions.UniqueViolationError: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 585, in execute
+    self._adapt_connection.await_(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 563, in _prepare_and_execute
+    self._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 513, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.IntegrityError: <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\workspace\indie\userecho\server\backend\scripts\set_boss_as_admin_debug.py", line 105, in main
+    await set_boss_as_admin(db)
+  File "D:\workspace\indie\userecho\server\backend\scripts\set_boss_as_admin_debug.py", line 75, in set_boss_as_admin
+    await tenant_member_dao.set_member_roles(
+  File "D:\workspace\indie\userecho\server\backend\app\userecho\crud\crud_tenant_member.py", line 79, in set_member_roles
+    await db.flush()
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 787, in flush
+    await greenlet_spawn(self.sync_session.flush, objects=objects)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 203, in greenlet_spawn
+    result = context.switch(value)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4331, in flush
+    self._flush(objects)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4466, in _flush
+    with util.safe_reraise():
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4427, in _flush
+    flush_context.execute()
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 1233, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 585, in execute
+    self._adapt_connection.await_(
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 563, in _prepare_and_execute
+    self._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 513, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "D:\workspace\indie\userecho\server\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+[SQL: INSERT INTO tenant_user_roles (id, tenant_user_id, role_id, assigned_by, assigned_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::BIGINT, $5::TIMESTAMP WITH TIME ZONE)]
+[parameters: ('c318d077-0a8d-4c51-97a3-cda4203daf71', '4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4', 'cc90beaf-5161-44bb-b02a-2f2353f9aaec', 8, datetime.datetime(2026, 1, 15, 23, 56, 49, 428402, tzinfo=zoneinfo.ZoneInfo(key='Asia/Shanghai')))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+开始为租户 default-tenant 中的用户 boss 设置管理员角色
+1. 查找用户 boss...
+✅ 找到用户: boss (ID: 8)
+2. 查找租户成员关联...
+✅ 找到租户成员关联 (ID: 4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4)
+3. 查找管理员角色...
+✅ 找到管理员角色: 管理员 (ID: cc90beaf-5161-44bb-b02a-2f2353f9aaec)
+4. 分配管理员角色...
+❌ 发生错误: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+[SQL: INSERT INTO tenant_user_roles (id, tenant_user_id, role_id, assigned_by, assigned_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::BIGINT, $5::TIMESTAMP WITH TIME ZONE)]
+[parameters: ('c318d077-0a8d-4c51-97a3-cda4203daf71', '4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4', 'cc90beaf-5161-44bb-b02a-2f2353f9aaec', 8, datetime.datetime(2026, 1, 15, 23, 56, 49, 428402, tzinfo=zoneinfo.ZoneInfo(key='Asia/Shanghai')))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+❌ 设置失败: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_user_role"
+DETAIL:  Key (tenant_user_id, role_id)=(4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4, cc90beaf-5161-44bb-b02a-2f2353f9aaec) already exists.
+[SQL: INSERT INTO tenant_user_roles (id, tenant_user_id, role_id, assigned_by, assigned_at) VALUES ($1::VARCHAR, $2::VARCHAR, $3::VARCHAR, $4::BIGINT, $5::TIMESTAMP WITH TIME ZONE)]
+[parameters: ('c318d077-0a8d-4c51-97a3-cda4203daf71', '4bd1ce17-1bca-4c88-a5cf-8cab2997a7b4', 'cc90beaf-5161-44bb-b02a-2f2353f9aaec', 8, datetime.datetime(2026, 1, 15, 23, 56, 49, 428402, tzinfo=zoneinfo.ZoneInfo(key='Asia/Shanghai')))]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
