@@ -142,6 +142,21 @@ function createMiniRequestClient(
 
 export const requestClient = createRequestClient(apiURL, {
   responseReturn: 'data',
+  paramsSerializer: (params: any) => {
+    const searchParams = new URLSearchParams();
+    for (const key in params) {
+      const value = params[key];
+      if (value === null || value === undefined) continue;
+      if (Array.isArray(value)) {
+        value.forEach((val) => {
+          if (val !== null && val !== undefined) searchParams.append(key, String(val));
+        });
+      } else {
+        searchParams.append(key, String(value));
+      }
+    }
+    return searchParams.toString();
+  },
 });
 
 export const miniRequestClient = createMiniRequestClient(apiURL, {

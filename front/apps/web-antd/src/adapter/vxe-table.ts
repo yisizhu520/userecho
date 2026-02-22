@@ -18,6 +18,7 @@ import {
   Popconfirm,
   Switch,
   Tag,
+  Tooltip,
 } from 'ant-design-vue';
 
 import { $t } from '#/locales';
@@ -162,10 +163,10 @@ setupVbenVxeTable({
               return presets[opt]
                 ? { code: opt, ...presets[opt], ...defaultProps }
                 : {
-                    code: opt,
-                    text: $te(`common.${opt}`) ? $t(`common.${opt}`) : opt,
-                    ...defaultProps,
-                  };
+                  code: opt,
+                  text: $te(`common.${opt}`) ? $t(`common.${opt}`) : opt,
+                  ...defaultProps,
+                };
             } else {
               return { ...defaultProps, ...presets[opt.code], ...opt };
             }
@@ -180,7 +181,7 @@ setupVbenVxeTable({
           .filter((opt) => opt.show !== false);
 
         function renderBtn(opt: Recordable<any>, listen = true) {
-          return h(
+          const btn = h(
             Button,
             {
               ...props,
@@ -188,10 +189,10 @@ setupVbenVxeTable({
               icon: undefined,
               onClick: listen
                 ? () =>
-                    attrs?.onClick?.({
-                      code: opt.code,
-                      row,
-                    })
+                  attrs?.onClick?.({
+                    code: opt.code,
+                    row,
+                  })
                 : undefined,
             },
             {
@@ -207,10 +208,14 @@ setupVbenVxeTable({
               },
             },
           );
+          if (opt.tooltip) {
+            return h(Tooltip, { title: opt.tooltip }, { default: () => btn });
+          }
+          return btn;
         }
 
         function renderConfirm(opt: Recordable<any>) {
-          return h(
+          const confirm = h(
             Popconfirm,
             {
               getPopupContainer(el) {
@@ -248,6 +253,11 @@ setupVbenVxeTable({
                 ),
             },
           );
+
+          if (opt.tooltip) {
+            return h(Tooltip, { title: opt.tooltip }, { default: () => confirm });
+          }
+          return confirm;
         }
 
         function renderDropdown(opt: Recordable<any>) {

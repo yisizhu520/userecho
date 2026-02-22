@@ -143,18 +143,21 @@ export function useColumns(
         options: [
           {
             code: 'detail',
-            icon: 'lucide:eye',
+            icon: 'ant-design:eye-outlined',
+            tooltip: '查看',
             text: '',
           },
           {
             code: 'edit',
-            icon: 'lucide:edit',
+            icon: 'ant-design:edit-outlined',
+            tooltip: '编辑',
             text: '',
           },
           {
             code: 'delete',
-            icon: 'lucide:trash-2',
+            icon: 'ant-design:delete-outlined',
             text: '',
+            tooltip: '删除',
             popconfirm: {
               title: '确认删除此议题？',
             },
@@ -228,7 +231,7 @@ export const topicFormSchema: VbenFormSchema[] = [
       placeholder: '选择状态',
       style: { width: '100%' },
     },
-    defaultValue: 'pending',
+    defaultValue: 'planned',
   },
 ];
 

@@ -60,10 +60,10 @@ const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
  * 筛选条件状态
  */
 const { state: filterValues } = useFilterStorage({
-  key: 'topic_filter_values',
+  key: 'topic_filter_values_v2',
   defaultValue: {
     search_query: '',
-    status: ['pending', 'planned', 'in_progress'],
+    status: ['planned', 'in_progress'],
     category: TOPIC_CATEGORIES.map((c) => c.value),
     board_ids: [] as string[],
     date_range: null as [string, string] | null,
@@ -166,6 +166,8 @@ const gridOptions: VxeTableGridOptions<Topic> = {
             queryParams.date_from = filterValues.value.date_range[0];
             queryParams.date_to = filterValues.value.date_range[1];
           }
+
+
           
           const data = await getTopicList(queryParams);
 

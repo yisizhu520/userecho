@@ -171,13 +171,15 @@ export function useColumns(
         options: [
           {
             code: 'edit',
-            icon: 'lucide:edit',
+            icon: 'ant-design:edit-outlined',
             text: '',
+            tooltip: '编辑',
           },
           {
             code: 'delete',
-            icon: 'lucide:trash-2',
+            icon: 'ant-design:delete-outlined',
             text: '',
+            tooltip: '删除',
             popconfirm: {
               title: '确认删除此反馈？',
             },
