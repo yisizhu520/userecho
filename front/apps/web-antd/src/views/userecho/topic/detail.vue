@@ -30,12 +30,7 @@ import { getStatusConfig, getCategoryConfig, categoryIcons, statusFormSchema } f
 import PriorityScoreCard from './components/PriorityScoreCard.vue';
 import NotificationPanel from './components/NotificationPanel.vue';
 import LinkFeedbackModal from './components/LinkFeedbackModal.vue';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
-
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
+import { formatToSmartTime, formatToDateTime } from '#/utils/dateUtil';
 
 const router = useRouter();
 const route = useRoute();
@@ -221,7 +216,6 @@ const feedbackColumns = [
     title: '提交时间',
     dataIndex: 'submitted_at',
     width: 120,
-    customRender: ({ text }: any) => dayjs(text).fromNow(),
   },
   {
     title: '操作',
@@ -279,7 +273,7 @@ onMounted(() => {
                 </span>
                 <span class="meta-separator">|</span>
                 <span class="meta-item">
-                   创建于 {{ dayjs(topic.created_time).fromNow() }}
+                   创建于 {{ formatToSmartTime(topic?.created_time) }}
                 </span>
              </div>
           </div>
@@ -322,6 +316,11 @@ onMounted(() => {
                 <template v-if="column.dataIndex === 'content'">
                   <span v-if="record.is_urgent" style="color: #ff4d4f; margin-right: 4px;">[紧急]</span>
                   {{ record.content }}
+                </template>
+                <template v-else-if="column.dataIndex === 'submitted_at'">
+                  <a-tooltip :title="formatToDateTime(record.submitted_at)">
+                    <span>{{ formatToSmartTime(record.submitted_at) }}</span>
+                  </a-tooltip>
                 </template>
                 <template v-if="column.key === 'action'">
                     <a-popconfirm

@@ -16,9 +16,7 @@ import { $t } from '@vben/locales';
 
 import { message, Input, Select, Space, Tooltip, Drawer, Descriptions } from 'ant-design-vue';
 import { SearchOutlined } from '@ant-design/icons-vue';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
+import { formatToSmartTime, formatToDateTime } from '#/utils/dateUtil';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -31,10 +29,6 @@ import {
   CUSTOMER_TYPES,
   BUSINESS_VALUE_LEVELS,
 } from '#/api';
-
-// 配置 dayjs 相对时间
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
 
 // 搜索筛选状态
 const searchValue = ref('');
@@ -60,13 +54,7 @@ function getBusinessValueLevel(value: number) {
   ) || BUSINESS_VALUE_LEVELS[0]!;
 }
 
-/**
- * 格式化相对时间
- */
-function formatRelativeTime(time: string | null | undefined) {
-  if (!time) return '-';
-  return dayjs(time).fromNow();
-}
+
 
 /**
  * 表格配置
@@ -431,15 +419,15 @@ const typeOptions = computed(() => [
 
       <!-- 创建时间（相对时间） -->
       <template #created_time="{ row }">
-        <Tooltip :title="row.created_time">
-          <span class="text-gray-500">{{ formatRelativeTime(row.created_time) }}</span>
+        <Tooltip :title="formatToDateTime(row.created_time)">
+          <span class="text-gray-500">{{ formatToSmartTime(row.created_time) }}</span>
         </Tooltip>
       </template>
 
       <!-- 更新时间（相对时间） -->
       <template #updated_time="{ row }">
-        <Tooltip :title="row.updated_time">
-          <span class="text-gray-500">{{ formatRelativeTime(row.updated_time) }}</span>
+        <Tooltip :title="formatToDateTime(row.updated_time)">
+          <span class="text-gray-500">{{ formatToSmartTime(row.updated_time) }}</span>
         </Tooltip>
       </template>
 

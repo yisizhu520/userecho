@@ -10,12 +10,7 @@ import type {
 } from '#/api';
 
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
-
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
+import { formatToSmartTime, formatToDateTime } from '#/utils/dateUtil';
 import { useRouter } from 'vue-router';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
@@ -116,23 +111,7 @@ function getPriorityConfig(score: number): { label: string; color: string; icon:
 /**
  * 格式化相对时间
  */
-function formatRelativeTime(dateStr: string): string {
-  const date = dayjs(dateStr);
-  const now = dayjs();
-  const diffDays = now.diff(date, 'day');
-  
-  if (diffDays < 1) {
-    return date.fromNow(); // 几小时前
-  } else if (diffDays < 7) {
-    return date.fromNow(); // 几天前
-  } else if (diffDays < 30) {
-    return `${Math.floor(diffDays / 7)}周前`;
-  } else if (diffDays < 365) {
-    return `${Math.floor(diffDays / 30)}个月前`;
-  } else {
-    return date.format('YYYY-MM-DD');
-  }
-}
+
 
 
 
@@ -521,8 +500,8 @@ onBeforeUnmount(() => {
 
           <!-- 创建时间（相对时间） -->
           <template #created_time="{ row }">
-            <a-tooltip :title="dayjs(row.created_time).format('YYYY-MM-DD HH:mm:ss')">
-              <span class="text-gray-500">{{ formatRelativeTime(row.created_time) }}</span>
+            <a-tooltip :title="formatToDateTime(row.created_time)">
+              <span class="text-gray-500">{{ formatToSmartTime(row.created_time) }}</span>
             </a-tooltip>
           </template>
           </Grid>
