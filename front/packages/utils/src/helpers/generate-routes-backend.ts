@@ -72,7 +72,7 @@ function convertRoutes(
 }
 
 function normalizeViewPath(path: string): string {
-  // 去除相对路径前缀
+  // 去除相对路径前缀（如果有）
   const normalizedPath = path.replace(/^(\.\/|\.\.\/)+/, '');
 
   // 确保路径以 '/' 开头
@@ -80,7 +80,8 @@ function normalizeViewPath(path: string): string {
     ? normalizedPath
     : `/${normalizedPath}`;
 
-  // 这里耦合了vben-admin的目录结构
-  return viewPath.replace(/^\/views/, '');
+  // 直接返回路径，不移除任何前缀
+  // pageMap 的 key 是绝对路径 /src/views/**/*.vue
+  return viewPath;
 }
 export { generateRoutesByBackend };

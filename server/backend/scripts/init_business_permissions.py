@@ -31,7 +31,7 @@ BUSINESS_PERMISSIONS = [
     # 工作台（所有人可见，不需要权限控制）
     # 反馈管理
     {
-        'code': 'feedback:view',
+        'code': 'feedback',  # 对应前端 permissionCode: 'feedback'
         'name': '反馈管理',
         'type': 'module',
         'menu_path': '/app/feedback',
@@ -40,7 +40,7 @@ BUSINESS_PERMISSIONS = [
     },
     # AI 发现
     {
-        'code': 'discovery:view',
+        'code': 'discovery',  # 对应前端 permissionCode: 'discovery'
         'name': 'AI 发现',
         'type': 'module',
         'menu_path': '/app/ai/discovery',
@@ -49,7 +49,7 @@ BUSINESS_PERMISSIONS = [
     },
     # 需求管理
     {
-        'code': 'topic:view',
+        'code': 'topic',  # 对应前端 permissionCode: 'topic'
         'name': '需求管理',
         'type': 'module',
         'menu_path': '/app/topic/list',
@@ -58,7 +58,7 @@ BUSINESS_PERMISSIONS = [
     },
     # 客户管理
     {
-        'code': 'customer:view',
+        'code': 'customer',  # 对应前端 permissionCode: 'customer'
         'name': '客户管理',
         'type': 'module',
         'menu_path': '/app/customer',
@@ -67,7 +67,7 @@ BUSINESS_PERMISSIONS = [
     },
     # 洞察报告
     {
-        'code': 'report:view',
+        'code': 'insight',  # 对应前端 permissionCode: 'insight'
         'name': '洞察报告',
         'type': 'module',
         'menu_path': '/app/insights/report',
@@ -76,7 +76,7 @@ BUSINESS_PERMISSIONS = [
     },
     # 系统设置（父级）
     {
-        'code': 'settings:view',
+        'code': 'settings',  # 对应前端 permissionCode: 'settings'
         'name': '系统设置',
         'type': 'module',
         'menu_path': '/app/settings',
@@ -85,30 +85,30 @@ BUSINESS_PERMISSIONS = [
     },
     # 成员管理（设置子菜单）
     {
-        'code': 'settings:members',
+        'code': 'member',  # 对应前端 permissionCode: 'member'
         'name': '成员管理',
         'type': 'action',
-        'parent_code': 'settings:view',
+        'parent_code': 'settings',
         'menu_path': '/app/settings/members',
         'menu_icon': 'lucide:users',
         'sort': 91,
     },
     # 角色管理（设置子菜单）
     {
-        'code': 'settings:roles',
+        'code': 'role',  # 对应前端 permissionCode: 'role'
         'name': '角色管理',
         'type': 'action',
-        'parent_code': 'settings:view',
+        'parent_code': 'settings',
         'menu_path': '/app/settings/roles',
         'menu_icon': 'lucide:shield',
         'sort': 92,
     },
     # 积分配置（设置子菜单）
     {
-        'code': 'settings:credits',
+        'code': 'credits',  # 对应前端 permissionCode: 'credits'
         'name': '积分配置',
         'type': 'action',
-        'parent_code': 'settings:view',
+        'parent_code': 'settings',
         'menu_path': '/app/settings/credits',
         'menu_icon': 'lucide:coins',
         'sort': 93,

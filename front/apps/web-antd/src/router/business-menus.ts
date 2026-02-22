@@ -12,6 +12,9 @@ import { useUserStore } from '@vben/stores';
 import { $t } from '#/locales';
 import { useTopicStore } from '#/store';
 
+// 导入完整的业务路由定义
+import userechoRoutes from './routes/modules/userecho';
+
 /**
  * 业务菜单定义
  * permissionCode 为空表示所有人可见
@@ -122,78 +125,43 @@ const BUSINESS_MENUS: BusinessMenuItem[] = [
     },
 ];
 
-/**
- * 转换业务菜单项为路由格式
- */
-function convertToRouteFormat(
-    item: BusinessMenuItem,
-): RouteRecordStringComponent {
-    const route: RouteRecordStringComponent = {
-        path: item.path,
-        name: item.name,
-        meta: {
-            title: item.title,
-            icon: item.icon,
-            order: item.order,
-        },
-    };
 
-    if (item.redirect) {
-        route.redirect = item.redirect;
-    }
-
-    // 动态 badge
-    if (item.badgeGetter) {
-        Object.defineProperty(route.meta!, 'badge', {
-            get: item.badgeGetter,
-        });
-        if (item.badgeType) route.meta!.badgeType = item.badgeType;
-        if (item.badgeVariants) route.meta!.badgeVariants = item.badgeVariants;
-    }
-
-    // 子菜单
-    if (item.children && item.children.length > 0) {
-        route.children = item.children.map(convertToRouteFormat);
-    }
-
-    return route;
-}
 
 /**
- * 检查用户是否有权限访问菜单
+ * 过滤路由（根据租户权限）
  */
-function hasPermission(
-    item: BusinessMenuItem,
+function filterRoutesByPermission(
+    routes: RouteRecordStringComponent[],
     tenantPermissions: string[],
-): boolean {
-    // 没有配置权限码，表示所有人可见
-    if (!item.permissionCode) {
-        return true;
-    }
-    return tenantPermissions.includes(item.permissionCode);
-}
-
-/**
- * 过滤业务菜单（根据租户权限）
- */
-function filterMenusByPermission(
-    menus: BusinessMenuItem[],
-    tenantPermissions: string[],
-): BusinessMenuItem[] {
-    return menus
-        .filter((item) => hasPermission(item, tenantPermissions))
-        .map((item) => {
-            if (item.children) {
+): RouteRecordStringComponent[] {
+    return routes
+        .filter((route) => {
+            const permCode = route.meta?.permissionCode as string | undefined;
+            // 没有权限码 = 公开路由（如工作台）
+            if (!permCode) return true;
+            return tenantPermissions.includes(permCode);
+        })
+        .map((route) => {
+            // 递归过滤子路由
+            if (route.children && route.children.length > 0) {
                 return {
-                    ...item,
-                    children: filterMenusByPermission(item.children, tenantPermissions),
+                    ...route,
+                    children: filterRoutesByPermission(
+                        route.children as RouteRecordStringComponent[],
+                        tenantPermissions,
+                    ),
                 };
             }
-            return item;
+            return route;
         })
-        .filter((item) => {
-            // 过滤掉没有子菜单的父菜单（除非父菜单本身可访问）
-            if (item.children && item.children.length === 0 && item.redirect) {
+        .filter((route) => {
+            // 过滤掉没有子路由的父路由（如果父路由本身需要 redirect）
+            if (
+                route.children &&
+                route.children.length === 0 &&
+                route.redirect &&
+                route.meta?.permissionCode
+            ) {
                 return false;
             }
             return true;
@@ -202,6 +170,8 @@ function filterMenusByPermission(
 
 /**
  * 获取业务菜单列表（根据当前用户权限过滤）
+ * 
+ * 从 userecho.ts 导入路由定义，根据租户权限过滤
  */
 export function getBusinessMenus(): RouteRecordStringComponent[] {
     const userStore = useUserStore();
@@ -211,16 +181,8 @@ export function getBusinessMenus(): RouteRecordStringComponent[] {
     const tenantPermissions: string[] =
         (userInfo as Record<string, unknown>)?.tenantPermissions as string[] || [];
 
-    // 如果没有任何权限，返回工作台等默认菜单
-    if (tenantPermissions.length === 0) {
-        // 只返回不需要权限的菜单
-        const publicMenus = BUSINESS_MENUS.filter((m) => !m.permissionCode);
-        return publicMenus.map(convertToRouteFormat);
-    }
-
-    // 根据权限过滤菜单
-    const filteredMenus = filterMenusByPermission(BUSINESS_MENUS, tenantPermissions);
-    return filteredMenus.map(convertToRouteFormat);
+    // 根据权限过滤路由，直接返回（component 已是字符串，无需转换）
+    return filterRoutesByPermission(userechoRoutes, tenantPermissions);
 }
 
 /**
@@ -232,29 +194,38 @@ export function hasBusinessMenuAccess(path: string): boolean {
     const tenantPermissions: string[] =
         (userInfo as Record<string, unknown>)?.tenantPermissions as string[] || [];
 
-    // 查找对应的菜单配置
-    const findMenu = (
-        menus: BusinessMenuItem[],
+    // 递归查找路由
+    const findRoute = (
+        routes: RouteRecordStringComponent[],
         targetPath: string,
-    ): BusinessMenuItem | undefined => {
-        for (const menu of menus) {
-            if (menu.path === targetPath) {
-                return menu;
+    ): RouteRecordStringComponent | undefined => {
+        for (const route of routes) {
+            if (route.path === targetPath) {
+                return route;
             }
-            if (menu.children) {
-                const found = findMenu(menu.children, targetPath);
+            if (route.children) {
+                const found = findRoute(
+                    route.children as RouteRecordStringComponent[],
+                    targetPath,
+                );
                 if (found) return found;
             }
         }
         return undefined;
     };
 
-    const menu = findMenu(BUSINESS_MENUS, path);
+    const route = findRoute(userechoRoutes, path);
 
-    // 没找到菜单配置，默认允许访问
-    if (!menu) {
+    // 没找到路由配置，默认允许访问
+    if (!route) {
         return true;
     }
 
-    return hasPermission(menu, tenantPermissions);
+    const permCode = route.meta?.permissionCode as string | undefined;
+    // 没有权限码 = 公开路由
+    if (!permCode) {
+        return true;
+    }
+
+    return tenantPermissions.includes(permCode);
 }

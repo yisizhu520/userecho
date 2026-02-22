@@ -18,8 +18,8 @@ const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
 
 async function generateAccess(options: GenerateMenuAndRoutesOptions) {
   const pageMap: ComponentRecordType = {
-    ...import.meta.glob('../views/**/*.vue'),
-    ...import.meta.glob('../plugins/**/*.vue'),
+    ...import.meta.glob('/src/views/**/*.vue'),
+    ...import.meta.glob('/src/plugins/**/*.vue'),
   };
 
   const layoutMap: ComponentRecordType = {

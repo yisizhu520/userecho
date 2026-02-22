@@ -11,11 +11,36 @@ from backend.common.exception import errors
 
 # 内置角色定义
 BUILTIN_ROLES = [
-    {'code': 'admin', 'name': '管理员', 'description': '租户管理员，拥有所有权限', 'permissions': ['feedback', 'topic', 'insight', 'member', 'role', 'settings']},
-    {'code': 'product_manager', 'name': '产品经理', 'description': '管理需求和反馈', 'permissions': ['feedback', 'topic', 'insight']},
-    {'code': 'sales', 'name': '销售', 'description': '录入客户反馈', 'permissions': ['feedback']},
-    {'code': 'developer', 'name': '开发者', 'description': '查看需求和反馈', 'permissions': ['feedback', 'topic']},
-    {'code': 'viewer', 'name': '观察者', 'description': '只读权限', 'permissions': ['feedback', 'topic', 'insight']},
+    {
+        'code': 'admin',
+        'name': '管理员',
+        'description': '租户管理员，拥有所有权限',
+        'permissions': ['feedback', 'discovery', 'topic', 'customer', 'insight', 'settings', 'member', 'role', 'credits']
+    },
+    {
+        'code': 'product_manager',
+        'name': '产品经理',
+        'description': '管理需求和反馈',
+        'permissions': ['feedback', 'discovery', 'topic', 'customer', 'insight']
+    },
+    {
+        'code': 'sales',
+        'name': '销售',
+        'description': '录入客户反馈',
+        'permissions': ['feedback', 'customer']
+    },
+    {
+        'code': 'developer',
+        'name': '开发者',
+        'description': '查看需求和反馈',
+        'permissions': ['topic', 'discovery']
+    },
+    {
+        'code': 'viewer',
+        'name': '观察者',
+        'description': '只读权限',
+        'permissions': ['feedback', 'topic', 'customer', 'insight']
+    },
 ]
 
 

@@ -41,27 +41,25 @@
     "topicDetail": "Topic Detail",
     "customerManage": "Customer Management"
   },
-  "page": {
-    "userecho": {
-      "title": "UserEcho",
-      "feedback": {
-        "list": "Feedback List",
-        "import": "Import Feedback"
-      },
-      "topic": {
-        "list": "Demand Library",
-        "detail": "Topic Detail"
-      },
-      "customer": {
-        "title": "Customer Management"
-      },
-      "discovery": {
-        "title": "Pending Decisions"
-      },
-      "settings": {
-        "title": "Settings",
-        "clustering": "Clustering Strategy"
-      }
+  "userecho": {
+    "title": "UserEcho",
+    "feedback": {
+      "list": "Feedback List",
+      "import": "Import Feedback"
+    },
+    "topic": {
+      "list": "Demand Library",
+      "detail": "Topic Detail"
+    },
+    "customer": {
+      "title": "Customer Management"
+    },
+    "discovery": {
+      "title": "Pending Decisions"
+    },
+    "settings": {
+      "title": "Settings",
+      "clustering": "Clustering Strategy"
     }
   },
   "monitor": {

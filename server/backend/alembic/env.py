@@ -65,7 +65,7 @@ def run_migrations_offline() -> None:
 def do_run_migrations(connection: Connection) -> None:
     # 当迁移无变化时，不生成迁移记录
     def process_revision_directives(context, revision, directives) -> None:  # noqa: ANN001
-        if alembic_config.cmd_opts.autogenerate:
+        if getattr(alembic_config.cmd_opts, 'autogenerate', False):
             script = directives[0]
             if script.upgrade_ops.is_empty():
                 directives[:] = []

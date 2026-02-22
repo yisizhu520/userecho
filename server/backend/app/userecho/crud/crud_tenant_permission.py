@@ -50,6 +50,9 @@ class CRUDTenantPermission:
         old_perms = result.scalars().all()
         for perm in old_perms:
             await db.delete(perm)
+        
+        # 确保删除操作先完成
+        await db.flush()
 
         # 创建新的权限关联
         for perm_id in permission_ids:
