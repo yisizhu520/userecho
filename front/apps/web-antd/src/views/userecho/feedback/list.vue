@@ -266,14 +266,14 @@ const handleTriggerClustering = async () => {
     // 兼容同步模式返回
     const result: any = resp;
     if (result?.status === 'skipped') {
-      message.warning(result.message || '聚类已跳过');
+      message.warning(result.message || '整理已跳过');
     } else {
-      message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个需求，噪声 ${result.noise_count ?? 0} 条`);
+      message.success(`整理完成：创建 ${result.topics_created ?? 0} 个需求，未关联 ${result.noise_count ?? 0} 条`);
     }
     onRefresh();
     clusteringModalOpen.value = false;
   } catch (error: any) {
-    message.error(error.message || '聚类失败，请稍后重试');
+    message.error(error.message || '整理失败，请稍后重试');
     clusteringModalOpen.value = false;
   } finally {
     clusteringLoading.value = false;
@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
           筛选条件
         </VbenButton>
         
-        <!-- 聚类状态横幅 -->
+        <!-- 智能整理状态横幅 -->
         <ClusteringStatusBanner 
           ref="clusteringBannerRef"
           @trigger-clustering="handleTriggerClustering"
@@ -360,7 +360,7 @@ onBeforeUnmount(() => {
                 </a-tag>
               </a-tooltip>
             </span>
-            <span v-else class="text-gray-400">未聚类</span>
+            <span v-else class="text-gray-400">未关联</span>
           </template>
 
           <template #derived_status="{ row }">
@@ -399,7 +399,7 @@ onBeforeUnmount(() => {
         <!-- 反馈弹窗（创建/编辑统一） -->
         <FeedbackModal ref="feedbackModalRef" @success="onRefresh" />
 
-        <!-- AI 聚类进度弹窗 -->
+        <!-- AI 智能整理进度弹窗 -->
         <ClusteringProgressModal
           v-model:open="clusteringModalOpen"
           :task-id="clusteringTaskId"

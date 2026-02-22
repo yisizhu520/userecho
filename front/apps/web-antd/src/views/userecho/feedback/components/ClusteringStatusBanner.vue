@@ -45,7 +45,7 @@ const statusText = computed(() => {
   
   const parts = [];
   if (status.value.pending_count > 0) {
-    parts.push(`${status.value.pending_count} 条反馈待聚类`);
+    parts.push(`${status.value.pending_count} 条反馈待整理`);
   }
   if (status.value.processing_count > 0) {
     parts.push(`${status.value.processing_count} 条正在处理`);

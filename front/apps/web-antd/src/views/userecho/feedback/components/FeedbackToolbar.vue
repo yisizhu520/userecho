@@ -64,7 +64,7 @@ const handleSearch = () => {
       :loading="clusteringLoading"
     >
       <span class="iconify lucide--sparkles mr-2" />
-      AI 智能聚类
+      AI 智能整理
     </VbenButton>
   </div>
 </template>

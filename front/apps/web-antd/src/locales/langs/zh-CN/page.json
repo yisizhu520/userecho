@@ -34,7 +34,7 @@
     "sysRole": "角色管理",
     "sysUser": "用户管理",
     "profile": "个人中心",
-    "clusteringSettings": "聚类策略",
+    "clusteringSettings": "整理策略",
     "userecho": "回响",
     "userecho": "回响",
     "feedbackList": "反馈列表",
@@ -62,7 +62,7 @@
       },
       "settings": {
         "title": "设置",
-        "clustering": "聚类策略"
+        "clustering": "整理策略"
       }
     }
   },

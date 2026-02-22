@@ -59,7 +59,7 @@
           <span class="font-medium">{{ previewResult.preview?.coverage_percentage }}</span>
         </div>
         <div>
-          <span class="text-gray-600 dark:text-gray-400">聚类质量：</span>
+          <span class="text-gray-600 dark:text-gray-400">整理质量：</span>
           <span
             class="rounded px-1.5 py-0.5 text-xs font-medium"
             :class="getQualityClass(previewResult.preview?.quality_rating)"

@@ -80,15 +80,15 @@ const pollTask = async () => {
     if (status.state === 'SUCCESS') {
       const result: any = status.result;
       if (!result) {
-        message.warning('聚类任务完成，但未返回结果');
+        message.warning('智能整理任务完成，但未返回结果');
         close();
         return;
       }
 
       if (result.status === 'skipped') {
-        message.warning(result.message || '聚类已跳过');
+        message.warning(result.message || '整理已跳过');
       } else {
-        message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个主题，噪声 ${result.noise_count ?? 0} 条`);
+        message.success(`整理完成：创建 ${result.topics_created ?? 0} 个主题，未关联 ${result.noise_count ?? 0} 条`);
       }
       emit('success', result);
       close();
@@ -132,7 +132,7 @@ const handleCancel = () => {
 <template>
   <a-modal
     :open="open"
-    title="AI 智能聚类"
+    title="AI 智能整理"
     :footer="null"
     :maskClosable="false"
     @cancel="handleCancel"
