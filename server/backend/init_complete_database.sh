@@ -213,6 +213,18 @@ step1b_migrate() {
         
         if [ $? -eq 0 ]; then
             print_success "系统基础数据初始化完成"
+            
+            # 【关键修复】fba init 使用 create_tables() 绕过了 Alembic
+            # 必须手动设置 alembic_version，否则后续 alembic upgrade 会失败
+            print_info "设置 Alembic 版本标记..."
+            alembic stamp head
+            
+            if [ $? -eq 0 ]; then
+                print_success "Alembic 版本标记设置完成"
+            else
+                print_warning "Alembic 版本标记设置失败，但不影响使用"
+                print_info "您可以稍后手动执行: alembic stamp head"
+            fi
         else
             print_error "fba init 执行失败"
             exit 1

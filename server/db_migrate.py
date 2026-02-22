@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 数据库迁移执行脚本
 解决 uv run 在 Windows 下的路径问题
 """
 
+import io
 import subprocess
 import sys
 from pathlib import Path
+
+# Windows 平台 UTF-8 输出支持
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # 获取项目根目录
 SERVER_DIR = Path(__file__).parent
