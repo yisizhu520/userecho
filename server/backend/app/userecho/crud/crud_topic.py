@@ -323,8 +323,8 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
                 t.ai_generated, t.ai_confidence, t.feedback_count, t.cluster_quality,
                 t.is_noise, t.deleted_at, t.created_time, t.updated_time,
                 ps.id as ps_id, ps.tenant_id as ps_tenant_id, ps.topic_id as ps_topic_id,
-                ps.reach_score, ps.frequency_score, ps.urgency_score, ps.revenue_score,
-                ps.strategy_score, ps.total_score, ps.created_time as ps_created_time,
+                ps.impact_scope, ps.business_value, ps.dev_cost, ps.urgency_factor,
+                ps.total_score, ps.details, ps.created_time as ps_created_time,
                 ps.updated_time as ps_updated_time,
                 (1 - (t.centroid <=> '{embedding_str}'::vector)) as similarity_score
             FROM topics t
@@ -367,12 +367,12 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
                         id=row.ps_id,
                         tenant_id=row.ps_tenant_id,
                         topic_id=row.ps_topic_id,
-                        reach_score=row.reach_score,
-                        frequency_score=row.frequency_score,
-                        urgency_score=row.urgency_score,
-                        revenue_score=row.revenue_score,
-                        strategy_score=row.strategy_score,
+                        impact_scope=row.impact_scope,
+                        business_value=row.business_value,
+                        dev_cost=row.dev_cost,
+                        urgency_factor=row.urgency_factor,
                         total_score=row.total_score,
+                        details=row.details,
                         created_time=row.ps_created_time,
                         updated_time=row.ps_updated_time,
                     )

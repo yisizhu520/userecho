@@ -27,7 +27,9 @@ import FeedbackFilterSidebar from '#/layouts/components/sidebar/FeedbackFilterSi
 import FeedbackToolbar from './components/FeedbackToolbar.vue';
 import FeedbackModal from './components/FeedbackModal.vue';
 import ClusteringProgressModal from './components/ClusteringProgressModal.vue';
+import MergeSuggestionsModal from './components/MergeSuggestionsModal.vue';
 import ClusteringStatusBanner from './components/ClusteringStatusBanner.vue';
+
 import ScreenshotCell from './components/ScreenshotCell.vue';
 
 import { useFilterStorage } from '#/composables/useFilterStorage';
@@ -185,6 +187,9 @@ watch(
  * @param boardId 可选，如果传入则确保该 board 在筛选条件中
  */
 function onRefresh(boardId?: string) {
+  // 刷新聚类状态 Banner
+  clusteringBannerRef.value?.refresh();
+
   // 如果传入了 boardId，且不在当前筛选条件中，则将其加入
   if (boardId && filterValues.value.board_ids && !filterValues.value.board_ids.includes(boardId)) {
     filterValues.value.board_ids = [...filterValues.value.board_ids, boardId];
@@ -229,6 +234,8 @@ const clusteringBannerRef = ref<InstanceType<typeof ClusteringStatusBanner>>();
 const clusteringLoading = ref(false);
 const clusteringModalOpen = ref(false);
 const clusteringTaskId = ref<string>('');
+const mergeSuggestionsOpen = ref(false);
+const mergeSuggestions = ref<any[]>([]);
 
 const handleTriggerClustering = async () => {
   try {
@@ -247,6 +254,14 @@ const handleTriggerClustering = async () => {
     if (result?.status === 'skipped') {
       message.warning(result.message || '整理已跳过');
     } else {
+      // 检查是否有合并建议
+      if (result.merge_suggestions?.length > 0) {
+        mergeSuggestions.value = result.merge_suggestions;
+        // 稍后打开建议弹窗（等待进度弹窗关闭或用户点击）
+        setTimeout(() => {
+          mergeSuggestionsOpen.value = true;
+        }, 500);
+      }
       message.success(`整理完成：创建 ${result.topics_created ?? 0} 个需求，未关联 ${result.noise_count ?? 0} 条`);
     }
     onRefresh();
@@ -259,9 +274,18 @@ const handleTriggerClustering = async () => {
   }
 };
 
-const handleClusteringSuccess = () => {
+const handleClusteringSuccess = (result: any) => {
   onRefresh();
+  // 如果有合并建议，打开弹窗
+  if (result.merge_suggestions?.length > 0) {
+    mergeSuggestions.value = result.merge_suggestions;
+    // 稍微延迟一下，体验更好
+    setTimeout(() => {
+      mergeSuggestionsOpen.value = true;
+    }, 500);
+  }
 };
+
 
 onMounted(() => {
   initBoardSelection();
@@ -384,6 +408,14 @@ onBeforeUnmount(() => {
           :task-id="clusteringTaskId"
           @success="handleClusteringSuccess"
         />
+
+        <!-- 合并建议弹窗 -->
+        <MergeSuggestionsModal
+          v-model:open="mergeSuggestionsOpen"
+          :suggestions="mergeSuggestions"
+          @refresh="onRefresh"
+        />
+
       </div>
       
       <!-- 移动端抽屉 -->

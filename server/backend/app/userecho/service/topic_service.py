@@ -149,7 +149,7 @@ class TopicService:
         Returns:
             创建的主题实例
         """
-        return await crud_topic.create(
+        topic = await crud_topic.create(
             db=db,
             tenant_id=tenant_id,
             id=uuid4_str(),
@@ -160,6 +160,22 @@ class TopicService:
             board_id=data.board_id,  # 传递看板ID
             ai_generated=False,  # 手动创建的主题
         )
+
+        # 异步生成 centroid（不阻塞响应）
+        # 使手动创建的需求也能参与相似度匹配
+        try:
+            from backend.app.task.celery import celery_app
+
+            celery_app.send_task(
+                'userecho.generate_topic_centroid',
+                args=[topic.id, tenant_id],
+            )
+        except Exception as e:
+            # 失败不影响主流程
+            log.warning(f'Failed to trigger centroid generation for topic {topic.id}: {e}')
+
+        return topic
+
 
     async def update_topic(
         self,

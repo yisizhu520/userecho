@@ -258,117 +258,216 @@ class ClusteringService:
                 f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters, {len(noise_indices)} noise points'
             )
 
-            # 7. 为每个聚类创建 Topic
+
+            # 7. 为每个聚类创建 Topic（或生成合并建议）
             created_topics = []
             failed_topics = []
+            merge_suggestions = []  # 新增：合并建议（与已有需求重复）
 
             for label, indices in clusters.items():
                 try:
-                    cluster_feedbacks = [valid_feedbacks[i] for i in indices]
-                    cluster_embeddings = embeddings_array[indices]
+                    # 使用嵌套事务（Savepoint），防止单个 Topic 创建失败导致整个 Session 回滚
+                    async with db.begin_nested():
+                        cluster_feedbacks = [valid_feedbacks[i] for i in indices]
+                        cluster_embeddings = embeddings_array[indices]
 
-                    # 使用 AI 生成主题标题和分类
-                    feedback_contents = [f.content for f in cluster_feedbacks]
-                    topic_data = await ai_client.generate_topic_title(feedback_contents)
+                        # 使用 AI 生成主题标题和分类
+                        feedback_contents = [f.content for f in cluster_feedbacks]
+                        topic_data = await ai_client.generate_topic_title(feedback_contents)
 
-                    # 计算中心向量（均值）
-                    centroid = np.mean(cluster_embeddings, axis=0).astype(float).tolist()
+                        # 计算中心向量（均值）
+                        centroid = np.mean(cluster_embeddings, axis=0).astype(float).tolist()
 
-                    # 计算簇内平均相似度（用于展示/置信度）
-                    avg_similarity = 1.0
-                    if len(indices) >= 2:
-                        from sklearn.metrics.pairwise import cosine_similarity
-
-                        sim = cosine_similarity(cluster_embeddings)
-                        upper = sim[np.triu_indices_from(sim, k=1)]
-                        if upper.size > 0:
-                            avg_similarity = float(np.mean(upper))
-
-                    # 简单置信度：相似度 + 规模（MVP 版本）
-                    size_factor = min(1.0, len(indices) / 5.0)
-                    threshold = tenant_config.get('similarity_threshold', 0.85)
-                    similarity_factor = max(0.0, min(1.0, (avg_similarity - threshold) / (1 - threshold)))
-                    confidence = float(min(1.0, 0.2 + 0.8 * size_factor * similarity_factor))
-
-                    # 从 Feedback 推断 board_id（取出现频率最高的）
-                    from collections import Counter
-                    board_ids = [f.board_id for f in cluster_feedbacks if f.board_id]
-                    inferred_board_id = Counter(board_ids).most_common(1)[0][0] if board_ids else None
-
-                    topic = await crud_topic.create(
-                        db=db,
-                        tenant_id=tenant_id,
-                        board_id=inferred_board_id,
-                        title=topic_data['title'],
-                        category=topic_data['category'],
-                        ai_generated=True,
-                        ai_confidence=confidence,
-                        feedback_count=len(cluster_feedbacks),
-                        centroid=centroid,
-                        cluster_quality={
-                            'silhouette': quality_metrics.get('silhouette', 0.0),
-                            'noise_ratio': quality_metrics.get('noise_ratio', 1.0),
-                            'confidence': confidence,
-                            'avg_similarity': avg_similarity,
-                            'size': len(cluster_feedbacks),
-                        },
-                        is_noise=False,
-                    )
-
-                    # ✅ 自动生成默认优先级评分
-                    try:
-                        from backend.app.userecho.service.priority_service import priority_service
-
-                        # 统计客户数量
-                        customer_ids = {f.customer_id for f in cluster_feedbacks if f.customer_id}
-                        customer_count = len(customer_ids)
-
-                        # 检测紧急程度（关键词匹配）
-                        is_urgent = any(f.is_urgent for f in cluster_feedbacks)
-
-                        await priority_service.create_default_priority_score(
+                        # ============================================================
+                        # 新增：检查是否与已有 Topic 重复
+                        # ============================================================
+                        similar_topics = await crud_topic.search_by_semantic(
                             db=db,
                             tenant_id=tenant_id,
-                            topic_id=topic.id,
-                            category=topic_data['category'],
-                            title=topic_data['title'],
-                            customer_count=customer_count,
-                            feedback_count=len(cluster_feedbacks),
-                            is_urgent=is_urgent,
+                            query_embedding=centroid,
+                            limit=3,
+                            min_similarity=0.80,  # 高阈值：只匹配高度相似的
                         )
 
-                        log.debug(f'Generated default priority score for topic {topic.id}')
-                    except Exception as e:
-                        # 评分失败不影响聚类流程
-                        log.warning(f'Failed to generate default priority score for topic {topic.id}: {e}')
+                        if similar_topics:
+                            # 找到相似需求，生成合并建议
+                            matched_topic = similar_topics[0]
+                            matched_status = matched_topic.status
+                            similarity_score = getattr(matched_topic, 'similarity_score', 0.85)
 
-                    feedback_ids = [f.id for f in cluster_feedbacks]
-                    await crud_feedback.batch_update_clustering(
-                        db=db,
-                        tenant_id=tenant_id,
-                        feedback_ids=feedback_ids,
-                        clustering_status='clustered',
-                        topic_id=topic.id,
-                        clustering_metadata={
-                            'cluster_label': int(label),
-                            'clustered_at': timezone.now().isoformat(),
+                            merge_suggestion = {
+                                'cluster_label': int(label),
+                                'suggested_topic_id': matched_topic.id,
+                                'suggested_topic_title': matched_topic.title,
+                                'suggested_topic_status': matched_status,
+                                'suggested_topic_category': matched_topic.category,
+                                'similarity': float(similarity_score),
+                                'feedback_ids': [f.id for f in cluster_feedbacks],
+                                'feedback_count': len(cluster_feedbacks),
+                                'is_completed': matched_status == 'completed',
+                                'ai_generated_title': topic_data['title'],  # AI 生成的标题（供参考）
+                            }
+
+                            # 如果是已完成的需求，增加额外提示
+                            if matched_status == 'completed':
+                                merge_suggestion['warning'] = '此需求已完成，请确认用户反馈的问题是否已解决'
+                                merge_suggestion['suggested_actions'] = [
+                                    {'action': 'mark_outdated', 'label': '标记反馈为过时'},
+                                    {'action': 'reopen_and_link', 'label': '重新打开需求'},
+                                    {'action': 'create_new', 'label': '创建新需求'},
+                                ]
+                            else:
+                                merge_suggestion['suggested_actions'] = [
+                                    {'action': 'link_to_existing', 'label': '关联到此需求'},
+                                    {'action': 'create_new', 'label': '创建新需求'},
+                                ]
+
+                            merge_suggestions.append(merge_suggestion)
+
+                            # 暂时将这些反馈标记为待处理（等待用户决策）
+                            feedback_ids = [f.id for f in cluster_feedbacks]
+                            await crud_feedback.batch_update_clustering(
+                                db=db,
+                                tenant_id=tenant_id,
+                                feedback_ids=feedback_ids,
+                                clustering_status='pending',  # 保持 pending，等待用户决策
+                                clustering_metadata={
+                                    'cluster_label': int(label),
+                                    'clustered_at': timezone.now().isoformat(),
+                                    'merge_suggestion': {
+                                        'topic_id': matched_topic.id,
+                                        'similarity': float(similarity_score),
+                                    },
+                                },
+                            )
+
+                            log.info(
+                                f'Found similar topic for cluster {label}: {matched_topic.title} '
+                                f'(id={matched_topic.id}, similarity={similarity_score:.2f}, status={matched_status})'
+                            )
+                            continue  # 不创建新 Topic，跳到下一个聚类
+
+                        # ============================================================
+                        # 没有找到相似需求，创建新 Topic
+                        # ============================================================
+
+                        # 计算簇内平均相似度（用于展示/置信度）
+                        avg_similarity = 1.0
+                        if len(indices) >= 2:
+                            from sklearn.metrics.pairwise import cosine_similarity
+
+                            sim = cosine_similarity(cluster_embeddings)
+                            upper = sim[np.triu_indices_from(sim, k=1)]
+                            if upper.size > 0:
+                                avg_similarity = float(np.mean(upper))
+
+                        # 简单置信度：相似度 + 规模（MVP 版本）
+                        size_factor = min(1.0, len(indices) / 5.0)
+                        threshold = tenant_config.get('similarity_threshold', 0.85)
+                        similarity_factor = max(0.0, min(1.0, (avg_similarity - threshold) / (1 - threshold)))
+                        confidence = float(min(1.0, 0.2 + 0.8 * size_factor * similarity_factor))
+
+                        # 从 Feedback 推断 board_id（取出现频率最高的）
+                        from collections import Counter
+                        board_ids = [f.board_id for f in cluster_feedbacks if f.board_id]
+                        inferred_board_id = Counter(board_ids).most_common(1)[0][0] if board_ids else None
+
+
+                        topic = await crud_topic.create(
+                            db=db,
+                            tenant_id=tenant_id,
+                            board_id=inferred_board_id,
+                            title=topic_data['title'],
+                            category=topic_data['category'],
+                            ai_generated=True,
+                            ai_confidence=confidence,
+                            feedback_count=len(cluster_feedbacks),
+                            centroid=centroid,
+                            cluster_quality={
+                                'silhouette': quality_metrics.get('silhouette', 0.0),
+                                'noise_ratio': quality_metrics.get('noise_ratio', 1.0),
+                                'confidence': confidence,
+                                'avg_similarity': avg_similarity,
+                                'size': len(cluster_feedbacks),
+                            },
+                            is_noise=False,
+                        )
+
+                        # ✅ 自动生成默认优先级评分
+                        try:
+                            from backend.app.userecho.service.priority_service import priority_service
+
+                            # 统计客户数量
+                            customer_ids = {f.customer_id for f in cluster_feedbacks if f.customer_id}
+                            customer_count = len(customer_ids)
+
+                            # 初步估算：业务价值 = 客户数 * 5 + 反馈数 * 2
+                            business_value = min(100, customer_count * 5 + len(cluster_feedbacks) * 2)
+
+                            # 初步估算：处理成本 = 默认 20 (S)
+                            dev_cost = 20
+
+                            # 生成评分
+                            await priority_service.calculate_priority_score(
+                                db,
+                                topic.id,
+                                tenant_id,
+                                override_factors={
+                                    'business_value': business_value,
+                                    'dev_cost': dev_cost,
+                                    'urgency_factor': 1.0,
+                                },
+                            )
+                        except Exception as e:
+                            log.warning(f'Failed to generate initial priority score for topic {topic.id}: {e}')
+
+                        # 关联反馈到主题
+                        feedback_ids = [f.id for f in cluster_feedbacks]
+                        await crud_feedback.batch_update_clustering(
+                            db=db,
+                            tenant_id=tenant_id,
+                            feedback_ids=feedback_ids,
+                            clustering_status='clustered',
+                            topic_id=topic.id,
+                            clustering_metadata={
+                                'cluster_label': int(label),
+                                'clustered_at': timezone.now().isoformat(),
+                                'topic_id': topic.id,
+                                'topic_title': topic.title,
+                                'quality': {
+                                    'avg_similarity': avg_similarity,
+                                    'confidence': confidence,
+                                },
+                            },
+                        )
+
+                        # 异步生成 Topic 的向量（虽然我们已经计算了 centroid，但统一逻辑可能更好）
+                        # 不过既然我们已经有 centroid 了，直接存进去更高效（上面 create 已经做了）
+                        # 触发异步任务去更新其他关联信息（如通知等）
+                        try:
+                            from backend.app.task.celery import celery_app
+                            celery_app.send_task(
+                                'userecho.generate_topic_centroid',
+                                args=[topic.id, tenant_id],
+                            )
+                        except Exception as e:
+                            log.warning(f'Failed to trigger topic async task: {e}')
+
+
+                        created_topics.append({
                             'topic_id': topic.id,
-                            'confidence': confidence,
-                        },
-                    )
-
-                    created_topics.append({
-                        'topic_id': topic.id,
-                        'title': topic.title,
-                        'feedback_count': len(cluster_feedbacks),
-                        'is_noise': False,
-                    })
-
-                    log.debug(f'Created topic: {topic.title} with {len(cluster_feedbacks)} feedbacks')
+                            'title': topic.title,
+                            'feedback_count': len(cluster_feedbacks),
+                            'is_noise': False,
+                        })
 
                 except Exception as e:
-                    log.error(f'Failed to create topic for cluster {label}, tenant {tenant_id}: {e}')
-                    failed_topics.append({'label': label, 'error': str(e)})
+                    # 捕获并记录错误，不影响其他聚类
+                    # 由于使用了 begin_nested()，当前聚类的操作会自动回滚，
+                    # 且不会影响外部事务（不会抛出 InFailedSQLTransactionError）
+                    log.error(f'Failed to create topic for cluster {label}: {e}')
+                    failed_topics.append({'label': int(label), 'error': str(e)})
+                    continue
 
             # 噪声点：标记为 clustered，但保持 topic_id=NULL
             if noise_indices:
@@ -424,10 +523,12 @@ class ClusteringService:
                 'topics_created': len(created_topics),
                 'topics_failed': len(failed_topics),
                 'topics': created_topics,
+                'merge_suggestions': merge_suggestions,  # 新增：合并建议
                 'noise_count': len(noise_indices),
                 'quality_metrics': quality_metrics,
                 'elapsed_ms': int((timezone.now() - started_at).total_seconds() * 1000),
             }
+
 
         except Exception as e:
             log.error(f'Clustering failed for tenant {tenant_id}: {e}')

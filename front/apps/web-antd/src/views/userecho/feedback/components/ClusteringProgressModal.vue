@@ -88,11 +88,18 @@ const pollTask = async () => {
       if (result.status === 'skipped') {
         message.warning(result.message || '整理已跳过');
       } else {
-        message.success(`整理完成：创建 ${result.topics_created ?? 0} 个主题，未关联 ${result.noise_count ?? 0} 条`);
+        // 检查是否有合并建议
+        const mergeSuggestionsCount = result.merge_suggestions?.length ?? 0;
+        if (mergeSuggestionsCount > 0) {
+          message.info(`整理完成：创建 ${result.topics_created ?? 0} 个主题，发现 ${mergeSuggestionsCount} 个相似需求待处理`);
+        } else {
+          message.success(`整理完成：创建 ${result.topics_created ?? 0} 个主题，未关联 ${result.noise_count ?? 0} 条`);
+        }
       }
       emit('success', result);
       close();
     }
+
   } catch (error: any) {
     message.error(error.message || '查询任务状态失败');
     close();

@@ -111,12 +111,71 @@ async def get_clustering_status(
     - processing_count: 处理中反馈数量
     - last_run_at: 上次聚类运行时间
     - last_run_result: 上次聚类结果摘要
+    
+    智能超时检测：
+    - 自动清理超过10分钟的 processing 状态（防止任务失败后状态卡死）
+    - 只统计最近10分钟内的真实 processing 记录
     """
+    from datetime import timedelta
+
     from sqlalchemy import func, select
 
     from backend.app.userecho.model.feedback import Feedback
+    from backend.common.log import log
+    from backend.utils.timezone import timezone
 
-    # 待聚类数量（pending 状态）
+    # 超时阈值：10分钟（大于 Celery 任务的 9分钟软超时 + 1分钟硬超时）
+    PROCESSING_TIMEOUT_MINUTES = 10
+    timeout_threshold = timezone.now() - timedelta(minutes=PROCESSING_TIMEOUT_MINUTES)
+
+    # ========================================
+    # 1. 自动清理超时的 processing 状态
+    # ========================================
+    # 查找超时的 processing 记录（updated_time 超过10分钟）
+    stale_processing_query = select(Feedback.id).where(
+        Feedback.tenant_id == tenant_id,
+        Feedback.deleted_at.is_(None),
+        Feedback.clustering_status == 'processing',
+        Feedback.updated_time < timeout_threshold,
+    )
+    stale_processing_ids = list(await db.scalars(stale_processing_query))
+
+    # 如果发现超时记录，自动清理并记录日志
+    if stale_processing_ids:
+        log.warning(
+            f'Found {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}, '
+            f'cleaning up (threshold: {PROCESSING_TIMEOUT_MINUTES} minutes)'
+        )
+
+        # 批量更新为 failed 状态
+        await crud_feedback.batch_update_clustering(
+            db=db,
+            tenant_id=tenant_id,
+            feedback_ids=stale_processing_ids,
+            clustering_status='failed',
+            clustering_metadata={
+                'failed_at': timezone.now().isoformat(),
+                'reason': 'timeout_cleanup',
+                'timeout_minutes': PROCESSING_TIMEOUT_MINUTES,
+            },
+        )
+
+        log.info(f'Successfully cleaned up {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}')
+
+    # ========================================
+    # 2. 统计真实的 processing 数量（10分钟内）
+    # ========================================
+    processing_query = select(func.count(Feedback.id)).where(
+        Feedback.tenant_id == tenant_id,
+        Feedback.deleted_at.is_(None),
+        Feedback.clustering_status == 'processing',
+        Feedback.updated_time >= timeout_threshold,  # 只统计最近10分钟内的
+    )
+    processing_count = await db.scalar(processing_query) or 0
+
+    # ========================================
+    # 3. 统计待聚类数量（pending 状态）
+    # ========================================
     pending_query = select(func.count(Feedback.id)).where(
         Feedback.tenant_id == tenant_id,
         Feedback.deleted_at.is_(None),
@@ -125,15 +184,9 @@ async def get_clustering_status(
     )
     pending_count = await db.scalar(pending_query) or 0
 
-    # 处理中数量（processing 状态）
-    processing_query = select(func.count(Feedback.id)).where(
-        Feedback.tenant_id == tenant_id,
-        Feedback.deleted_at.is_(None),
-        Feedback.clustering_status == 'processing',
-    )
-    processing_count = await db.scalar(processing_query) or 0
-
-    # 获取最近一次聚类的时间（通过 clustering_metadata 中的 clustered_at）
+    # ========================================
+    # 4. 获取最近一次聚类的时间
+    # ========================================
     last_clustered_query = (
         select(Feedback.clustering_metadata)
         .where(
@@ -182,6 +235,26 @@ async def get_clustering_suggestions(
     )
 
     return response_base.success(data=suggestions)
+
+
+@router.get('/pending-suggestions', summary='获取待处理的合并建议', dependencies=[DependsTurnstile])
+async def get_pending_suggestions(
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+):
+    """
+    获取当前租户所有待处理的合并建议
+
+    包括：
+    - 与已有需求重复的聚类（未自动创建新需求，等待人工确认）
+    """
+    suggestions = await clustering_service.get_pending_suggestions(
+        db=db,
+        tenant_id=tenant_id,
+    )
+
+    return response_base.success(data=suggestions)
+
 
 
 @router.get('/debug/similarity-matrix', summary='【调试】查看反馈相似度矩阵和聚类结果')

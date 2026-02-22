@@ -37,6 +37,8 @@ import {
 import { useFilterStorage } from '#/composables/useFilterStorage';
 import { useBoardStore } from '#/store';
 import TopicFilterSidebar from '#/layouts/components/sidebar/TopicFilterSidebar.vue';
+import MergeSuggestionsBanner from './components/MergeSuggestionsBanner.vue';
+
 
 const router = useRouter();
 
@@ -296,6 +298,15 @@ const [AddForm, addFormApi] = useVbenForm({
   wrapperClass: 'grid grid-cols-12',
 });
 
+import { useRoute } from 'vue-router';
+const route = useRoute();
+
+/**
+ * 关联反馈的临时存储（用于新建需求时自动关联）
+ */
+const pendingLinkFeedbackIds = ref<string[]>([]);
+const isLinkingPending = ref(false);
+
 const [addModal, addModalApi] = useVbenModal({
   title: '新建需求',
   destroyOnClose: true,
@@ -305,8 +316,25 @@ const [addModal, addModalApi] = useVbenModal({
       addModalApi.lock();
       const data = await addFormApi.getValues<CreateTopicParams>();
       try {
-        await createTopic(data);
-        message.success('创建成功');
+        const newTopic = await createTopic(data);
+        
+        // 如果有待关联的反馈（从合并建议跳转过来的）
+        if (pendingLinkFeedbackIds.value.length > 0) {
+          isLinkingPending.value = true;
+          try {
+            await linkFeedbacksToTopic(newTopic.id, pendingLinkFeedbackIds.value);
+            message.success('创建并关联反馈成功');
+          } catch (e) {
+            console.error('Failed to link feedbacks:', e);
+            message.warning('需求创建成功，但反馈关联失败');
+          } finally {
+            isLinkingPending.value = false;
+            pendingLinkFeedbackIds.value = [];
+          }
+        } else {
+          message.success('创建成功');
+        }
+        
         await addModalApi.close();
         onRefresh();
       } catch {
@@ -318,22 +346,34 @@ const [addModal, addModalApi] = useVbenModal({
   },
   async onOpenChange(isOpen) {
     if (isOpen) {
-      addFormApi.resetForm();
+      // 注意：如果不是从外部跳转来的（pendingLinkFeedbackIds 为空），则清空表单
+      // 如果是从外部跳转来的，表单可能已经被 setValues 填充了，不要重置
+      if (pendingLinkFeedbackIds.value.length === 0) {
+        addFormApi.resetForm();
+      }
+      
       // 加载看板列表
       await boardStore.refreshBoards();
       const boardOptions = boardStore.boards.map((b) => ({ label: b.name, value: b.id }));
       addFormApi.updateSchema([{ fieldName: 'board_id', componentProps: { options: boardOptions } }]);
-      // 默认选中当前筛选的看板（如果有且只有一个）
-      if (filterValues.value.board_ids?.length === 1) {
-        addFormApi.setValues({ board_id: filterValues.value.board_ids[0] });
-      } else if (boardOptions.length > 0) {
-        addFormApi.setValues({ board_id: boardOptions[0].value });
+      
+      // 默认选中当前筛选的看板（如果有且只有一个），且表单中没有值
+      const currentValues = await addFormApi.getValues();
+      if (!currentValues.board_id) {
+        if (filterValues.value.board_ids?.length === 1) {
+          addFormApi.setValues({ board_id: filterValues.value.board_ids[0] });
+        } else if (boardOptions.length > 0) {
+          addFormApi.setValues({ board_id: boardOptions[0].value });
+        }
       }
+    } else {
+      // 关闭时清空临时数据
+      pendingLinkFeedbackIds.value = [];
     }
   },
 });
 
-onMounted(() => {
+onMounted(async () => {
   // 初始化看板数据，确保看板列能正确显示
   boardStore.refreshBoards();
   // 初始化看板选中
@@ -344,9 +384,31 @@ onMounted(() => {
   handleMediaChange(mediaQuery);
   mediaQuery.addEventListener('change', handleMediaChange);
   
-  // 保存 mediaQuery 引用以便清理
   (window as any).__topicMediaQuery = mediaQuery;
+
+  // 处理路由参数（从合并建议跳转过来）
+  if (route.query.action === 'create') {
+    const title = route.query.title as string;
+    const feedbackIdsStr = route.query.feedback_ids as string;
+    
+    if (title) {
+        // 等待一下确保组件加载
+        setTimeout(() => {
+            addModalApi.open();
+            addFormApi.setValues({
+                title: title,
+                description: `基于 ${feedbackIdsStr?.split(',').length || 0} 条用户反馈自动创建。`,
+                category: 'feature', // 默认分类
+            });
+            
+            if (feedbackIdsStr) {
+                pendingLinkFeedbackIds.value = feedbackIdsStr.split(',');
+            }
+        }, 500);
+    }
+  }
 });
+
 
 onBeforeUnmount(() => {
   // 清理响应式检测监听器
@@ -373,6 +435,9 @@ onBeforeUnmount(() => {
       
       <!-- 右侧内容区域 -->
       <div class="topic-main-content" :class="isMobile ? 'p-2' : 'p-2'">
+        <!-- 合并建议 Banner -->
+        <MergeSuggestionsBanner />
+        
         <!-- 移动端汉堡菜单按钮 -->
         <VbenButton 
           v-if="isMobile" 

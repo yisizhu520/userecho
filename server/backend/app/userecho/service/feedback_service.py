@@ -133,7 +133,21 @@ class FeedbackService:
                 source_user_name=source_user_name,
             )
 
+            # 7. 异步生成 embedding（不阻塞响应）
+            # 将 AI 能力潜移默化地赋能给用户，聚类时可直接使用缓存
+            try:
+                from backend.app.task.celery import celery_app
+
+                celery_app.send_task(
+                    'userecho.generate_feedback_embedding',
+                    args=[feedback.id, data.content, tenant_id],
+                )
+            except Exception as e:
+                # 失败不影响主流程
+                log.warning(f'Failed to trigger embedding generation for feedback {feedback.id}: {e}')
+
             return feedback
+
 
         except Exception as e:
             log.error(f'Failed to create feedback for tenant {tenant_id}: {e}')

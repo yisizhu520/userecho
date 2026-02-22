@@ -85,6 +85,15 @@ def init_celery() -> celery.Celery:
     packages = find_task_packages()
     app.autodiscover_tasks(packages)
 
+    # 配置 loguru 文件日志（确保 Celery worker 的日志也能写入文件）
+    # 只在 worker 进程中配置，beat 和 flower 不需要
+    # 通过检查 argv 判断是否是 worker 进程
+    import sys
+    if 'worker' in sys.argv:
+        from backend.common.log import setup_logging, set_custom_logfile
+        setup_logging()
+        set_custom_logfile()
+
     return app
 
 

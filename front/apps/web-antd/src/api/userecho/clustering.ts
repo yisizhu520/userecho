@@ -4,6 +4,25 @@
 
 import { requestClient } from '#/api/request';
 
+/** 合并建议（与已有需求重复） */
+export interface MergeSuggestion {
+  cluster_label: number;
+  suggested_topic_id: string;
+  suggested_topic_title: string;
+  suggested_topic_status: string;
+  suggested_topic_category: string;
+  similarity: number;
+  feedback_ids: string[];
+  feedback_count: number;
+  is_completed: boolean;
+  ai_generated_title: string;
+  warning?: string;
+  suggested_actions: Array<{
+    action: 'link_to_existing' | 'reopen_and_link' | 'mark_outdated' | 'create_new';
+    label: string;
+  }>;
+}
+
 /** 聚类结果 */
 export interface ClusteringResult {
   status: string;
@@ -20,12 +39,15 @@ export interface ClusteringResult {
     feedback_count: number;
     is_noise: boolean;
   }>;
+  /** 合并建议（与已有需求重复的聚类） */
+  merge_suggestions?: MergeSuggestion[];
   quality_metrics?: {
     silhouette: number;
     davies_bouldin: number | null;  // null 表示聚类质量太差无法计算
     noise_ratio: number;
   };
 }
+
 
 /** 异步聚类：任务已提交 */
 export interface ClusteringTaskAccepted {
@@ -120,3 +142,11 @@ export async function getSimilarityMatrix(limit = 20) {
     params: { limit },
   });
 }
+
+/**
+ * 获取待处理的合并建议
+ */
+export async function getPendingMergeSuggestions() {
+  return requestClient.get<MergeSuggestion[]>('/api/v1/app/clustering/pending-suggestions');
+}
+

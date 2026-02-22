@@ -42,9 +42,15 @@ def default_formatter(record: logging.LogRecord) -> str:
     # https://github.com/sqlalchemy/sqlalchemy/discussions/12791
     record_name = record['name'] or ''
     if record_name.startswith('sqlalchemy'):
-        record['message'] = re.sub(r'\s+', ' ', record['message']).strip()
+        message = record['message']
+        # 1. 压缩多余空格
+        message = re.sub(r'\s+', ' ', message).strip()
+        # 2. 截断超长向量数据 (匹配长度 > 200 的向量字符串: '[-0.123, ...]')
+        message = re.sub(r"'\[[\d\.,\s-eE]{200,}\]'", "'[VECTOR_TRUNCATED]'", message)
+        record['message'] = message
 
     return settings.LOG_FORMAT if settings.LOG_FORMAT.endswith('\n') else f'{settings.LOG_FORMAT}\n'
+
 
 
 def request_id_filter(record: logging.LogRecord) -> logging.LogRecord:
