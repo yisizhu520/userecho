@@ -640,5 +640,134 @@ class ClusteringService:
             log.error(f'Failed to get clustering suggestions for feedback {feedback_id}, tenant {tenant_id}: {e}')
             return []
 
+    async def get_pending_suggestions(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+    ) -> list[dict]:
+        """
+        获取当前租户所有待处理的合并建议
+
+        查询那些聚类成功但因为与已有需求相似而未自动创建新需求的反馈，
+        将它们按聚类分组返回，供用户决策是合并到已有需求还是创建新需求。
+
+        Args:
+            db: 数据库会话
+            tenant_id: 租户ID
+
+        Returns:
+            合并建议列表，每个建议包含：
+            - cluster_label: 聚类标签
+            - suggested_topic_id: 建议关联的需求ID
+            - suggested_topic_title: 建议关联的需求标题
+            - similarity: 相似度
+            - feedback_ids: 反馈ID列表
+            - feedback_count: 反馈数量
+        """
+        try:
+            from backend.app.userecho.model.feedback import Feedback
+
+            # 查询所有 pending 状态且包含 merge_suggestion 的反馈
+            query = (
+                select(Feedback)
+                .where(
+                    Feedback.tenant_id == tenant_id,
+                    Feedback.deleted_at.is_(None),
+                    Feedback.clustering_status == 'pending',
+                    Feedback.clustering_metadata.is_not(None),
+                )
+                .order_by(Feedback.updated_time.desc())
+            )
+
+            result = await db.execute(query)
+            feedbacks = result.scalars().all()
+
+            # 按 cluster_label 分组
+            suggestions_map: dict[int, dict] = {}
+
+            for feedback in feedbacks:
+                metadata = feedback.clustering_metadata
+                if not isinstance(metadata, dict):
+                    continue
+
+                merge_suggestion = metadata.get('merge_suggestion')
+                if not merge_suggestion:
+                    continue
+
+                cluster_label = metadata.get('cluster_label')
+                if cluster_label is None:
+                    continue
+
+                # 初始化或更新建议
+                if cluster_label not in suggestions_map:
+                    # 从第一个反馈的 metadata 中获取完整的建议信息
+                    suggestions_map[cluster_label] = {
+                        'cluster_label': cluster_label,
+                        'suggested_topic_id': merge_suggestion.get('topic_id'),
+                        'suggested_topic_title': None,  # 待填充
+                        'suggested_topic_status': None,  # 待填充
+                        'suggested_topic_category': None,  # 待填充
+                        'similarity': merge_suggestion.get('similarity', 0.0),
+                        'feedback_ids': [],
+                        'feedback_count': 0,
+                        'is_completed': False,
+                    }
+
+                # 添加反馈ID
+                suggestions_map[cluster_label]['feedback_ids'].append(feedback.id)
+                suggestions_map[cluster_label]['feedback_count'] += 1
+
+            if not suggestions_map:
+                return []
+
+            # 批量查询 topic 信息
+            from backend.app.userecho.model.topic import Topic
+
+            topic_ids = {sug['suggested_topic_id'] for sug in suggestions_map.values() if sug['suggested_topic_id']}
+            topic_map = {}
+
+            if topic_ids:
+                topic_query = select(Topic).where(
+                    Topic.tenant_id == tenant_id,
+                    Topic.id.in_(list(topic_ids)),
+                    Topic.deleted_at.is_(None),
+                )
+                topic_result = await db.execute(topic_query)
+                topics = topic_result.scalars().all()
+                topic_map = {t.id: t for t in topics}
+
+            # 填充 topic 信息
+            for suggestion in suggestions_map.values():
+                topic_id = suggestion['suggested_topic_id']
+                if topic_id and topic_id in topic_map:
+                    topic = topic_map[topic_id]
+                    suggestion['suggested_topic_title'] = topic.title
+                    suggestion['suggested_topic_status'] = topic.status
+                    suggestion['suggested_topic_category'] = topic.category
+                    suggestion['is_completed'] = topic.status == 'completed'
+
+                    # 添加建议的操作
+                    if topic.status == 'completed':
+                        suggestion['warning'] = '此需求已完成，请确认用户反馈的问题是否已解决'
+                        suggestion['suggested_actions'] = [
+                            {'action': 'mark_outdated', 'label': '标记反馈为过时'},
+                            {'action': 'reopen_and_link', 'label': '重新打开需求'},
+                            {'action': 'create_new', 'label': '创建新需求'},
+                        ]
+                    else:
+                        suggestion['suggested_actions'] = [
+                            {'action': 'link_to_existing', 'label': '关联到此需求'},
+                            {'action': 'create_new', 'label': '创建新需求'},
+                        ]
+
+            # 按反馈数量降序排列
+            suggestions = sorted(suggestions_map.values(), key=lambda x: x['feedback_count'], reverse=True)
+
+            return suggestions
+
+        except Exception as e:
+            log.error(f'Failed to get pending suggestions for tenant {tenant_id}: {e}')
+            return []
+
 
 clustering_service = ClusteringService()
