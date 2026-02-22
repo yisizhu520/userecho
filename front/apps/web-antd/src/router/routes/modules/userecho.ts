@@ -118,8 +118,26 @@ const routes: RouteRecordRaw[] = [
       order: 99,
       title: '系统设置',
     },
-    redirect: '/app/settings/credits',
+    redirect: '/app/settings/members',
     children: [
+      {
+        name: 'MembersManage',
+        path: 'members',
+        component: () => import('#/views/userecho/settings/members.vue'),
+        meta: {
+          icon: 'lucide:users',
+          title: '成员管理',
+        },
+      },
+      {
+        name: 'RolesManage',
+        path: 'roles',
+        component: () => import('#/views/userecho/settings/roles.vue'),
+        meta: {
+          icon: 'lucide:shield',
+          title: '角色管理',
+        },
+      },
       {
         name: 'CreditsConfig',
         path: 'credits',

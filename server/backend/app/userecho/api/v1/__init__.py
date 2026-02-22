@@ -12,6 +12,8 @@ from . import (
     priority,
     system_notification,
     tenant_config,
+    tenant_member,
+    tenant_role,
     topic,
     topic_notification,
 )
@@ -28,7 +30,8 @@ __all__ = [
     'priority',
     'system_notification',
     'tenant_config',
+    'tenant_member',
+    'tenant_role',
     'topic',
     'topic_notification',
 ]
-

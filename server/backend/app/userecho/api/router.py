@@ -16,6 +16,8 @@ from backend.app.userecho.api.v1 import (
     reply_template,
     system_notification,
     tenant_config,
+    tenant_member,
+    tenant_role,
     topic,
     topic_notification,
 )
@@ -41,4 +43,6 @@ v1.include_router(credits.router)
 v1.include_router(system_notification.router)
 v1.include_router(reply_template.router)
 
-
+# 租户权限管理
+v1.include_router(tenant_role.router, prefix='/tenant/roles', tags=['TenantRole'])
+v1.include_router(tenant_member.router, prefix='/tenant/members', tags=['TenantMember'])

@@ -47,7 +47,7 @@ async def get_role_scopes(
 
 
 @router.get('/{pk}', summary='获取角色详情', dependencies=[DependsJwtAuth])
-async def get_role(
+async def get_sys_role(
     db: CurrentSession, pk: Annotated[int, Path(description='角色 ID')]
 ) -> ResponseSchemaModel[GetRoleWithRelationDetail]:
     data = await role_service.get(db=db, pk=pk)
@@ -79,7 +79,7 @@ async def get_roles_paginated(
         DependsRBAC,
     ],
 )
-async def create_role(db: CurrentSessionTransaction, obj: CreateRoleParam) -> ResponseModel:
+async def create_sys_role(db: CurrentSessionTransaction, obj: CreateRoleParam) -> ResponseModel:
     await role_service.create(db=db, obj=obj)
     return response_base.success()
 
@@ -92,7 +92,7 @@ async def create_role(db: CurrentSessionTransaction, obj: CreateRoleParam) -> Re
         DependsRBAC,
     ],
 )
-async def update_role(
+async def update_sys_role(
     db: CurrentSessionTransaction, pk: Annotated[int, Path(description='角色 ID')], obj: UpdateRoleParam
 ) -> ResponseModel:
     count = await role_service.update(db=db, pk=pk, obj=obj)

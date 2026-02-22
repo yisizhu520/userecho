@@ -58,7 +58,10 @@ class TenantUserRole(MappedBase):
     tenant_user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey('tenant_users.id', ondelete='CASCADE'), index=True, comment='租户用户ID'
     )
-    role_id: Mapped[int] = mapped_column(ForeignKey('sys_role.id', ondelete='CASCADE'), index=True, comment='角色ID')
+    # 关联到租户角色表（租户隔离的角色）
+    role_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey('tenant_roles.id', ondelete='CASCADE'), index=True, comment='租户角色ID'
+    )
 
     # 分配信息
     assigned_by: Mapped[int | None] = mapped_column(
