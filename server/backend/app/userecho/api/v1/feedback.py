@@ -550,10 +550,14 @@ async def create_feedback_from_screenshot(
     from backend.app.userecho.crud import crud_customer
     from backend.app.userecho.model.feedback import Feedback
     from backend.common.log import log
+    from backend.common.security.jwt import get_current_user_id
     from backend.database.db import uuid4_str
     from backend.utils.timezone import timezone
 
     try:
+        # 获取当前登录用户作为提交者
+        submitter_id = get_current_user_id()
+
         # 1. 根据 author_type 处理不同来源模式
         customer_id = None
         author_type_val = 'customer'
@@ -607,6 +611,7 @@ async def create_feedback_from_screenshot(
             source_user_id=data.source_user_id,
             ai_confidence=data.ai_confidence,
             submitted_at=timezone.now(),
+            submitter_id=submitter_id,
         )
 
         # 4. 保存到数据库
