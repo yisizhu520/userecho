@@ -268,7 +268,7 @@ const handleTriggerClustering = async () => {
     if (result?.status === 'skipped') {
       message.warning(result.message || '聚类已跳过');
     } else {
-      message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个主题，噪声 ${result.noise_count ?? 0} 条`);
+      message.success(`聚类完成：创建 ${result.topics_created ?? 0} 个需求，噪声 ${result.noise_count ?? 0} 条`);
     }
     onRefresh();
     clusteringModalOpen.value = false;
@@ -350,15 +350,21 @@ onBeforeUnmount(() => {
 
           <template #topic="{ row }">
             <span v-if="row.topic_id && row.topic_title">
-              <a-tag color="blue" style="cursor: pointer" @click="$router.push(`/app/topic/detail/${row.topic_id}`)">
-                {{ row.topic_title }}
-              </a-tag>
+              <a-tooltip :title="row.topic_title">
+                <a-tag
+                  color="blue"
+                  style="cursor: pointer; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;"
+                  @click="$router.push(`/app/topic/detail/${row.topic_id}`)"
+                >
+                  {{ row.topic_title }}
+                </a-tag>
+              </a-tooltip>
             </span>
             <span v-else class="text-gray-400">未聚类</span>
           </template>
 
           <template #derived_status="{ row }">
-            <!-- 待处理: 未归类到主题 (pending/processing/failed/clustered无topic) -->
+            <!-- 待处理: 未归类到需求 (pending/processing/failed/clustered无topic) -->
             <a-tag v-if="!row.topic_id" color="default">待处理</a-tag>
             <!-- 待评审: clustered + topic.status = 'review' -->
             <a-tag v-else-if="row.topic_status === 'review'" color="orange">待评审</a-tag>

@@ -272,7 +272,7 @@ const [EditForm, editFormApi] = useVbenForm({
 const editTopicId = ref<string>('');
 
 const [editModal, editModalApi] = useVbenModal({
-  title: '编辑议题',
+  title: '编辑需求',
   destroyOnClose: true,
   async onConfirm() {
     const { valid } = await editFormApi.validate();
@@ -316,7 +316,7 @@ const [AddForm, addFormApi] = useVbenForm({
 });
 
 const [addModal, addModalApi] = useVbenModal({
-  title: '新建议题',
+  title: '新建需求',
   destroyOnClose: true,
   async onConfirm() {
     const { valid } = await addFormApi.validate();
@@ -409,7 +409,7 @@ onBeforeUnmount(() => {
             <!-- 搜索框 -->
             <a-input
               v-model:value="filterValues.search_query"
-              placeholder="搜索主题标题..."
+              placeholder="搜索需求标题..."
               allow-clear
               @pressEnter="handleSearch"
               style="width: 300px;"
@@ -422,7 +422,7 @@ onBeforeUnmount(() => {
             
             <VbenButton @click="() => addModalApi.open()">
               <MaterialSymbolsAdd class="size-5" />
-              手动创建议题
+              手动创建需求
             </VbenButton>
           <VbenButton variant="outline" @click="() => router.push('/app/feedback/list')">
             <span class="iconify lucide--inbox" />

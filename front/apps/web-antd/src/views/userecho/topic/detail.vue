@@ -111,7 +111,7 @@ const [StatusForm, statusFormApi] = useVbenForm({
 });
 
 const [statusModal, statusModalApi] = useVbenModal({
-  title: '更新主题状态',
+  title: '更新需求状态',
   destroyOnClose: true,
   async onConfirm() {
     const { valid } = await statusFormApi.validate();
@@ -146,7 +146,7 @@ const [statusModal, statusModalApi] = useVbenModal({
 const handleQuickStatusUpdate = (status: string) => {
   Modal.confirm({
     title: '确认更新状态？',
-    content: `将主题状态更新为「${getStatusConfig(status).label}」`,
+    content: `将需求状态更新为「${getStatusConfig(status).label}」`,
     onOk: async () => {
       try {
         await updateTopicStatus(topicId, { status });
@@ -249,9 +249,9 @@ onMounted(() => {
     <div class="page-header">
       <a-breadcrumb>
         <a-breadcrumb-item>
-          <router-link to="/app/topic/list">需求主题</router-link>
+          <router-link to="/app/topic/list">需求池</router-link>
         </a-breadcrumb-item>
-        <a-breadcrumb-item>主题详情</a-breadcrumb-item>
+        <a-breadcrumb-item>需求详情</a-breadcrumb-item>
       </a-breadcrumb>
     </div>
 
@@ -461,7 +461,7 @@ onMounted(() => {
     <LinkModal :topic-id="topicId" @success="loadTopicDetail" />
   </div>
 
-  <a-empty v-else description="主题不存在" />
+  <a-empty v-else description="需求不存在" />
 </template>
 
 <style scoped>

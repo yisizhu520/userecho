@@ -40,7 +40,7 @@
     "feedbackList": "反馈列表",
     "feedbackImport": "导入反馈",
     "topicList": "需求库",
-    "topicDetail": "主题详情",
+    "topicDetail": "需求详情",
     "customerManage": "客户管理"
   },
   "page": {
@@ -52,13 +52,13 @@
       },
       "topic": {
         "list": "需求池",
-        "detail": "议题详情"
+        "detail": "需求详情"
       },
       "customer": {
         "title": "客户管理"
       },
       "discovery": {
-        "title": "待审议题"
+        "title": "待审需求"
       },
       "settings": {
         "title": "设置",

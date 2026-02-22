@@ -117,8 +117,9 @@ export function useColumns(
     },
     {
       field: 'topic_title',
-      title: '所属主题',
-      width: 150,
+      title: '所属需求',
+      width: 180,
+      showOverflow: false,
       slots: { default: 'topic' },
     },
     {
