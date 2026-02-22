@@ -135,6 +135,7 @@ class ImportService:
         default_source_platform: str | None = None,
         default_external_user_name: str | None = None,
         generate_summary: bool = True,
+        submitter_id: int | None = None,
     ) -> dict[str, Any]:
         """
         导入 Excel 文件
@@ -149,6 +150,7 @@ class ImportService:
             default_source_platform: 默认来源平台（external 模式）
             default_external_user_name: 默认外部用户名称（external 模式必填）
             generate_summary: 是否生成 AI 摘要
+            submitter_id: 提交者用户ID（当前登录用户）
 
         Returns:
             导入结果统计
@@ -353,6 +355,7 @@ class ImportService:
                         external_contact=external_contact,
                         source_platform=source_platform,
                         source_user_name=source_user_name,
+                        submitter_id=submitter_id,
                     )
 
                     success_count += 1

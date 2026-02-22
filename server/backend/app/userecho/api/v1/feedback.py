@@ -194,6 +194,10 @@ async def import_feedbacks(
     - 是否紧急
     """
     from backend.common.log import log
+    from backend.common.security.jwt import get_current_user_id
+
+    # 获取当前登录用户作为提交者
+    submitter_id = get_current_user_id()
 
     log.info(f'Starting import for tenant {tenant_id}, board={default_board_id}, author_type={author_type}')
 
@@ -208,6 +212,7 @@ async def import_feedbacks(
             default_source_platform=default_source_platform,
             default_external_user_name=default_external_user_name,
             generate_summary=False,
+            submitter_id=submitter_id,
         )
 
         if result['status'] == 'error':
