@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from backend.app.userecho.crud.crud_subscription import subscription_plan_dao
 from backend.app.userecho.schema.subscription import (
@@ -12,7 +12,7 @@ from backend.app.userecho.schema.subscription import (
 )
 from backend.app.userecho.service.subscription_service import subscription_service
 from backend.common.response.response_schema import response_base
-from backend.common.security.jwt import DependsUser
+from backend.common.security.jwt import CurrentUser
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/subscription', tags=['Admin - 订阅管理'])
@@ -21,7 +21,7 @@ router = APIRouter(prefix='/subscription', tags=['Admin - 订阅管理'])
 @router.get('/plans', summary='获取所有订阅套餐')
 async def get_subscription_plans(
     db: CurrentSession,
-    _: Annotated[dict, Depends(DependsUser)],
+    _: Annotated[dict, CurrentUser],
 ):
     """获取所有启用的订阅套餐"""
     plans = await subscription_plan_dao.get_all_active(db)
@@ -32,7 +32,7 @@ async def get_subscription_plans(
 async def get_tenant_subscription(
     tenant_id: str,
     db: CurrentSession,
-    _: Annotated[dict, Depends(DependsUser)],
+    _: Annotated[dict, CurrentUser],
 ):
     """获取租户当前的订阅状态"""
     sub = await subscription_service.get_current_subscription(db, tenant_id)
@@ -51,7 +51,7 @@ async def update_tenant_subscription(
     tenant_id: str,
     body: SubscriptionUpdateReq,
     db: CurrentSession,
-    current_user: Annotated[dict, Depends(DependsUser)],
+    current_user: Annotated[dict, CurrentUser],
 ):
     """管理员手动更新租户订阅"""
     operator_id = current_user.get('id')

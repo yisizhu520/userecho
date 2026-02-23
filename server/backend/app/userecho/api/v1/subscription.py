@@ -1,6 +1,6 @@
 """订阅信息 API (租户端)"""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from backend.app.userecho.schema.subscription import (
     SubscriptionPlanSchema,
@@ -8,7 +8,7 @@ from backend.app.userecho.schema.subscription import (
 )
 from backend.app.userecho.service.subscription_service import subscription_service
 from backend.common.response.response_schema import response_base
-from backend.common.security.jwt import CurrentTenantId, DependsUser
+from backend.common.security.jwt import CurrentTenantId, CurrentUser
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/subscription', tags=['UserEcho - 订阅信息'])
@@ -18,7 +18,7 @@ router = APIRouter(prefix='/subscription', tags=['UserEcho - 订阅信息'])
 async def get_current_subscription(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    _: dict = Depends(DependsUser),
+    _: dict = CurrentUser,
 ):
     """获取当前租户的订阅详情"""
     sub = await subscription_service.get_current_subscription(db, tenant_id)

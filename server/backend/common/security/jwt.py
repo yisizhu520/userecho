@@ -312,3 +312,17 @@ def get_current_user_id() -> int:
 
 # 当前用户 ID 依赖注入
 CurrentUserId = Depends(get_current_user_id)
+
+
+def get_current_user_obj(request: Request) -> GetUserInfoWithRelationDetail:
+    """
+    获取当前通过中间件认证的用户对象
+    """
+    user = request.user
+    if not user:
+        raise errors.TokenError(msg='未登录或 Token 已过期')
+    return user
+
+
+# 用户对象依赖注入
+CurrentUser = Depends(get_current_user_obj)

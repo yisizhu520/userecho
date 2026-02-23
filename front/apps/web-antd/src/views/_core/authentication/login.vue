@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import type { VbenFormSchema } from '@vben/common-ui';
-import type { BasicOption } from '@vben/types';
 
 import { computed, h, onMounted, onUnmounted, ref } from 'vue';
 
@@ -17,17 +16,6 @@ defineOptions({ name: 'Login' });
 
 const authStore = useAuthStore();
 const accessStore = useAccessStore();
-
-const MOCK_USER_OPTIONS: BasicOption[] = [
-  {
-    label: 'Admin',
-    value: 'admin',
-  },
-  {
-    label: 'Test',
-    value: 'test',
-  },
-];
 
 const imageSrc = ref('');
 const captchaEnabled = ref(false);
@@ -61,40 +49,10 @@ const refreshCaptcha = async () => {
 const formSchema = computed((): VbenFormSchema[] => {
   const baseFields: VbenFormSchema[] = [
     {
-      component: 'VbenSelect',
-      componentProps: {
-        options: MOCK_USER_OPTIONS,
-        placeholder: $t('authentication.selectAccount'),
-      },
-      fieldName: 'selectAccount',
-      label: $t('authentication.selectAccount'),
-      rules: z
-        .string()
-        .min(1, { message: $t('authentication.selectAccount') })
-        .optional()
-        .default('admin'),
-    },
-    {
       component: 'VbenInput',
       componentProps: {
         placeholder: '请输入邮箱',
         type: 'email',
-      },
-      dependencies: {
-        trigger(values, form) {
-          if (values.selectAccount) {
-            const findUser = MOCK_USER_OPTIONS.find(
-              (item) => item.value === values.selectAccount,
-            );
-            if (findUser) {
-              form.setValues({
-                password: '123456',
-                email: findUser.value,
-              });
-            }
-          }
-        },
-        triggerFields: ['selectAccount'],
       },
       fieldName: 'email',
       label: '邮箱',
