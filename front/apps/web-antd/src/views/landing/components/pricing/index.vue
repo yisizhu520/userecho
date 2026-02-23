@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue';
-import type { PricingTier, BillingPeriod } from './pricing-data';
-import { pricingTiers, calculateSavings } from './pricing-data';
+import type { BillingPeriod } from './pricing-data';
+import { pricingTiers } from './pricing-data';
 import PricingHeader from './PricingHeader.vue';
 import BillingToggle from './BillingToggle.vue';
 import PricingCard from './PricingCard.vue';

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { TopicDetail, UpdateTopicStatusParams } from '#/api';
 
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 import { VbenButton, useVbenModal } from '@vben/common-ui';
 
 import { message, Modal } from 'ant-design-vue';
 import {
-  LeftOutlined,
   EditOutlined,
   ThunderboltOutlined,
   CheckCircleOutlined,

@@ -24,7 +24,7 @@ interface Props {
   decisions: PendingDecision[];
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();

@@ -77,6 +77,9 @@ class TenantMemberOut(BaseModel):
     user_type: str
     status: str
     feedback_count: int
+    username: str | None = None
+    nickname: str | None = None
+    email: str | None = None
 
     class Config:
         from_attributes = True

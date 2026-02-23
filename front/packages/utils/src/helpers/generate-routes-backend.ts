@@ -55,6 +55,10 @@ function convertRoutes(
       route.component = layoutMap[component];
       // 页面组件转换
     } else if (component) {
+      if (typeof component !== 'string') {
+        route.component = component;
+        return route;
+      }
       const normalizePath = normalizeViewPath(component);
       const pageKey = normalizePath.endsWith('.vue')
         ? normalizePath

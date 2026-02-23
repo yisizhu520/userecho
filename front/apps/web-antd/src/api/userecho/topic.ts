@@ -164,11 +164,11 @@ export async function unlinkFeedbackFromTopic(topicId: string, feedbackId: strin
 
 /** 主题分类选项 */
 export const TOPIC_CATEGORIES = [
-  { value: 'bug', label: 'Bug' },
-  { value: 'improvement', label: '体验优化' },
-  { value: 'feature', label: '新功能' },
-  { value: 'performance', label: '性能问题' },
-  { value: 'other', label: '其他' },
+  { value: 'bug', label: 'Bug', color: 'red' },
+  { value: 'improvement', label: '体验优化', color: 'blue' },
+  { value: 'feature', label: '新功能', color: 'green' },
+  { value: 'performance', label: '性能问题', color: 'orange' },
+  { value: 'other', label: '其他', color: 'default' },
 ];
 
 /** 主题状态选项 */

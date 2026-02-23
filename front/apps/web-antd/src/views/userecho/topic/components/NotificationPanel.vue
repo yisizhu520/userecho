@@ -3,15 +3,13 @@ import type { TopicNotification, GenerateReplyParams } from '#/api/userecho/noti
 
 import { ref, computed, onMounted } from 'vue';
 
-import { VbenButton, VbenLoading } from '@vben/common-ui';
+import { VbenButton } from '@vben/common-ui';
 
-import { message, Modal, Tooltip, Tag, Drawer, Input, Select, Switch, Table } from 'ant-design-vue';
+import { message, Modal, Tooltip, Tag, Drawer, Input, Select, Table } from 'ant-design-vue';
 import {
-  SendOutlined,
   CopyOutlined,
   RobotOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined,
   ReloadOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
@@ -29,7 +27,7 @@ const props = defineProps<{
   topicStatus: string;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'refresh'): void;
 }>();
 
@@ -179,6 +177,11 @@ const handleBatchGenerate = () => {
   });
 };
 
+// 类型转换辅助函数
+function asNotification(record: any): TopicNotification {
+  return record as TopicNotification;
+}
+
 // 表格列定义
 const columns = [
   {
@@ -198,13 +201,11 @@ const columns = [
     dataIndex: 'status',
     key: 'status',
     width: 100,
-    align: 'center',
   },
   {
     title: '操作',
     key: 'action',
     width: 200,
-    align: 'center',
   },
 ];
 
@@ -315,8 +316,8 @@ onMounted(() => {
            <div class="item-actions">
               <VbenButton
                 variant="link"
-                size="small"
-                @click="openGenerateDrawer(record)"
+                size="sm"
+                @click="openGenerateDrawer(asNotification(record))"
                 style="text-decoration: underline;"
               >
                 {{ record.status === 'sent' ? '查看回复' : (record.ai_reply ? '修改回复' : '回复') }}
@@ -325,9 +326,9 @@ onMounted(() => {
               <VbenButton
                 v-if="record.ai_reply && record.status !== 'sent'"
                 variant="link"
-                size="small"
+                size="sm"
                 color="success"
-                @click="handleMarkSent(record)"
+                @click="handleMarkSent(asNotification(record))"
                 style="text-decoration: underline;"
               >
                 标记已通知
@@ -417,7 +418,7 @@ onMounted(() => {
               生成结果
               <VbenButton
                 variant="link"
-                size="small"
+                size="sm"
                 @click="handleCopyReply"
               >
                 <CopyOutlined /> 复制

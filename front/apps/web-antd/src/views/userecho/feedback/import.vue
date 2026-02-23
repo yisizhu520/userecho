@@ -13,7 +13,6 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DownloadOutlined,
-  LeftOutlined,
   SettingOutlined,
 } from '@ant-design/icons-vue';
 

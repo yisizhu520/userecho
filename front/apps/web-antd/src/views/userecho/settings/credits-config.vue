@@ -2,7 +2,7 @@
 /**
  * 积分配置管理页面（Admin）
  */
-import { ref, onMounted, computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import {
   Card,
   Table,
@@ -58,6 +58,13 @@ const planLabels: Record<string, string> = {
   quota_pro: '专业版',
   quota_team: '团队版',
   quota_enterprise: '企业版',
+};
+
+const planColors: Record<string, string> = {
+  starter: 'default',
+  pro: 'blue',
+  team: 'green',
+  enterprise: 'gold',
 };
 
 // ==================== 方法 ====================
@@ -132,6 +139,10 @@ async function confirmAdjust() {
   }
 }
 
+function asConfigItem(record: any): CreditsConfigItem {
+  return record as CreditsConfigItem;
+}
+
 // ==================== 表格列 ====================
 
 const configColumns = [
@@ -176,15 +187,6 @@ const tenantColumns = [
     dataIndex: 'plan_type',
     key: 'plan_type',
     width: 100,
-    customRender: ({ text }: { text: string }) => {
-      const colors: Record<string, string> = {
-        starter: 'default',
-        pro: 'blue',
-        team: 'green',
-        enterprise: 'gold',
-      };
-      return <Tag color={colors[text] || 'default'}>{text}</Tag>;
-    },
   },
   {
     title: '月度额度',
@@ -198,10 +200,6 @@ const tenantColumns = [
     dataIndex: 'current_balance',
     key: 'current_balance',
     width: 100,
-    customRender: ({ text, record }: { text: number; record: TenantCreditsItem }) => {
-      const color = text < 50 ? 'red' : text < 200 ? 'orange' : 'green';
-      return <Tag color={color}>{text}</Tag>;
-    },
   },
   {
     title: '累计使用',
@@ -252,10 +250,10 @@ onMounted(() => {
                   </template>
                   <template v-if="column.key === 'action'">
                     <template v-if="editingId === record.id">
-                      <Button type="link" size="small" @click="saveEdit(record)">保存</Button>
+                      <Button type="link" size="small" @click="saveEdit(asConfigItem(record))">保存</Button>
                       <Button type="link" size="small" @click="cancelEdit">取消</Button>
                     </template>
-                    <Button v-else type="link" size="small" @click="startEdit(record)">编辑</Button>
+                    <Button v-else type="link" size="small" @click="startEdit(asConfigItem(record))">编辑</Button>
                   </template>
                 </template>
               </Table>
@@ -284,10 +282,10 @@ onMounted(() => {
                   </template>
                   <template v-if="column.key === 'action'">
                     <template v-if="editingId === record.id">
-                      <Button type="link" size="small" @click="saveEdit(record)">保存</Button>
+                      <Button type="link" size="small" @click="saveEdit(asConfigItem(record))">保存</Button>
                       <Button type="link" size="small" @click="cancelEdit">取消</Button>
                     </template>
-                    <Button v-else type="link" size="small" @click="startEdit(record)">编辑</Button>
+                    <Button v-else type="link" size="small" @click="startEdit(asConfigItem(record))">编辑</Button>
                   </template>
                 </template>
               </Table>
@@ -306,6 +304,22 @@ onMounted(() => {
               rowKey="id"
             >
               <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'plan_type'">
+                  <Tag :color="planColors[record.plan_type] || 'default'">{{ record.plan_type }}</Tag>
+                </template>
+                <template v-if="column.key === 'current_balance'">
+                  <Tag
+                    :color="
+                      record.current_balance < 50
+                        ? 'red'
+                        : record.current_balance < 200
+                          ? 'orange'
+                          : 'green'
+                    "
+                  >
+                    {{ record.current_balance }}
+                  </Tag>
+                </template>
                 <template v-if="column.key === 'action'">
                   <Button type="link" size="small" @click="openAdjustModal(record.tenant_id)">
                     调整

@@ -22,6 +22,8 @@ export const MaterialSymbolsDelete = createIconifyIcon(
   'material-symbols:delete',
 );
 
+export const MaterialSymbolsShield = createIconifyIcon('material-symbols:shield');
+
 export const MingcuteProfileLine = createIconifyIcon('mingcute:profile-line');
 
 export const LucideLayers = createIconifyIcon('lucide:layers');

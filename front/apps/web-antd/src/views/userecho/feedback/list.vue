@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { VbenFormProps } from '@vben/common-ui';
 import type {
   OnActionClickParams,
   VxeTableGridOptions,
@@ -11,7 +10,6 @@ import { formatToSmartTime, formatToDateTime } from '#/utils/dateUtil';
 import { useRoute } from 'vue-router';
 
 import { VbenButton } from '@vben/common-ui';
-import { $t } from '@vben/locales';
 
 import { message } from 'ant-design-vue';
 
@@ -78,8 +76,9 @@ const initBoardSelection = async () => {
   try {
     await boardStore.refreshBoards();
     const boards = boardStore.boards;
-    if (boards.length > 0 && (filterValues.value?.board_ids?.length ?? 0) === 0) {
-      filterValues.value.board_ids = [boards[0].id];
+    const filters = filterValues.value;
+    if (boards.length > 0 && filters && (filters.board_ids?.length ?? 0) === 0) {
+      filters!.board_ids = [boards[0]!.id];
     }
   } catch (error) {
     console.error('Failed to init board selection:', error);

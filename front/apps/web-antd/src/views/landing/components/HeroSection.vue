@@ -14,9 +14,6 @@ withDefaults(defineProps<Props>(), {
   description: '10倍速度洞察需求 | 团队的智能决策助手',
 });
 
-const emit = defineEmits<{
-  (e: 'getStarted'): void;
-}>();
 
 const { theme } = useLandingTheme();
 const canvasRef = ref<HTMLCanvasElement>();
@@ -50,7 +47,6 @@ const STAGE_CONFIG = Object.values(stageConfig);
 type AnimationStage = 'INGEST' | 'PROCESS' | 'INSIGHT' | 'SYNC';
 let currentStage: AnimationStage = 'INGEST';
 let nextStage: AnimationStage = 'PROCESS';
-let previousStage: AnimationStage | null = null;
 let frameCount = 0;
 let stageTransition: number = 0; // 0-1 during transition
 let isTransitioning: boolean = false;
@@ -80,7 +76,6 @@ const CLUSTER_DATA: ClusterData[] = [
   { label: '移动端体验',   priority: 'P2', value: '低', count: 5,  color: '#6b7280' },    // Gray - Low
 ];
 
-const CLUSTER_LABELS = CLUSTER_DATA.map(c => c.label);
 
 // User data for SYNC stage - users who will receive updates
 type UserData = {
@@ -194,14 +189,11 @@ class Particle {
     const centerY = CANVAS_HEIGHT / 2;
 
     // Smooth easing function
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-    const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
     // 1. INGEST: Particles orbit slowly in background (texts take focus)
     if (stage === 'INGEST') {
       // Slow orbital motion around center - subtle background effect
       const angle = Math.atan2(this.y - centerY, this.x - centerX);
-      const dist = Math.sqrt((this.x - centerX) ** 2 + (this.y - centerY) ** 2);
       const targetDist = 150 + this.clusterId * 30;
 
       // Gentle drift towards orbital position
@@ -274,6 +266,7 @@ class Particle {
       // Fly towards target user with gentle, smooth motion
       if (this.targetUserIndex >= 0 && this.syncedUserIndex === -1) {
         const targetUser = USER_DATA[this.targetUserIndex];
+        if (!targetUser) return;
         const dx = targetUser.x - this.x;
         const dy = targetUser.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -337,7 +330,7 @@ class FeedbackText {
   collected: boolean = false;
   spawnDelay: number;
 
-  constructor(text: string, isDark: boolean) {
+  constructor(text: string) {
     this.text = text;
 
     // Start from random position outside canvas
@@ -490,7 +483,7 @@ const initParticles = () => {
     const isHighValueCluster = id === 0;
 
     for (let i = 0; i < 15; i++) {
-      const p = new Particle(id, colors[id % colors.length], isDark.value);
+      const p = new Particle(id, colors[id % colors.length]!, isDark.value);
 
       // Target position
       const angle = Math.random() * Math.PI * 2;
@@ -509,7 +502,7 @@ const initParticles = () => {
 
   // Create flying feedback texts (use all samples, staggered)
   FEEDBACK_SAMPLES.forEach((text) => {
-    feedbackTexts.push(new FeedbackText(text, isDark.value));
+    feedbackTexts.push(new FeedbackText(text));
   });
 };
 
@@ -541,10 +534,10 @@ const animate = () => {
   let localProgress = 0;
 
   for (let i = 0; i < stages.length; i++) {
-    if (cycleTime >= stageBreaks[i] && cycleTime < stageBreaks[i + 1]) {
-      newStage = stages[i];
+    if (cycleTime >= stageBreaks[i]! && cycleTime < stageBreaks[i + 1]!) {
+      newStage = stages[i]!;
       stageIdx = i;
-      localProgress = (cycleTime - stageBreaks[i]) / stageDurations[i];
+      localProgress = (cycleTime - stageBreaks[i]!) / stageDurations[i]!;
       break;
     }
   }
@@ -564,7 +557,6 @@ const animate = () => {
       // Transition complete
       stageTransition = 0;
       isTransitioning = false;
-      previousStage = currentStage;
       currentStage = nextStage;
       stageWeights = [1, 0];
     } else {
@@ -625,8 +617,8 @@ const animate = () => {
 
   // Render with transition blend
   if (isTransitioning) {
-    renderStageElements(currentStage, stageWeights[0]);
-    renderStageElements(nextStage, stageWeights[1]);
+    renderStageElements(currentStage, stageWeights[0] ?? 1);
+    renderStageElements(nextStage, stageWeights[1] ?? 0);
   } else {
     renderStageElements(currentStage, 1);
   }
@@ -657,7 +649,7 @@ const animate = () => {
 
     feedbackTexts = [];
     FEEDBACK_SAMPLES.forEach((text) => {
-      feedbackTexts.push(new FeedbackText(text, dark));
+      feedbackTexts.push(new FeedbackText(text));
     });
 
     USER_DATA.forEach(user => {
@@ -678,7 +670,7 @@ const animate = () => {
                      (isTransitioning && (nextStage === 'PROCESS' || nextStage === 'INSIGHT'));
 
   if (showLabels) {
-    const processStartTime = stageBreaks[1];
+    const processStartTime = stageBreaks[1]!;
     // Slower, smoother fade in over 80 frames instead of 50
     const fadeTime = Math.max(0, cycleTime - processStartTime);
     const fadeInProgress = Math.min(1, fadeTime / 80);
@@ -691,7 +683,7 @@ const animate = () => {
     ctx.textBaseline = 'middle';
 
     clusters.forEach((c, i) => {
-      const cluster = CLUSTER_DATA[i];
+      const cluster = CLUSTER_DATA[i]!;
       const isP0 = cluster.priority === 'P0';
       const isP1 = cluster.priority === 'P1';
 
@@ -703,13 +695,13 @@ const animate = () => {
         if (nextStage === 'INSIGHT') {
           // Transitioning TO insight - blend alpha towards target values
           const targetAlpha = isP0 ? 1 : (isP1 ? 0.7 : 0.4);
-          alpha = alpha * (1 - stageWeights[1]) + targetAlpha * stageWeights[1];
-          showInsightCard = stageWeights[1] > 0.5;
+          alpha = alpha * (1 - (stageWeights[1] ?? 0)) + targetAlpha * (stageWeights[1] ?? 0);
+          showInsightCard = (stageWeights[1] ?? 0) > 0.5;
         } else if (currentStage === 'INSIGHT') {
           // Transitioning FROM insight
           const baseAlpha = isP0 ? 1 : (isP1 ? 0.7 : 0.4);
-          alpha = baseAlpha * stageWeights[0];
-          showInsightCard = stageWeights[0] > 0.5;
+          alpha = baseAlpha * (stageWeights[0] ?? 0);
+          showInsightCard = (stageWeights[0] ?? 0) > 0.5;
         }
       } else if (currentStage === 'INSIGHT') {
         alpha = isP0 ? 1 : (isP1 ? 0.7 : 0.4);

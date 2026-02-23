@@ -170,7 +170,7 @@ const loadBoardList = async () => {
     if (isCreateMode.value && boardList.length > 0) {
       const lastSelectedBoardId = localStorage.getItem(LAST_SELECTED_BOARD_KEY);
       const boardExists = lastSelectedBoardId && boardList.some((b: { value: string }) => b.value === lastSelectedBoardId);
-      const defaultBoardId = boardExists ? lastSelectedBoardId : boardList[0].value;
+      const defaultBoardId = boardExists ? lastSelectedBoardId : boardList[0]!.value;
       topFormApi.setValues({ board_id: defaultBoardId });
     }
   } catch (error: any) {

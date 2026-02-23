@@ -21,9 +21,10 @@ import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
   getTopicList,
-  createTopic,
   updateTopic,
   deleteTopic,
+  linkFeedbacksToTopic,
+  createTopic,
 } from '#/api';
 import { getBoardList } from '#/api/userecho/board';
 import { TOPIC_CATEGORIES } from '#/api';
@@ -81,7 +82,7 @@ const initBoardSelection = async () => {
     const boards = response || [];
     if (boards.length > 0 && filterValues.value && (filterValues.value.board_ids?.length ?? 0) === 0) {
       // 只有在没有存储值时才默认选中第一个
-      filterValues.value.board_ids = [boards[0].id];
+      filterValues.value.board_ids = [boards[0]!.id];
     }
   } catch (error) {
     console.error('Failed to init board selection:', error);
@@ -363,7 +364,7 @@ const [addModal, addModalApi] = useVbenModal({
         if (filterValues.value.board_ids?.length === 1) {
           addFormApi.setValues({ board_id: filterValues.value.board_ids[0] });
         } else if (boardOptions.length > 0) {
-          addFormApi.setValues({ board_id: boardOptions[0].value });
+          addFormApi.setValues({ board_id: boardOptions[0]!.value });
         }
       }
     } else {

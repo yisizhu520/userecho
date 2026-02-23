@@ -7,7 +7,6 @@
 import type { MergeSuggestion } from '#/api';
 
 import { ref, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
 
 import { getPendingMergeSuggestions } from '#/api';
 import MergeSuggestionsModal from '#/views/userecho/feedback/components/MergeSuggestionsModal.vue';

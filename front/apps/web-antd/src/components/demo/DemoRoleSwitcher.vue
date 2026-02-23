@@ -16,7 +16,7 @@ const roles = [
 ];
 
 const currentRoleInfo = computed(() =>
-  roles.find(r => r.key === currentRole.value) || roles[0]
+  roles.find(r => r.key === currentRole.value) || roles[0]!
 );
 
 const handleSwitchRole = async (roleKey: string) => {

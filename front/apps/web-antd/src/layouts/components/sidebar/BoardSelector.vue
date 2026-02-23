@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { Checkbox, Divider } from 'ant-design-vue';
+import { Checkbox } from 'ant-design-vue';
 
 const boards = ref([
   { label: 'Feature Requests', value: 'feature-requests', count: 12 },
@@ -26,7 +26,7 @@ const onCheckAllChange = (e: any) => {
   <div class="px-4 py-4">
     <div class="flex items-center justify-between mb-2">
       <span class="text-xs font-semibold text-gray-500 uppercase">Boards</span>
-      <span class="text-xs text-primary cursor-pointer hover:underline">Select All</span>
+      <span class="text-xs text-primary cursor-pointer hover:underline" @click="onCheckAllChange">Select All</span>
     </div>
 
     <div class="flex flex-col gap-2">

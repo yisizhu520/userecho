@@ -1,7 +1,11 @@
 from datetime import datetime
 
 from sqlalchemy import ForeignKey, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from backend.app.admin.model.user import User
 
 from backend.common.model import MappedBase, TimeZone
 from backend.database.db import uuid4_str
@@ -20,6 +24,7 @@ class TenantUser(MappedBase):
     user_id: Mapped[int] = mapped_column(
         ForeignKey('sys_user.id', ondelete='CASCADE'), index=True, comment='平台用户ID'
     )
+    user: Mapped['User'] = relationship('backend.app.admin.model.user.User', lazy='selectin')
 
     # 用户类型（在该租户中的角色）
     user_type: Mapped[str] = mapped_column(
@@ -73,3 +78,13 @@ class TenantUserRole(MappedBase):
         UniqueConstraint('tenant_user_id', 'role_id', name='uq_tenant_user_role'),
         {'comment': '租户用户角色关联表（RBAC 权限系统）'},
     )
+
+
+def _get_user_attr(self, attr: str):
+    return getattr(self.user, attr) if self.user else None
+
+# Monkey patch properties to TenantUser for Pydantic serialization
+TenantUser.username = property(lambda self: _get_user_attr(self, 'username'))
+TenantUser.nickname = property(lambda self: _get_user_attr(self, 'nickname'))
+TenantUser.email = property(lambda self: _get_user_attr(self, 'email'))
+

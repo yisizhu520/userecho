@@ -19,7 +19,6 @@ import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard
 
 import ConversionFunnelCard from './components/ConversionFunnelCard.vue';
 import CustomerStatsCard from './components/CustomerStatsCard.vue';
-import InsightsCard from './components/InsightsCard.vue';
 import MyFeedbacksCard from './components/MyFeedbacksCard.vue';
 import PendingDecisionsCard from './components/PendingDecisionsCard.vue';
 import TagDistributionChart from './components/TagDistributionChart.vue';
@@ -132,6 +131,7 @@ function normalizeStats(data: any): DashboardStats | null {
       topic_stats: {
         total: Number(data.topic_stats?.total ?? 0),
         pending: Number(data.topic_stats?.pending ?? 0),
+        completed: Number(data.topic_stats?.completed ?? 0),
         weekly_count: Number(data.topic_stats?.weekly_count ?? 0),
       },
       customer_stats: {

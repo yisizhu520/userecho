@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
-import { message, Select, Input } from 'ant-design-vue';
-import { SearchOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
 import { getFeedbackList } from '#/api';
 
 interface Props {

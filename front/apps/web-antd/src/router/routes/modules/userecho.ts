@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'UserEchoWorkspace',
     path: '/app/dashboard/workspace',
-    component: '/src/views/userecho/dashboard/workspace.vue',
+    component: () => import('#/views/userecho/dashboard/workspace.vue'),
     meta: {
       icon: 'lucide:layout-dashboard',
       order: -1,
@@ -29,7 +29,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'FeedbackList',
         path: 'list',
-        component: '/src/views/userecho/feedback/list.vue',
+        component: () => import('#/views/userecho/feedback/list.vue'),
         meta: {
           hideInBreadcrumb: true,
           hideInMenu: true,
@@ -39,7 +39,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'ScreenshotUpload',
         path: 'screenshot',
-        component: '/src/views/userecho/feedback/screenshot-upload.vue',
+        component: () => import('#/views/userecho/feedback/screenshot-upload.vue'),
         meta: {
           hideInMenu: true,
           title: '截图识别',
@@ -48,7 +48,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'FeedbackImport',
         path: 'import',
-        component: '/src/views/userecho/feedback/import.vue',
+        component: () => import('#/views/userecho/feedback/import.vue'),
         meta: {
           hideInMenu: true,
           title: $t('page.userecho.feedback.import'),
@@ -59,7 +59,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'AIDiscovery',
     path: '/app/ai/discovery',
-    component: '/src/views/userecho/discovery/index.vue',
+    component: () => import('#/views/userecho/discovery/index.vue'),
     meta: {
       icon: 'lucide:sparkles',
       order: 2,
@@ -78,7 +78,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'TopicList',
     path: '/app/topic/list',
-    component: '/src/views/userecho/topic/list.vue',
+    component: () => import('#/views/userecho/topic/list.vue'),
     meta: {
       icon: 'lucide:lightbulb',
       order: 4,
@@ -89,7 +89,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'TopicDetail',
     path: '/app/topic/detail/:id',
-    component: '/src/views/userecho/topic/detail.vue',
+    component: () => import('#/views/userecho/topic/detail.vue'),
     meta: {
       hideInMenu: true,
       title: $t('page.userecho.topic.detail'),
@@ -98,7 +98,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'CustomerManage',
     path: '/app/customer',
-    component: '/src/views/userecho/customer/index.vue',
+    component: () => import('#/views/userecho/customer/index.vue'),
     meta: {
       icon: 'lucide:users',
       order: 4,
@@ -109,7 +109,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'InsightReport',
     path: '/app/insights/report',
-    component: '/src/views/userecho/insights/report.vue',
+    component: () => import('#/views/userecho/insights/report.vue'),
     meta: {
       icon: 'lucide:file-bar-chart',
       order: 4.5,
@@ -131,7 +131,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'MembersManage',
         path: 'members',
-        component: '/src/views/userecho/settings/members.vue',
+        component: () => import('#/views/userecho/settings/members.vue'),
         meta: {
           icon: 'lucide:users',
           title: '成员管理',
@@ -141,7 +141,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'RolesManage',
         path: 'roles',
-        component: '/src/views/userecho/settings/roles.vue',
+        component: () => import('#/views/userecho/settings/roles.vue'),
         meta: {
           icon: 'lucide:shield',
           title: '角色管理',
@@ -151,7 +151,7 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'CreditsConfig',
         path: 'credits',
-        component: '/src/views/userecho/settings/credits-config.vue',
+        component: () => import('#/views/userecho/settings/credits-config.vue'),
         meta: {
           icon: 'lucide:coins',
           title: '积分配置',

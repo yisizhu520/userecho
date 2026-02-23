@@ -60,10 +60,6 @@ const priorityConfig = computed(() => {
  */
 const hasScore = computed(() => props.existingScore !== null && props.existingScore !== undefined);
 
-const matchedKeywords = computed(() => {
-  if (!props.existingScore?.details?.strategic_keywords_matched) return [];
-  return props.existingScore.details.strategic_keywords_matched as string[];
-});
 
 /**
  * AI 重新分析

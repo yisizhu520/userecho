@@ -1,10 +1,4 @@
 <script lang="ts" setup>
-import { Card, Col, Row, Statistic } from 'ant-design-vue';
-// Fallback to simple div if AntD is not available, but let's try to be robust.
-// Actually, let's use Tailwind + generic HTML to be safe and avoid import issues.
-// We can use the global AntD components if they are registered, but explicit import is safer if package exists.
-// Logic: If previous version failed, maybe package missing.
-// Strategy: Use pure Tailwind layout.
 
 interface Props {
   stats?: {

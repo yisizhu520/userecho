@@ -24,7 +24,6 @@ import {
   getSystemNotifications,
   markAllNotificationsAsRead,
   clearAllNotifications,
-  markNotificationAsRead,
 } from '#/api';
 import { router } from '#/router';
 import { useAuthStore } from '#/store';
@@ -72,22 +71,6 @@ async function loadNotifications() {
   }
 }
 
-// 处理通知点击
-async function handleNotificationClick(item: NotificationItem & { actionUrl?: string; id?: string }) {
-  // 标记为已读
-  if (item.id && !item.isRead) {
-    try {
-      await markNotificationAsRead(item.id);
-      item.isRead = true;
-    } catch {
-      // 静默处理
-    }
-  }
-  // 跳转到目标页面
-  if (item.actionUrl) {
-    router.push(item.actionUrl);
-  }
-}
 
 const showDot = computed(() =>
   notifications.value.some((item) => !item.isRead),

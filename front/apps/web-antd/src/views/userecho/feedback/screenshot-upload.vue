@@ -229,7 +229,7 @@ const loadBoards = async () => {
     boards.value = await getBoardList()
     // 默认选中第一个看板
     if (boards.value.length > 0 && !formData.board_id) {
-      formData.board_id = boards.value[0].id
+      formData.board_id = boards.value[0]!.id
     }
   } catch (error) {
     console.error('加载看板列表失败', error)

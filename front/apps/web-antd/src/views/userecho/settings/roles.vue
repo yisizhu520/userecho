@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { Page, useVbenModal, VbenButton } from '@vben/common-ui';
-import { MaterialSymbolsAdd, MaterialSymbolsDelete, MaterialSymbolsEdit, MaterialSymbolsShield } from '@vben/icons';
-import { message, Modal, Table, Tag, Space, Input, Form, FormItem, Checkbox, CheckboxGroup } from 'ant-design-vue';
+import { MaterialSymbolsAdd, MaterialSymbolsDelete, MaterialSymbolsShield } from '@vben/icons';
+import { message, Modal, Table, Tag, Space, Input, Form, FormItem, CheckboxGroup } from 'ant-design-vue';
 
 import {
   getTenantRoles,
   getTenantPermissions,
   getTenantRolePermissions,
   createTenantRole,
-  updateTenantRole,
   updateTenantRolePermissions,
   deleteTenantRole,
   type TenantRole,
@@ -144,6 +143,10 @@ const permissionOptions = computed(() =>
   permissions.value.map(p => ({ label: p.name, value: p.id }))
 );
 
+function asTenantRole(record: any): TenantRole {
+  return record as TenantRole;
+}
+
 onMounted(fetchData);
 </script>
 
@@ -176,15 +179,15 @@ onMounted(fetchData);
         </template>
         <template v-if="column.key === 'action'">
           <Space>
-            <VbenButton size="small" @click="openEditPerms(record)">
+            <VbenButton size="sm" @click="openEditPerms(asTenantRole(record))">
               <MaterialSymbolsShield class="size-4" />
               权限
             </VbenButton>
             <VbenButton
               v-if="!record.is_builtin"
-              size="small"
+              size="sm"
               danger
-              @click="handleDelete(record)"
+              @click="handleDelete(asTenantRole(record))"
             >
               <MaterialSymbolsDelete class="size-4" />
             </VbenButton>

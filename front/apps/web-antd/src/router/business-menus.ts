@@ -9,121 +9,11 @@ import type { RouteRecordStringComponent } from '@vben/types';
 
 import { useUserStore } from '@vben/stores';
 
-import { $t } from '#/locales';
-import { useTopicStore } from '#/store';
 
 // 导入完整的业务路由定义
 import userechoRoutes from './routes/modules/userecho';
 
-/**
- * 业务菜单定义
- * permissionCode 为空表示所有人可见
- */
-interface BusinessMenuItem {
-    path: string;
-    name: string;
-    title: string;
-    icon?: string;
-    permissionCode?: string;
-    order?: number;
-    redirect?: string;
-    children?: BusinessMenuItem[];
-    /** 动态 badge */
-    badgeGetter?: () => string | undefined;
-    badgeType?: string;
-    badgeVariants?: string;
-}
 
-const BUSINESS_MENUS: BusinessMenuItem[] = [
-    {
-        path: '/app/dashboard/workspace',
-        name: 'UserEchoWorkspace',
-        title: '工作台',
-        icon: 'lucide:layout-dashboard',
-        order: -1,
-        // 工作台对所有人可见，不需要权限
-    },
-    {
-        path: '/app/feedback',
-        name: 'FeedbackManagement',
-        title: $t('page.userecho.feedback.list'),
-        icon: 'lucide:inbox',
-        permissionCode: 'feedback',
-        order: 0,
-        redirect: '/app/feedback/list',
-    },
-    {
-        path: '/app/ai/discovery',
-        name: 'AIDiscovery',
-        title: $t('page.userecho.discovery.title'),
-        icon: 'lucide:sparkles',
-        permissionCode: 'discovery',
-        order: 2,
-        badgeGetter: () => {
-            const topicStore = useTopicStore();
-            const count = topicStore.pendingCount;
-            return count > 0 ? String(count) : undefined;
-        },
-        badgeType: 'normal',
-        badgeVariants: 'destructive',
-    },
-    {
-        path: '/app/topic/list',
-        name: 'TopicList',
-        title: $t('page.userecho.topic.list'),
-        icon: 'lucide:lightbulb',
-        permissionCode: 'topic',
-        order: 4,
-    },
-    {
-        path: '/app/customer',
-        name: 'CustomerManage',
-        title: $t('page.userecho.customer.title'),
-        icon: 'lucide:users',
-        permissionCode: 'customer',
-        order: 4,
-    },
-    {
-        path: '/app/insights/report',
-        name: 'InsightReport',
-        title: '洞察报告',
-        icon: 'lucide:file-bar-chart',
-        permissionCode: 'insight',
-        order: 4.5,
-    },
-    {
-        path: '/app/settings',
-        name: 'Settings',
-        title: '系统设置',
-        icon: 'lucide:settings',
-        permissionCode: 'settings',
-        order: 99,
-        redirect: '/app/settings/members',
-        children: [
-            {
-                path: '/app/settings/members',
-                name: 'MembersManage',
-                title: '成员管理',
-                icon: 'lucide:users',
-                permissionCode: 'member',
-            },
-            {
-                path: '/app/settings/roles',
-                name: 'RolesManage',
-                title: '角色管理',
-                icon: 'lucide:shield',
-                permissionCode: 'role',
-            },
-            {
-                path: '/app/settings/credits',
-                name: 'CreditsConfig',
-                title: '积分配置',
-                icon: 'lucide:coins',
-                permissionCode: 'credits',
-            },
-        ],
-    },
-];
 
 
 
@@ -182,7 +72,7 @@ export function getBusinessMenus(): RouteRecordStringComponent[] {
         (userInfo as Record<string, unknown>)?.tenantPermissions as string[] || [];
 
     // 根据权限过滤路由，直接返回（component 已是字符串，无需转换）
-    return filterRoutesByPermission(userechoRoutes, tenantPermissions);
+    return filterRoutesByPermission(userechoRoutes as any as RouteRecordStringComponent[], tenantPermissions);
 }
 
 /**
@@ -214,7 +104,7 @@ export function hasBusinessMenuAccess(path: string): boolean {
         return undefined;
     };
 
-    const route = findRoute(userechoRoutes, path);
+    const route = findRoute(userechoRoutes as any as RouteRecordStringComponent[], path);
 
     // 没找到路由配置，默认允许访问
     if (!route) {

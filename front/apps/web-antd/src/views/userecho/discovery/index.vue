@@ -55,36 +55,9 @@ async function refresh() {
   }
 }
 
-function confidenceOf(t: Topic) {
-  const q: any = t.cluster_quality || {};
-  const c = Number.isFinite(q.confidence) ? Number(q.confidence) : (t.ai_confidence ?? 0);
-  return Math.max(0, Math.min(1, c));
-}
 
-function qualityLabel(t: Topic) {
-  const c = confidenceOf(t);
-  if (t.is_noise) return '噪声';
-  if (c >= 0.8) return '可放心采纳';
-  if (c >= 0.6) return '中等可信';
-  return '待验证';
-}
 
-function qualityColor(t: Topic) {
-  const c = confidenceOf(t);
-  if (t.is_noise) return 'default';
-  if (c >= 0.8) return 'success';
-  if (c >= 0.6) return 'processing';
-  return 'warning';
-}
 
-/** AI 识别可信度图标 */
-function qualityIcon(t: Topic) {
-  const c = confidenceOf(t);
-  if (t.is_noise) return 'lucide--ban';
-  if (c >= 0.8) return 'lucide--shield-check';
-  if (c >= 0.6) return 'lucide--circle-check';
-  return 'lucide--circle-help';
-}
 
 /** 状态中文化 */
 function statusLabel(status: string) {

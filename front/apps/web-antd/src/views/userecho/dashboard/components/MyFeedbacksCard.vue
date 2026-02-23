@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getMyFeedbacks, type MyFeedbacksStats } from '#/api/userecho/dashboard';
 
@@ -164,9 +164,7 @@ defineExpose({ refresh });
       </a-list>
       
       <div v-else class="empty-state">
-        <a-empty description="暂无反馈记录" :image="null">
-          <template #image><span /></template>
-        </a-empty>
+        <a-empty description="暂无反馈记录" />
       </div>
     </template>
   </a-card>

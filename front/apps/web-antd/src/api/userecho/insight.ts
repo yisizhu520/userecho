@@ -101,6 +101,8 @@ export interface WeeklyReportResponse {
   markdown: string;
   data: WeeklyReportData;
   generated_at: string;
+  task_id?: string;
+  status?: string;
 }
 
 // 异步任务响应

@@ -25,7 +25,7 @@ interface Props {
   topCustomers?: TopCustomer[];
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   total: 0,
   newCount: 0,
   active7d: 0,
