@@ -1,5 +1,7 @@
 """租户成员 API"""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
 from backend.app.userecho.schema.tenant_rbac import (
@@ -20,7 +22,7 @@ router = APIRouter()
 async def get_member_list(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    status: str | None = Query(None, description='状态'),
+    status: Annotated[str | None, Query(description='状态')] = None,
 ) -> ResponseSchemaModel[list[TenantMemberOut]]:
     """获取当前租户的成员列表"""
     members = await tenant_member_service.get_list(db, tenant_id, status=status)
@@ -85,13 +87,18 @@ async def update_member(
     db: CurrentSession,
     member_id: str,
     body: TenantMemberUpdate,
+    current_user_id: int = CurrentUserId,
 ) -> ResponseSchemaModel[TenantMemberOut]:
     """更新成员信息"""
     member = await tenant_member_service.update(
         db,
         member_id,
+        username=body.username,
+        nickname=body.nickname,
+        role_ids=body.role_ids,
         user_type=body.user_type,
         status=body.status,
+        assigned_by=current_user_id,
     )
     await db.commit()
     return ResponseSchemaModel(data=TenantMemberOut.model_validate(member))

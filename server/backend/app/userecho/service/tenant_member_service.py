@@ -4,13 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.admin.crud.crud_user import user_dao
 from backend.app.admin.model import User
+from backend.app.admin.utils.password_security import get_hash_password
 from backend.app.userecho.crud.crud_tenant_member import tenant_member_dao
 from backend.app.userecho.crud.crud_tenant_permission import tenant_permission_dao
 from backend.app.userecho.crud.crud_tenant_role import tenant_role_dao
 from backend.app.userecho.model.tenant_user import TenantUser
-from backend.app.userecho.service.tenant_role_service import tenant_role_service
 from backend.common.exception import errors
-from backend.app.admin.utils.password_security import get_hash_password
 
 
 class TenantMemberService:
@@ -137,18 +136,41 @@ class TenantMemberService:
         db: AsyncSession,
         tenant_user_id: str,
         *,
+        username: str | None = None,
+        nickname: str | None = None,
+        role_ids: list[str] | None = None,
         user_type: str | None = None,
         status: str | None = None,
+        assigned_by: int | None = None,
     ) -> TenantUser:
         """更新成员信息"""
         member = await tenant_member_dao.get(db, tenant_user_id)
         if not member:
             raise errors.NotFoundError(msg='成员不存在')
 
+        # 更新用户表字段（username, nickname）
+        if username is not None or nickname is not None:
+            user = await user_dao.get(db, member.user_id)
+            if not user:
+                raise errors.NotFoundError(msg='用户不存在')
+
+            if username is not None:
+                user.username = username
+            if nickname is not None:
+                user.nickname = nickname
+            await db.flush()
+
+        # 更新成员角色
+        if role_ids is not None:
+            await tenant_member_dao.set_member_roles(db, tenant_user_id, role_ids, assigned_by=assigned_by)
+
+        # 更新成员状态和类型
         return await tenant_member_dao.update(db, member, user_type=user_type, status=status)
 
     @staticmethod
-    async def update_roles(db: AsyncSession, tenant_user_id: str, role_ids: list[str], assigned_by: int | None = None) -> None:
+    async def update_roles(
+        db: AsyncSession, tenant_user_id: str, role_ids: list[str], assigned_by: int | None = None
+    ) -> None:
         """更新成员角色"""
         member = await tenant_member_dao.get(db, tenant_user_id)
         if not member:

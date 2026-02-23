@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-pre-commit run --all-files --verbose --show-diff-on-failure
+.venv/Scripts/python.exe -m pre_commit run --all-files --verbose --show-diff-on-failure

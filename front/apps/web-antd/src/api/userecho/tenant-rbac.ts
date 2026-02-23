@@ -67,6 +67,9 @@ export interface CreateMemberParams {
 
 /** 更新成员参数 */
 export interface UpdateMemberParams {
+    username?: string;
+    nickname?: string;
+    role_ids?: string[];
     user_type?: string;
     status?: string;
 }

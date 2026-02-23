@@ -11,7 +11,7 @@ import {
   getTenantMembers,
   getTenantRoles,
   createTenantMember,
-  updateTenantMemberRoles,
+  updateTenantMember,
   deleteTenantMember,
   getTenantMemberRoles,
   type TenantMember,
@@ -146,31 +146,52 @@ const [CreateModal, createModalApi] = useVbenModal({
   },
 });
 
-// 编辑角色
-const editMemberId = ref('');
-const editRoleIds = ref<string[]>([]);
+// 编辑成员
+const editForm = ref({
+  id: '',
+  username: '',
+  nickname: '',
+  role_ids: [] as string[],
+  status: '',
+});
 
-const [EditRolesModal, editRolesModalApi] = useVbenModal({
+const [EditModal, editModalApi] = useVbenModal({
   destroyOnClose: true,
   async onConfirm() {
-    editRolesModalApi.lock();
+    if (!editForm.value.username || !editForm.value.nickname) {
+      message.error('请填写必填项');
+      return;
+    }
+    if (!editForm.value.role_ids || editForm.value.role_ids.length === 0) {
+      message.error('请至少选择一个角色');
+      return;
+    }
+    editModalApi.lock();
     try {
-      await updateTenantMemberRoles(editMemberId.value, editRoleIds.value);
+      await updateTenantMember(editForm.value.id, {
+        username: editForm.value.username,
+        nickname: editForm.value.nickname,
+        role_ids: editForm.value.role_ids,
+        status: editForm.value.status,
+      });
       message.success('更新成功');
-      await editRolesModalApi.close();
+      await editModalApi.close();
       gridApi.query();
     } finally {
-      editRolesModalApi.unlock();
+      editModalApi.unlock();
     }
   },
 });
 
-function openEditRoles(member: TenantMember) {
-  editMemberId.value = member.id;
+function openEdit(member: TenantMember) {
+  editForm.value.id = member.id;
+  editForm.value.username = member.username || '';
+  editForm.value.nickname = member.nickname || '';
+  editForm.value.status = member.status;
   // 获取该成员的角色
   getTenantMemberRoles(member.id).then((ids) => {
-    editRoleIds.value = ids;
-    editRolesModalApi.open();
+    editForm.value.role_ids = ids;
+    editModalApi.open();
   });
 }
 
@@ -223,9 +244,9 @@ const roleOptions = computed(() =>
 
             <template #action="{ row }">
               <Space>
-                <VbenButton size="sm" @click="openEditRoles(row)">
+                <VbenButton size="sm" @click="openEdit(row)">
                   <MaterialSymbolsEdit class="size-4" />
-                  角色
+                  编辑
                 </VbenButton>
                 <VbenButton size="sm" danger @click="handleDelete(row)">
                   <MaterialSymbolsDelete class="size-4" />
@@ -262,18 +283,37 @@ const roleOptions = computed(() =>
           </Form>
         </CreateModal>
 
-        <!-- 编辑角色 Modal -->
-        <EditRolesModal title="分配角色">
-          <div class="p-4">
-            <Select
-              v-model:value="editRoleIds"
-              mode="multiple"
-              :options="roleOptions"
-              placeholder="请选择角色"
-              style="width: 100%"
-            />
-          </div>
-        </EditRolesModal>
+        <!-- 编辑成员 Modal -->
+        <EditModal title="编辑成员">
+          <Form layout="vertical" class="p-4">
+            <FormItem label="用户名" required>
+              <Input v-model:value="editForm.username" placeholder="请输入用户名" />
+            </FormItem>
+            <FormItem label="昵称" required>
+              <Input v-model:value="editForm.nickname" placeholder="请输入昵称" />
+            </FormItem>
+            <FormItem label="角色" required>
+              <Select
+                v-model:value="editForm.role_ids"
+                mode="multiple"
+                :options="roleOptions"
+                placeholder="请选择角色"
+                style="width: 100%"
+              />
+            </FormItem>
+            <FormItem label="状态" required>
+              <Select
+                v-model:value="editForm.status"
+                :options="[
+                  { label: '正常', value: 'active' },
+                  { label: '停用', value: 'inactive' },
+                ]"
+                placeholder="请选择状态"
+                style="width: 100%"
+              />
+            </FormItem>
+          </Form>
+        </EditModal>
       </div>
     </div>
   </div>
@@ -301,4 +341,3 @@ const roleOptions = computed(() =>
   flex-direction: column;
 }
 </style>
-

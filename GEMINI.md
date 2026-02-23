@@ -159,9 +159,63 @@
 - 永远都用中文回复我
 - 文档放 docs 目录下
 - 中文不要出现乱码
-- 前端超过200行的代码改动，一定要在 front 目录下执行 pnpm check:type 命令检查，如果有错误自行修复，直到所有错误修复完成
-- 后端超过50行的代码改动，一定要执行 cd server && bash pre-commit.sh 命令，确保后端代码编译通过，没有error, 如果有错误自行修复，直到所有错误修复完成
+- 前端超过200行的代码改动，一定要在 front 目录下执行 `pnpm check:type` 命令检查，如果有错误自行修复，直到所有错误修复完成
+- 后端超过50行的代码改动，一定要执行 `cd server && bash pre-commit.sh` 命令，确保后端代码编译通过，没有error, 如果有错误自行修复，直到所有错误修复完成
 - 不要自动运行 npm run build, pnpm dev, pnpm build，除非主动让你执行
+
+### Python 代码质量检查
+
+> "代码质量检查不是可选项，是底线。" - Linus
+
+**工具链**：Ruff (linter + formatter) + mypy (类型检查器)
+
+#### 自动检查（推荐）
+
+```bash
+cd server
+
+# 运行所有检查：文件格式 + Ruff + mypy + 依赖同步
+bash pre-commit.sh
+```
+
+**这会自动执行：**
+1. 文件尾换行、JSON/YAML/TOML 语法检查
+2. Ruff 代码风格和潜在 bug 检查（自动修复）
+3. Ruff 代码格式化
+4. mypy 静态类型检查
+5. uv 依赖锁定和导出
+
+#### 手动检查（按需）
+
+```bash
+cd server
+
+# 只运行 Ruff 检查并自动修复
+.venv/Scripts/python.exe -m ruff check backend/ --fix
+
+# 只运行 Ruff 格式化
+.venv/Scripts/python.exe -m ruff format backend/
+
+# 只运行 mypy 类型检查
+.venv/Scripts/python.exe -m mypy backend/
+
+# 检查单个文件
+.venv/Scripts/python.exe -m mypy backend/app/admin/model/user.py
+```
+
+#### 快速检查清单
+
+- [ ] 后端超过 50 行代码改动必须运行 `bash pre-commit.sh`
+- [ ] 所有检查必须通过（exit code 0）
+- [ ] Ruff 错误必须修复，不能忽略
+- [ ] mypy 类型错误优先修复，必要时可用 `# type: ignore[error-code]` 标注
+- [ ] git commit 会自动触发检查，失败则拒绝提交
+
+#### 详细文档
+
+- Ruff 配置：`server/.ruff.toml`
+- mypy 配置：`server/pyproject.toml` 中的 `[tool.mypy]` 节
+- 完整指南：`docs/development/mypy-integration-guide.md`
 
 ### 后端依赖管理规范
 
