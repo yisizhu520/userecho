@@ -12,7 +12,6 @@ from backend.app.userecho.model.credits import CreditsConfig, CreditsUsageLog, T
 from backend.common.log import log
 from backend.utils.timezone import timezone
 
-
 # 默认积分消耗配置（数据库无配置时使用）
 DEFAULT_OPERATION_COSTS = {
     'clustering': 10,  # AI 聚类（每次）

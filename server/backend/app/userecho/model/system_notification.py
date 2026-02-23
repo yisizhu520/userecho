@@ -18,12 +18,17 @@ class SystemNotification(MappedBase):
         String(36), ForeignKey('tenants.id', ondelete='CASCADE'), index=True, comment='租户ID'
     )
     user_id: Mapped[int | None] = mapped_column(
-        ForeignKey('sys_user.id', ondelete='CASCADE'), index=True, default=None, comment='接收用户ID（NULL表示发送给租户所有用户）'
+        ForeignKey('sys_user.id', ondelete='CASCADE'),
+        index=True,
+        default=None,
+        comment='接收用户ID（NULL表示发送给租户所有用户）',
     )
 
     # 通知内容
     type: Mapped[str] = mapped_column(
-        String(50), index=True, comment='通知类型: topic_completed/notification_pending/feedback_imported/clustering_completed'
+        String(50),
+        index=True,
+        comment='通知类型: topic_completed/notification_pending/feedback_imported/clustering_completed',
     )
     title: Mapped[str] = mapped_column(String(200), comment='通知标题')
     message: Mapped[str] = mapped_column(Text, comment='通知内容')

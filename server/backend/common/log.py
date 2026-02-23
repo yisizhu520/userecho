@@ -52,7 +52,6 @@ def default_formatter(record: logging.LogRecord) -> str:
     return settings.LOG_FORMAT if settings.LOG_FORMAT.endswith('\n') else f'{settings.LOG_FORMAT}\n'
 
 
-
 def request_id_filter(record: logging.LogRecord) -> logging.LogRecord:
     """请求 ID 过滤器"""
     rid = get_request_trace_id()

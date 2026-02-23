@@ -5,10 +5,10 @@ Revises: 4f5g6h7i8j9k
 Create Date: 2026-01-14 08:03:14.293116
 
 """
-from alembic import op
-import sqlalchemy as sa
-import backend.common.model
 
+import sqlalchemy as sa
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '3b88fd02d888'
@@ -17,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     # 重命名列: metadata -> extra_data
     op.alter_column(
         'credits_usage_log',
@@ -28,7 +28,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     # 回滚: extra_data -> metadata
     op.alter_column(
         'credits_usage_log',

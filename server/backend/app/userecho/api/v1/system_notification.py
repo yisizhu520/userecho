@@ -13,7 +13,6 @@ from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 from backend.utils.timezone import timezone
 
-
 router = APIRouter(prefix='/notifications', tags=['UserEcho - 系统提醒'])
 
 
@@ -34,14 +33,13 @@ def format_relative_time(dt) -> str:
     seconds = diff.total_seconds()
     if seconds < 60:
         return '刚刚'
-    elif seconds < 3600:
+    if seconds < 3600:
         return f'{int(seconds / 60)}分钟前'
-    elif seconds < 86400:
+    if seconds < 86400:
         return f'{int(seconds / 3600)}小时前'
-    elif seconds < 604800:
+    if seconds < 604800:
         return f'{int(seconds / 86400)}天前'
-    else:
-        return dt.strftime('%Y-%m-%d')
+    return dt.strftime('%Y-%m-%d')
 
 
 @router.get('', summary='获取系统提醒列表')
@@ -67,9 +65,7 @@ async def get_notifications(
         unread_only=unread_only,
     )
 
-    unread_count = await crud_system_notification.count_unread(
-        db=db, tenant_id=tenant_id, user_id=current_user_id
-    )
+    unread_count = await crud_system_notification.count_unread(db=db, tenant_id=tenant_id, user_id=current_user_id)
 
     # 转换为输出格式并添加相对时间
     items_out = []
@@ -115,9 +111,7 @@ async def mark_all_as_read(
     current_user_id: int = Depends(get_current_user_id),
 ):
     """标记所有通知为已读"""
-    count = await crud_system_notification.mark_all_as_read(
-        db=db, tenant_id=tenant_id, user_id=current_user_id
-    )
+    count = await crud_system_notification.mark_all_as_read(db=db, tenant_id=tenant_id, user_id=current_user_id)
 
     return response_base.success(
         data={'marked_count': count},
@@ -132,9 +126,7 @@ async def clear_all_notifications(
     current_user_id: int = Depends(get_current_user_id),
 ):
     """清空当前用户的所有通知"""
-    count = await crud_system_notification.clear_all(
-        db=db, tenant_id=tenant_id, user_id=current_user_id
-    )
+    count = await crud_system_notification.clear_all(db=db, tenant_id=tenant_id, user_id=current_user_id)
 
     return response_base.success(
         data={'deleted_count': count},

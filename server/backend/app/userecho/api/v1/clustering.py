@@ -111,7 +111,7 @@ async def get_clustering_status(
     - processing_count: 处理中反馈数量
     - last_run_at: 上次聚类运行时间
     - last_run_result: 上次聚类结果摘要
-    
+
     智能超时检测：
     - 自动清理超过10分钟的 processing 状态（防止任务失败后状态卡死）
     - 只统计最近10分钟内的真实 processing 记录
@@ -160,7 +160,9 @@ async def get_clustering_status(
             },
         )
 
-        log.info(f'Successfully cleaned up {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}')
+        log.info(
+            f'Successfully cleaned up {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}'
+        )
 
     # ========================================
     # 2. 统计真实的 processing 数量（10分钟内）
@@ -254,7 +256,6 @@ async def get_pending_suggestions(
     )
 
     return response_base.success(data=suggestions)
-
 
 
 @router.get('/debug/similarity-matrix', summary='【调试】查看反馈相似度矩阵和聚类结果')

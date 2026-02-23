@@ -9,4 +9,3 @@ $env:CELERY_CUSTOM_WORKER_POOL = "celery_aio_pool.pool:AsyncIOPool"
 
 # 使用 -P custom 启动 worker，Celery 会使用环境变量指定的池
 & "$PSScriptRoot\.venv\Scripts\python.exe" -m celery -A backend.app.task.celery:celery_app worker -P custom -c 4 -l info --without-gossip --without-mingle
-

@@ -29,7 +29,7 @@ async def get_report_periods(
 
     用于左侧时间线导航，显示最近 N 周或 N 月，并标记哪些已有缓存
     """
-    from datetime import date, datetime, timedelta
+    from datetime import date, timedelta
 
     from sqlalchemy import distinct
 
@@ -110,13 +110,10 @@ async def get_report_periods(
             })
 
     # 查询已缓存的报告
-    cached_query = (
-        select(distinct(Insight.time_range))
-        .where(
-            Insight.tenant_id == tenant_id,
-            Insight.insight_type == 'weekly_report',
-            Insight.status == 'active',
-        )
+    cached_query = select(distinct(Insight.time_range)).where(
+        Insight.tenant_id == tenant_id,
+        Insight.insight_type == 'weekly_report',
+        Insight.status == 'active',
     )
     result = await db.execute(cached_query)
     cached_ranges = {row[0] for row in result.all()}

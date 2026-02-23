@@ -149,4 +149,3 @@ export async function getSimilarityMatrix(limit = 20) {
 export async function getPendingMergeSuggestions() {
   return requestClient.get<MergeSuggestion[]>('/api/v1/app/clustering/pending-suggestions');
 }
-

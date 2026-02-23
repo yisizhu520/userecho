@@ -2,6 +2,7 @@ import asyncio
 import os
 import pathlib
 import uuid
+
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -27,12 +28,12 @@ def _get_or_create_event_loop():
 async def local_db_session():
     """
     创建本地数据库会话（用于 Celery 任务）
-    
+
     解决问题：
     全局 `async_engine` 绑定在主线程/主进程的事件循环上。
     Celery 任务运行时（特别是手动管理 loop 时），会因为 loop 不匹配导致
     `RuntimeError: Task ... got Future ... attached to a different loop`。
-    
+
     此上下文管理器会在每次调用时创建一个全新的 engine 和 session，
     确保它们绑定到当前任务的 event loop 上。虽然有一定开销，但保证了正确性。
     """
@@ -416,7 +417,7 @@ async def generate_insight_report(self, tenant_id: str, time_range: str = 'this_
         # 如果这个任务也是并发不安全的，最好也用 local_db_session。
         # 但 async def 任务通常运行在 worker 的主 loop 里（如果是 aio pool）。
         # 这里为了安全起见，也替换为 local_db_session，但要注意 async with 兼容性。
-        
+
         async with local_db_session() as db:
             log.info(f'[Task {self.request.id}] Starting insight report generation for tenant: {tenant_id}')
 

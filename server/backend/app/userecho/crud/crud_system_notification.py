@@ -79,7 +79,6 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         user_id: int,
     ) -> SystemNotification | None:
         """标记为已读"""
-        from sqlalchemy import or_
 
         from backend.utils.timezone import timezone
 

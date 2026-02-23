@@ -20,8 +20,6 @@ class ReplyTemplateBase(BaseModel):
 class ReplyTemplateCreate(ReplyTemplateBase):
     """创建回复模板请求"""
 
-    pass
-
 
 class ReplyTemplateUpdate(BaseModel):
     """更新回复模板请求"""

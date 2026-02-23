@@ -8,8 +8,9 @@ Create Date: 2026-01-15 22:50:00
 
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'a1b2c3d4e5f6'
@@ -23,7 +24,14 @@ def upgrade() -> None:
     op.create_table(
         'tenant_roles',
         sa.Column('id', sa.String(36), primary_key=True, comment='角色ID'),
-        sa.Column('tenant_id', sa.String(36), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False, index=True, comment='租户ID'),
+        sa.Column(
+            'tenant_id',
+            sa.String(36),
+            sa.ForeignKey('tenants.id', ondelete='CASCADE'),
+            nullable=False,
+            index=True,
+            comment='租户ID',
+        ),
         sa.Column('name', sa.String(64), nullable=False, comment='角色名称'),
         sa.Column('code', sa.String(64), nullable=False, comment='角色代码'),
         sa.Column('description', sa.Text, nullable=True, comment='角色描述'),
@@ -33,7 +41,7 @@ def upgrade() -> None:
         sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
         sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
         sa.UniqueConstraint('tenant_id', 'code', name='uq_tenant_role_code'),
-        comment='租户角色表'
+        comment='租户角色表',
     )
 
     # 2. 创建租户权限表（全局定义）
@@ -46,18 +54,32 @@ def upgrade() -> None:
         sa.Column('type', sa.String(20), nullable=False, default='module', comment='类型'),
         sa.Column('sort', sa.Integer, nullable=False, default=0, comment='排序'),
         sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
-        comment='租户权限表'
+        comment='租户权限表',
     )
 
     # 3. 创建租户角色-权限关联表
     op.create_table(
         'tenant_role_permissions',
         sa.Column('id', sa.String(36), primary_key=True, comment='关联ID'),
-        sa.Column('role_id', sa.String(36), sa.ForeignKey('tenant_roles.id', ondelete='CASCADE'), nullable=False, index=True, comment='角色ID'),
-        sa.Column('permission_id', sa.String(36), sa.ForeignKey('tenant_permissions.id', ondelete='CASCADE'), nullable=False, index=True, comment='权限ID'),
+        sa.Column(
+            'role_id',
+            sa.String(36),
+            sa.ForeignKey('tenant_roles.id', ondelete='CASCADE'),
+            nullable=False,
+            index=True,
+            comment='角色ID',
+        ),
+        sa.Column(
+            'permission_id',
+            sa.String(36),
+            sa.ForeignKey('tenant_permissions.id', ondelete='CASCADE'),
+            nullable=False,
+            index=True,
+            comment='权限ID',
+        ),
         sa.Column('assigned_at', sa.DateTime(timezone=True), nullable=False, comment='分配时间'),
         sa.UniqueConstraint('role_id', 'permission_id', name='uq_tenant_role_permission'),
-        comment='租户角色-权限关联表'
+        comment='租户角色-权限关联表',
     )
 
     # 4. 修改 tenant_user_roles 表的 role_id 列
@@ -69,23 +91,19 @@ def upgrade() -> None:
         existing_type=sa.BigInteger(),
         type_=sa.String(36),
         existing_nullable=False,
-        comment='租户角色ID'
+        comment='租户角色ID',
     )
     op.create_foreign_key(
-        'tenant_user_roles_role_id_fkey',
-        'tenant_user_roles',
-        'tenant_roles',
-        ['role_id'],
-        ['id'],
-        ondelete='CASCADE'
+        'tenant_user_roles_role_id_fkey', 'tenant_user_roles', 'tenant_roles', ['role_id'], ['id'], ondelete='CASCADE'
     )
 
     # 5. 初始化内置权限数据
-    from backend.database.db import uuid4_str
     from datetime import datetime
 
+    from backend.database.db import uuid4_str
+
     now = datetime.now()
-    
+
     permissions = [
         # 反馈管理
         {'id': uuid4_str(), 'parent_id': None, 'name': '反馈管理', 'code': 'feedback', 'type': 'module', 'sort': 1},
@@ -112,9 +130,7 @@ def upgrade() -> None:
             sa.column('sort', sa.Integer),
             sa.column('created_time', sa.DateTime(timezone=True)),
         ),
-        [
-            {**p, 'created_time': now} for p in permissions
-        ]
+        [{**p, 'created_time': now} for p in permissions],
     )
 
 
@@ -127,15 +143,10 @@ def downgrade() -> None:
         existing_type=sa.String(36),
         type_=sa.BigInteger(),
         existing_nullable=False,
-        comment='角色ID'
+        comment='角色ID',
     )
     op.create_foreign_key(
-        'tenant_user_roles_role_id_fkey',
-        'tenant_user_roles',
-        'sys_role',
-        ['role_id'],
-        ['id'],
-        ondelete='CASCADE'
+        'tenant_user_roles_role_id_fkey', 'tenant_user_roles', 'sys_role', ['role_id'], ['id'], ondelete='CASCADE'
     )
 
     # 2. 删除新创建的表

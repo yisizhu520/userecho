@@ -333,9 +333,9 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         from sqlalchemy import or_
         from sqlalchemy.orm import aliased
 
+        from backend.app.admin.model.user import User
         from backend.app.userecho.model.customer import Customer
         from backend.app.userecho.model.topic import Topic
-        from backend.app.admin.model.user import User
 
         # 使用左连接查询
         CustomerAlias = aliased(Customer)

@@ -159,4 +159,3 @@ export async function getNotificationStats() {
     '/api/v1/app/dashboard/notification-stats',
   );
 }
-

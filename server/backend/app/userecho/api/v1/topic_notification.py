@@ -14,7 +14,7 @@ from backend.app.userecho.schema.topic_notification import (
 from backend.common.log import log
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
-from backend.common.security.jwt import CurrentTenantId, DependsJwtAuth
+from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix='/topics', tags=['UserEcho - 需求通知'])
@@ -40,9 +40,7 @@ async def get_topic_notifications(
 
     - **status**: 状态筛选 (pending/generated/copied/sent)
     """
-    notifications = await crud_topic_notification.get_with_details(
-        db=db, tenant_id=tenant_id, topic_id=topic_id
-    )
+    notifications = await crud_topic_notification.get_with_details(db=db, tenant_id=tenant_id, topic_id=topic_id)
 
     # 应用状态筛选
     if status:

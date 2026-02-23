@@ -75,12 +75,14 @@ async def update_credits_config(
 
     await db.commit()
 
-    return response_base.success(data={
-        'id': config.id,
-        'config_key': config.config_key,
-        'config_value': config.config_value,
-        'description': config.description,
-    })
+    return response_base.success(
+        data={
+            'id': config.id,
+            'config_key': config.config_key,
+            'config_value': config.config_value,
+            'description': config.description,
+        }
+    )
 
 
 # ==================== 租户积分管理 ====================
@@ -98,18 +100,20 @@ async def get_all_tenant_credits(db: CurrentSession):
     )
     credits_list = result.scalars().all()
 
-    return response_base.success(data=[
-        {
-            'id': tc.id,
-            'tenant_id': tc.tenant_id,
-            'plan_type': tc.plan_type,
-            'monthly_quota': tc.monthly_quota,
-            'current_balance': tc.current_balance,
-            'total_used': tc.total_used,
-            'next_refresh_at': tc.next_refresh_at.isoformat() if tc.next_refresh_at else None,
-        }
-        for tc in credits_list
-    ])
+    return response_base.success(
+        data=[
+            {
+                'id': tc.id,
+                'tenant_id': tc.tenant_id,
+                'plan_type': tc.plan_type,
+                'monthly_quota': tc.monthly_quota,
+                'current_balance': tc.current_balance,
+                'total_used': tc.total_used,
+                'next_refresh_at': tc.next_refresh_at.isoformat() if tc.next_refresh_at else None,
+            }
+            for tc in credits_list
+        ]
+    )
 
 
 @router.post('/tenants/{tenant_id}/adjust', summary='调整租户积分')
@@ -149,12 +153,14 @@ async def adjust_tenant_credits(
 
     log.info(f'Admin adjusted credits for tenant {tenant_id}: {old_balance} -> {tenant_credits.current_balance}')
 
-    return response_base.success(data={
-        'tenant_id': tenant_id,
-        'old_balance': old_balance,
-        'new_balance': tenant_credits.current_balance,
-        'adjustment': data.adjustment,
-    })
+    return response_base.success(
+        data={
+            'tenant_id': tenant_id,
+            'old_balance': old_balance,
+            'new_balance': tenant_credits.current_balance,
+            'adjustment': data.adjustment,
+        }
+    )
 
 
 @router.put('/tenants/{tenant_id}/plan', summary='变更租户套餐')
@@ -188,9 +194,11 @@ async def update_tenant_plan(
 
     await db.commit()
 
-    return response_base.success(data={
-        'tenant_id': tenant_id,
-        'old_plan': old_plan,
-        'new_plan': plan_type,
-        'monthly_quota': new_quota,
-    })
+    return response_base.success(
+        data={
+            'tenant_id': tenant_id,
+            'old_plan': old_plan,
+            'new_plan': plan_type,
+            'monthly_quota': new_quota,
+        }
+    )

@@ -262,4 +262,3 @@ export async function useReplyTemplate(templateId: string) {
         `/api/v1/app/reply-templates/${templateId}/use`,
     );
 }
-

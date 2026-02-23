@@ -94,4 +94,3 @@ export const BUSINESS_VALUE_LEVELS = [
   { min: 5, max: 7, label: '高', color: '#faad14', bgColor: 'rgba(250, 173, 20, 0.1)' },
   { min: 8, max: 10, label: '核心', color: '#722ed1', bgColor: 'rgba(114, 46, 209, 0.15)' },
 ];
-

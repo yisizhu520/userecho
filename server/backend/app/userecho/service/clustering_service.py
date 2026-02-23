@@ -3,6 +3,8 @@
 负责反馈的 AI 聚类，生成需求主题
 """
 
+import operator
+
 from typing import Any
 
 import numpy as np
@@ -258,7 +260,6 @@ class ClusteringService:
                 f'Clustering completed for tenant {tenant_id}: {len(clusters)} clusters, {len(noise_indices)} noise points'
             )
 
-
             # 7. 为每个聚类创建 Topic（或生成合并建议）
             created_topics = []
             failed_topics = []
@@ -369,9 +370,9 @@ class ClusteringService:
 
                         # 从 Feedback 推断 board_id（取出现频率最高的）
                         from collections import Counter
+
                         board_ids = [f.board_id for f in cluster_feedbacks if f.board_id]
                         inferred_board_id = Counter(board_ids).most_common(1)[0][0] if board_ids else None
-
 
                         topic = await crud_topic.create(
                             db=db,
@@ -446,13 +447,13 @@ class ClusteringService:
                         # 触发异步任务去更新其他关联信息（如通知等）
                         try:
                             from backend.app.task.celery import celery_app
+
                             celery_app.send_task(
                                 'userecho.generate_topic_centroid',
                                 args=[topic.id, tenant_id],
                             )
                         except Exception as e:
                             log.warning(f'Failed to trigger topic async task: {e}')
-
 
                         created_topics.append({
                             'topic_id': topic.id,
@@ -528,7 +529,6 @@ class ClusteringService:
                 'quality_metrics': quality_metrics,
                 'elapsed_ms': int((timezone.now() - started_at).total_seconds() * 1000),
             }
-
 
         except Exception as e:
             log.error(f'Clustering failed for tenant {tenant_id}: {e}')
@@ -761,7 +761,7 @@ class ClusteringService:
                         ]
 
             # 按反馈数量降序排列
-            suggestions = sorted(suggestions_map.values(), key=lambda x: x['feedback_count'], reverse=True)
+            suggestions = sorted(suggestions_map.values(), key=operator.itemgetter('feedback_count'), reverse=True)
 
             return suggestions
 

@@ -24,14 +24,27 @@ class CRUDTenantRole:
     @staticmethod
     async def get_list(db: AsyncSession, tenant_id: str, *, status: str | None = None) -> Sequence[TenantRole]:
         """获取租户的角色列表"""
-        stmt = select(TenantRole).where(TenantRole.tenant_id == tenant_id).order_by(TenantRole.sort, TenantRole.created_time)
+        stmt = (
+            select(TenantRole)
+            .where(TenantRole.tenant_id == tenant_id)
+            .order_by(TenantRole.sort, TenantRole.created_time)
+        )
         if status:
             stmt = stmt.where(TenantRole.status == status)
         result = await db.execute(stmt)
         return result.scalars().all()
 
     @staticmethod
-    async def create(db: AsyncSession, *, tenant_id: str, name: str, code: str, description: str | None = None, is_builtin: bool = False, sort: int = 0) -> TenantRole:
+    async def create(
+        db: AsyncSession,
+        *,
+        tenant_id: str,
+        name: str,
+        code: str,
+        description: str | None = None,
+        is_builtin: bool = False,
+        sort: int = 0,
+    ) -> TenantRole:
         """创建角色"""
         role = TenantRole(
             tenant_id=tenant_id,
@@ -46,7 +59,15 @@ class CRUDTenantRole:
         return role
 
     @staticmethod
-    async def update(db: AsyncSession, role: TenantRole, *, name: str | None = None, description: str | None = None, sort: int | None = None, status: str | None = None) -> TenantRole:
+    async def update(
+        db: AsyncSession,
+        role: TenantRole,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        sort: int | None = None,
+        status: str | None = None,
+    ) -> TenantRole:
         """更新角色"""
         if name is not None:
             role.name = name

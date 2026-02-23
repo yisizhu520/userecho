@@ -1,5 +1,7 @@
 """积分管理 API"""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
 from backend.app.userecho.service.credits_service import credits_service
@@ -35,8 +37,8 @@ async def get_credits_balance(
 async def get_credits_usage(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    operation_type: str | None = Query(None, description='操作类型过滤'),
-    limit: int = Query(100, ge=1, le=500, description='返回记录数'),
+    operation_type: Annotated[str | None, Query(description='操作类型过滤')] = None,
+    limit: Annotated[int, Query(ge=1, le=500, description='返回记录数')] = 100,
 ):
     """
     获取积分使用记录列表

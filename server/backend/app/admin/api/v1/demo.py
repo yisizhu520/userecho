@@ -14,42 +14,42 @@ router = APIRouter(prefix='/demo', tags=['演示模式'])
 
 # 预置角色映射（3 角色方案）
 DEMO_ROLES = {
-    "product_owner": {
-        "username": "demo_po",
-        "name": "产品负责人",
-        "description": "查看优先级看板、AI 洞察、审批议题",
-        "icon": "Target",
+    'product_owner': {
+        'username': 'demo_po',
+        'name': '产品负责人',
+        'description': '查看优先级看板、AI 洞察、审批议题',
+        'icon': 'Target',
     },
-    "user_ops": {
-        "username": "demo_ops",
-        "name": "用户运营",
-        "description": "录入反馈、管理客户、触发聚类",
-        "icon": "Headphones",
+    'user_ops': {
+        'username': 'demo_ops',
+        'name': '用户运营',
+        'description': '录入反馈、管理客户、触发聚类',
+        'icon': 'Headphones',
     },
-    "admin": {
-        "username": "demo_admin",
-        "name": "系统管理员",
-        "description": "用户管理、权限配置、看板设置",
-        "icon": "Settings",
+    'admin': {
+        'username': 'demo_admin',
+        'name': '系统管理员',
+        'description': '用户管理、权限配置、看板设置',
+        'icon': 'Settings',
     },
 }
 
 # Demo 统一密码
-DEMO_PASSWORD = "demo123456"
+DEMO_PASSWORD = 'demo123456'
 
 
 @router.get('/roles', summary='获取可切换的角色列表')
 async def get_demo_roles():
     """获取 Demo 模式下可切换的角色"""
     if not settings.DEMO_MODE:
-        raise HTTPException(status_code=404, detail="接口不存在")
+        raise HTTPException(status_code=404, detail='接口不存在')
 
     roles = [
         {
-            "key": key,
-            "name": info["name"],
-            "description": info["description"],
-            "icon": info["icon"],
+            'key': key,
+            'name': info['name'],
+            'description': info['description'],
+            'icon': info['icon'],
         }
         for key, info in DEMO_ROLES.items()
     ]
@@ -67,13 +67,13 @@ async def switch_role(
     直接返回新角色的 JWT Token，前端无需重新登录
     """
     if not settings.DEMO_MODE:
-        raise HTTPException(status_code=404, detail="接口不存在")
+        raise HTTPException(status_code=404, detail='接口不存在')
 
     if role_key not in DEMO_ROLES:
-        raise HTTPException(status_code=400, detail="无效的角色")
+        raise HTTPException(status_code=400, detail='无效的角色')
 
     role_info = DEMO_ROLES[role_key]
-    username = role_info["username"]
+    username = role_info['username']
 
     try:
         # 构造登录参数
@@ -95,16 +95,13 @@ async def switch_role(
 
         return response_base.success(
             data={
-                "access_token": data.access_token,
-                "token_type": "Bearer",
-                "role": {
-                    "key": role_key,
-                    "name": role_info["name"],
+                'access_token': data.access_token,
+                'token_type': 'Bearer',
+                'role': {
+                    'key': role_key,
+                    'name': role_info['name'],
                 },
             }
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"角色切换失败: {e!s}"
-        )
+        raise HTTPException(status_code=500, detail=f'角色切换失败: {e!s}')

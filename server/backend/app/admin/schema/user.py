@@ -133,17 +133,13 @@ class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
             data['roles'] = role_names
 
         # 计算 homePath - 根据角色类型
-        is_superuser = data.get('is_superuser', False)
-        has_system_role = False
-        has_business_role = False
+        data.get('is_superuser', False)
 
         if raw_roles:
             for role in raw_roles:
                 role_type = role.get('role_type', 'business')
-                if role_type == 'system':
-                    has_system_role = True
-                elif role_type == 'business':
-                    has_business_role = True
+                if role_type == 'system' or role_type == 'business':
+                    pass
 
         # 首页路径 - 统一跳转到工作台
         data['homePath'] = '/app/dashboard/workspace'

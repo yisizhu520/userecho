@@ -8,6 +8,7 @@
 
 import asyncio
 import sys
+
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
@@ -19,17 +20,17 @@ from backend.app.admin.model import Menu
 from backend.database.db import async_db_session, async_engine
 
 
-async def check_settings_menus():
+async def check_settings_menus() -> None:
     """检查系统设置相关菜单"""
     async with async_db_session() as db:
         print('📋 检查系统设置相关菜单')
         print('=' * 60)
-        
+
         # 查找所有 /app/settings 相关的菜单
         stmt = select(Menu).where(Menu.path.like('/app/settings%')).order_by(Menu.sort)
         result = await db.execute(stmt)
         menus = result.scalars().all()
-        
+
         if not menus:
             print('❌ 未找到任何 /app/settings 相关的菜单!')
             print()
@@ -49,7 +50,7 @@ async def check_settings_menus():
                 print(f'     权限: {menu.perms or "无"}')
                 print(f'     状态: {display_info}{parent_info}')
                 print()
-        
+
         # 检查所有 /app/* 菜单
         print('=' * 60)
         print('📋 所有业务菜单:')
@@ -57,12 +58,12 @@ async def check_settings_menus():
         stmt = select(Menu).where(Menu.path.like('/app/%')).order_by(Menu.sort)
         result = await db.execute(stmt)
         all_menus = result.scalars().all()
-        
+
         for menu in all_menus:
             print(f'   - {menu.title} ({menu.path})')
 
 
-async def main():
+async def main() -> int | None:
     """主函数"""
     try:
         await check_settings_menus()
@@ -70,6 +71,7 @@ async def main():
     except Exception as e:
         print(f'❌ 检查失败: {e}')
         import traceback
+
         traceback.print_exc()
         return 1
     finally:

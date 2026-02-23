@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.userecho.model.feedback import Feedback
 from backend.app.userecho.model.customer import Customer
+from backend.app.userecho.model.feedback import Feedback
 from backend.app.userecho.model.topic import Topic
 from backend.common.log import log
 
@@ -139,7 +139,6 @@ class DashboardService:
             'total': total,
             'pending': pending,
             'completed': completed,
-            'weekly_count': weekly_count,
             'weekly_count': weekly_count,
         }
 
@@ -644,7 +643,7 @@ class DashboardService:
     ) -> dict:
         """
         获取需求转化漏斗数据
-        
+
         流程：总反馈 → 已聚类 → 待审 → 已排期 → 进行中 → 已完成
         """
         # 1. 总反馈数

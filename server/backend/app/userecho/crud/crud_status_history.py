@@ -81,7 +81,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
             .limit(limit)
         )
         result = await db.execute(query)
-        
+
         history_list = []
         for history, changed_by_name in result.all():
             # 将 SQLAlchemy 对象转换为字典并附加 changed_by_name
@@ -91,7 +91,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
             h_dict = {c.name: getattr(history, c.name) for c in history.__table__.columns}
             h_dict['changed_by_name'] = changed_by_name
             history_list.append(h_dict)
-            
+
         return history_list
 
 

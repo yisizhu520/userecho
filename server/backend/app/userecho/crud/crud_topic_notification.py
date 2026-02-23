@@ -56,9 +56,13 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         """统计议题的通知记录数量"""
         from sqlalchemy import func
 
-        query = select(func.count()).select_from(self.model).where(
-            self.model.tenant_id == tenant_id,
-            self.model.topic_id == topic_id,
+        query = (
+            select(func.count())
+            .select_from(self.model)
+            .where(
+                self.model.tenant_id == tenant_id,
+                self.model.topic_id == topic_id,
+            )
         )
 
         if status:

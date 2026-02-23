@@ -89,8 +89,10 @@ def init_celery() -> celery.Celery:
     # 只在 worker 进程中配置，beat 和 flower 不需要
     # 通过检查 argv 判断是否是 worker 进程
     import sys
+
     if 'worker' in sys.argv:
-        from backend.common.log import setup_logging, set_custom_logfile
+        from backend.common.log import set_custom_logfile, setup_logging
+
         setup_logging()
         set_custom_logfile()
 

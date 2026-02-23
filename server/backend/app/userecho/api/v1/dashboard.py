@@ -193,4 +193,3 @@ async def get_notification_stats(
             'recent_notifications': recent_notifications,
         }
     )
-

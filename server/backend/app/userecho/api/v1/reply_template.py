@@ -37,15 +37,11 @@ async def get_templates(
     - **category**: 分类筛选 (general/bug_fix/feature/improvement)
     - **tone**: 语气筛选 (formal/friendly/concise)
     """
-    templates = await crud_reply_template.get_active_templates(
-        db=db, tenant_id=tenant_id, category=category, tone=tone
-    )
+    templates = await crud_reply_template.get_active_templates(db=db, tenant_id=tenant_id, category=category, tone=tone)
 
     templates_out = [ReplyTemplateOut.model_validate(t) for t in templates]
 
-    return response_base.success(
-        data=ReplyTemplateListResponse(items=templates_out, total=len(templates_out))
-    )
+    return response_base.success(data=ReplyTemplateListResponse(items=templates_out, total=len(templates_out)))
 
 
 @router.get('/{template_id}', summary='获取模板详情')

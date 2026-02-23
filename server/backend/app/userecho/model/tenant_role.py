@@ -25,7 +25,9 @@ class TenantRole(MappedBase):
     status: Mapped[str] = mapped_column(String(20), default='active', comment='状态: active, disabled')
 
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment='创建时间')
-    updated_time: Mapped[datetime | None] = mapped_column(TimeZone, onupdate=timezone.now, default=None, comment='更新时间')
+    updated_time: Mapped[datetime | None] = mapped_column(
+        TimeZone, onupdate=timezone.now, default=None, comment='更新时间'
+    )
 
     __table_args__ = (
         UniqueConstraint('tenant_id', 'code', name='uq_tenant_role_code'),

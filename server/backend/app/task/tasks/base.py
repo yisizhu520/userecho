@@ -51,5 +51,5 @@ class TaskBase(Task):
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            
+
         loop.run_until_complete(task_notification(msg=f'任务 {task_id} 执行失败'))

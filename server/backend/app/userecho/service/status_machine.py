@@ -74,7 +74,4 @@ class TopicStatusMachine:
             allowed = cls.get_allowed_transitions(from_status)
             if not allowed:
                 raise ValueError(f'状态 {from_status} 为终态，不可变更')
-            raise ValueError(
-                f'非法状态流转: {from_status} → {to_status}。'
-                f'允许的目标状态: {allowed}'
-            )
+            raise ValueError(f'非法状态流转: {from_status} → {to_status}。允许的目标状态: {allowed}')

@@ -18,6 +18,7 @@ router = APIRouter(prefix='/landing', tags=['Landing'])
 
 class TrialApplicationRequest(BaseModel):
     """试用申请请求"""
+
     name: str = Field(..., min_length=1, max_length=50, description='姓名')
     phone: str = Field(..., min_length=1, max_length=50, description='手机/微信')
     company: str = Field(default='', max_length=100, description='公司/团队')
@@ -32,7 +33,7 @@ async def send_notification_email(recipients: str, subject: str, content: str) -
     message['From'] = settings.EMAIL_USERNAME
     message['date'] = timezone.now().strftime('%a, %d %b %Y %H:%M:%S %z')
     message.attach(MIMEText(content, 'plain', 'utf-8'))
-    
+
     smtp_client = SMTP(
         hostname=settings.EMAIL_HOST,
         port=settings.EMAIL_PORT,
@@ -50,13 +51,13 @@ async def submit_trial_application(
 ) -> ResponseModel:
     """
     接收用户的试用申请，发送邮件通知管理员
-    
+
     这是一个公开接口，不需要登录
     """
     try:
         # 获取用户 IP
         client_ip = request.client.host if request.client else 'unknown'
-        
+
         # 构建邮件内容
         submit_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         email_subject = f'📥 新用户申请免费试用 - {data.name}'
@@ -74,20 +75,20 @@ async def submit_trial_application(
 
 请尽快联系该用户！
 """
-        
+
         # 发送邮件通知
         admin_email = '1914731404@qq.com'
-        
+
         await send_notification_email(
             recipients=admin_email,
             subject=email_subject,
             content=email_content,
         )
-        
+
         log.info(f'Trial application submitted: name={data.name}, phone={data.phone}')
-        
+
         return response_base.success(data={'message': '提交成功，我们会尽快联系您'})
-        
+
     except Exception as e:
         log.error(f'Failed to submit trial application: {e}')
         # 即使邮件发送失败，也返回成功，避免用户重复提交

@@ -117,13 +117,9 @@ class TopicService:
                         created_count = await notification_service.create_notifications_for_topic(
                             db=db, tenant_id=tenant_id, topic_id=topic_id
                         )
-                        log.info(
-                            f'Auto-created {created_count} notification records for topic {topic_id}'
-                        )
+                        log.info(f'Auto-created {created_count} notification records for topic {topic_id}')
                     except Exception as e:
-                        log.error(
-                            f'Failed to auto-create notifications for topic {topic_id}: {e}'
-                        )
+                        log.error(f'Failed to auto-create notifications for topic {topic_id}: {e}')
                         # 不抛出异常，避免影响状态更新的主流程
 
             return topic
@@ -175,7 +171,6 @@ class TopicService:
             log.warning(f'Failed to trigger centroid generation for topic {topic.id}: {e}')
 
         return topic
-
 
     async def update_topic(
         self,

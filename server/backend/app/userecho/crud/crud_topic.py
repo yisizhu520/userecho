@@ -75,9 +75,9 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         Returns:
             包含 topic 和 feedbacks 的字典，或 None
         """
-        from backend.app.userecho.model.feedback import Feedback
-        from backend.app.userecho.model.customer import Customer
         from backend.app.admin.model.user import User
+        from backend.app.userecho.model.customer import Customer
+        from backend.app.userecho.model.feedback import Feedback
 
         # 获取主题
         topic = await self.get_by_id(db, tenant_id, topic_id)
@@ -86,11 +86,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
 
         # 获取关联反馈（关联查询 Customer 和 User）
         query = (
-            select(
-                Feedback, 
-                Customer.name.label('customer_name'),
-                User.username.label('submitter_name')
-            )
+            select(Feedback, Customer.name.label('customer_name'), User.username.label('submitter_name'))
             .outerjoin(Customer, Feedback.customer_id == Customer.id)
             .outerjoin(User, Feedback.submitter_id == User.id)
             .where(

@@ -1,8 +1,8 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from backend.app.admin.model.user import User
@@ -83,8 +83,8 @@ class TenantUserRole(MappedBase):
 def _get_user_attr(self, attr: str):
     return getattr(self.user, attr) if self.user else None
 
+
 # Monkey patch properties to TenantUser for Pydantic serialization
 TenantUser.username = property(lambda self: _get_user_attr(self, 'username'))
 TenantUser.nickname = property(lambda self: _get_user_attr(self, 'nickname'))
 TenantUser.email = property(lambda self: _get_user_attr(self, 'email'))
-

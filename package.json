@@ -1,0 +1,7 @@
+{
+    "name": "userecho-root",
+    "private": true,
+    "devDependencies": {
+        "lefthook": "^1.10.10"
+    }
+}

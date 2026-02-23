@@ -12,19 +12,19 @@
 
 import asyncio
 import sys
+
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.model.tenant_permission import TenantPermission
 from backend.common.log import log
-from backend.database.db import async_engine, async_db_session, uuid4_str
+from backend.database.db import async_db_session, async_engine, uuid4_str
 from backend.utils.timezone import timezone
-
 
 # 业务权限定义（与前端菜单对应）
 BUSINESS_PERMISSIONS = [
@@ -109,32 +109,32 @@ BUSINESS_PERMISSIONS = [
 async def init_permissions(db: AsyncSession) -> None:
     """初始化业务权限数据"""
     log.info('Starting business permissions initialization...')
-    
+
     # 获取现有权限
     stmt = select(TenantPermission)
     result = await db.execute(stmt)
     existing_permissions = {p.code: p for p in result.scalars().all()}
-    
+
     # 用于存储新创建的权限 ID
     permission_ids: dict[str, str] = {code: p.id for code, p in existing_permissions.items()}
-    
+
     created_count = 0
     updated_count = 0
-    
+
     for perm_data in BUSINESS_PERMISSIONS:
         code = perm_data['code']
         parent_code = perm_data.get('parent_code')
-        
+
         # 计算 parent_id
         parent_id = None
         if parent_code and parent_code in permission_ids:
             parent_id = permission_ids[parent_code]
-        
+
         if code in existing_permissions:
             # 更新现有权限
             existing = existing_permissions[code]
             need_update = False
-            
+
             if existing.menu_path != perm_data.get('menu_path'):
                 existing.menu_path = perm_data.get('menu_path')
                 need_update = True
@@ -147,7 +147,7 @@ async def init_permissions(db: AsyncSession) -> None:
             if existing.sort != perm_data.get('sort', 0):
                 existing.sort = perm_data.get('sort', 0)
                 need_update = True
-            
+
             if need_update:
                 updated_count += 1
                 log.info(f'Updated permission: {code}')
@@ -168,18 +168,18 @@ async def init_permissions(db: AsyncSession) -> None:
             permission_ids[code] = new_perm.id
             created_count += 1
             log.info(f'Created permission: {code}')
-    
+
     await db.flush()
     log.info(f'✅ Permissions initialized: {created_count} created, {updated_count} updated')
 
 
-async def main():
+async def main() -> None:
     """主函数"""
     try:
         async with async_db_session() as db:
             await init_permissions(db)
             await db.commit()
-        
+
         log.info('✅ Business permissions initialization completed successfully')
     except Exception as e:
         log.error(f'❌ Initialization failed: {e}')

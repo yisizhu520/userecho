@@ -1,6 +1,6 @@
 """回复模板 CRUD"""
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.crud.base import TenantAwareCRUD
@@ -54,10 +54,14 @@ class CRUDReplyTemplate(TenantAwareCRUD[ReplyTemplate]):
         db: AsyncSession,
     ) -> list[ReplyTemplate]:
         """获取系统预置模板"""
-        query = select(self.model).where(
-            self.model.is_system == True,  # noqa: E712
-            self.model.is_active == True,  # noqa: E712
-        ).order_by(self.model.category, self.model.name)
+        query = (
+            select(self.model)
+            .where(
+                self.model.is_system == True,  # noqa: E712
+                self.model.is_active == True,  # noqa: E712
+            )
+            .order_by(self.model.category, self.model.name)
+        )
 
         result = await db.execute(query)
         return list(result.scalars().all())

@@ -68,23 +68,17 @@ class NotificationService:
         from sqlalchemy import select
 
         # 获取反馈
-        feedback_result = await db.execute(
-            select(Feedback).where(Feedback.id == notification.feedback_id)
-        )
+        feedback_result = await db.execute(select(Feedback).where(Feedback.id == notification.feedback_id))
         feedback = feedback_result.scalar_one_or_none()
 
         # 获取议题
-        topic_result = await db.execute(
-            select(Topic).where(Topic.id == notification.topic_id)
-        )
+        topic_result = await db.execute(select(Topic).where(Topic.id == notification.topic_id))
         topic = topic_result.scalar_one_or_none()
 
         # 获取客户（如果有）
         customer = None
         if notification.customer_id:
-            customer_result = await db.execute(
-                select(Customer).where(Customer.id == notification.customer_id)
-            )
+            customer_result = await db.execute(select(Customer).where(Customer.id == notification.customer_id))
             customer = customer_result.scalar_one_or_none()
 
         # 构建 Prompt
@@ -157,7 +151,7 @@ class NotificationService:
             'success': success_count,
             'failed': failed_count,
             'total': len(notifications),
-            'errors': errors if errors else None,
+            'errors': errors or None,
         }
 
     async def create_notifications_for_topic(
@@ -167,9 +161,10 @@ class NotificationService:
         topic_id: str,
     ) -> int:
         """为议题创建通知记录（Topic 状态变为 completed 时调用）"""
+        from sqlalchemy import select
+
         from backend.app.userecho.model.customer import Customer
         from backend.app.userecho.model.feedback import Feedback
-        from sqlalchemy import select
 
         # 获取议题关联的所有反馈
         feedback_result = await db.execute(

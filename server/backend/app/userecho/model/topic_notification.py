@@ -30,9 +30,7 @@ class TopicNotification(MappedBase):
     # 收件人信息
     recipient_name: Mapped[str] = mapped_column(String(100), comment='收件人名称')
     recipient_contact: Mapped[str | None] = mapped_column(String(255), default=None, comment='联系方式')
-    recipient_type: Mapped[str] = mapped_column(
-        String(20), default='customer', comment='收件人类型: customer/external'
-    )
+    recipient_type: Mapped[str] = mapped_column(String(20), default='customer', comment='收件人类型: customer/external')
 
     # AI 回复相关
     ai_reply: Mapped[str | None] = mapped_column(Text, default=None, comment='AI 生成的回复内容')
@@ -58,4 +56,3 @@ class TopicNotification(MappedBase):
         TimeZone, onupdate=timezone.now, default=None, comment='更新时间'
     )
     deleted_at: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment='软删除时间')
-

@@ -1,5 +1,7 @@
 """租户角色 API"""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Query
 
 from backend.app.userecho.schema.tenant_rbac import (
@@ -21,7 +23,7 @@ router = APIRouter()
 async def get_role_list(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    status: str | None = Query(None, description='角色状态'),
+    status: Annotated[str | None, Query(description='角色状态')] = None,
 ) -> ResponseSchemaModel[list[TenantRoleOut]]:
     """获取当前租户的角色列表"""
     roles = await tenant_role_service.get_list(db, tenant_id, status=status)

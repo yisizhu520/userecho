@@ -8,6 +8,7 @@
 
 import asyncio
 import sys
+
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
@@ -19,16 +20,16 @@ from backend.app.admin.model import Menu, Role, role_menu
 from backend.database.db import async_db_session, async_engine
 
 
-async def add_settings_menus():
+async def add_settings_menus() -> None:
     """添加系统设置菜单"""
     async with async_db_session.begin() as db:
         print('📋 开始添加系统设置菜单...')
         print('=' * 60)
-        
+
         # 1. 创建系统设置父菜单
         print('\n1️⃣  创建系统设置父菜单...')
         settings_parent = await db.scalar(select(Menu).where(Menu.path == '/app/settings'))
-        
+
         if not settings_parent:
             settings_parent = Menu(
                 title='系统设置',
@@ -48,7 +49,7 @@ async def add_settings_menus():
             print(f'   ✅ 创建父菜单: 系统设置 (ID: {settings_parent.id})')
         else:
             print(f'   ⏭️  父菜单已存在 (ID: {settings_parent.id})')
-        
+
         # 2. 创建子菜单
         print('\n2️⃣  创建子菜单...')
         sub_menus = [
@@ -80,13 +81,13 @@ async def add_settings_menus():
                 'sort': 3,
             },
         ]
-        
+
         created_menus = []
         menu_ids = [settings_parent.id]  # 包含父菜单
-        
+
         for menu_data in sub_menus:
             existing = await db.scalar(select(Menu).where(Menu.path == menu_data['path']))
-            
+
             if not existing:
                 menu = Menu(
                     **menu_data,
@@ -103,20 +104,16 @@ async def add_settings_menus():
             else:
                 print(f'   ⏭️  子菜单已存在: {menu_data["title"]} (ID: {existing.id})')
                 menu_ids.append(existing.id)
-        
+
         # 3. 为管理员角色分配菜单权限
         print('\n3️⃣  为管理员角色分配菜单权限...')
-        
+
         # 查找所有管理员相关的角色
         admin_roles = await db.scalars(
-            select(Role).where(
-                (Role.name == '老板') | 
-                (Role.name == 'PM') | 
-                (Role.name == 'Admin')
-            )
+            select(Role).where((Role.name == '老板') | (Role.name == 'PM') | (Role.name == 'Admin'))
         )
         admin_roles_list = list(admin_roles)
-        
+
         if not admin_roles_list:
             print('   ⚠️  未找到管理员角色,跳过权限分配')
         else:
@@ -124,19 +121,14 @@ async def add_settings_menus():
                 # 检查是否已经有权限
                 for menu_id in menu_ids:
                     existing_perm = await db.scalar(
-                        select(role_menu).where(
-                            (role_menu.c.role_id == role.id) & 
-                            (role_menu.c.menu_id == menu_id)
-                        )
+                        select(role_menu).where((role_menu.c.role_id == role.id) & (role_menu.c.menu_id == menu_id))
                     )
-                    
+
                     if not existing_perm:
-                        await db.execute(
-                            role_menu.insert().values(role_id=role.id, menu_id=menu_id)
-                        )
-                
+                        await db.execute(role_menu.insert().values(role_id=role.id, menu_id=menu_id))
+
                 print(f'   ✅ 为角色 "{role.name}" 分配系统设置菜单权限')
-        
+
         print('\n✅ 系统设置菜单添加完成!')
         print('\n📝 创建的菜单:')
         print('   - 系统设置 (父菜单)')
@@ -145,16 +137,16 @@ async def add_settings_menus():
         print('   - 积分配置')
 
 
-async def verify_menus():
+async def verify_menus() -> None:
     """验证菜单创建结果"""
     async with async_db_session() as db:
         print('\n\n🔍 验证菜单创建结果...')
         print('=' * 60)
-        
+
         stmt = select(Menu).where(Menu.path.like('/app/settings%')).order_by(Menu.sort)
         result = await db.execute(stmt)
         menus = result.scalars().all()
-        
+
         if menus:
             print(f'\n✅ 找到 {len(menus)} 个系统设置菜单:')
             for menu in menus:
@@ -164,21 +156,22 @@ async def verify_menus():
             print('\n❌ 未找到系统设置菜单!')
 
 
-async def main():
+async def main() -> int | None:
     """主函数"""
     try:
         await add_settings_menus()
         await verify_menus()
-        
+
         print('\n' + '=' * 60)
         print('✅ 完成!')
         print('=' * 60)
         print('\n💡 现在你可以访问 /app/settings/members 页面了!')
-        
+
         return 0
     except Exception as e:
         print(f'\n❌ 执行失败: {e}')
         import traceback
+
         traceback.print_exc()
         return 1
     finally:

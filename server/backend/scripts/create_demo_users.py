@@ -2,7 +2,7 @@
 
 创建 3 个演示角色账号：
 - demo_po: 产品负责人 (product_manager)
-- demo_ops: 用户运营 (customer_success)  
+- demo_ops: 用户运营 (customer_success)
 - demo_admin: 系统管理员 (admin)
 
 执行方式: python scripts/create_demo_users.py
@@ -11,6 +11,7 @@
 import asyncio
 import io
 import sys
+
 from pathlib import Path
 
 # 修复 Windows 控制台编码问题
@@ -23,6 +24,7 @@ backend_path = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_path))
 
 import bcrypt
+
 from sqlalchemy import select
 
 from backend.app.admin.model import Dept, Role, User, user_role
@@ -75,20 +77,18 @@ async def delete_existing_demo_users() -> int:
             user = await db.scalar(select(User).where(User.username == username))
             if user:
                 # 删除关联的 TenantUser
-                tenant_user = await db.scalar(
-                    select(TenantUser).where(TenantUser.user_id == user.id)
-                )
+                tenant_user = await db.scalar(select(TenantUser).where(TenantUser.user_id == user.id))
                 if tenant_user:
                     await db.delete(tenant_user)
-                
+
                 # 删除用户角色关联
                 await db.execute(user_role.delete().where(user_role.c.user_id == user.id))
-                
+
                 # 删除用户
                 await db.delete(user)
                 deleted += 1
                 print(f'  🗑️  删除现有用户: {username}')
-        
+
         await db.commit()
         return deleted
 
@@ -181,9 +181,9 @@ async def main(reset: bool = False) -> None:
         deleted = await delete_existing_demo_users()
         print(f'   已删除: {deleted} 个')
         print()
-    
+
     await create_demo_users()
-    
+
     print()
     print('📝 Demo 账号清单 - 统一密码：demo123456')
     print('=' * 60)
@@ -197,11 +197,11 @@ async def main(reset: bool = False) -> None:
 
 if __name__ == '__main__':
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='创建 Demo 预置账号')
     parser.add_argument('--reset', action='store_true', help='重置模式：先删除现有账号再重建')
     args = parser.parse_args()
-    
+
     try:
         asyncio.run(main(reset=args.reset))
         print('=' * 60)
@@ -210,5 +210,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f'\n❌ 初始化失败: {e}')
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

@@ -8,7 +8,9 @@ from backend.common.schema import SchemaBase
 class SystemNotificationBase(SchemaBase):
     """系统提醒基础模型"""
 
-    type: str = Field(description='通知类型: topic_completed/notification_pending/feedback_imported/clustering_completed')
+    type: str = Field(
+        description='通知类型: topic_completed/notification_pending/feedback_imported/clustering_completed'
+    )
     title: str = Field(description='通知标题')
     message: str = Field(description='通知内容')
     avatar: str | None = Field(None, description='头像URL')
