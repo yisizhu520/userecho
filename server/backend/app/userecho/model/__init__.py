@@ -7,6 +7,14 @@ from .manual_adjustment import ManualAdjustment
 from .priority_score import PriorityScore
 from .reply_template import ReplyTemplate
 from .status_history import StatusHistory
+from .subscription import (
+    SubscriptionAction,
+    SubscriptionHistory,
+    SubscriptionPlan,
+    SubscriptionSource,
+    SubscriptionStatus,
+    TenantSubscription,
+)
 from .system_notification import SystemNotification
 from .tenant import Tenant
 from .tenant_config import TenantConfig
@@ -28,6 +36,11 @@ __all__ = [
     'PriorityScore',
     'ReplyTemplate',
     'StatusHistory',
+    'SubscriptionAction',
+    'SubscriptionHistory',
+    'SubscriptionPlan',
+    'SubscriptionSource',
+    'SubscriptionStatus',
     'SystemNotification',
     'Tenant',
     'TenantConfig',
@@ -35,6 +48,7 @@ __all__ = [
     'TenantPermission',
     'TenantRole',
     'TenantRolePermission',
+    'TenantSubscription',
     'TenantUser',
     'TenantUserRole',
     'Topic',

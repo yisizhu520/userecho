@@ -3,6 +3,7 @@
 通用积分消耗体系，支持月度自动刷新和可配置的消耗规则
 """
 
+from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
@@ -46,8 +47,12 @@ class TenantCredits(MappedBase):
     monthly_quota: Mapped[int] = mapped_column(Integer, default=500, nullable=False, comment='月度积分额度')
     current_balance: Mapped[int] = mapped_column(Integer, default=500, nullable=False, comment='当前剩余积分')
     total_used: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment='累计使用积分')
-    last_refresh_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True, comment='上次刷新时间')
-    next_refresh_at: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True, comment='下次刷新时间')
+    last_refresh_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment='上次刷新时间'
+    )
+    next_refresh_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment='下次刷新时间'
+    )
 
     __table_args__ = (Index('idx_tenant_credits_refresh', 'next_refresh_at'),)
 
@@ -66,7 +71,7 @@ class CreditsUsageLog(MappedBase):
     credits_cost: Mapped[int] = mapped_column(Integer, nullable=False, comment='消耗积分')
     description: Mapped[str | None] = mapped_column(String(255), nullable=True, comment='操作描述')
     extra_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True, comment='扩展信息')
-    created_at: Mapped[str] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=timezone.now, nullable=False, comment='创建时间'
     )
 

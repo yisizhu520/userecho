@@ -276,6 +276,27 @@ class CreditsService:
             log.error(f'Failed to refresh credits for tenant {tenant_credits.tenant_id}: {e}')
             return False
 
+    async def sync_subscription_plan(
+        self, db: AsyncSession, tenant_id: str, plan_code: str, monthly_quota: int
+    ) -> None:
+        """同步订阅套餐变更"""
+        tenant_credits = await self.get_or_create_tenant_credits(db, tenant_id)
+
+        # Update plan and quota
+        tenant_credits.plan_type = plan_code
+        tenant_credits.monthly_quota = monthly_quota
+
+        # Reset balance to new quota
+        tenant_credits.current_balance = monthly_quota
+
+        # Reset refresh timer
+        now = timezone.now()
+        tenant_credits.last_refresh_at = now
+        tenant_credits.next_refresh_at = now + timedelta(days=30)
+
+        await db.flush()
+        log.info(f'Synced credits plan for tenant {tenant_id}: plan={plan_code}, quota={monthly_quota}')
+
     async def refresh_all_expired(self, db: AsyncSession) -> int:
         """刷新所有过期的租户积分（定时任务调用）"""
         now = timezone.now()

@@ -15,6 +15,13 @@ from .feedback import (
 # 必须在 topic 之前导入 priority，因为 TopicDetailOut.model_rebuild() 需要 PriorityScoreOut
 from .priority import PriorityScoreCreate, PriorityScoreOut, PriorityScoreUpdate
 from .status_history import StatusHistoryOut
+from .subscription import (
+    SubscriptionCreateReq,
+    SubscriptionHistorySchema,
+    SubscriptionPlanSchema,
+    SubscriptionUpdateReq,
+    TenantSubscriptionSchema,
+)
 from .tenant import TenantCreate, TenantOut, TenantUpdate
 from .tenant_config import TenantConfigCreate, TenantConfigOut, TenantConfigUpdate
 from .topic import (
@@ -43,6 +50,11 @@ __all__ = [
     'PriorityScoreUpdate',
     # Status History
     'StatusHistoryOut',
+    # Subscription
+    'SubscriptionCreateReq',
+    'SubscriptionHistorySchema',
+    'SubscriptionPlanSchema',
+    'SubscriptionUpdateReq',
     # Tenant Config
     'TenantConfigCreate',
     'TenantConfigOut',
@@ -50,6 +62,7 @@ __all__ = [
     # Tenant
     'TenantCreate',
     'TenantOut',
+    'TenantSubscriptionSchema',
     'TenantUpdate',
     # Topic
     'TopicCreate',

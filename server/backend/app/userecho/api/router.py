@@ -14,6 +14,7 @@ from backend.app.userecho.api.v1 import (
     onboarding,
     priority,
     reply_template,
+    subscription,
     system_notification,
     tenant_config,
     tenant_member,
@@ -40,6 +41,7 @@ v1.include_router(onboarding.router)
 v1.include_router(board.router)
 v1.include_router(landing.router)
 v1.include_router(credits.router)
+v1.include_router(subscription.router)
 v1.include_router(system_notification.router)
 v1.include_router(reply_template.router)
 

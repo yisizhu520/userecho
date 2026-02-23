@@ -87,6 +87,15 @@ const routes: RouteRecordRaw[] = [
           icon: 'clarity:plugin-line',
         },
       },
+      {
+        name: 'SysSubscription',
+        path: '/admin/system/subscription',
+        component: () => import('#/views/system/subscription/index.vue'),
+        meta: {
+          title: '订阅管理',
+          icon: 'eos-icons:subscription-management-outlined',
+        },
+      },
     ],
   },
 ];

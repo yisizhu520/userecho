@@ -288,12 +288,33 @@ step3_business_menus() {
     echo ""
 }
 
-# 步骤 4: 创建测试用户
-step4_test_users() {
+# 步骤 4: 初始化订阅套餐
+step4_subscription_plans() {
     if [ "$DROP_TABLES" = true ]; then
-        print_header "步骤 5/6: 创建测试用户"
+        print_header "步骤 5/7: 初始化订阅套餐"
     else
-        print_header "步骤 4/5: 创建测试用户"
+        print_header "步骤 4/6: 初始化订阅套餐"
+    fi
+    
+    print_info "创建或更新系统订阅套餐..."
+    python scripts/init_subscription_plans.py
+    
+    if [ $? -eq 0 ]; then
+        print_success "订阅套餐初始化完成"
+    else
+        print_error "订阅套餐初始化失败"
+        exit 1
+    fi
+    
+    echo ""
+}
+
+# 步骤 5: 创建测试用户
+step5_test_users() {
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 6/7: 创建测试用户"
+    else
+        print_header "步骤 5/6: 创建测试用户"
     fi
     
     print_info "创建 6 个测试账号（sysadmin, pm, cs, dev, boss, hybrid）..."
@@ -308,12 +329,12 @@ step4_test_users() {
     echo ""
 }
 
-# 步骤 5: 验证初始化结果
-step5_verify() {
+# 步骤 6: 验证初始化结果
+step6_verify() {
     if [ "$DROP_TABLES" = true ]; then
-        print_header "步骤 6/6: 验证初始化结果"
+        print_header "步骤 7/7: 验证初始化结果"
     else
-        print_header "步骤 5/5: 验证初始化结果"
+        print_header "步骤 6/6: 验证初始化结果"
     fi
     
     print_info "验证数据库初始化状态..."
@@ -333,7 +354,7 @@ from backend.database.db import async_db_session
 from backend.app.admin.model import Menu, Role, User, Dept
 
 async def verify():
-    from backend.app.userecho.model import Tenant, Board, TenantUser, Insight
+    from backend.app.userecho.model import Tenant, Board, TenantUser, Insight, SubscriptionPlan
     
     async with async_db_session() as db:
         # 检查租户
@@ -369,6 +390,10 @@ async def verify():
         # 检查用户
         user_count = await db.scalar(select(func.count(User.id)))
         print(f'  🧑 用户数量: {user_count}')
+
+        # 检查订阅套餐
+        plan_count = await db.scalar(select(func.count(SubscriptionPlan.id)))
+        print(f'  💳 订阅套餐数量: {plan_count}')
         
         # 检查租户用户关联
         tenant_user_count = await db.scalar(select(func.count(TenantUser.id)))
@@ -387,7 +412,7 @@ async def verify():
         if admin:
             print(f'  ✅ admin 超级管理员已创建')
         
-        return tenant and board and dept_count > 0 and sys_menu_count > 0 and app_menu_count > 0
+        return tenant and board and dept_count > 0 and sys_menu_count > 0 and app_menu_count > 0 and plan_count > 0
 
 try:
     if asyncio.run(verify()):
@@ -438,8 +463,9 @@ main() {
         echo "  2. 使用 fba init 初始化系统基础数据"
         echo "  3. 创建默认租户和看板"
         echo "  4. 初始化业务菜单和角色"
-        echo "  5. 创建测试用户"
-        echo "  6. 验证初始化结果"
+        echo "  5. 初始化订阅套餐"
+        echo "  6. 创建测试用户"
+        echo "  7. 验证初始化结果"
         echo ""
     else
         print_info "此脚本将执行以下操作："
@@ -447,8 +473,9 @@ main() {
         echo "  1. 执行数据库迁移（Alembic upgrade head）"
         echo "  2. 创建默认租户和看板（如果不存在）"
         echo "  3. 初始化业务菜单和角色（如果不存在）"
-        echo "  4. 创建测试用户（如果不存在）"
-        echo "  5. 验证初始化结果"
+        echo "  4. 初始化订阅套餐"
+        echo "  5. 创建测试用户（如果不存在）"
+        echo "  6. 验证初始化结果"
         echo ""
     fi
     
@@ -460,8 +487,9 @@ main() {
     step1b_migrate
     step2_default_tenant
     step3_business_menus
-    step4_test_users
-    step5_verify
+    step4_subscription_plans
+    step5_test_users
+    step6_verify
     
     # 完成提示
     print_header "✅ 完整数据库初始化完成！"

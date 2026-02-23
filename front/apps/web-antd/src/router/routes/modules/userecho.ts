@@ -148,6 +148,17 @@ const routes: RouteRecordRaw[] = [
           permissionCode: 'role',
         },
       },
+      {
+        name: 'SubscriptionManage',
+        path: 'subscription',
+        component: () => import('#/views/userecho/settings/subscription.vue'),
+        meta: {
+          icon: 'lucide:credit-card',
+          title: '订阅信息',
+          // 任何租户成员都能查看订阅状态，还是只有管理员？
+          // 暂时假设有 Settings 权限的都能看
+        },
+      },
     ],
   },
 ];

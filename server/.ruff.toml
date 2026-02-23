@@ -17,7 +17,7 @@ select = [
     "ASYNC110",
     "ASYNC116",
     "ASYNC210",
-    "ASYNC212",
+
     "ASYNC230",
     "ASYNC240",
     "ASYNC250",

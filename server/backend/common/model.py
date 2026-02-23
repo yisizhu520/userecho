@@ -119,7 +119,7 @@ class MappedBase(AsyncAttrs, DeclarativeBase):
         return self.__name__.lower()
 
     @declared_attr.directive
-    def __table_args__(self) -> dict:
+    def __table_args__(self) -> dict | tuple:
         """表配置"""
         return {'comment': self.__doc__ or ''}
 
