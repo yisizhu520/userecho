@@ -70,56 +70,65 @@ class TenantMemberService:
         db: AsyncSession,
         *,
         tenant_id: str,
-        username: str,
+        email: str,
         nickname: str,
         password: str,
-        email: str | None = None,
+        username: str | None = None,
         role_ids: list[str] | None = None,
         created_by: int | None = None,
     ) -> tuple[User, TenantUser]:
         """
-        创建成员（直接创建用户账号）
+        创建成员（使用 Email 作为唯一标识）
 
-        1. 创建 sys_user 记录
-        2. 创建 tenant_users 关联
-        3. 分配角色
+        1. 检查 Email 是否已存在
+        2. 如果存在，检查是否已是该租户成员
+        3. 如果不存在，创建新用户
+        4. 创建租户成员关联
+        5. 分配角色
         """
-        # 检查用户名是否已存在
-        existing_user = await user_dao.get_by_username(db, username)
+        # 1. 检查该邮箱是否已存在
+        existing_user = await user_dao.get_by_email(db, email)
+
         if existing_user:
-            # 检查是否已是该租户成员
+            # 用户已存在，检查是否已是该租户成员
             existing_member = await tenant_member_dao.get_by_user_id(db, tenant_id, existing_user.id)
             if existing_member:
                 raise errors.ConflictError(msg='该用户已是租户成员')
-            # 用户存在但不是成员，直接添加为成员
             user = existing_user
         else:
             # 创建新用户
             import bcrypt
+
             salt = bcrypt.gensalt()
             hashed_password = get_hash_password(password, salt)
+
+            # 如果没提供 username，使用 email 前缀
+            if not username:
+                username = email.split('@')[0]
+
             user = User(
+                email=email,
                 username=username,
                 nickname=nickname,
                 password=hashed_password,
                 salt=salt,
-                email=email,
-                tenant_id=tenant_id,
+                tenant_id='default-tenant',  # 不绑定特定租户
             )
             db.add(user)
             await db.flush()
 
-        # 创建成员关联
+        # 2. 创建租户成员关联
         member = await tenant_member_dao.create(db, tenant_id=tenant_id, user_id=user.id, user_type='member')
 
-        # 分配角色
+        # 3. 分配角色
         if role_ids:
             await tenant_member_dao.set_member_roles(db, member.id, role_ids, assigned_by=created_by)
         else:
             # 默认分配 viewer 角色
             viewer_role = await tenant_role_dao.get_by_code(db, tenant_id, 'viewer')
-            if viewer_role:
-                await tenant_member_dao.set_member_roles(db, member.id, [viewer_role.id], assigned_by=created_by)
+            if not viewer_role:
+                raise errors.InternalServerError(msg='默认 viewer 角色不存在，请先初始化租户角色')
+            await tenant_member_dao.set_member_roles(db, member.id, [viewer_role.id], assigned_by=created_by)
 
         return user, member
 

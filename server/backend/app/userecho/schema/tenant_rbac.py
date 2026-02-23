@@ -51,10 +51,10 @@ class TenantPermissionOut(BaseModel):
 
 class TenantMemberCreate(BaseModel):
     """创建租户成员"""
-    username: str = Field(..., max_length=64, description='用户名')
+    email: str = Field(..., max_length=256, description='邮箱')
     nickname: str = Field(..., max_length=64, description='昵称')
     password: str = Field(..., min_length=6, max_length=32, description='密码')
-    email: str | None = Field(None, max_length=256, description='邮箱')
+    username: str | None = Field(None, max_length=64, description='用户名(可选，用于显示)')
     role_ids: list[str] | None = Field(None, description='角色 ID 列表')
 
 

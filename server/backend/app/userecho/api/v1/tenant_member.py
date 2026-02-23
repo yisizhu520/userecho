@@ -65,14 +65,14 @@ async def create_member(
     tenant_id: str = CurrentTenantId,
     current_user_id: int = CurrentUserId,
 ) -> ResponseSchemaModel[TenantMemberOut]:
-    """创建成员（直接创建用户账号）"""
+    """创建成员（使用 Email 作为唯一标识）"""
     _, member = await tenant_member_service.create(
         db,
         tenant_id=tenant_id,
-        username=body.username,
+        email=body.email,
         nickname=body.nickname,
         password=body.password,
-        email=body.email,
+        username=body.username,
         role_ids=body.role_ids,
         created_by=current_user_id,
     )

@@ -103,16 +103,6 @@ BUSINESS_PERMISSIONS = [
         'menu_icon': 'lucide:shield',
         'sort': 92,
     },
-    # 积分配置（设置子菜单）
-    {
-        'code': 'credits',  # 对应前端 permissionCode: 'credits'
-        'name': '积分配置',
-        'type': 'action',
-        'parent_code': 'settings',
-        'menu_path': '/app/settings/credits',
-        'menu_icon': 'lucide:coins',
-        'sort': 93,
-    },
 ]
 
 

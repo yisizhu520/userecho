@@ -35,24 +35,24 @@ class AuthService:
     """认证服务类"""
 
     @staticmethod
-    async def user_verify(db: AsyncSession, username: str, password: str) -> tuple[User, int | None]:
+    async def user_verify(db: AsyncSession, email: str, password: str) -> tuple[User, int | None]:
         """
-        验证用户名和密码
+        验证邮箱和密码
 
         :param db: 数据库会话
-        :param username: 用户名
+        :param email: 邮箱
         :param password: 密码
         :return:
         """
-        user = await user_dao.get_by_username(db, username)
+        user = await user_dao.get_by_email(db, email)
         if not user:
-            raise errors.NotFoundError(msg='用户名或密码有误')
+            raise errors.NotFoundError(msg='邮箱或密码有误')
 
         await password_security_service.check_status(user.id, user.status)
 
         if user.password is None or not password_verify(password, user.password):
             await password_security_service.handle_login_failure(db, user.id)
-            raise errors.AuthorizationError(msg='用户名或密码有误')
+            raise errors.AuthorizationError(msg='邮箱或密码有误')
 
         days_remaining = await password_security_service.check_password_expiry_status(
             db, user.last_password_changed_time
@@ -99,7 +99,7 @@ class AuthService:
         """
         user = None
         try:
-            user, days_remaining = await self.user_verify(db, obj.username, obj.password)
+            user, days_remaining = await self.user_verify(db, obj.email, obj.password)
 
             await load_login_config(db)
             if settings.LOGIN_CAPTCHA_ENABLED:
@@ -112,7 +112,7 @@ class AuthService:
                     raise errors.CustomError(error=CustomErrorCode.CAPTCHA_ERROR)
                 await redis_client.delete(f'{settings.LOGIN_CAPTCHA_REDIS_PREFIX}:{obj.uuid}')
 
-            await user_dao.update_login_time(db, obj.username)
+            await user_dao.update_login_time(db, obj.email)
             await db.refresh(user)
             access_token_data = await create_access_token(
                 user.id,
@@ -148,7 +148,7 @@ class AuthService:
                 login_log_service.create,
                 db=db,
                 user_uuid=user.uuid if user else uuid4_str(),
-                username=obj.username,
+                username=obj.email,
                 login_time=timezone.now(),
                 status=LoginLogStatusType.fail.value,
                 msg=e.msg,
@@ -162,7 +162,7 @@ class AuthService:
                 login_log_service.create,
                 db=db,
                 user_uuid=user.uuid,
-                username=obj.username,
+                username=obj.email,
                 login_time=timezone.now(),
                 status=LoginLogStatusType.success.value,
                 msg=t('success.login.success'),

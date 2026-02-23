@@ -148,16 +148,6 @@ const routes: RouteRecordRaw[] = [
           permissionCode: 'role',
         },
       },
-      {
-        name: 'CreditsConfig',
-        path: 'credits',
-        component: () => import('#/views/userecho/settings/credits-config.vue'),
-        meta: {
-          icon: 'lucide:coins',
-          title: '积分配置',
-          permissionCode: 'credits',
-        },
-      },
     ],
   },
 ];

@@ -73,6 +73,16 @@ class CRUDUser(CRUDPlus[User]):
         """
         return await self.select_model_by_column(db, email=email)
 
+    async def get_by_email(self, db: AsyncSession, email: str) -> User | None:
+        """
+        通过邮箱获取用户（用于登录）
+
+        :param db: 数据库会话
+        :param email: 电子邮箱
+        :return:
+        """
+        return await self.select_model_by_column(db, email=email)
+
     async def get_select(self, dept: int | None, username: str | None, phone: str | None, status: int | None) -> Select:
         """
         获取用户列表查询表达式
@@ -178,15 +188,22 @@ class CRUDUser(CRUDPlus[User]):
 
         return count
 
-    async def update_login_time(self, db: AsyncSession, username: str) -> int:
+    async def update_login_time(self, db: AsyncSession, identifier: str) -> int:
         """
-        更新用户上次登录时间
+        更新用户上次登录时间（支持 email 或 username）
 
         :param db: 数据库会话
-        :param username: 用户名
+        :param identifier: 邮箱或用户名
         :return:
         """
-        return await self.update_model_by_column(db, {'last_login_time': timezone.now()}, username=username)
+        # 先尝试按 email 查找
+        user = await self.get_by_email(db, identifier)
+        if not user:
+            # 兼容旧的 username 登录
+            user = await self.get_by_username(db, identifier)
+        if user:
+            return await self.update_model(db, user.id, {'last_login_time': timezone.now()})
+        return 0
 
     async def update_password_changed_time(self, db: AsyncSession, user_id: int) -> int:
         """

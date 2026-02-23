@@ -15,7 +15,7 @@ BUILTIN_ROLES = [
         'code': 'admin',
         'name': '管理员',
         'description': '租户管理员，拥有所有权限',
-        'permissions': ['feedback', 'discovery', 'topic', 'customer', 'insight', 'settings', 'member', 'role', 'credits']
+        'permissions': ['feedback', 'discovery', 'topic', 'customer', 'insight', 'settings', 'member', 'role']
     },
     {
         'code': 'product_manager',

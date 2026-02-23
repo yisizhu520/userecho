@@ -29,6 +29,7 @@ const gridOptions: VxeTableGridOptions<TenantMember> = {
   },
   columns: [
     { field: 'user_id', title: 'ID', width: 80 },
+    { field: 'email', title: '邮箱', minWidth: 200 },
     { field: 'username', title: '用户名', minWidth: 120 },
     { field: 'nickname', title: '昵称', minWidth: 120 },
     { field: 'user_type', title: '类型', width: 120 },
@@ -104,18 +105,22 @@ function handleSearch() {
 
 // 创建成员表单
 const createForm = ref({
-  username: '',
+  email: '',
   nickname: '',
   password: '',
-  email: '',
+  username: '',
   role_ids: [] as string[],
 });
 
 const [CreateModal, createModalApi] = useVbenModal({
   destroyOnClose: true,
   async onConfirm() {
-    if (!createForm.value.username || !createForm.value.nickname || !createForm.value.password) {
+    if (!createForm.value.email || !createForm.value.nickname || !createForm.value.password) {
       message.error('请填写必填项');
+      return;
+    }
+    if (!createForm.value.role_ids || createForm.value.role_ids.length === 0) {
+      message.error('请至少选择一个角色');
       return;
     }
     createModalApi.lock();
@@ -131,10 +136,10 @@ const [CreateModal, createModalApi] = useVbenModal({
   onOpenChange(isOpen) {
     if (isOpen) {
       createForm.value = {
-        username: '',
+        email: '',
         nickname: '',
         password: '',
-        email: '',
+        username: '',
         role_ids: [],
       };
     }
@@ -233,8 +238,8 @@ const roleOptions = computed(() =>
         <!-- 创建成员 Modal -->
         <CreateModal title="添加成员">
           <Form layout="vertical" class="p-4">
-            <FormItem label="用户名" required>
-              <Input v-model:value="createForm.username" placeholder="请输入用户名" />
+            <FormItem label="邮箱" required>
+              <Input v-model:value="createForm.email" placeholder="请输入邮箱" type="email" />
             </FormItem>
             <FormItem label="昵称" required>
               <Input v-model:value="createForm.nickname" placeholder="请输入昵称" />
@@ -242,10 +247,7 @@ const roleOptions = computed(() =>
             <FormItem label="密码" required>
               <Input.Password v-model:value="createForm.password" placeholder="请输入初始密码" />
             </FormItem>
-            <FormItem label="邮箱">
-              <Input v-model:value="createForm.email" placeholder="请输入邮箱" />
-            </FormItem>
-            <FormItem label="角色">
+            <FormItem label="角色" required>
               <Select
                 v-model:value="createForm.role_ids"
                 mode="multiple"
@@ -253,6 +255,9 @@ const roleOptions = computed(() =>
                 placeholder="请选择角色"
                 style="width: 100%"
               />
+            </FormItem>
+            <FormItem label="用户名">
+              <Input v-model:value="createForm.username" placeholder="可选，用于@提及" />
             </FormItem>
           </Form>
         </CreateModal>

@@ -58,10 +58,10 @@ export interface UpdateRoleParams {
 
 /** 创建成员参数 */
 export interface CreateMemberParams {
-    username: string;
+    email: string;
     nickname: string;
     password: string;
-    email?: string;
+    username?: string;
     role_ids?: string[];
 }
 

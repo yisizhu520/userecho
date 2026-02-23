@@ -17,9 +17,11 @@ class AuthSchemaBase(SchemaBase):
     password: str = Field(description='密码')
 
 
-class AuthLoginParam(AuthSchemaBase):
+class AuthLoginParam(SchemaBase):
     """用户登录参数"""
 
+    email: str = Field(..., max_length=256, description='邮箱')
+    password: str = Field(..., description='密码')
     uuid: str | None = Field(None, description='验证码 UUID')
     captcha: str | None = Field(None, description='验证码')
 
