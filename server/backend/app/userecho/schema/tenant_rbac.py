@@ -92,6 +92,7 @@ class TenantMemberOut(BaseModel):
     username: str | None = None
     nickname: str | None = None
     email: str | None = None
+    roles: list[TenantRoleOut] = []
 
     class Config:
         from_attributes = True

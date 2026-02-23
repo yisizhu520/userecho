@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from backend.app.admin.model.user import User
+    from backend.app.userecho.model.tenant_role import TenantRole
 
 from backend.common.model import MappedBase, TimeZone
 from backend.database.db import uuid4_str
@@ -25,6 +26,15 @@ class TenantUser(MappedBase):
         ForeignKey('sys_user.id', ondelete='CASCADE'), index=True, comment='平台用户ID'
     )
     user: Mapped['User'] = relationship('backend.app.admin.model.user.User', lazy='selectin')
+
+    # RBAC 角色关联
+    roles: Mapped[list['TenantRole']] = relationship(
+        'TenantRole',
+        secondary='tenant_user_roles',
+        primaryjoin='TenantUser.id == TenantUserRole.tenant_user_id',
+        secondaryjoin='TenantRole.id == TenantUserRole.role_id',
+        viewonly=True,
+    )
 
     # 用户类型（在该租户中的角色）
     user_type: Mapped[str] = mapped_column(

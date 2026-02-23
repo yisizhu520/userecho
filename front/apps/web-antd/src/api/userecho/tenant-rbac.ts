@@ -38,7 +38,7 @@ export interface TenantMember {
     username?: string;
     nickname?: string;
     email?: string;
-    roles?: TenantRole[];
+    roles: TenantRole[];
 }
 
 /** 创建角色参数 */

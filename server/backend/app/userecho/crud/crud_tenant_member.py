@@ -38,10 +38,16 @@ class CRUDTenantMember:
         )
 
         # 主查询：关联 TenantUser 和反馈统计
+        from sqlalchemy.orm import selectinload
+
         from backend.app.admin.model.user import User
 
         stmt = (
             select(TenantUser, func.coalesce(feedback_count_subq.c.count, 0).label('real_feedback_count'))
+            .options(
+                selectinload(TenantUser.user),
+                selectinload(TenantUser.roles),
+            )  # 预加载 User 和 Roles
             .outerjoin(User, TenantUser.user_id == User.id)
             .outerjoin(feedback_count_subq, User.id == feedback_count_subq.c.submitter_id)
             .where(TenantUser.tenant_id == tenant_id)

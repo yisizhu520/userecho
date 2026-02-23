@@ -32,7 +32,12 @@ const gridOptions: VxeTableGridOptions<TenantMember> = {
     { field: 'email', title: '邮箱', minWidth: 200 },
     { field: 'username', title: '用户名', minWidth: 120 },
     { field: 'nickname', title: '昵称', minWidth: 120 },
-    { field: 'user_type', title: '类型', width: 120 },
+    { 
+      field: 'roles', 
+      title: '角色', 
+      minWidth: 160,
+      slots: { default: 'roles' }
+    },
     { 
       field: 'status', 
       title: '状态', 
@@ -235,7 +240,15 @@ const roleOptions = computed(() =>
                 </VbenButton>
               </div>
             </template>
-
+            
+            <template #roles="{ row }">
+              <Space wrap>
+                <Tag v-for="role in row.roles" :key="role.id" color="blue">
+                  {{ role.name }}
+                </Tag>
+              </Space>
+            </template>
+            
             <template #status="{ row }">
               <Tag :color="row.status === 'active' ? 'green' : 'red'">
                 {{ row.status === 'active' ? '正常' : '停用' }}
