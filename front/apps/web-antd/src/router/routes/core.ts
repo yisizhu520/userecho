@@ -131,6 +131,24 @@ const coreRoutes: RouteRecordRaw[] = [
           title: $t('page.auth.register'),
         },
       },
+      {
+        name: 'RegisterInvite',
+        path: 'register-invite',
+        component: () =>
+          import('#/views/_core/authentication/register-invite.vue'),
+        meta: {
+          title: '邀请注册',
+        },
+      },
+      {
+        name: 'VerifyEmail',
+        path: 'verify-email',
+        component: () =>
+          import('#/views/_core/authentication/verify-email.vue'),
+        meta: {
+          title: '验证邮箱',
+        },
+      },
     ],
   },
   /**

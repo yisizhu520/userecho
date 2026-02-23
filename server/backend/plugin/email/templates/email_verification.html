@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证邮箱</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2f54eb;
+            letter-spacing: 1px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .greeting {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .benefits {
+            background-color: #f0f3ff;
+            border-left: 4px solid #2f54eb;
+            padding: 16px 20px;
+            margin: 24px 0;
+        }
+
+        .benefits-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2f54eb;
+            margin-bottom: 12px;
+        }
+
+        .benefits ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .benefits li {
+            font-size: 14px;
+            color: #666;
+            line-height: 2;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 32px 0;
+        }
+
+        .verify-button {
+            display: inline-block;
+            background-color: #2f54eb;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 14px 40px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(47, 84, 235, 0.3);
+            transition: background-color 0.3s;
+        }
+
+        .verify-button:hover {
+            background-color: #1d39c4;
+        }
+
+        .code-section {
+            margin: 24px 0;
+            padding: 20px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .code-label {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .code {
+            display: inline-block;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #2f54eb;
+            background-color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: 2px dashed #d9d9d9;
+            margin: 8px 0;
+        }
+
+        .tips {
+            font-size: 14px;
+            color: #999;
+            text-align: center;
+            line-height: 1.6;
+            margin-top: 24px;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .footer a {
+            color: #2f54eb;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f7fa">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <div class="container">
+                    <!-- Logo -->
+                    <div class="logo">
+                        <div class="logo-text">回响 UserEcho</div>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="title">🎉 欢迎加入回响！</div>
+
+                    <!-- Greeting -->
+                    <div class="greeting">
+                        <p>你好，<strong>{{nickname}}</strong>！</p>
+                        <p>感谢注册回响 - AI 驱动的用户反馈智能分析平台。</p>
+                        <p>请点击下方按钮验证你的邮箱，以激活试用订阅。</p>
+                    </div>
+
+                    <!-- Benefits -->
+                    <div class="benefits">
+                        <div class="benefits-title">🎁 你的邀请权益</div>
+                        <ul>
+                            <li><strong>{{plan_name}}</strong> 免费试用 <strong>{{trial_days}} 天</strong></li>
+                            <li>无限反馈收集</li>
+                            <li>AI 智能聚类分析</li>
+                            <li>500 AI 积分/月</li>
+                        </ul>
+                    </div>
+
+                    <!-- Verify Button -->
+                    <div class="button-container">
+                        <a href="{{verify_url}}" class="verify-button">验证邮箱并激活试用</a>
+                    </div>
+
+                    <!-- Alternative: Verification Code -->
+                    <div class="code-section">
+                        <div class="code-label">或者输入以下验证码：</div>
+                        <div class="code">{{code}}</div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="tips">
+                        <p>验证码有效期为 <strong>24小时</strong>，请勿泄露给他人。</p>
+                        <p>如果按钮无法点击，请复制以下链接到浏览器：</p>
+                        <p style="word-break: break-all; color: #2f54eb;">{{verify_url}}</p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="footer">
+                        <p>如果这不是你的操作，请忽略此邮件。</p>
+                        <p>本邮件由系统自动发送，请勿直接回复。</p>
+                        <p style="margin-top: 16px;">
+                            需要帮助？访问
+                            <a href="https://userecho.example.com/help">帮助中心</a>
+                            或联系我们
+                        </p>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

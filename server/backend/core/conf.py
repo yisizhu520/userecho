@@ -349,6 +349,9 @@ class Settings(BaseSettings):
     EMAIL_CAPTCHA_REDIS_PREFIX: str = "fba:email:captcha"
     EMAIL_CAPTCHA_EXPIRE_SECONDS: int = 60 * 3  # 3 分钟
 
+    # 前端 URL（用于生成邮件中的验证链接）
+    FRONTEND_URL: str = "http://localhost:5173"
+
     @model_validator(mode="before")
     @classmethod
     def check_env(cls, values: Any) -> Any:

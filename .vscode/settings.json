@@ -20,5 +20,8 @@
     "front/apps/web-antd/src/plugins/dict/langs",
     "front/apps/web-antd/src/plugins/code_generator/langs",
     "front/apps/web-antd/src/plugins/notice/langs"
+  ],
+  "cursorpyright.analysis.extraPaths": [
+    "${workspaceFolder}/server"
   ]
 }

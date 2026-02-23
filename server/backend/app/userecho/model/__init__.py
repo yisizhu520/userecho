@@ -23,6 +23,10 @@ from .tenant_role import TenantRole
 from .tenant_user import TenantUser, TenantUserRole
 from .topic import Topic
 from .topic_notification import TopicNotification
+from .invitation import Invitation
+from .invitation_usage import InvitationUsage
+from .email_blacklist import EmailBlacklist
+from .email_verification import EmailVerification
 
 __all__ = [
     "Board",
@@ -53,4 +57,8 @@ __all__ = [
     "TenantUserRole",
     "Topic",
     "TopicNotification",
+    "Invitation",
+    "InvitationUsage",
+    "EmailBlacklist",
+    "EmailVerification",
 ]

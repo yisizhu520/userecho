@@ -96,6 +96,24 @@ const routes: RouteRecordRaw[] = [
           icon: 'eos-icons:subscription-management-outlined',
         },
       },
+      {
+        name: 'SysInvitation',
+        path: '/admin/system/invitation',
+        component: () => import('#/views/system/invitation/index.vue'),
+        meta: {
+          title: '邀请管理',
+          icon: 'mdi:invitation',
+        },
+      },
+      {
+        name: 'SysInvitationDetail',
+        path: '/admin/system/invitation/:id',
+        component: () => import('#/views/system/invitation/detail.vue'),
+        meta: {
+          title: '邀请详情',
+          hideInMenu: true,
+        },
+      },
     ],
   },
 ];
