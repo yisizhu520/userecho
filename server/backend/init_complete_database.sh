@@ -288,6 +288,27 @@ step3_business_menus() {
     echo ""
 }
 
+# 步骤 3b: 添加额外系统管理菜单（积分管理、订阅管理）
+step3b_system_extra_menus() {
+    if [ "$DROP_TABLES" = true ]; then
+        print_header "步骤 4.5/7: 添加额外系统管理菜单"
+    else
+        print_header "步骤 3.5/6: 添加额外系统管理菜单"
+    fi
+    
+    print_info "添加积分管理和订阅管理菜单..."
+    python scripts/init_system_extra_menus.py
+    
+    if [ $? -eq 0 ]; then
+        print_success "额外系统菜单初始化完成"
+    else
+        print_error "额外系统菜单初始化失败"
+        exit 1
+    fi
+    
+    echo ""
+}
+
 # 步骤 4: 初始化订阅套餐
 step4_subscription_plans() {
     if [ "$DROP_TABLES" = true ]; then
@@ -487,6 +508,7 @@ main() {
     step1b_migrate
     step2_default_tenant
     step3_business_menus
+    step3b_system_extra_menus
     step4_subscription_plans
     step5_test_users
     step6_verify
