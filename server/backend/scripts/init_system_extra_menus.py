@@ -35,12 +35,8 @@ async def add_extra_system_menus() -> None:
         print(f"✅ 找到 System 菜单 (ID: {system_menu_id})")
 
         # 检查菜单是否已存在
-        existing_credits = await db.scalar(
-            select(Menu).where(Menu.name == "SysCredits")
-        )
-        existing_subscription = await db.scalar(
-            select(Menu).where(Menu.name == "SysSubscription")
-        )
+        existing_credits = await db.scalar(select(Menu).where(Menu.name == "SysCredits"))
+        existing_subscription = await db.scalar(select(Menu).where(Menu.name == "SysSubscription"))
 
         menus_added = 0
 
