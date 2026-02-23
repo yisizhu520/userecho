@@ -18,17 +18,17 @@ def get_request_ip(request: Request) -> str:
     :param request: FastAPI 请求对象
     :return:
     """
-    real = request.headers.get('X-Real-IP')
+    real = request.headers.get("X-Real-IP")
     if real:
         return real
 
-    forwarded = request.headers.get('X-Forwarded-For')
+    forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
-        return forwarded.split(',')[0]
+        return forwarded.split(",")[0]
 
     # 忽略 pytest
-    if request.client.host == 'testclient':
-        return '127.0.0.1'
+    if request.client.host == "testclient":
+        return "127.0.0.1"
     return request.client.host
 
 
@@ -41,19 +41,19 @@ async def get_location_online(ip: str, user_agent: str) -> dict | None:
     :return:
     """
     async with httpx.AsyncClient(timeout=3) as client:
-        ip_api_url = f'http://ip-api.com/json/{ip}?lang=zh-CN'
-        headers = {'User-Agent': user_agent}
+        ip_api_url = f"http://ip-api.com/json/{ip}?lang=zh-CN"
+        headers = {"User-Agent": user_agent}
         try:
             response = await client.get(ip_api_url, headers=headers)
             if response.status_code == 200:
                 return response.json()
         except Exception as e:
-            log.error(f'在线获取 IP 地址属地失败，错误信息：{e}')
+            log.error(f"在线获取 IP 地址属地失败，错误信息：{e}")
             return None
 
 
 # 离线 IP 搜索器单例（数据将缓存到内存，缓存大小取决于 IP 数据文件大小）
-__xdb_searcher = XdbSearcher(contentBuff=XdbSearcher.loadContentFromFile(dbfile=STATIC_DIR / 'ip2region_v4.xdb'))
+__xdb_searcher = XdbSearcher(contentBuff=XdbSearcher.loadContentFromFile(dbfile=STATIC_DIR / "ip2region_v4.xdb"))
 
 
 def get_location_offline(ip: str) -> dict | None:
@@ -65,14 +65,14 @@ def get_location_offline(ip: str) -> dict | None:
     """
     try:
         data = __xdb_searcher.search(ip)
-        data = data.split('|')
+        data = data.split("|")
         return {
-            'country': data[0] if data[0] != '0' else None,
-            'regionName': data[1] if data[1] != '0' else None,
-            'city': data[2] if data[2] != '0' else None,
+            "country": data[0] if data[0] != "0" else None,
+            "regionName": data[1] if data[1] != "0" else None,
+            "city": data[2] if data[2] != "0" else None,
         }
     except Exception as e:
-        log.error(f'离线获取 IP 地址属地失败，错误信息：{e}')
+        log.error(f"离线获取 IP 地址属地失败，错误信息：{e}")
         return None
 
 
@@ -85,24 +85,24 @@ async def parse_ip_info(request: Request) -> IpInfo:
     """
     country, region, city = None, None, None
     ip = get_request_ip(request)
-    location = await redis_client.get(f'{settings.IP_LOCATION_REDIS_PREFIX}:{ip}')
+    location = await redis_client.get(f"{settings.IP_LOCATION_REDIS_PREFIX}:{ip}")
     if location:
-        country, region, city = location.split('|')
+        country, region, city = location.split("|")
         return IpInfo(ip=ip, country=country, region=region, city=city)
 
     location_info = None
-    if settings.IP_LOCATION_PARSE == 'online':
-        location_info = await get_location_online(ip, request.headers.get('User-Agent'))
-    elif settings.IP_LOCATION_PARSE == 'offline':
+    if settings.IP_LOCATION_PARSE == "online":
+        location_info = await get_location_online(ip, request.headers.get("User-Agent"))
+    elif settings.IP_LOCATION_PARSE == "offline":
         location_info = get_location_offline(ip)
 
     if location_info:
-        country = location_info.get('country')
-        region = location_info.get('regionName')
-        city = location_info.get('city')
+        country = location_info.get("country")
+        region = location_info.get("regionName")
+        city = location_info.get("city")
         await redis_client.set(
-            f'{settings.IP_LOCATION_REDIS_PREFIX}:{ip}',
-            f'{country}|{region}|{city}',
+            f"{settings.IP_LOCATION_REDIS_PREFIX}:{ip}",
+            f"{country}|{region}|{city}",
             ex=settings.IP_LOCATION_EXPIRE_SECONDS,
         )
     return IpInfo(ip=ip, country=country, region=region, city=city)
@@ -115,7 +115,7 @@ def parse_user_agent_info(request: Request) -> UserAgentInfo:
     :param request: FastAPI 请求对象
     :return:
     """
-    user_agent = request.headers.get('User-Agent')
+    user_agent = request.headers.get("User-Agent")
     user_agent_ = parse(user_agent)
     os = user_agent_.get_os()
     browser = user_agent_.get_browser()

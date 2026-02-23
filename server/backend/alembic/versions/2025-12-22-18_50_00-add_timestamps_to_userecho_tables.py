@@ -13,8 +13,8 @@ from alembic import op
 import backend.common.model
 
 # revision identifiers, used by Alembic.
-revision = '2025122218'
-down_revision = '2025122201'
+revision = "2025122218"
+down_revision = "2025122201"
 branch_labels = None
 depends_on = None
 
@@ -24,13 +24,13 @@ def upgrade() -> None:
 
     # 定义要添加时间戳的表
     tables = [
-        'topics',
-        'feedbacks',
-        'customers',
-        'status_histories',
-        'manual_adjustments',
-        'priority_scores',
-        'tenants',
+        "topics",
+        "feedbacks",
+        "customers",
+        "status_histories",
+        "manual_adjustments",
+        "priority_scores",
+        "tenants",
     ]
 
     # 为每个表添加 created_time 和 updated_time
@@ -39,18 +39,18 @@ def upgrade() -> None:
         op.add_column(
             table,
             sa.Column(
-                'created_time',
+                "created_time",
                 backend.common.model.TimeZone(timezone=True),
                 nullable=False,
-                server_default=sa.text('CURRENT_TIMESTAMP'),
-                comment='创建时间',
+                server_default=sa.text("CURRENT_TIMESTAMP"),
+                comment="创建时间",
             ),
         )
 
         # 添加 updated_time
         op.add_column(
             table,
-            sa.Column('updated_time', backend.common.model.TimeZone(timezone=True), nullable=True, comment='更新时间'),
+            sa.Column("updated_time", backend.common.model.TimeZone(timezone=True), nullable=True, comment="更新时间"),
         )
 
 
@@ -58,15 +58,15 @@ def downgrade() -> None:
     """移除时间戳字段"""
 
     tables = [
-        'topics',
-        'feedbacks',
-        'customers',
-        'status_histories',
-        'manual_adjustments',
-        'priority_scores',
-        'tenants',
+        "topics",
+        "feedbacks",
+        "customers",
+        "status_histories",
+        "manual_adjustments",
+        "priority_scores",
+        "tenants",
     ]
 
     for table in tables:
-        op.drop_column(table, 'updated_time')
-        op.drop_column(table, 'created_time')
+        op.drop_column(table, "updated_time")
+        op.drop_column(table, "created_time")

@@ -1,6 +1,6 @@
 """洞察 API 接口"""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 from sqlalchemy import select
@@ -17,13 +17,13 @@ from backend.database.db import CurrentSession
 router = APIRouter()
 
 
-@router.get('/insights/report/periods', summary='获取报告时间段列表')
+@router.get("/insights/report/periods", summary="获取报告时间段列表")
 async def get_report_periods(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    period_type: Annotated[str, Query(description='周期类型：week | month')] = 'week',
+    period_type: Annotated[str, Query(description="周期类型：week | month")] = "week",
     limit: Annotated[int, Query(ge=1, le=52)] = 12,
-):
+) -> Any:
     """
     返回可选择的时间段列表
 
@@ -38,7 +38,7 @@ async def get_report_periods(
     today = date.today()
     periods: list[dict] = []
 
-    if period_type == 'week':
+    if period_type == "week":
         # 计算最近 N 周
         # ISO 周：周一为一周开始
         current_week_start = today - timedelta(days=today.weekday())
@@ -47,27 +47,29 @@ async def get_report_periods(
             week_start = current_week_start - timedelta(weeks=i)
             week_end = week_start + timedelta(days=6)
             iso_year, iso_week, _ = week_start.isocalendar()
-            period_key = f'{iso_year}-W{iso_week:02d}'
+            period_key = f"{iso_year}-W{iso_week:02d}"
 
             # 生成标签
             if i == 0:
-                label = '本周'
+                label = "本周"
             elif i == 1:
-                label = '上周'
+                label = "上周"
             else:
-                label = f'{week_start.month}月第{(week_start.day - 1) // 7 + 1}周'
+                label = f"{week_start.month}月第{(week_start.day - 1) // 7 + 1}周"
 
-            sub_label = f'{week_start.month}/{week_start.day} - {week_end.month}/{week_end.day}'
+            sub_label = f"{week_start.month}/{week_start.day} - {week_end.month}/{week_end.day}"
 
-            periods.append({
-                'period_key': period_key,
-                'start_date': week_start.isoformat(),
-                'end_date': week_end.isoformat(),
-                'label': label,
-                'sub_label': sub_label,
-                'is_current': i == 0,
-                'time_range': f'{iso_year}-W{iso_week:02d}',  # 用于查询报告
-            })
+            periods.append(
+                {
+                    "period_key": period_key,
+                    "start_date": week_start.isoformat(),
+                    "end_date": week_end.isoformat(),
+                    "label": label,
+                    "sub_label": sub_label,
+                    "is_current": i == 0,
+                    "time_range": f"{iso_year}-W{iso_week:02d}",  # 用于查询报告
+                }
+            )
     else:
         # 计算最近 N 月
         current_month_start = today.replace(day=1)
@@ -87,52 +89,54 @@ async def get_report_periods(
             else:
                 month_end = date(year, month + 1, 1) - timedelta(days=1)
 
-            period_key = f'{year}-{month:02d}'
+            period_key = f"{year}-{month:02d}"
 
             # 生成标签
             if i == 0:
-                label = '本月'
+                label = "本月"
             elif i == 1:
-                label = '上月'
+                label = "上月"
             else:
-                label = f'{year}年{month}月'
+                label = f"{year}年{month}月"
 
-            sub_label = f'{month_start.month}/{month_start.day} - {month_end.month}/{month_end.day}'
+            sub_label = f"{month_start.month}/{month_start.day} - {month_end.month}/{month_end.day}"
 
-            periods.append({
-                'period_key': period_key,
-                'start_date': month_start.isoformat(),
-                'end_date': month_end.isoformat(),
-                'label': label,
-                'sub_label': sub_label,
-                'is_current': i == 0,
-                'time_range': f'{year}-{month:02d}',  # 用于查询报告
-            })
+            periods.append(
+                {
+                    "period_key": period_key,
+                    "start_date": month_start.isoformat(),
+                    "end_date": month_end.isoformat(),
+                    "label": label,
+                    "sub_label": sub_label,
+                    "is_current": i == 0,
+                    "time_range": f"{year}-{month:02d}",  # 用于查询报告
+                }
+            )
 
     # 查询已缓存的报告
     cached_query = select(distinct(Insight.time_range)).where(
         Insight.tenant_id == tenant_id,
-        Insight.insight_type == 'weekly_report',
-        Insight.status == 'active',
+        Insight.insight_type == "weekly_report",
+        Insight.status == "active",
     )
     result = await db.execute(cached_query)
     cached_ranges = {row[0] for row in result.all()}
 
     # 标记缓存状态
     for period in periods:
-        period['has_cache'] = period['time_range'] in cached_ranges
+        period["has_cache"] = period["time_range"] in cached_ranges
 
     return response_base.success(data=periods)
 
 
-@router.get('/insights/{insight_type}', summary='获取指定类型的洞察', dependencies=[DependsTurnstile])
+@router.get("/insights/{insight_type}", summary="获取指定类型的洞察", dependencies=[DependsTurnstile])
 async def get_insight(
     insight_type: str,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    time_range: Annotated[str, Query(description='时间范围：this_week | this_month | custom')] = 'this_week',
-    force_refresh: Annotated[bool, Query(description='是否强制刷新（忽略缓存）')] = False,
-):
+    time_range: Annotated[str, Query(description="时间范围：this_week | this_month | custom")] = "this_week",
+    force_refresh: Annotated[bool, Query(description="是否强制刷新（忽略缓存）")] = False,
+) -> Any:
     """
     获取指定类型的洞察
 
@@ -152,11 +156,11 @@ async def get_insight(
     return response_base.success(data=result)
 
 
-@router.get('/insights/dashboard/summary', summary='工作台批量获取洞察')
+@router.get("/insights/dashboard/summary", summary="工作台批量获取洞察")
 async def get_dashboard_insights(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     工作台一次性获取所有洞察
 
@@ -166,60 +170,60 @@ async def get_dashboard_insights(
     - sentiment_summary: 满意度趋势
     """
     # 并发获取 3 种洞察（周报单独生成，不在工作台显示）
-    priority_suggestions = await insight_service.generate_insight(db, tenant_id, 'priority_suggestion', 'this_week')
+    priority_suggestions = await insight_service.generate_insight(db, tenant_id, "priority_suggestion", "this_week")
 
-    high_risk_topics = await insight_service.generate_insight(db, tenant_id, 'high_risk', 'this_week')
+    high_risk_topics = await insight_service.generate_insight(db, tenant_id, "high_risk", "this_week")
 
-    sentiment_summary = await insight_service.generate_insight(db, tenant_id, 'sentiment_trend', 'this_week')
+    sentiment_summary = await insight_service.generate_insight(db, tenant_id, "sentiment_trend", "this_week")
 
     return response_base.success(
         data={
-            'priority_suggestions': priority_suggestions,
-            'high_risk_topics': high_risk_topics,
-            'sentiment_summary': sentiment_summary,
+            "priority_suggestions": priority_suggestions,
+            "high_risk_topics": high_risk_topics,
+            "sentiment_summary": sentiment_summary,
         }
     )
 
 
-@router.post('/insights/report/export', summary='导出周报/月报（异步）', dependencies=[DependsTurnstile])
+@router.post("/insights/report/export", summary="导出周报/月报（异步）", dependencies=[DependsTurnstile])
 async def export_report(
     tenant_id: str = CurrentTenantId,
-    time_range: Annotated[str, Query(description='时间范围：this_week | this_month')] = 'this_week',
-    format: Annotated[str, Query(description='导出格式：markdown | html')] = 'markdown',
-):
+    time_range: Annotated[str, Query(description="时间范围：this_week | this_month")] = "this_week",
+    format: Annotated[str, Query(description="导出格式：markdown | html")] = "markdown",
+) -> Any:
     """
     导出周报/月报（异步生成）
 
     返回 task_id，前端通过 /insights/task/{task_id} 轮询任务状态
     """
     async_result = celery_app.send_task(
-        name='userecho.generate_insight_report',
+        name="userecho.generate_insight_report",
         args=[tenant_id, time_range, format],
     )
     return response_base.success(
-        data={'status': 'accepted', 'task_id': async_result.id},
-        res=CustomResponse(code=200, msg='报告生成任务已提交'),
+        data={"status": "accepted", "task_id": async_result.id},
+        res=CustomResponse(code=200, msg="报告生成任务已提交"),
     )
 
 
-@router.post('/insights/report/send-email', summary='发送报告邮件')
+@router.post("/insights/report/send-email", summary="发送报告邮件")
 async def send_report_email(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    recipients: Annotated[list[str] | None, Query(description='收件人邮箱列表')] = None,
-    time_range: Annotated[str, Query(description='时间范围：this_week | this_month')] = 'this_week',
-):
+    recipients: Annotated[list[str] | None, Query(description="收件人邮箱列表")] = None,
+    time_range: Annotated[str, Query(description="时间范围：this_week | this_month")] = "this_week",
+) -> Any:
     """
     发送周报邮件给指定收件人
     """
     if not recipients:
-        return response_base.fail(msg='请提供收件人邮箱')
+        return response_base.fail(msg="请提供收件人邮箱")
 
     # 生成报告数据
     report_content = await insight_service.generate_insight(
         db=db,
         tenant_id=tenant_id,
-        insight_type='weekly_report',
+        insight_type="weekly_report",
         time_range=time_range,
         force_refresh=False,
     )
@@ -232,14 +236,14 @@ async def send_report_email(
         time_range=time_range,
     )
 
-    return response_base.success(msg='报告邮件发送成功')
+    return response_base.success(msg="报告邮件发送成功")
 
 
-@router.get('/insights/task/{task_id}', summary='查询洞察生成任务状态')
+@router.get("/insights/task/{task_id}", summary="查询洞察生成任务状态")
 async def get_insight_task_status(
     task_id: str,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     查询 Celery 洞察生成任务状态
 
@@ -251,26 +255,26 @@ async def get_insight_task_status(
     """
     _ = tenant_id  # 租户鉴权由依赖保证；MVP 不做 task_id ↔ tenant 的强绑定
     r = celery_app.AsyncResult(task_id)
-    data: dict = {'task_id': task_id, 'state': r.state}
+    data: dict = {"task_id": task_id, "state": r.state}
 
     if r.successful():
-        data['result'] = r.result
+        data["result"] = r.result
     elif r.failed():
-        data['error'] = str(r.result)
-    elif r.state == 'PROGRESS':
+        data["error"] = str(r.result)
+    elif r.state == "PROGRESS":
         # 支持进度更新（可选）
-        data['progress'] = r.info
+        data["progress"] = r.info
 
     return response_base.success(data=data)
 
 
-@router.post('/insights/{insight_id}/dismiss', summary='忽略洞察')
+@router.post("/insights/{insight_id}/dismiss", summary="忽略洞察")
 async def dismiss_insight(
     insight_id: str,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    reason: str = Query(..., description='忽略原因'),
-):
+    reason: str = Query(..., description="忽略原因"),
+) -> Any:
     """
     用户手动忽略洞察（例如"这个建议不合理"）
     """
@@ -280,20 +284,20 @@ async def dismiss_insight(
         tenant_id=tenant_id,
         reason=reason,
     )
-    return response_base.success(msg='洞察已忽略')
+    return response_base.success(msg="洞察已忽略")
 
 
-@router.get('/insights/history', summary='获取历史洞察')
+@router.get("/insights/history", summary="获取历史洞察")
 async def get_insights_history(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    insight_type: Annotated[str | None, Query(description='洞察类型筛选')] = None,
-    status: Annotated[str, Query(description='状态筛选：active | archived | dismissed')] = 'active',
+    insight_type: Annotated[str | None, Query(description="洞察类型筛选")] = None,
+    status: Annotated[str, Query(description="状态筛选：active | archived | dismissed")] = "active",
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
-):
+) -> Any:
     """
     获取历史洞察列表（分页）
     """
     # TODO: 实现分页查询
-    return response_base.success(data={'items': [], 'total': 0})
+    return response_base.success(data={"items": [], "total": 0})

@@ -20,7 +20,7 @@ class TenantMemberService:
         """获取成员详情"""
         member = await tenant_member_dao.get(db, tenant_user_id)
         if not member:
-            raise errors.NotFoundError(msg='成员不存在')
+            raise errors.NotFoundError(msg="成员不存在")
         return member
 
     @staticmethod
@@ -92,7 +92,7 @@ class TenantMemberService:
             # 用户已存在，检查是否已是该租户成员
             existing_member = await tenant_member_dao.get_by_user_id(db, tenant_id, existing_user.id)
             if existing_member:
-                raise errors.ConflictError(msg='该用户已是租户成员')
+                raise errors.ConflictError(msg="该用户已是租户成员")
             user = existing_user
         else:
             # 创建新用户
@@ -103,7 +103,7 @@ class TenantMemberService:
 
             # 如果没提供 username，使用 email 前缀
             if not username:
-                username = email.split('@')[0]
+                username = email.split("@")[0]
 
             user = User(
                 email=email,
@@ -111,22 +111,22 @@ class TenantMemberService:
                 nickname=nickname,
                 password=hashed_password,
                 salt=salt,
-                tenant_id='default-tenant',  # 不绑定特定租户
+                tenant_id="default-tenant",  # 不绑定特定租户
             )
             db.add(user)
             await db.flush()
 
         # 2. 创建租户成员关联
-        member = await tenant_member_dao.create(db, tenant_id=tenant_id, user_id=user.id, user_type='member')
+        member = await tenant_member_dao.create(db, tenant_id=tenant_id, user_id=user.id, user_type="member")
 
         # 3. 分配角色
         if role_ids:
             await tenant_member_dao.set_member_roles(db, member.id, role_ids, assigned_by=created_by)
         else:
             # 默认分配 viewer 角色
-            viewer_role = await tenant_role_dao.get_by_code(db, tenant_id, 'viewer')
+            viewer_role = await tenant_role_dao.get_by_code(db, tenant_id, "viewer")
             if not viewer_role:
-                raise errors.InternalServerError(msg='默认 viewer 角色不存在，请先初始化租户角色')
+                raise errors.InternalServerError(msg="默认 viewer 角色不存在，请先初始化租户角色")
             await tenant_member_dao.set_member_roles(db, member.id, [viewer_role.id], assigned_by=created_by)
 
         return user, member
@@ -146,13 +146,13 @@ class TenantMemberService:
         """更新成员信息"""
         member = await tenant_member_dao.get(db, tenant_user_id)
         if not member:
-            raise errors.NotFoundError(msg='成员不存在')
+            raise errors.NotFoundError(msg="成员不存在")
 
         # 更新用户表字段（username, nickname）
         if username is not None or nickname is not None:
             user = await user_dao.get(db, member.user_id)
             if not user:
-                raise errors.NotFoundError(msg='用户不存在')
+                raise errors.NotFoundError(msg="用户不存在")
 
             if username is not None:
                 user.username = username
@@ -174,7 +174,7 @@ class TenantMemberService:
         """更新成员角色"""
         member = await tenant_member_dao.get(db, tenant_user_id)
         if not member:
-            raise errors.NotFoundError(msg='成员不存在')
+            raise errors.NotFoundError(msg="成员不存在")
 
         await tenant_member_dao.set_member_roles(db, tenant_user_id, role_ids, assigned_by=assigned_by)
 
@@ -183,11 +183,11 @@ class TenantMemberService:
         """移除成员"""
         member = await tenant_member_dao.get(db, tenant_user_id)
         if not member:
-            raise errors.NotFoundError(msg='成员不存在')
+            raise errors.NotFoundError(msg="成员不存在")
 
         # 检查是否是租户管理员
-        if member.user_type == 'admin':
-            raise errors.ForbiddenError(msg='不能移除租户管理员')
+        if member.user_type == "admin":
+            raise errors.ForbiddenError(msg="不能移除租户管理员")
 
         await tenant_member_dao.delete(db, member)
 

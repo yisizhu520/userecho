@@ -66,7 +66,7 @@ class CRUDCustomer(TenantAwareCRUD[Customer]):
 
         # 添加搜索条件
         if search:
-            base_conditions.append(self.model.name.ilike(f'%{search}%'))
+            base_conditions.append(self.model.name.ilike(f"%{search}%"))
 
         # 添加类型筛选
         if customer_type:
@@ -113,7 +113,7 @@ class CRUDCustomer(TenantAwareCRUD[Customer]):
             select(self.model)
             .where(
                 self.model.tenant_id == tenant_id,
-                self.model.name.ilike(f'%{query}%'),
+                self.model.name.ilike(f"%{query}%"),
                 self.model.deleted_at.is_(None),
             )
             .order_by(self.model.name)

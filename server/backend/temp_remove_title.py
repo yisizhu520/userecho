@@ -23,7 +23,7 @@ result = db.execute(
 )
 
 if result.fetchone():
-    print('✅ 找到 title 列，开始迁移...')
+    print("✅ 找到 title 列，开始迁移...")
 
     # 1. 合并 title 到 content
     result = db.execute(
@@ -34,15 +34,15 @@ if result.fetchone():
     """)
     )
     affected = result.rowcount
-    print(f'   ├─ 已合并 {affected} 条记录的 title 到 content')
+    print(f"   ├─ 已合并 {affected} 条记录的 title 到 content")
 
     # 2. 删除 title 列
-    db.execute(text('ALTER TABLE feedbacks DROP COLUMN title'))
-    print('   ├─ 已删除 title 列')
+    db.execute(text("ALTER TABLE feedbacks DROP COLUMN title"))
+    print("   ├─ 已删除 title 列")
 
     db.commit()
-    print('✅ 迁移完成！')
+    print("✅ 迁移完成！")
 else:
-    print('ℹ️  title 列不存在，无需迁移')
+    print("ℹ️  title 列不存在，无需迁移")
 
 db.close()

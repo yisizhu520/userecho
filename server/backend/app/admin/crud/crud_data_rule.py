@@ -31,9 +31,9 @@ class CRUDDataRule(CRUDPlus[DataRule]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
 
-        return await self.select_order('id', **filters)
+        return await self.select_order("id", **filters)
 
     async def get_by_name(self, db: AsyncSession, name: str) -> DataRule | None:
         """

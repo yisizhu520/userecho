@@ -96,17 +96,17 @@ class CRUDUser(CRUDPlus[User]):
         filters = {}
 
         if dept:
-            filters['dept_id'] = dept
+            filters["dept_id"] = dept
         if username:
-            filters['username__like'] = f'%{username}%'
+            filters["username__like"] = f"%{username}%"
         if phone:
-            filters['phone__like'] = f'%{phone}%'
+            filters["phone__like"] = f"%{phone}%"
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
 
         return await self.select_order(
-            'id',
-            'desc',
+            "id",
+            "desc",
             join_conditions=[
                 JoinConfig(model=Dept, join_on=Dept.id == self.model.dept_id, fill_result=True),
                 JoinConfig(model=user_role, join_on=user_role.c.user_id == self.model.id),
@@ -126,8 +126,8 @@ class CRUDUser(CRUDPlus[User]):
         salt = bcrypt.gensalt()
         obj.password = get_hash_password(obj.password, salt)
 
-        dict_obj = obj.model_dump(exclude={'roles'})
-        dict_obj.update({'salt': salt})
+        dict_obj = obj.model_dump(exclude={"roles"})
+        dict_obj.update({"salt": salt})
         new_user = self.model(**dict_obj)
         db.add(new_user)
         await db.flush()
@@ -149,7 +149,7 @@ class CRUDUser(CRUDPlus[User]):
         :return:
         """
         dict_obj = obj.model_dump()
-        dict_obj.update({'is_staff': True, 'salt': None})
+        dict_obj.update({"is_staff": True, "salt": None})
         new_user = self.model(**dict_obj)
         db.add(new_user)
         await db.flush()
@@ -202,7 +202,7 @@ class CRUDUser(CRUDPlus[User]):
             # 兼容旧的 username 登录
             user = await self.get_by_username(db, identifier)
         if user:
-            return await self.update_model(db, user.id, {'last_login_time': timezone.now()})
+            return await self.update_model(db, user.id, {"last_login_time": timezone.now()})
         return 0
 
     async def update_password_changed_time(self, db: AsyncSession, user_id: int) -> int:
@@ -213,7 +213,7 @@ class CRUDUser(CRUDPlus[User]):
         :param user_id: 用户 ID
         :return:
         """
-        return await self.update_model(db, user_id, {'last_password_changed_time': timezone.now()})
+        return await self.update_model(db, user_id, {"last_password_changed_time": timezone.now()})
 
     async def update_nickname(self, db: AsyncSession, user_id: int, nickname: str) -> int:
         """
@@ -224,7 +224,7 @@ class CRUDUser(CRUDPlus[User]):
         :param nickname: 用户昵称
         :return:
         """
-        return await self.update_model(db, user_id, {'nickname': nickname})
+        return await self.update_model(db, user_id, {"nickname": nickname})
 
     async def update_avatar(self, db: AsyncSession, user_id: int, avatar: str) -> int:
         """
@@ -235,7 +235,7 @@ class CRUDUser(CRUDPlus[User]):
         :param avatar: 头像地址
         :return:
         """
-        return await self.update_model(db, user_id, {'avatar': avatar})
+        return await self.update_model(db, user_id, {"avatar": avatar})
 
     async def update_email(self, db: AsyncSession, user_id: int, email: str) -> int:
         """
@@ -246,7 +246,7 @@ class CRUDUser(CRUDPlus[User]):
         :param email: 邮箱
         :return:
         """
-        return await self.update_model(db, user_id, {'email': email})
+        return await self.update_model(db, user_id, {"email": email})
 
     async def reset_password(self, db: AsyncSession, pk: int, password: str) -> int:
         """
@@ -259,7 +259,7 @@ class CRUDUser(CRUDPlus[User]):
         """
         salt = bcrypt.gensalt()
         new_pwd = get_hash_password(password, salt)
-        return await self.update_model(db, pk, {'password': new_pwd, 'salt': salt}, flush=True)
+        return await self.update_model(db, pk, {"password": new_pwd, "salt": salt}, flush=True)
 
     async def set_super(self, db: AsyncSession, user_id: int, *, is_super: bool) -> int:
         """
@@ -270,7 +270,7 @@ class CRUDUser(CRUDPlus[User]):
         :param is_super: 是否超级管理员
         :return:
         """
-        return await self.update_model(db, user_id, {'is_superuser': is_super})
+        return await self.update_model(db, user_id, {"is_superuser": is_super})
 
     async def set_staff(self, db: AsyncSession, user_id: int, *, is_staff: bool) -> int:
         """
@@ -281,7 +281,7 @@ class CRUDUser(CRUDPlus[User]):
         :param is_staff: 是否可登录后台
         :return:
         """
-        return await self.update_model(db, user_id, {'is_staff': is_staff})
+        return await self.update_model(db, user_id, {"is_staff": is_staff})
 
     async def set_status(self, db: AsyncSession, user_id: int, status: int) -> int:
         """
@@ -292,7 +292,7 @@ class CRUDUser(CRUDPlus[User]):
         :param status: 状态
         :return:
         """
-        return await self.update_model(db, user_id, {'status': status})
+        return await self.update_model(db, user_id, {"status": status})
 
     async def set_multi_login(self, db: AsyncSession, user_id: int, *, multi_login: bool) -> int:
         """
@@ -303,7 +303,7 @@ class CRUDUser(CRUDPlus[User]):
         :param multi_login: 是否允许多端登录
         :return:
         """
-        return await self.update_model(db, user_id, {'is_multi_login': multi_login})
+        return await self.update_model(db, user_id, {"is_multi_login": multi_login})
 
     async def delete(self, db: AsyncSession, user_id: int) -> int:
         """
@@ -317,7 +317,7 @@ class CRUDUser(CRUDPlus[User]):
         await db.execute(user_role_stmt)
 
         try:
-            user_social = import_module_cached('backend.plugin.oauth2.crud.crud_user_social')
+            user_social = import_module_cached("backend.plugin.oauth2.crud.crud_user_social")
             user_social_dao = user_social.user_social_dao
         except (ImportError, AttributeError):
             pass
@@ -344,9 +344,9 @@ class CRUDUser(CRUDPlus[User]):
         filters = {}
 
         if user_id:
-            filters['id'] = user_id
+            filters["id"] = user_id
         if username:
-            filters['username'] = username
+            filters["username"] = username
 
         result = await self.select_models(
             db,
@@ -367,11 +367,11 @@ class CRUDUser(CRUDPlus[User]):
         return select_join_serialize(
             result,
             relationships=[
-                'User-m2o-Dept',
-                'User-m2m-Role',
-                'Role-m2m-Menu',
-                'Role-m2m-DataScope:scopes',
-                'DataScope-m2m-DataRule:rules',
+                "User-m2o-Dept",
+                "User-m2m-Role",
+                "Role-m2m-Menu",
+                "Role-m2m-DataScope:scopes",
+                "DataScope-m2m-DataRule:rules",
             ],
         )
 

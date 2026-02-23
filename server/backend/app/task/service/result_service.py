@@ -22,7 +22,7 @@ class TaskResultService:
 
         result = await task_result_dao.get(db, pk)
         if not result:
-            raise errors.NotFoundError(msg='任务结果不存在')
+            raise errors.NotFoundError(msg="任务结果不存在")
         return result
 
     @staticmethod

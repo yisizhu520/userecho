@@ -12,10 +12,10 @@ from backend.core.path_conf import BASE_PATH
 
 def find_task_packages() -> list[str]:
     packages = []
-    task_dir = BASE_PATH / 'app' / 'task' / 'tasks'
+    task_dir = BASE_PATH / "app" / "task" / "tasks"
     for root, _dirs, files in os.walk(task_dir):
-        if 'tasks.py' in files:
-            package = root.replace(str(BASE_PATH.parent) + os.path.sep, '').replace(os.path.sep, '.')
+        if "tasks.py" in files:
+            package = root.replace(str(BASE_PATH.parent) + os.path.sep, "").replace(os.path.sep, ".")
             packages.append(package)
     return packages
 
@@ -29,57 +29,57 @@ def init_celery() -> celery.Celery:
     celery.app.trace.build_tracer = celery_aio_pool.build_async_tracer
     celery.app.trace.reset_worker_optimizations()
 
-    broker_url = f'amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}'
+    broker_url = f"amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}"
     broker_use_ssl = None
-    if settings.CELERY_BROKER == 'redis':
+    if settings.CELERY_BROKER == "redis":
         if settings.REDIS_URL:
             # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
             # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
-            broker_url = settings.REDIS_URL.rsplit('/', 1)[0] + f'/{settings.CELERY_BROKER_REDIS_DATABASE}'
+            broker_url = settings.REDIS_URL.rsplit("/", 1)[0] + f"/{settings.CELERY_BROKER_REDIS_DATABASE}"
 
             # TLS 连接跳过证书验证（与 redis.py 保持一致）
-            if settings.REDIS_URL.startswith('rediss://'):
-                broker_use_ssl = {'ssl_cert_reqs': None}
+            if settings.REDIS_URL.startswith("rediss://"):
+                broker_use_ssl = {"ssl_cert_reqs": None}
         else:
             # 构造 Redis URL
-            password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ''
-            auth = f':{password}' if password else ''
+            password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ""
+            auth = f":{password}" if password else ""
             if settings.REDIS_USERNAME:
-                auth = f'{settings.REDIS_USERNAME}:{password}'
+                auth = f"{settings.REDIS_USERNAME}:{password}"
             broker_url = (
-                f'redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}'
+                f"redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}"
             )
 
-    result_backend = f'db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}'
+    result_backend = f"db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}"
     if DataBaseType.mysql == settings.DATABASE_TYPE:
-        result_backend = result_backend.replace('postgresql+psycopg', 'mysql+pymysql')
+        result_backend = result_backend.replace("postgresql+psycopg", "mysql+pymysql")
 
     # https://docs.celeryq.dev/en/stable/userguide/configuration.html
     celery_config = {
-        'broker_url': broker_url,
-        'broker_connection_retry_on_startup': True,
-        'result_backend': result_backend,
-        'result_extended': True,
-        'database_engine_options': {'echo': settings.DATABASE_ECHO},
-        'beat_schedule': LOCAL_BEAT_SCHEDULE,
-        'beat_scheduler': 'backend.app.task.utils.schedulers:DatabaseScheduler',
-        'task_cls': 'backend.app.task.tasks.base:TaskBase',
-        'task_track_started': True,
-        'enable_utc': False,
-        'timezone': settings.DATETIME_TIMEZONE,
-        'worker_send_task_events': True,
-        'task_send_sent_event': True,
+        "broker_url": broker_url,
+        "broker_connection_retry_on_startup": True,
+        "result_backend": result_backend,
+        "result_extended": True,
+        "database_engine_options": {"echo": settings.DATABASE_ECHO},
+        "beat_schedule": LOCAL_BEAT_SCHEDULE,
+        "beat_scheduler": "backend.app.task.utils.schedulers:DatabaseScheduler",
+        "task_cls": "backend.app.task.tasks.base:TaskBase",
+        "task_track_started": True,
+        "enable_utc": False,
+        "timezone": settings.DATETIME_TIMEZONE,
+        "worker_send_task_events": True,
+        "task_send_sent_event": True,
     }
 
     # 如果需要 SSL 配置，添加到配置中
     if broker_use_ssl is not None:
-        celery_config['broker_use_ssl'] = broker_use_ssl
+        celery_config["broker_use_ssl"] = broker_use_ssl
 
-    app = celery.Celery('fba_celery', **celery_config)
+    app = celery.Celery("fba_celery", **celery_config)
 
     # 在 Celery 中设置此参数无效
     # 参数：https://github.com/celery/celery/issues/7270
-    app.loader.override_backends = {'db': 'backend.app.task.database:DatabaseBackend'}
+    app.loader.override_backends = {"db": "backend.app.task.database:DatabaseBackend"}
 
     # 自动发现任务
     packages = find_task_packages()
@@ -90,7 +90,7 @@ def init_celery() -> celery.Celery:
     # 通过检查 argv 判断是否是 worker 进程
     import sys
 
-    if 'worker' in sys.argv:
+    if "worker" in sys.argv:
         from backend.common.log import set_custom_logfile, setup_logging
 
         setup_logging()

@@ -41,9 +41,9 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         is_noise: bool | None = None,
     ) -> bool:
         """更新聚类质量指标（可选同时更新 is_noise）"""
-        values: dict = {'cluster_quality': cluster_quality}
+        values: dict = {"cluster_quality": cluster_quality}
         if is_noise is not None:
-            values['is_noise'] = is_noise
+            values["is_noise"] = is_noise
 
         stmt = (
             update(self.model)
@@ -86,7 +86,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
 
         # 获取关联反馈（关联查询 Customer 和 User）
         query = (
-            select(Feedback, Customer.name.label('customer_name'), User.username.label('submitter_name'))
+            select(Feedback, Customer.name.label("customer_name"), User.username.label("submitter_name"))
             .outerjoin(Customer, Feedback.customer_id == Customer.id)
             .outerjoin(User, Feedback.submitter_id == User.id)
             .where(
@@ -101,11 +101,11 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         feedbacks = []
         for feedback_obj, customer_name, submitter_name in rows:
             fb_dict = {c.name: getattr(feedback_obj, c.name) for c in feedback_obj.__table__.columns}
-            fb_dict['customer_name'] = customer_name
-            fb_dict['submitter_name'] = submitter_name
+            fb_dict["customer_name"] = customer_name
+            fb_dict["submitter_name"] = submitter_name
             feedbacks.append(fb_dict)
 
-        return {'topic': topic, 'feedbacks': feedbacks}
+        return {"topic": topic, "feedbacks": feedbacks}
 
     async def update_status(
         self,
@@ -164,8 +164,8 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         status: list[str] | None = None,
         category: list[str] | None = None,
         board_ids: list[str] | None = None,
-        sort_by: str = 'created_time',
-        sort_order: str = 'desc',
+        sort_by: str = "created_time",
+        sort_order: str = "desc",
         search_query: str | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
@@ -216,13 +216,13 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             keywords = [kw for kw in jieba.cut(search_query.strip()) if kw.strip() and len(kw.strip()) > 0]
             # 过滤掉单字符（通常是停用词或无意义词）
             keywords = [kw for kw in keywords if len(kw) > 1 or not kw.isalpha()]
-            log.info(f'[SEARCH_DEBUG] CRUD Layer - Applying keyword search filter (jieba): keywords={keywords!r}')
+            log.info(f"[SEARCH_DEBUG] CRUD Layer - Applying keyword search filter (jieba): keywords={keywords!r}")
 
             if keywords:
                 # 每个关键词构建一个 OR 条件：title LIKE '%kw%' OR description LIKE '%kw%'
                 keyword_conditions = []
                 for kw in keywords:
-                    search_pattern = f'%{kw}%'
+                    search_pattern = f"%{kw}%"
                     keyword_conditions.append(
                         or_(self.model.title.ilike(search_pattern), self.model.description.ilike(search_pattern))
                     )
@@ -231,7 +231,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         else:
             from backend.common.log import log
 
-            log.info('[SEARCH_DEBUG] CRUD Layer - No search_query, skipping filter')
+            log.info("[SEARCH_DEBUG] CRUD Layer - No search_query, skipping filter")
 
         # 日期范围筛选（基于 created_time）
         if date_from:
@@ -248,7 +248,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
 
         # 添加排序
         sort_column = getattr(self.model, sort_by, self.model.created_time)
-        query = query.order_by(sort_column.desc()) if sort_order == 'desc' else query.order_by(sort_column.asc())
+        query = query.order_by(sort_column.desc()) if sort_order == "desc" else query.order_by(sort_column.asc())
 
         query = query.offset(skip).limit(limit)
 
@@ -294,23 +294,23 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         # 构建过滤条件 SQL
         filter_conditions = [
             f"t.tenant_id = '{tenant_id}'",
-            't.centroid IS NOT NULL',
-            't.deleted_at IS NULL',
+            "t.centroid IS NOT NULL",
+            "t.deleted_at IS NULL",
             f"(1 - (t.centroid <=> '{embedding_str}'::vector)) >= {min_similarity}",
         ]
 
         # 添加过滤条件（多选）
         if status is not None and len(status) > 0:
-            status_conditions = ' OR '.join([f"t.status = '{s}'" for s in status])
-            filter_conditions.append(f'({status_conditions})')
+            status_conditions = " OR ".join([f"t.status = '{s}'" for s in status])
+            filter_conditions.append(f"({status_conditions})")
         if category is not None and len(category) > 0:
-            category_conditions = ' OR '.join([f"t.category = '{c}'" for c in category])
-            filter_conditions.append(f'({category_conditions})')
+            category_conditions = " OR ".join([f"t.category = '{c}'" for c in category])
+            filter_conditions.append(f"({category_conditions})")
         if board_ids is not None and len(board_ids) > 0:
-            board_conditions = ' OR '.join([f"t.board_id = '{b}'" for b in board_ids])
-            filter_conditions.append(f'({board_conditions})')
+            board_conditions = " OR ".join([f"t.board_id = '{b}'" for b in board_ids])
+            filter_conditions.append(f"({board_conditions})")
 
-        where_clause = ' AND '.join(filter_conditions)
+        where_clause = " AND ".join(filter_conditions)
 
         # pgvector 相似度搜索 + 关联查询
         query_sql = f"""
@@ -381,7 +381,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             return topics
 
         except Exception as e:
-            log.error(f'Semantic search failed for topics: {e}')
+            log.error(f"Semantic search failed for topics: {e}")
             # Fallback: 返回空列表
             return []
 

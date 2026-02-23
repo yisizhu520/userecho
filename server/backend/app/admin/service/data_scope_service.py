@@ -31,7 +31,7 @@ class DataScopeService:
 
         data_scope = await data_scope_dao.get(db, pk)
         if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+            raise errors.NotFoundError(msg="数据范围不存在")
         return data_scope
 
     @staticmethod
@@ -58,7 +58,7 @@ class DataScopeService:
 
         data_scope = await data_scope_dao.get_join(db, pk)
         if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+            raise errors.NotFoundError(msg="数据范围不存在")
         return data_scope
 
     @staticmethod
@@ -85,7 +85,7 @@ class DataScopeService:
         """
         data_scope = await data_scope_dao.get_by_name(db, obj.name)
         if data_scope:
-            raise errors.ConflictError(msg='数据范围已存在')
+            raise errors.ConflictError(msg="数据范围已存在")
         await data_scope_dao.create(db, obj)
 
     @staticmethod
@@ -100,9 +100,9 @@ class DataScopeService:
         """
         data_scope = await data_scope_dao.get(db, pk)
         if not data_scope:
-            raise errors.NotFoundError(msg='数据范围不存在')
+            raise errors.NotFoundError(msg="数据范围不存在")
         if data_scope.name != obj.name and await data_scope_dao.get_by_name(db, obj.name):
-            raise errors.ConflictError(msg='数据范围已存在')
+            raise errors.ConflictError(msg="数据范围已存在")
         count = await data_scope_dao.update(db, pk, obj)
         await user_cache_manager.clear_by_data_scope_id(db, [pk])
         return count

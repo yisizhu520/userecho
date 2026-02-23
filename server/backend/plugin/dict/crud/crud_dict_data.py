@@ -31,8 +31,8 @@ class CRUDDictData(CRUDPlus[DictData]):
         """
         return await self.select_models_order(
             db,
-            sort_columns='sort',
-            sort_orders='desc',
+            sort_columns="sort",
+            sort_orders="desc",
             type_code=type_code,
         )
 
@@ -66,17 +66,17 @@ class CRUDDictData(CRUDPlus[DictData]):
         filters = {}
 
         if type_code is not None:
-            filters['type_code'] = type_code
+            filters["type_code"] = type_code
         if label is not None:
-            filters['label__like'] = f'%{label}%'
+            filters["label__like"] = f"%{label}%"
         if value is not None:
-            filters['value__like'] = f'%{value}%'
+            filters["value__like"] = f"%{value}%"
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
         if type_id is not None:
-            filters['type_id'] = type_id
+            filters["type_id"] = type_id
 
-        return await self.select_order('id', 'desc', **filters)
+        return await self.select_order("id", "desc", **filters)
 
     async def get_by_label_and_type_code(self, db: AsyncSession, label: str, type_code: str) -> DictData | None:
         """
@@ -99,7 +99,7 @@ class CRUDDictData(CRUDPlus[DictData]):
         :return:
         """
         dict_obj = obj.model_dump()
-        dict_obj.update({'type_code': type_code})
+        dict_obj.update({"type_code": type_code})
         new_data = self.model(**dict_obj)
         db.add(new_data)
 
@@ -114,7 +114,7 @@ class CRUDDictData(CRUDPlus[DictData]):
         :return:
         """
         dict_obj = obj.model_dump()
-        dict_obj.update({'type_code': type_code})
+        dict_obj.update({"type_code": type_code})
         return await self.update_model(db, pk, dict_obj)
 
     async def delete(self, db: AsyncSession, pks: list[int]) -> int:

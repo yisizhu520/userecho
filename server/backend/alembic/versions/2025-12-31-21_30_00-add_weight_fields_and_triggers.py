@@ -18,8 +18,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '20251231a'
-down_revision: str | None = '2025122911'
+revision: str = "20251231a"
+down_revision: str | None = "2025122911"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -27,60 +27,60 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """新增权重相关字段和触发器"""
 
-    print('🔧 开始数据库改造...')
+    print("🔧 开始数据库改造...")
 
     # 1. customers 表新增 mrr 字段
-    print('   ├─ [1/4] customers 表新增 mrr 字段...')
-    op.add_column('customers', sa.Column('mrr', sa.Numeric(10, 2), nullable=True, comment='月收入 (MRR)'))
+    print("   ├─ [1/4] customers 表新增 mrr 字段...")
+    op.add_column("customers", sa.Column("mrr", sa.Numeric(10, 2), nullable=True, comment="月收入 (MRR)"))
 
     # 2. feedbacks 表新增冗余字段
-    print('   ├─ [2/4] feedbacks 表新增冗余字段...')
+    print("   ├─ [2/4] feedbacks 表新增冗余字段...")
     op.add_column(
-        'feedbacks',
-        sa.Column('customer_mrr', sa.Numeric(10, 2), nullable=True, comment='客户月收入（冗余字段，便于聚合）'),
+        "feedbacks",
+        sa.Column("customer_mrr", sa.Numeric(10, 2), nullable=True, comment="客户月收入（冗余字段，便于聚合）"),
     )
-    op.add_column('feedbacks', sa.Column('customer_type', sa.String(20), nullable=True, comment='客户类型（冗余字段）'))
+    op.add_column("feedbacks", sa.Column("customer_type", sa.String(20), nullable=True, comment="客户类型（冗余字段）"))
 
     # 3. topics 表新增权重聚合字段和产品管理字段
-    print('   ├─ [3/4] topics 表新增权重聚合和产品管理字段...')
+    print("   ├─ [3/4] topics 表新增权重聚合和产品管理字段...")
     # 权重聚合字段
     op.add_column(
-        'topics',
+        "topics",
         sa.Column(
-            'affected_customer_count',
+            "affected_customer_count",
             sa.Integer(),
             nullable=False,
-            server_default='0',
-            comment='受影响客户数量（去重）',
+            server_default="0",
+            comment="受影响客户数量（去重）",
         ),
     )
     op.add_column(
-        'topics',
-        sa.Column('total_mrr', sa.Numeric(10, 2), nullable=False, server_default='0', comment='关联客户 MRR 总和'),
+        "topics",
+        sa.Column("total_mrr", sa.Numeric(10, 2), nullable=False, server_default="0", comment="关联客户 MRR 总和"),
     )
-    op.add_column('topics', sa.Column('avg_sentiment_score', sa.Float(), nullable=True, comment='平均情感分数'))
+    op.add_column("topics", sa.Column("avg_sentiment_score", sa.Float(), nullable=True, comment="平均情感分数"))
     # 产品经理评估字段
-    op.add_column('topics', sa.Column('impact_scope', sa.Integer(), nullable=True, comment='影响范围评分 (1-10)'))
-    op.add_column('topics', sa.Column('dev_cost_estimate', sa.Integer(), nullable=True, comment='开发成本评分 (1-10)'))
+    op.add_column("topics", sa.Column("impact_scope", sa.Integer(), nullable=True, comment="影响范围评分 (1-10)"))
+    op.add_column("topics", sa.Column("dev_cost_estimate", sa.Integer(), nullable=True, comment="开发成本评分 (1-10)"))
     op.add_column(
-        'topics',
+        "topics",
         sa.Column(
-            'product_owner_id',
+            "product_owner_id",
             sa.Integer(),
-            sa.ForeignKey('sys_user.id', ondelete='SET NULL'),
+            sa.ForeignKey("sys_user.id", ondelete="SET NULL"),
             nullable=True,
-            comment='产品负责人',
+            comment="产品负责人",
         ),
     )
-    op.add_column('topics', sa.Column('estimated_release_date', sa.Date(), nullable=True, comment='预计发布日期'))
+    op.add_column("topics", sa.Column("estimated_release_date", sa.Date(), nullable=True, comment="预计发布日期"))
     # 外部集成字段
-    op.add_column('topics', sa.Column('jira_issue_key', sa.String(50), nullable=True, comment='Jira Issue Key'))
-    op.add_column('topics', sa.Column('tapd_story_id', sa.String(50), nullable=True, comment='Tapd Story ID'))
+    op.add_column("topics", sa.Column("jira_issue_key", sa.String(50), nullable=True, comment="Jira Issue Key"))
+    op.add_column("topics", sa.Column("tapd_story_id", sa.String(50), nullable=True, comment="Tapd Story ID"))
 
     # 4. 创建触发器函数（仅 PostgreSQL）
     bind = op.get_bind()
-    if bind.dialect.name == 'postgresql':
-        print('   ├─ [4/4] 创建 Topic 统计触发器...')
+    if bind.dialect.name == "postgresql":
+        print("   ├─ [4/4] 创建 Topic 统计触发器...")
 
         # 创建触发器函数
         op.execute("""
@@ -154,7 +154,7 @@ def upgrade() -> None:
         """)
 
         # 先删除旧触发器（如果存在）
-        op.execute('DROP TRIGGER IF EXISTS trigger_update_topic_stats ON feedbacks')
+        op.execute("DROP TRIGGER IF EXISTS trigger_update_topic_stats ON feedbacks")
 
         # 创建新触发器
         op.execute("""
@@ -164,50 +164,50 @@ def upgrade() -> None:
             EXECUTE FUNCTION update_topic_stats()
         """)
 
-        print('✅ 数据库改造完成！')
+        print("✅ 数据库改造完成！")
         print()
-        print('📊 新增字段：')
-        print('   - customers.mrr: 月收入')
-        print('   - feedbacks.customer_mrr, customer_type: 冗余字段')
-        print('   - topics: 10 个新字段（权重聚合 + 产品管理 + 外部集成）')
+        print("📊 新增字段：")
+        print("   - customers.mrr: 月收入")
+        print("   - feedbacks.customer_mrr, customer_type: 冗余字段")
+        print("   - topics: 10 个新字段（权重聚合 + 产品管理 + 外部集成）")
         print()
-        print('🔄 触发器：')
-        print('   - trigger_update_topic_stats: 自动更新 Topic 统计')
+        print("🔄 触发器：")
+        print("   - trigger_update_topic_stats: 自动更新 Topic 统计")
     else:
-        print('   ⚠️  触发器仅支持 PostgreSQL，已跳过')
+        print("   ⚠️  触发器仅支持 PostgreSQL，已跳过")
 
 
 def downgrade() -> None:
     """回滚：删除新增的字段和触发器"""
 
-    print('🔧 开始回滚数据库改造...')
+    print("🔧 开始回滚数据库改造...")
 
     bind = op.get_bind()
-    if bind.dialect.name == 'postgresql':
+    if bind.dialect.name == "postgresql":
         # 删除触发器和函数
-        print('   ├─ 删除触发器...')
-        op.execute('DROP TRIGGER IF EXISTS trigger_update_topic_stats ON feedbacks')
-        op.execute('DROP FUNCTION IF EXISTS update_topic_stats')
+        print("   ├─ 删除触发器...")
+        op.execute("DROP TRIGGER IF EXISTS trigger_update_topic_stats ON feedbacks")
+        op.execute("DROP FUNCTION IF EXISTS update_topic_stats")
 
     # 删除 topics 表新增字段
-    print('   ├─ 删除 topics 表新增字段...')
-    op.drop_column('topics', 'tapd_story_id')
-    op.drop_column('topics', 'jira_issue_key')
-    op.drop_column('topics', 'estimated_release_date')
-    op.drop_column('topics', 'product_owner_id')
-    op.drop_column('topics', 'dev_cost_estimate')
-    op.drop_column('topics', 'impact_scope')
-    op.drop_column('topics', 'avg_sentiment_score')
-    op.drop_column('topics', 'total_mrr')
-    op.drop_column('topics', 'affected_customer_count')
+    print("   ├─ 删除 topics 表新增字段...")
+    op.drop_column("topics", "tapd_story_id")
+    op.drop_column("topics", "jira_issue_key")
+    op.drop_column("topics", "estimated_release_date")
+    op.drop_column("topics", "product_owner_id")
+    op.drop_column("topics", "dev_cost_estimate")
+    op.drop_column("topics", "impact_scope")
+    op.drop_column("topics", "avg_sentiment_score")
+    op.drop_column("topics", "total_mrr")
+    op.drop_column("topics", "affected_customer_count")
 
     # 删除 feedbacks 表新增字段
-    print('   ├─ 删除 feedbacks 表新增字段...')
-    op.drop_column('feedbacks', 'customer_type')
-    op.drop_column('feedbacks', 'customer_mrr')
+    print("   ├─ 删除 feedbacks 表新增字段...")
+    op.drop_column("feedbacks", "customer_type")
+    op.drop_column("feedbacks", "customer_mrr")
 
     # 删除 customers 表新增字段
-    print('   ├─ 删除 customers 表新增字段...')
-    op.drop_column('customers', 'mrr')
+    print("   ├─ 删除 customers 表新增字段...")
+    op.drop_column("customers", "mrr")
 
-    print('✅ 回滚完成！')
+    print("✅ 回滚完成！")

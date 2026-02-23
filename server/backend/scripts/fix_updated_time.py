@@ -21,11 +21,11 @@ from backend.database.db import async_engine
 async def fix_updated_time():
     """修复所有表的 updated_time=NULL 记录"""
     tables = [
-        ('topics', Topic),
-        ('feedbacks', Feedback),
-        ('customers', Customer),
-        ('priority_scores', PriorityScore),
-        ('tenants', Tenant),
+        ("topics", Topic),
+        ("feedbacks", Feedback),
+        ("customers", Customer),
+        ("priority_scores", PriorityScore),
+        ("tenants", Tenant),
     ]
 
     async with AsyncSession(async_engine) as db:
@@ -39,29 +39,29 @@ async def fix_updated_time():
                 fixed = result.rowcount
 
                 if fixed > 0:
-                    log.info(f'Fixed {fixed} records in {table_name}')
+                    log.info(f"Fixed {fixed} records in {table_name}")
                     total_fixed += fixed
                 else:
-                    log.debug(f'No records to fix in {table_name}')
+                    log.debug(f"No records to fix in {table_name}")
 
             except Exception as e:
-                log.error(f'Failed to fix {table_name}: {e}')
+                log.error(f"Failed to fix {table_name}: {e}")
 
         await db.commit()
-        log.info(f'Total fixed: {total_fixed} records')
+        log.info(f"Total fixed: {total_fixed} records")
         return total_fixed
 
 
 async def main() -> None:
     """主函数"""
-    log.info('Starting updated_time fix...')
+    log.info("Starting updated_time fix...")
     try:
         count = await fix_updated_time()
-        log.info(f'✅ Fix completed: {count} records updated')
+        log.info(f"✅ Fix completed: {count} records updated")
     except Exception as e:
-        log.error(f'❌ Fix failed: {e}')
+        log.error(f"❌ Fix failed: {e}")
         raise
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

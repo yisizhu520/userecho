@@ -3,7 +3,7 @@
 import json
 import time
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from jinja2 import Template
@@ -16,6 +16,7 @@ from backend.app.userecho.model.feedback import Feedback
 from backend.app.userecho.model.topic import Topic
 from backend.common.log import log
 from backend.utils.ai_client import ai_client
+from backend.utils.timezone import timezone
 
 
 class InsightService:
@@ -23,10 +24,10 @@ class InsightService:
 
     # 紧急程度优先级（用于排序）
     URGENCY_PRIORITY = {
-        'critical': 0,
-        'high': 1,
-        'medium': 2,
-        'low': 3,
+        "critical": 0,
+        "high": 1,
+        "medium": 2,
+        "low": 3,
     }
 
     async def generate_insight(
@@ -34,7 +35,7 @@ class InsightService:
         db: AsyncSession,
         tenant_id: str,
         insight_type: str,
-        time_range: str = 'this_week',
+        time_range: str = "this_week",
         force_refresh: bool = False,
     ) -> dict[str, Any]:
         """
@@ -68,30 +69,30 @@ class InsightService:
                 db, tenant_id, insight_type, time_range, start_date.date(), end_date.date()
             )
             if cached:
-                log.info(f'Using cached insight: {insight_type} for tenant {tenant_id}')
+                log.info(f"Using cached insight: {insight_type} for tenant {tenant_id}")
                 return cached.content
                 return cached.content
 
         # 3. weekly_report 特殊处理：触发异步任务
-        if insight_type == 'weekly_report':
+        if insight_type == "weekly_report":
             from backend.app.task.celery import celery_app
 
             async_result = celery_app.send_task(
-                name='userecho.generate_insight_report',
-                args=[tenant_id, time_range, 'markdown'],
+                name="userecho.generate_insight_report",
+                args=[tenant_id, time_range, "markdown"],
             )
-            log.info(f'Triggered async weekly_report generation for tenant {tenant_id}, task_id={async_result.id}')
-            return {'status': 'generating', 'task_id': async_result.id}
+            log.info(f"Triggered async weekly_report generation for tenant {tenant_id}, task_id={async_result.id}")
+            return {"status": "generating", "task_id": async_result.id}
 
         # 4. 其他类型：同步生成
-        if insight_type == 'priority_suggestion':
+        if insight_type == "priority_suggestion":
             content = await self._generate_priority_suggestions(db, tenant_id)
-        elif insight_type == 'high_risk':
+        elif insight_type == "high_risk":
             content = await self._identify_high_risk_topics(db, tenant_id)
-        elif insight_type == 'sentiment_trend':
+        elif insight_type == "sentiment_trend":
             content = await self._calculate_sentiment_trend(db, tenant_id, start_date, end_date)
         else:
-            raise ValueError(f'Unknown insight_type: {insight_type}')
+            raise ValueError(f"Unknown insight_type: {insight_type}")
 
         # 5. 计算执行时间
         execution_time_ms = int((time.time() - start_time) * 1000)
@@ -105,11 +106,11 @@ class InsightService:
             start_date=start_date.date(),
             end_date=end_date.date(),
             content=content,
-            generated_by='hybrid',
+            generated_by="hybrid",
             execution_time_ms=execution_time_ms,
         )
 
-        log.info(f'Generated {insight_type} insight for tenant {tenant_id} in {execution_time_ms}ms')
+        log.info(f"Generated {insight_type} insight for tenant {tenant_id} in {execution_time_ms}ms")
 
         return content
 
@@ -125,23 +126,23 @@ class InsightService:
         """
         import re
 
-        now = datetime.now()
+        now = timezone.now()
         today = now.date()
 
         # ISO 周格式：2026-W02
-        iso_week_match = re.match(r'^(\d{4})-W(\d{2})$', time_range)
+        iso_week_match = re.match(r"^(\d{4})-W(\d{2})$", time_range)
         if iso_week_match:
             year = int(iso_week_match.group(1))
             week = int(iso_week_match.group(2))
             # 计算该周的周一
-            start_date = datetime.strptime(f'{year}-W{week}-1', '%G-W%V-%u').date()
+            start_date = datetime.strptime(f"{year}-W{week}-1", "%G-W%V-%u").replace(tzinfo=timezone.tz_info).date()
             end_date = start_date + timedelta(days=6)
-            start_datetime = datetime.combine(start_date, datetime.min.time())
-            end_datetime = datetime.combine(end_date, datetime.max.time())
+            start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.tz_info)
+            end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.tz_info)
             return start_datetime, end_datetime
 
         # 月份格式：2026-01
-        month_match = re.match(r'^(\d{4})-(\d{2})$', time_range)
+        month_match = re.match(r"^(\d{4})-(\d{2})$", time_range)
         if month_match:
             year = int(month_match.group(1))
             month = int(month_match.group(2))
@@ -151,16 +152,16 @@ class InsightService:
                 end_date = date(year + 1, 1, 1) - timedelta(days=1)
             else:
                 end_date = date(year, month + 1, 1) - timedelta(days=1)
-            start_datetime = datetime.combine(start_date, datetime.min.time())
-            end_datetime = datetime.combine(end_date, datetime.max.time())
+            start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.tz_info)
+            end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.tz_info)
             return start_datetime, end_datetime
 
         # 相对时间范围
-        if time_range == 'this_week':
+        if time_range == "this_week":
             # 本周一到今天
             start_date = today - timedelta(days=today.weekday())
             end_date = today
-        elif time_range == 'this_month':
+        elif time_range == "this_month":
             # 本月1号到今天
             start_date = today.replace(day=1)
             end_date = today
@@ -170,8 +171,8 @@ class InsightService:
             end_date = today
 
         # 转换为 datetime：start_date 00:00:00, end_date 23:59:59
-        start_datetime = datetime.combine(start_date, datetime.min.time())
-        end_datetime = datetime.combine(end_date, datetime.max.time())
+        start_datetime = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.tz_info)
+        end_datetime = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.tz_info)
 
         return start_datetime, end_datetime
 
@@ -199,7 +200,7 @@ class InsightService:
             .where(
                 and_(
                     Topic.tenant_id == tenant_id,
-                    Topic.status.in_(['pending', 'planned', 'in_progress']),
+                    Topic.status.in_(["pending", "planned", "in_progress"]),
                     Topic.deleted_at.is_(None),
                 )
             )
@@ -210,9 +211,9 @@ class InsightService:
 
         if not topics:
             return {
-                'top_recommendations': [],
-                'summary': '暂无待处理的需求。',
-                'generated_at': datetime.now().isoformat(),
+                "top_recommendations": [],
+                "summary": "暂无待处理的需求。",
+                "generated_at": timezone.now().isoformat(),
             }
 
         # 2. 计算每个 Topic 的 ROI 和紧急程度
@@ -234,19 +235,21 @@ class InsightService:
             # 建议操作
             suggested_action = self._get_suggested_action(urgency_level)
 
-            scored_topics.append({
-                'topic_id': topic.id,
-                'title': topic.title,
-                'reason': reason,
-                'urgency_level': urgency_level,
-                'estimated_roi': round(roi, 2),
-                'suggested_action': suggested_action,
-                'category': topic.category,
-                'feedback_count': topic.feedback_count,
-            })
+            scored_topics.append(
+                {
+                    "topic_id": topic.id,
+                    "title": topic.title,
+                    "reason": reason,
+                    "urgency_level": urgency_level,
+                    "estimated_roi": round(roi, 2),
+                    "suggested_action": suggested_action,
+                    "category": topic.category,
+                    "feedback_count": topic.feedback_count,
+                }
+            )
 
         # 3. 排序：critical > high > medium，同级按 ROI 降序
-        scored_topics.sort(key=lambda x: (self.URGENCY_PRIORITY[x['urgency_level']], -x['estimated_roi']))
+        scored_topics.sort(key=lambda x: (self.URGENCY_PRIORITY[x["urgency_level"]], -x["estimated_roi"]))
 
         # 4. 取前3个
         top_3 = scored_topics[:3]
@@ -254,12 +257,12 @@ class InsightService:
         # 5. AI 生成总结（可选，失败不影响主流程）
         summary = await self._enhance_suggestions_with_ai(top_3)
 
-        return {'top_recommendations': top_3, 'summary': summary, 'generated_at': datetime.now().isoformat()}
+        return {"top_recommendations": top_3, "summary": summary, "generated_at": timezone.now().isoformat()}
 
     async def _classify_urgency(self, db: AsyncSession, topic: Topic) -> str:
         """规则：判断紧急程度"""
         if not topic.priority_score:
-            return 'low'
+            return "low"
 
         score = topic.priority_score.total_score
 
@@ -273,17 +276,17 @@ class InsightService:
         result = await db.execute(query)
         customers = result.scalars().all()
 
-        has_major_customer = any(c.customer_type in ['major', 'strategic'] for c in customers)
-        is_bug = topic.category == 'bug'
+        has_major_customer = any(c.customer_type in ["major", "strategic"] for c in customers)
+        is_bug = topic.category == "bug"
 
         # 应用规则
         if score >= 50 and has_major_customer and is_bug:
-            return 'critical'
+            return "critical"
         if score >= 20:
-            return 'high'
+            return "high"
         if score >= 5:
-            return 'medium'
-        return 'low'
+            return "medium"
+        return "low"
 
     async def _generate_reason_template(
         self,
@@ -310,7 +313,7 @@ class InsightService:
                 and_(
                     Feedback.topic_id == topic.id,
                     Feedback.tenant_id == topic.tenant_id,
-                    Customer.customer_type.in_(['major', 'strategic']),
+                    Customer.customer_type.in_(["major", "strategic"]),
                 )
             )
         )
@@ -321,47 +324,47 @@ class InsightService:
         parts = []
 
         if major_customer_count > 0:
-            parts.append(f'影响 {major_customer_count} 个大客户')
+            parts.append(f"影响 {major_customer_count} 个大客户")
 
         if customer_count > major_customer_count:
-            parts.append(f'共 {customer_count} 个客户反馈')
+            parts.append(f"共 {customer_count} 个客户反馈")
         elif customer_count > 0 and major_customer_count == 0:
-            parts.append(f'影响 {customer_count} 个客户')
+            parts.append(f"影响 {customer_count} 个客户")
 
         if topic.priority_score:
-            parts.append(f'优先级 {topic.priority_score.total_score:.1f} 分')
+            parts.append(f"优先级 {topic.priority_score.total_score:.1f} 分")
 
             # 预计开发时间
             dev_cost = topic.priority_score.dev_cost
             if dev_cost == 1:
-                parts.append('预计 1 天可完成')
+                parts.append("预计 1 天可完成")
             elif dev_cost == 3:
-                parts.append('预计 3 天可完成')
+                parts.append("预计 3 天可完成")
             elif dev_cost == 5:
-                parts.append('预计 1 周可完成')
+                parts.append("预计 1 周可完成")
             else:
-                parts.append('预计 2 周以上')
+                parts.append("预计 2 周以上")
 
-        return '，'.join(parts)
+        return "，".join(parts)
 
     def _get_suggested_action(self, urgency_level: str) -> str:
         """获取建议操作"""
-        actions = {'critical': '立即处理', 'high': '本周处理', 'medium': '下周考虑', 'low': '待评估'}
-        return actions.get(urgency_level, '待评估')
+        actions = {"critical": "立即处理", "high": "本周处理", "medium": "下周考虑", "low": "待评估"}
+        return actions.get(urgency_level, "待评估")
 
     async def _enhance_suggestions_with_ai(self, suggestions: list[dict]) -> str:
         """AI 润色建议文案（可选，失败不影响主流程）"""
         if not suggestions:
-            return '暂无需处理的需求。'
+            return "暂无需处理的需求。"
 
         try:
             top_item = suggestions[0]
             prompt = f"""
 你是产品经理的智能助手。基于以下需求数据，生成一句话总结建议（不超过 50 字）：
 
-1. {suggestions[0]['title']} - 优先级：{suggestions[0]['estimated_roi']:.1f}，{suggestions[0]['reason']}
-{f'2. {suggestions[1]["title"]} - 优先级：{suggestions[1]["estimated_roi"]:.1f}' if len(suggestions) > 1 else ''}
-{f'3. {suggestions[2]["title"]} - 优先级：{suggestions[2]["estimated_roi"]:.1f}' if len(suggestions) > 2 else ''}
+1. {suggestions[0]["title"]} - 优先级：{suggestions[0]["estimated_roi"]:.1f}，{suggestions[0]["reason"]}
+{f"2. {suggestions[1]['title']} - 优先级：{suggestions[1]['estimated_roi']:.1f}" if len(suggestions) > 1 else ""}
+{f"3. {suggestions[2]['title']} - 优先级：{suggestions[2]['estimated_roi']:.1f}" if len(suggestions) > 2 else ""}
 
 要求：
 - 直接给出建议，不要解释为什么
@@ -372,7 +375,7 @@ class InsightService:
             summary = await ai_client.chat(prompt, max_tokens=100)
             return summary.strip()
         except Exception as e:
-            log.warning(f'AI 建议生成失败，使用默认文案: {e}')
+            log.warning(f"AI 建议生成失败，使用默认文案: {e}")
             return f'建议本周优先处理"{top_item["title"]}"。'
 
     async def _identify_high_risk_topics(
@@ -398,8 +401,8 @@ class InsightService:
             .where(
                 and_(
                     Topic.tenant_id == tenant_id,
-                    Topic.category == 'bug',
-                    Topic.status.in_(['pending', 'planned', 'in_progress']),
+                    Topic.category == "bug",
+                    Topic.status.in_(["pending", "planned", "in_progress"]),
                     Topic.deleted_at.is_(None),
                 )
             )
@@ -431,54 +434,56 @@ class InsightService:
 
             # 应用规则
             risk_level = None
-            if any(c.customer_type == 'strategic' for c in customers) and score >= 50:
-                risk_level = 'critical'
-            elif any(c.customer_type == 'major' for c in customers) and score >= 20:
-                risk_level = 'high'
-            elif len([c for c in customers if c.customer_type == 'paid']) >= 3 and score >= 10:
-                risk_level = 'medium'
+            if any(c.customer_type == "strategic" for c in customers) and score >= 50:
+                risk_level = "critical"
+            elif any(c.customer_type == "major" for c in customers) and score >= 20:
+                risk_level = "high"
+            elif len([c for c in customers if c.customer_type == "paid"]) >= 3 and score >= 10:
+                risk_level = "medium"
 
             if risk_level:
                 # 计算未解决天数
-                days_unresolved = (datetime.now() - topic.created_time).days
+                days_unresolved = (timezone.now() - topic.created_time).days
 
-                high_risk.append({
-                    'topic_id': topic.id,
-                    'title': topic.title,
-                    'risk_level': risk_level,
-                    'affected_customers': [
-                        {'name': c.name, 'type': c.customer_type}
-                        for c in customers
-                        if c.customer_type in ['major', 'strategic', 'paid']
-                    ],
-                    'days_unresolved': days_unresolved,
-                    'priority_score': score,
-                    'suggested_action': '立即联系客户，安排紧急修复' if risk_level == 'critical' else '尽快处理',
-                })
+                high_risk.append(
+                    {
+                        "topic_id": topic.id,
+                        "title": topic.title,
+                        "risk_level": risk_level,
+                        "affected_customers": [
+                            {"name": c.name, "type": c.customer_type}
+                            for c in customers
+                            if c.customer_type in ["major", "strategic", "paid"]
+                        ],
+                        "days_unresolved": days_unresolved,
+                        "priority_score": score,
+                        "suggested_action": "立即联系客户，安排紧急修复" if risk_level == "critical" else "尽快处理",
+                    }
+                )
 
         # 排序：按风险等级和未解决天数
         high_risk.sort(
             key=lambda x: (
-                0 if x['risk_level'] == 'critical' else 1 if x['risk_level'] == 'high' else 2,
-                -x['days_unresolved'],
+                0 if x["risk_level"] == "critical" else 1 if x["risk_level"] == "high" else 2,
+                -x["days_unresolved"],
             )
         )
 
         # 生成总结
         if not high_risk:
-            summary = '✅ 暂无高风险需求。'
+            summary = "✅ 暂无高风险需求。"
         else:
-            critical_count = len([x for x in high_risk if x['risk_level'] == 'critical'])
-            high_count = len([x for x in high_risk if x['risk_level'] == 'high'])
+            critical_count = len([x for x in high_risk if x["risk_level"] == "critical"])
+            high_count = len([x for x in high_risk if x["risk_level"] == "high"])
 
             if critical_count > 0:
-                summary = f'⚠️ 发现 {critical_count} 个极高风险需求，请立即处理！'
+                summary = f"⚠️ 发现 {critical_count} 个极高风险需求，请立即处理！"
             elif high_count > 0:
-                summary = f'发现 {high_count} 个高风险需求。'
+                summary = f"发现 {high_count} 个高风险需求。"
             else:
-                summary = f'发现 {len(high_risk)} 个中等风险需求。'
+                summary = f"发现 {len(high_risk)} 个中等风险需求。"
 
-        return {'high_risk_topics': high_risk, 'summary': summary, 'generated_at': datetime.now().isoformat()}
+        return {"high_risk_topics": high_risk, "summary": summary, "generated_at": timezone.now().isoformat()}
 
     async def _generate_weekly_report(
         self,
@@ -505,7 +510,7 @@ class InsightService:
         # 3. 渲染 Markdown
         markdown = self._render_report_template(data, ai_suggestion, start_date, end_date)
 
-        return {'markdown': markdown, 'data': data, 'generated_at': datetime.now().isoformat()}
+        return {"markdown": markdown, "data": data, "generated_at": timezone.now().isoformat()}
 
     async def _collect_report_data(
         self,
@@ -546,7 +551,7 @@ class InsightService:
         query_completed = select(func.count(Topic.id)).where(
             and_(
                 Topic.tenant_id == tenant_id,
-                Topic.status == 'completed',
+                Topic.status == "completed",
                 Topic.updated_time.between(start_date, end_date),
             )
         )
@@ -606,38 +611,40 @@ class InsightService:
                 else:
                     estimated_days = 14
 
-            top_topics.append({
-                'id': topic.id,
-                'title': topic.title,
-                'status': topic.status,
-                'customer_count': customer_count,
-                'score': round(topic.priority_score.total_score, 1) if topic.priority_score else 0,
-                'estimated_days': estimated_days,
-                'category': topic.category,
-            })
+            top_topics.append(
+                {
+                    "id": topic.id,
+                    "title": topic.title,
+                    "status": topic.status,
+                    "customer_count": customer_count,
+                    "score": round(topic.priority_score.total_score, 1) if topic.priority_score else 0,
+                    "estimated_days": estimated_days,
+                    "category": topic.category,
+                }
+            )
 
         return {
-            'new_feedbacks_count': new_feedbacks_count,
-            'change_percent': round(change_percent, 1),
-            'new_topics_count': new_topics_count,
-            'completed_count': completed_count,
-            'tag_distribution': tag_distribution,
-            'top_topics': top_topics,
-            'total_topics': new_topics_count,
+            "new_feedbacks_count": new_feedbacks_count,
+            "change_percent": round(change_percent, 1),
+            "new_topics_count": new_topics_count,
+            "completed_count": completed_count,
+            "tag_distribution": tag_distribution,
+            "top_topics": top_topics,
+            "total_topics": new_topics_count,
         }
 
     async def _generate_ai_suggestion_for_report(self, data: dict) -> str:
         """AI 生成报告建议"""
-        if not data['top_topics']:
-            return '暂无需处理的需求。'
+        if not data["top_topics"]:
+            return "暂无需处理的需求。"
 
         try:
-            top_topics = data['top_topics']
+            top_topics = data["top_topics"]
             prompt = f"""
 基于以下 TOP 3 需求，生成一句话建议（不超过 50 字）：
-1. {top_topics[0]['title']} - 影响 {top_topics[0]['customer_count']} 个客户
-{f'2. {top_topics[1]["title"]} - 影响 {top_topics[1]["customer_count"]} 个客户' if len(top_topics) > 1 else ''}
-{f'3. {top_topics[2]["title"]} - 影响 {top_topics[2]["customer_count"]} 个客户' if len(top_topics) > 2 else ''}
+1. {top_topics[0]["title"]} - 影响 {top_topics[0]["customer_count"]} 个客户
+{f"2. {top_topics[1]['title']} - 影响 {top_topics[1]['customer_count']} 个客户" if len(top_topics) > 1 else ""}
+{f"3. {top_topics[2]['title']} - 影响 {top_topics[2]['customer_count']} 个客户" if len(top_topics) > 2 else ""}
 
 要求：直接给出建议，不要解释。
 """
@@ -645,8 +652,8 @@ class InsightService:
             suggestion = await ai_client.chat(prompt, max_tokens=80)
             return suggestion.strip()
         except Exception as e:
-            log.warning(f'AI 报告建议生成失败: {e}')
-            top = data['top_topics'][0]
+            log.warning(f"AI 报告建议生成失败: {e}")
+            top = data["top_topics"][0]
             return f'建议优先处理"{top["title"]}"。'
 
     def _render_report_template(
@@ -660,13 +667,16 @@ class InsightService:
         template_str = """## 本周反馈总结（{{ start_date }} ~ {{ end_date }}）
 
 ### 📊 数据概览
-- 新增反馈：{{ data.new_feedbacks_count }} 条{% if data.change_percent > 0 %}（↑ {{ data.change_percent }}% vs 上周）{% elif data.change_percent < 0 %}（↓ {{ data.change_percent|abs }}% vs 上周）{% endif %}
+- 新增反馈：{{ data.new_feedbacks_count }} 条
+{% if data.change_percent > 0 %}（↑ {{ data.change_percent }}% vs 上周）
+{% elif data.change_percent < 0 %}（↓ {{ data.change_percent|abs }}% vs 上周）{% endif %}
 - 生成需求主题：{{ data.new_topics_count }} 个
 - 已完成需求：{{ data.completed_count }} 个
 
 ### 🏷️ 需求分布
 {% for tag, count in data.tag_distribution %}
-- {{ tag }}：{% if data.total_topics > 0 %}{{ (count / data.total_topics * 100)|round|int }}%{% else %}0%{% endif %}（{{ count }} 个）
+- {{ tag }}：{% if data.total_topics > 0 %}{{ (count / data.total_topics * 100)|round|int }}%{% else %}0%{% endif %}
+（{{ count }} 个）
 {% endfor %}
 
 ### 🔥 客户反馈热度 TOP 3
@@ -683,8 +693,8 @@ class InsightService:
         return template.render(
             data=data,
             ai_suggestion=ai_suggestion,
-            start_date=start_date.strftime('%Y-%m-%d'),
-            end_date=end_date.strftime('%Y-%m-%d'),
+            start_date=start_date.strftime("%Y-%m-%d"),
+            end_date=end_date.strftime("%Y-%m-%d"),
         )
 
     async def _calculate_sentiment_trend(
@@ -731,8 +741,8 @@ class InsightService:
         this_total = sum(this_week_data.values()) or 1
         last_total = sum(last_week_data.values()) or 1
 
-        this_positive = this_week_data.get('positive', 0)
-        last_positive = last_week_data.get('positive', 0)
+        this_positive = this_week_data.get("positive", 0)
+        last_positive = last_week_data.get("positive", 0)
 
         this_positive_rate = (this_positive / this_total) * 100
         last_positive_rate = (last_positive / last_total) * 100
@@ -741,12 +751,12 @@ class InsightService:
 
         # 5. 找出负面反馈最多的 Topic
         query_negative_topics = (
-            select(Topic.id, Topic.title, func.count(Feedback.id).label('negative_count'))
+            select(Topic.id, Topic.title, func.count(Feedback.id).label("negative_count"))
             .join(Feedback, Topic.id == Feedback.topic_id)
             .where(
                 and_(
                     Topic.tenant_id == tenant_id,
-                    Feedback.sentiment == 'negative',
+                    Feedback.sentiment == "negative",
                     Feedback.submitted_at.between(start_date, end_date),
                 )
             )
@@ -756,42 +766,42 @@ class InsightService:
         )
         result_negative = await db.execute(query_negative_topics)
         negative_topics = [
-            {'topic_id': row[0], 'title': row[1], 'negative_count': row[2]} for row in result_negative.all()
+            {"topic_id": row[0], "title": row[1], "negative_count": row[2]} for row in result_negative.all()
         ]
 
         # 6. 生成总结
         if change > 10:
-            summary = f'本周正面反馈占比 {this_positive_rate:.0f}%，较上周上升 {change:.0f}%，客户满意度显著改善。'
+            summary = f"本周正面反馈占比 {this_positive_rate:.0f}%，较上周上升 {change:.0f}%，客户满意度显著改善。"
         elif change > 0:
-            summary = f'本周正面反馈占比 {this_positive_rate:.0f}%，较上周上升 {change:.0f}%，客户满意度略有改善。'
+            summary = f"本周正面反馈占比 {this_positive_rate:.0f}%，较上周上升 {change:.0f}%，客户满意度略有改善。"
         elif change < -10:
             summary = (
-                f'⚠️ 本周正面反馈占比 {this_positive_rate:.0f}%，较上周下降 {abs(change):.0f}%，需要关注客户满意度问题。'
+                f"⚠️ 本周正面反馈占比 {this_positive_rate:.0f}%，较上周下降 {abs(change):.0f}%，需要关注客户满意度问题。"
             )
         elif change < 0:
-            summary = f'本周正面反馈占比 {this_positive_rate:.0f}%，较上周下降 {abs(change):.0f}%。'
+            summary = f"本周正面反馈占比 {this_positive_rate:.0f}%，较上周下降 {abs(change):.0f}%。"
         else:
-            summary = f'本周正面反馈占比 {this_positive_rate:.0f}%，与上周持平。'
+            summary = f"本周正面反馈占比 {this_positive_rate:.0f}%，与上周持平。"
 
         return {
-            'sentiment_trend': {
-                'this_week': {
-                    'positive': this_week_data.get('positive', 0),
-                    'neutral': this_week_data.get('neutral', 0),
-                    'negative': this_week_data.get('negative', 0),
-                    'positive_rate': round(this_positive_rate, 1),
+            "sentiment_trend": {
+                "this_week": {
+                    "positive": this_week_data.get("positive", 0),
+                    "neutral": this_week_data.get("neutral", 0),
+                    "negative": this_week_data.get("negative", 0),
+                    "positive_rate": round(this_positive_rate, 1),
                 },
-                'last_week': {
-                    'positive': last_week_data.get('positive', 0),
-                    'neutral': last_week_data.get('neutral', 0),
-                    'negative': last_week_data.get('negative', 0),
-                    'positive_rate': round(last_positive_rate, 1),
+                "last_week": {
+                    "positive": last_week_data.get("positive", 0),
+                    "neutral": last_week_data.get("neutral", 0),
+                    "negative": last_week_data.get("negative", 0),
+                    "positive_rate": round(last_positive_rate, 1),
                 },
-                'change': f'{change:+.1f}%',
+                "change": f"{change:+.1f}%",
             },
-            'summary': summary,
-            'negative_topics': negative_topics,
-            'generated_at': datetime.now().isoformat(),
+            "summary": summary,
+            "negative_topics": negative_topics,
+            "generated_at": timezone.now().isoformat(),
         }
 
     async def _ensure_sentiment_analyzed(
@@ -821,7 +831,7 @@ class InsightService:
         if not to_analyze:
             return
 
-        log.info(f'Analyzing sentiment for {len(to_analyze)} feedbacks')
+        log.info(f"Analyzing sentiment for {len(to_analyze)} feedbacks")
 
         # 批量调用 AI
         try:
@@ -844,7 +854,7 @@ class InsightService:
 - negative：抱怨、投诉、愤怒
 """
 
-            results = await ai_client.chat(prompt, response_format='json')
+            results = await ai_client.chat(prompt, response_format="json")
 
             # 解析结果
             if isinstance(results, str):
@@ -854,15 +864,15 @@ class InsightService:
             for i, feedback in enumerate(to_analyze[: len(results)]):
                 if i < len(results):
                     result_item = results[i]
-                    feedback.sentiment = result_item.get('sentiment', 'neutral')
-                    feedback.sentiment_score = result_item.get('score', 0.0)
-                    feedback.sentiment_reason = result_item.get('reason', '')
+                    feedback.sentiment = result_item.get("sentiment", "neutral")
+                    feedback.sentiment_score = result_item.get("score", 0.0)
+                    feedback.sentiment_reason = result_item.get("reason", "")
 
             await db.commit()
-            log.info(f'Successfully analyzed sentiment for {len(results)} feedbacks')
+            log.info(f"Successfully analyzed sentiment for {len(results)} feedbacks")
 
         except Exception as e:
-            log.error(f'Sentiment analysis failed: {e}')
+            log.error(f"Sentiment analysis failed: {e}")
             # 失败不影响主流程，继续执行
 
     async def send_report_email(
@@ -870,7 +880,7 @@ class InsightService:
         db: AsyncSession,
         recipients: list[str],
         report_data: dict,
-        time_range: str = 'this_week',
+        time_range: str = "this_week",
     ) -> None:
         """
         发送报告邮件
@@ -884,32 +894,32 @@ class InsightService:
         from backend.plugin.email.utils.send import send_email
 
         if not recipients:
-            log.warning('No recipients provided for report email')
+            log.warning("No recipients provided for report email")
             return
 
         # 解析时间范围
         start_date, end_date = self._parse_time_range(time_range)
 
         # 准备邮件内容
-        data = report_data.get('data', {})
+        data = report_data.get("data", {})
         email_content = {
-            'date_range': f'{start_date.strftime("%Y年%m月%d日")} - {end_date.strftime("%Y年%m月%d日")}',
-            'new_feedbacks_count': data.get('new_feedbacks_count', 0),
-            'change_percent': data.get('change_percent', 0),
-            'new_topics_count': data.get('new_topics_count', 0),
-            'completed_count': data.get('completed_count', 0),
-            'top_topics': data.get('top_topics', []),
+            "date_range": f"{start_date.strftime('%Y年%m月%d日')} - {end_date.strftime('%Y年%m月%d日')}",
+            "new_feedbacks_count": data.get("new_feedbacks_count", 0),
+            "change_percent": data.get("change_percent", 0),
+            "new_topics_count": data.get("new_topics_count", 0),
+            "completed_count": data.get("completed_count", 0),
+            "top_topics": data.get("top_topics", []),
         }
 
         # 生成核心洞察文案
-        top_topics = data.get('top_topics', [])
+        top_topics = data.get("top_topics", [])
         if top_topics:
             top = top_topics[0]
-            email_content['insight'] = f'"{top["title"]}" 影响 {top["customer_count"]} 位客户，建议优先处理。'
+            email_content["insight"] = f'"{top["title"]}" 影响 {top["customer_count"]} 位客户，建议优先处理。'
         else:
-            email_content['insight'] = '本周暂无高优先级需求需要处理。'
+            email_content["insight"] = "本周暂无高优先级需求需要处理。"
 
-        subject = f'📊 userecho 周度洞察简报 ({start_date.strftime("%m/%d")}-{end_date.strftime("%m/%d")})'
+        subject = f"📊 userecho 周度洞察简报 ({start_date.strftime('%m/%d')}-{end_date.strftime('%m/%d')})"
 
         try:
             await send_email(
@@ -917,11 +927,11 @@ class InsightService:
                 recipients=recipients,
                 subject=subject,
                 content=email_content,
-                template='weekly_report.html',
+                template="weekly_report.html",
             )
-            log.info(f'Report email sent to {len(recipients)} recipients')
+            log.info(f"Report email sent to {len(recipients)} recipients")
         except Exception as e:
-            log.error(f'Failed to send report email: {e}')
+            log.error(f"Failed to send report email: {e}")
             raise
 
 

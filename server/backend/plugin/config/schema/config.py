@@ -8,12 +8,12 @@ from backend.common.schema import SchemaBase
 class ConfigSchemaBase(SchemaBase):
     """参数配置基础模型"""
 
-    name: str = Field(description='参数配置名称')
-    type: str | None = Field(None, description='参数配置类型')
-    key: str = Field(description='参数配置键名')
-    value: str = Field(description='参数配置值')
-    is_frontend: bool = Field(description='是否前端参数配置')
-    remark: str | None = Field(None, description='备注')
+    name: str = Field(description="参数配置名称")
+    type: str | None = Field(None, description="参数配置类型")
+    key: str = Field(description="参数配置键名")
+    value: str = Field(description="参数配置值")
+    is_frontend: bool = Field(description="是否前端参数配置")
+    remark: str | None = Field(None, description="备注")
 
 
 class CreateConfigParam(ConfigSchemaBase):
@@ -27,7 +27,7 @@ class UpdateConfigParam(ConfigSchemaBase):
 class UpdateConfigsParam(UpdateConfigParam):
     """批量更新参数配置参数"""
 
-    id: int = Field(description='参数配置 ID')
+    id: int = Field(description="参数配置 ID")
 
 
 class GetConfigDetail(ConfigSchemaBase):
@@ -35,6 +35,6 @@ class GetConfigDetail(ConfigSchemaBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(description='参数配置 ID')
-    created_time: datetime = Field(description='创建时间')
-    updated_time: datetime | None = Field(None, description='更新时间')
+    id: int = Field(description="参数配置 ID")
+    created_time: datetime = Field(description="创建时间")
+    updated_time: datetime | None = Field(None, description="更新时间")

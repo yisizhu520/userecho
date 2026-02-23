@@ -29,11 +29,11 @@ class CRUDTaskResult(CRUDPlus[TaskResult]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if task_id is not None:
-            filters['task_id'] = task_id
+            filters["task_id"] = task_id
 
-        return await self.select_order('id', 'desc', **filters)
+        return await self.select_order("id", "desc", **filters)
 
     async def delete(self, db: AsyncSession, pks: list[int]) -> int:
         """

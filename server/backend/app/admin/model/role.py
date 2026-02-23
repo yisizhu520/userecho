@@ -8,13 +8,13 @@ from backend.common.model import Base, UniversalText, id_key
 class Role(Base):
     """角色表"""
 
-    __tablename__ = 'sys_role'
+    __tablename__ = "sys_role"
 
     id: Mapped[id_key] = mapped_column(init=False)
-    name: Mapped[str] = mapped_column(sa.String(32), unique=True, comment='角色名称')
-    status: Mapped[int] = mapped_column(default=1, comment='角色状态（0停用 1正常）')
-    is_filter_scopes: Mapped[bool] = mapped_column(default=True, comment='过滤数据权限(0否 1是)')
+    name: Mapped[str] = mapped_column(sa.String(32), unique=True, comment="角色名称")
+    status: Mapped[int] = mapped_column(default=1, comment="角色状态（0停用 1正常）")
+    is_filter_scopes: Mapped[bool] = mapped_column(default=True, comment="过滤数据权限(0否 1是)")
     role_type: Mapped[str] = mapped_column(
-        sa.String(20), default='business', comment='角色类型（system=系统角色，business=业务角色）'
+        sa.String(20), default="business", comment="角色类型（system=系统角色，business=业务角色）"
     )
-    remark: Mapped[str | None] = mapped_column(UniversalText, default=None, comment='备注')
+    remark: Mapped[str | None] = mapped_column(UniversalText, default=None, comment="备注")

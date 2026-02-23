@@ -13,8 +13,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '4f5g6h7i8j9k'
-down_revision: str | None = '8c9d0e1f2a3b'
+revision: str = "4f5g6h7i8j9k"
+down_revision: str | None = "8c9d0e1f2a3b"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -22,48 +22,48 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # 租户积分配置表
     op.create_table(
-        'tenant_credits',
-        sa.Column('id', sa.String(36), primary_key=True),
-        sa.Column('tenant_id', sa.String(36), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('plan_type', sa.String(20), nullable=False, server_default='starter'),
-        sa.Column('monthly_quota', sa.Integer(), nullable=False, server_default='500'),
-        sa.Column('current_balance', sa.Integer(), nullable=False, server_default='500'),
-        sa.Column('total_used', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('last_refresh_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('next_refresh_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
-        sa.UniqueConstraint('tenant_id', name='uq_tenant_credits_tenant'),
+        "tenant_credits",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("tenant_id", sa.String(36), sa.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("plan_type", sa.String(20), nullable=False, server_default="starter"),
+        sa.Column("monthly_quota", sa.Integer(), nullable=False, server_default="500"),
+        sa.Column("current_balance", sa.Integer(), nullable=False, server_default="500"),
+        sa.Column("total_used", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("last_refresh_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("next_refresh_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("NOW()")),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("NOW()")),
+        sa.UniqueConstraint("tenant_id", name="uq_tenant_credits_tenant"),
     )
-    op.create_index('idx_tenant_credits_refresh', 'tenant_credits', ['next_refresh_at'])
+    op.create_index("idx_tenant_credits_refresh", "tenant_credits", ["next_refresh_at"])
 
     # 积分消耗记录表
     op.create_table(
-        'credits_usage_log',
-        sa.Column('id', sa.String(36), primary_key=True),
-        sa.Column('tenant_id', sa.String(36), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('user_id', sa.String(36), nullable=True),
-        sa.Column('operation_type', sa.String(50), nullable=False),
-        sa.Column('credits_cost', sa.Integer(), nullable=False),
-        sa.Column('description', sa.String(255), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
+        "credits_usage_log",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("tenant_id", sa.String(36), sa.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("user_id", sa.String(36), nullable=True),
+        sa.Column("operation_type", sa.String(50), nullable=False),
+        sa.Column("credits_cost", sa.Integer(), nullable=False),
+        sa.Column("description", sa.String(255), nullable=True),
+        sa.Column("metadata", postgresql.JSONB(), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("NOW()")),
     )
-    op.create_index('idx_credits_usage_tenant_date', 'credits_usage_log', ['tenant_id', 'created_at'])
-    op.create_index('idx_credits_usage_type', 'credits_usage_log', ['operation_type'])
+    op.create_index("idx_credits_usage_tenant_date", "credits_usage_log", ["tenant_id", "created_at"])
+    op.create_index("idx_credits_usage_type", "credits_usage_log", ["operation_type"])
 
     # 积分配置表（系统级）
     op.create_table(
-        'credits_config',
-        sa.Column('id', sa.String(36), primary_key=True),
-        sa.Column('config_key', sa.String(50), unique=True, nullable=False),
-        sa.Column('config_value', sa.Integer(), nullable=False),
-        sa.Column('config_type', sa.String(20), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
+        "credits_config",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("config_key", sa.String(50), unique=True, nullable=False),
+        sa.Column("config_value", sa.Integer(), nullable=False),
+        sa.Column("config_type", sa.String(20), nullable=False),
+        sa.Column("description", sa.Text(), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("NOW()")),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("NOW()")),
     )
-    op.create_index('idx_credits_config_type', 'credits_config', ['config_type'])
+    op.create_index("idx_credits_config_type", "credits_config", ["config_type"])
 
     # 插入默认配置
     op.execute("""
@@ -83,6 +83,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table('credits_config')
-    op.drop_table('credits_usage_log')
-    op.drop_table('tenant_credits')
+    op.drop_table("credits_config")
+    op.drop_table("credits_usage_log")
+    op.drop_table("tenant_credits")

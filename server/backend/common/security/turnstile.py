@@ -5,7 +5,7 @@ import httpx
 from backend.common.log import log
 from backend.core.conf import settings
 
-TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 
 async def verify_turnstile(token: str, remote_ip: str | None = None) -> bool:
@@ -23,26 +23,26 @@ async def verify_turnstile(token: str, remote_ip: str | None = None) -> bool:
         return True
 
     if not token:
-        log.warning('Turnstile token is empty')
+        log.warning("Turnstile token is empty")
         return False
 
     payload = {
-        'secret': settings.TURNSTILE_SECRET_KEY,
-        'response': token,
+        "secret": settings.TURNSTILE_SECRET_KEY,
+        "response": token,
     }
     if remote_ip:
-        payload['remoteip'] = remote_ip
+        payload["remoteip"] = remote_ip
 
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(TURNSTILE_VERIFY_URL, data=payload)
             result = response.json()
 
-            if not result.get('success'):
-                log.warning(f'Turnstile verification failed: {result.get("error-codes")}')
+            if not result.get("success"):
+                log.warning(f"Turnstile verification failed: {result.get('error-codes')}")
                 return False
 
             return True
     except Exception as e:
-        log.error(f'Turnstile verification error: {e}')
+        log.error(f"Turnstile verification error: {e}")
         return False

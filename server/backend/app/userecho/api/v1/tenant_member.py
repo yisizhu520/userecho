@@ -18,18 +18,18 @@ from backend.database.db import CurrentSession
 router = APIRouter()
 
 
-@router.get('', summary='获取成员列表', dependencies=[DependsJwtAuth])
+@router.get("", summary="获取成员列表", dependencies=[DependsJwtAuth])
 async def get_member_list(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    status: Annotated[str | None, Query(description='状态')] = None,
+    status: Annotated[str | None, Query(description="状态")] = None,
 ) -> ResponseSchemaModel[list[TenantMemberOut]]:
     """获取当前租户的成员列表"""
     members = await tenant_member_service.get_list(db, tenant_id, status=status)
     return ResponseSchemaModel(data=[TenantMemberOut.model_validate(m) for m in members])
 
 
-@router.get('/my-permissions', summary='获取我的权限', dependencies=[DependsJwtAuth])
+@router.get("/my-permissions", summary="获取我的权限", dependencies=[DependsJwtAuth])
 async def get_my_permissions(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -46,21 +46,21 @@ async def get_my_permissions(
     return ResponseSchemaModel(data=permissions)
 
 
-@router.get('/{member_id}', summary='获取成员详情', dependencies=[DependsJwtAuth])
+@router.get("/{member_id}", summary="获取成员详情", dependencies=[DependsJwtAuth])
 async def get_member(db: CurrentSession, member_id: str) -> ResponseSchemaModel[TenantMemberOut]:
     """获取成员详情"""
     member = await tenant_member_service.get(db, member_id)
     return ResponseSchemaModel(data=TenantMemberOut.model_validate(member))
 
 
-@router.get('/{member_id}/roles', summary='获取成员角色', dependencies=[DependsJwtAuth])
+@router.get("/{member_id}/roles", summary="获取成员角色", dependencies=[DependsJwtAuth])
 async def get_member_roles(db: CurrentSession, member_id: str) -> ResponseSchemaModel[list[str]]:
     """获取成员的角色 ID 列表"""
     role_ids = await tenant_member_service.get_member_role_ids(db, member_id)
     return ResponseSchemaModel(data=role_ids)
 
 
-@router.post('', summary='创建成员', dependencies=[DependsJwtAuth])
+@router.post("", summary="创建成员", dependencies=[DependsJwtAuth])
 async def create_member(
     db: CurrentSession,
     body: TenantMemberCreate,
@@ -82,7 +82,7 @@ async def create_member(
     return ResponseSchemaModel(data=TenantMemberOut.model_validate(member))
 
 
-@router.put('/{member_id}', summary='更新成员', dependencies=[DependsJwtAuth])
+@router.put("/{member_id}", summary="更新成员", dependencies=[DependsJwtAuth])
 async def update_member(
     db: CurrentSession,
     member_id: str,
@@ -104,7 +104,7 @@ async def update_member(
     return ResponseSchemaModel(data=TenantMemberOut.model_validate(member))
 
 
-@router.put('/{member_id}/roles', summary='更新成员角色', dependencies=[DependsJwtAuth])
+@router.put("/{member_id}/roles", summary="更新成员角色", dependencies=[DependsJwtAuth])
 async def update_member_roles(
     db: CurrentSession,
     member_id: str,
@@ -117,7 +117,7 @@ async def update_member_roles(
     return ResponseModel()
 
 
-@router.delete('/{member_id}', summary='移除成员', dependencies=[DependsJwtAuth])
+@router.delete("/{member_id}", summary="移除成员", dependencies=[DependsJwtAuth])
 async def delete_member(db: CurrentSession, member_id: str) -> ResponseModel:
     """移除成员"""
     await tenant_member_service.delete(db, member_id)

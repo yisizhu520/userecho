@@ -1,4 +1,4 @@
-"""客户 API 端点"""
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -9,10 +9,10 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/customers', tags=['UserEcho - 客户管理'])
+router = APIRouter(prefix="/customers", tags=["UserEcho - 客户管理"])
 
 
-@router.get('', summary='获取客户列表')
+@router.get("", summary="获取客户列表")
 async def get_customers(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -20,7 +20,7 @@ async def get_customers(
     limit: int = 20,
     search: str | None = None,
     customer_type: str | None = None,
-):
+) -> Any:
     """
     获取客户列表（支持搜索和筛选）
 
@@ -39,16 +39,16 @@ async def get_customers(
     )
     # 转换为 Pydantic schema
     customers_out = [CustomerOut.model_validate(c) for c in customers]
-    return response_base.success(data={'items': customers_out, 'total': total})
+    return response_base.success(data={"items": customers_out, "total": total})
 
 
-@router.get('/search', summary='搜索客户')
+@router.get("/search", summary="搜索客户")
 async def search_customers(
     db: CurrentSession,
     query: str,
     tenant_id: str = CurrentTenantId,
     limit: int = 10,
-):
+) -> Any:
     """
     模糊搜索客户名称
 
@@ -60,12 +60,12 @@ async def search_customers(
     return response_base.success(data=customers_out)
 
 
-@router.post('', summary='创建客户')
+@router.post("", summary="创建客户")
 async def create_customer(
     data: CustomerCreate,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     创建客户
 
@@ -77,28 +77,28 @@ async def create_customer(
     return response_base.success(data=CustomerOut.model_validate(customer))
 
 
-@router.put('/{customer_id}', summary='更新客户')
+@router.put("/{customer_id}", summary="更新客户")
 async def update_customer(
     customer_id: str,
     data: CustomerUpdate,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """更新客户"""
     customer = await customer_service.update_customer(db=db, tenant_id=tenant_id, customer_id=customer_id, data=data)
     if not customer:
-        return response_base.fail(res=CustomResponse(code=400, msg='客户不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="客户不存在"))
     return response_base.success(data=CustomerOut.model_validate(customer))
 
 
-@router.delete('/{customer_id}', summary='删除客户')
+@router.delete("/{customer_id}", summary="删除客户")
 async def delete_customer(
     customer_id: str,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """删除客户（软删除）"""
     success = await customer_service.delete_customer(db=db, tenant_id=tenant_id, customer_id=customer_id)
     if not success:
-        return response_base.fail(res=CustomResponse(code=400, msg='客户不存在或已删除'))
-    return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
+        return response_base.fail(res=CustomResponse(code=400, msg="客户不存在或已删除"))
+    return response_base.success(res=CustomResponse(code=200, msg="删除成功"))

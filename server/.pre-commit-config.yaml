@@ -8,23 +8,31 @@ repos:
       - id: check-yaml
       - id: check-toml
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.14.6
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.1
     hooks:
-      - id: ruff-check
+      - id: ruff
         args:
           # https://github.com/astral-sh/ruff-pre-commit/issues/64
           - '--fix'
           - '--unsafe-fixes'
+          - '--config=server/pyproject.toml'
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.13.0
     hooks:
       - id: mypy
+        args:
+          - '--config-file=server/pyproject.toml'
         additional_dependencies:
           - types-redis>=4.6.0
           - types-pyyaml>=6.0.12
+          - pydantic>=2.12.5
+          - pydantic-settings>=2.12.0
+          - sqlalchemy[asyncio]>=2.0.44
+          - fastapi>=0.123.5
+          - sqlalchemy-crud-plus>=1.13.1
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.9.12

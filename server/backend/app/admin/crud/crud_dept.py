@@ -53,18 +53,18 @@ class CRUDDept(CRUDPlus[Dept]):
         :param status: 部门状态
         :return:
         """
-        filters = {'del_flag': False}
+        filters = {"del_flag": False}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if leader is not None:
-            filters['leader__like'] = f'%{leader}%'
+            filters["leader__like"] = f"%{leader}%"
         if phone is not None:
-            filters['phone__startswith'] = phone
+            filters["phone__startswith"] = phone
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
 
-        return await self.select_models_order(db, 'sort', 'desc', data_filter, **filters)
+        return await self.select_models_order(db, "sort", "desc", data_filter, **filters)
 
     async def create(self, db: AsyncSession, obj: CreateDeptParam) -> None:
         """
@@ -95,7 +95,7 @@ class CRUDDept(CRUDPlus[Dept]):
         :param dept_id: 部门 ID
         :return:
         """
-        return await self.delete_model_by_column(db, id=dept_id, logical_deletion=True, deleted_flag_column='del_flag')
+        return await self.delete_model_by_column(db, id=dept_id, logical_deletion=True, deleted_flag_column="del_flag")
 
     async def get_join(self, db: AsyncSession, dept_id: int) -> Any | None:
         """
@@ -110,7 +110,7 @@ class CRUDDept(CRUDPlus[Dept]):
             dept_id,
             join_conditions=[JoinConfig(model=User, join_on=User.dept_id == self.model.id, fill_result=True)],
         )
-        return select_join_serialize(result, relationships=['Dept-o2m-User'])
+        return select_join_serialize(result, relationships=["Dept-o2m-User"])
 
     async def get_children(self, db: AsyncSession, dept_id: int) -> Sequence[Dept | None]:
         """

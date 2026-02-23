@@ -2,6 +2,8 @@
 
 import operator
 
+from typing import Any
+
 import numpy as np
 
 from fastapi import APIRouter
@@ -20,17 +22,17 @@ from backend.core.conf import settings
 from backend.database.db import CurrentSession
 from backend.utils.ai_client import ai_client
 
-router = APIRouter(prefix='/clustering', tags=['UserEcho - AI聚类'])
+router = APIRouter(prefix="/clustering", tags=["UserEcho - AI聚类"])
 
 
-@router.post('/trigger', summary='触发聚类任务', dependencies=[DependsTurnstile])
+@router.post("/trigger", summary="触发聚类任务", dependencies=[DependsTurnstile])
 async def trigger_clustering(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     max_feedbacks: int = 100,
     force_recluster: bool = False,
     async_mode: bool = False,
-):
+) -> Any:
     """
     触发 AI 聚类任务
 
@@ -47,13 +49,13 @@ async def trigger_clustering(
     """
     if async_mode:
         async_result = celery_app.send_task(
-            name='userecho_clustering_batch',
+            name="userecho_clustering_batch",
             args=[tenant_id],
-            kwargs={'max_feedbacks': max_feedbacks, 'force_recluster': force_recluster},
+            kwargs={"max_feedbacks": max_feedbacks, "force_recluster": force_recluster},
         )
         return response_base.success(
-            data={'status': 'accepted', 'task_id': async_result.id},
-            res=CustomResponse(code=200, msg='聚类任务已提交'),
+            data={"status": "accepted", "task_id": async_result.id},
+            res=CustomResponse(code=200, msg="聚类任务已提交"),
         )
 
     result = await clustering_service.trigger_clustering(
@@ -63,23 +65,23 @@ async def trigger_clustering(
         force_recluster=force_recluster,
     )
 
-    if result['status'] == 'error':
-        return response_base.fail(res=CustomResponse(code=400, msg=result.get('message', '聚类失败')))
+    if result["status"] == "error":
+        return response_base.fail(res=CustomResponse(code=400, msg=result.get("message", "聚类失败")))
 
-    if result['status'] == 'failed':
-        return response_base.fail(res=CustomResponse(code=400, msg=result.get('message', '聚类失败')))
+    if result["status"] == "failed":
+        return response_base.fail(res=CustomResponse(code=400, msg=result.get("message", "聚类失败")))
 
-    if result['status'] == 'skipped':
-        return response_base.fail(res=CustomResponse(code=400, msg=result.get('message', '聚类已跳过')))
+    if result["status"] == "skipped":
+        return response_base.fail(res=CustomResponse(code=400, msg=result.get("message", "聚类已跳过")))
 
-    return response_base.success(data=result, res=CustomResponse(code=200, msg='聚类完成'))
+    return response_base.success(data=result, res=CustomResponse(code=200, msg="聚类完成"))
 
 
-@router.get('/task/{task_id}', summary='查询聚类任务状态')
+@router.get("/task/{task_id}", summary="查询聚类任务状态")
 async def get_clustering_task_status(
     task_id: str,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     查询 Celery 聚类任务状态（MVP：基于 task_id 轮询）
 
@@ -90,19 +92,19 @@ async def get_clustering_task_status(
     """
     _ = tenant_id  # 租户鉴权由依赖保证；MVP 不做 task_id ↔ tenant 的强绑定
     r = celery_app.AsyncResult(task_id)
-    data: dict = {'task_id': task_id, 'state': r.state}
+    data: dict = {"task_id": task_id, "state": r.state}
     if r.successful():
-        data['result'] = r.result
+        data["result"] = r.result
     elif r.failed():
-        data['error'] = str(r.result)
+        data["error"] = str(r.result)
     return response_base.success(data=data)
 
 
-@router.get('/status', summary='获取聚类状态概览')
+@router.get("/status", summary="获取聚类状态概览")
 async def get_clustering_status(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     获取聚类状态概览
 
@@ -125,8 +127,8 @@ async def get_clustering_status(
     from backend.utils.timezone import timezone
 
     # 超时阈值：10分钟（大于 Celery 任务的 9分钟软超时 + 1分钟硬超时）
-    PROCESSING_TIMEOUT_MINUTES = 10
-    timeout_threshold = timezone.now() - timedelta(minutes=PROCESSING_TIMEOUT_MINUTES)
+    processing_timeout_minutes = 10
+    timeout_threshold = timezone.now() - timedelta(minutes=processing_timeout_minutes)
 
     # ========================================
     # 1. 自动清理超时的 processing 状态
@@ -135,7 +137,7 @@ async def get_clustering_status(
     stale_processing_query = select(Feedback.id).where(
         Feedback.tenant_id == tenant_id,
         Feedback.deleted_at.is_(None),
-        Feedback.clustering_status == 'processing',
+        Feedback.clustering_status == "processing",
         Feedback.updated_time < timeout_threshold,
     )
     stale_processing_ids = list(await db.scalars(stale_processing_query))
@@ -143,8 +145,8 @@ async def get_clustering_status(
     # 如果发现超时记录，自动清理并记录日志
     if stale_processing_ids:
         log.warning(
-            f'Found {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}, '
-            f'cleaning up (threshold: {PROCESSING_TIMEOUT_MINUTES} minutes)'
+            f"Found {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}, "
+            f"cleaning up (threshold: {processing_timeout_minutes} minutes)"
         )
 
         # 批量更新为 failed 状态
@@ -152,16 +154,16 @@ async def get_clustering_status(
             db=db,
             tenant_id=tenant_id,
             feedback_ids=stale_processing_ids,
-            clustering_status='failed',
+            clustering_status="failed",
             clustering_metadata={
-                'failed_at': timezone.now().isoformat(),
-                'reason': 'timeout_cleanup',
-                'timeout_minutes': PROCESSING_TIMEOUT_MINUTES,
+                "failed_at": timezone.now().isoformat(),
+                "reason": "timeout_cleanup",
+                "timeout_minutes": processing_timeout_minutes,
             },
         )
 
         log.info(
-            f'Successfully cleaned up {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}'
+            f"Successfully cleaned up {len(stale_processing_ids)} stale processing feedbacks for tenant {tenant_id}"
         )
 
     # ========================================
@@ -170,7 +172,7 @@ async def get_clustering_status(
     processing_query = select(func.count(Feedback.id)).where(
         Feedback.tenant_id == tenant_id,
         Feedback.deleted_at.is_(None),
-        Feedback.clustering_status == 'processing',
+        Feedback.clustering_status == "processing",
         Feedback.updated_time >= timeout_threshold,  # 只统计最近10分钟内的
     )
     processing_count = await db.scalar(processing_query) or 0
@@ -182,7 +184,7 @@ async def get_clustering_status(
         Feedback.tenant_id == tenant_id,
         Feedback.deleted_at.is_(None),
         Feedback.topic_id.is_(None),
-        Feedback.clustering_status == 'pending',
+        Feedback.clustering_status == "pending",
     )
     pending_count = await db.scalar(pending_query) or 0
 
@@ -194,7 +196,7 @@ async def get_clustering_status(
         .where(
             Feedback.tenant_id == tenant_id,
             Feedback.deleted_at.is_(None),
-            Feedback.clustering_status == 'clustered',
+            Feedback.clustering_status == "clustered",
             Feedback.clustering_metadata.is_not(None),
         )
         .order_by(Feedback.updated_time.desc())
@@ -204,24 +206,24 @@ async def get_clustering_status(
 
     last_run_at = None
     if last_metadata and isinstance(last_metadata, dict):
-        last_run_at = last_metadata.get('clustered_at')
+        last_run_at = last_metadata.get("clustered_at")
 
     return response_base.success(
         data={
-            'pending_count': pending_count,
-            'processing_count': processing_count,
-            'last_run_at': last_run_at,
+            "pending_count": pending_count,
+            "processing_count": processing_count,
+            "last_run_at": last_run_at,
         }
     )
 
 
-@router.get('/suggestions/{feedback_id}', summary='获取聚类建议', dependencies=[DependsTurnstile])
+@router.get("/suggestions/{feedback_id}", summary="获取聚类建议", dependencies=[DependsTurnstile])
 async def get_clustering_suggestions(
     feedback_id: str,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     top_k: int = 5,
-):
+) -> Any:
     """
     获取反馈的聚类建议（查找相似反馈）
 
@@ -239,11 +241,11 @@ async def get_clustering_suggestions(
     return response_base.success(data=suggestions)
 
 
-@router.get('/pending-suggestions', summary='获取待处理的合并建议', dependencies=[DependsTurnstile])
+@router.get("/pending-suggestions", summary="获取待处理的合并建议", dependencies=[DependsTurnstile])
 async def get_pending_suggestions(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     获取当前租户所有待处理的合并建议
 
@@ -258,14 +260,14 @@ async def get_pending_suggestions(
     return response_base.success(data=suggestions)
 
 
-@router.get('/debug/similarity-matrix', summary='【调试】查看反馈相似度矩阵和聚类结果')
+@router.get("/debug/similarity-matrix", summary="【调试】查看反馈相似度矩阵和聚类结果")
 async def debug_similarity_matrix(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     limit: int = 20,
     similarity_threshold: float | None = None,
     min_samples: int | None = None,
-):
+) -> Any:
     """
     调试接口：查看待聚类反馈之间的相似度矩阵 + 实际聚类结果
 
@@ -294,7 +296,7 @@ async def debug_similarity_matrix(
     )
 
     if len(feedbacks) < 2:
-        return response_base.fail(res=CustomResponse(code=400, msg=f'待聚类反馈不足（当前: {len(feedbacks)}）'))
+        return response_base.fail(res=CustomResponse(code=400, msg=f"待聚类反馈不足（当前: {len(feedbacks)}）"))
 
     # 获取 embedding
     embeddings = []
@@ -313,7 +315,7 @@ async def debug_similarity_matrix(
                 valid_feedbacks.append(feedback)
 
     if len(embeddings) < 2:
-        return response_base.fail(res=CustomResponse(code=400, msg='无法获取足够的 embedding'))
+        return response_base.fail(res=CustomResponse(code=400, msg="无法获取足够的 embedding"))
 
     # 计算相似度矩阵
     embeddings_array = np.array(embeddings)
@@ -322,9 +324,9 @@ async def debug_similarity_matrix(
     # 构造反馈信息
     feedbacks_info = [
         {
-            'id': fb.id,
-            'content': fb.content[:50] + '...' if len(fb.content) > 50 else fb.content,
-            'full_content': fb.content,
+            "id": fb.id,
+            "content": fb.content[:50] + "..." if len(fb.content) > 50 else fb.content,
+            "full_content": fb.content,
         }
         for fb in valid_feedbacks
     ]
@@ -335,16 +337,18 @@ async def debug_similarity_matrix(
         for j in range(i + 1, len(similarity_matrix)):
             sim = float(similarity_matrix[i][j])
             if sim >= 0.75:
-                high_similarity_pairs.append({
-                    'feedback1_id': valid_feedbacks[i].id,
-                    'feedback1_content': feedbacks_info[i]['content'],
-                    'feedback2_id': valid_feedbacks[j].id,
-                    'feedback2_content': feedbacks_info[j]['content'],
-                    'similarity': round(sim, 4),
-                })
+                high_similarity_pairs.append(
+                    {
+                        "feedback1_id": valid_feedbacks[i].id,
+                        "feedback1_content": feedbacks_info[i]["content"],
+                        "feedback2_id": valid_feedbacks[j].id,
+                        "feedback2_content": feedbacks_info[j]["content"],
+                        "similarity": round(sim, 4),
+                    }
+                )
 
     # 按相似度降序排列
-    high_similarity_pairs.sort(key=operator.itemgetter('similarity'), reverse=True)
+    high_similarity_pairs.sort(key=operator.itemgetter("similarity"), reverse=True)
 
     # ========================================
     # 执行 DBSCAN 聚类
@@ -359,7 +363,7 @@ async def debug_similarity_matrix(
 
     # DBSCAN 参数：eps = 1 - threshold（距离阈值）
     eps = 1 - threshold
-    dbscan = DBSCAN(eps=eps, min_samples=min_samples_val, metric='precomputed')
+    dbscan = DBSCAN(eps=eps, min_samples=min_samples_val, metric="precomputed")
     labels = dbscan.fit_predict(distance_matrix)
 
     # ========================================
@@ -385,13 +389,13 @@ async def debug_similarity_matrix(
                 silhouette = silhouette_score(
                     embeddings_array[non_noise_mask],
                     labels[non_noise_mask],
-                    metric='euclidean',
+                    metric="euclidean",
                 )
             except Exception as e:
                 # 如果还是失败，记录错误并跳过
                 from backend.common.log import log
 
-                log.warning(f'Failed to calculate silhouette score: {e}')
+                log.warning(f"Failed to calculate silhouette score: {e}")
                 silhouette = None
 
     # ========================================
@@ -406,15 +410,15 @@ async def debug_similarity_matrix(
         cluster_indices = np.where(labels == label)[0]
         cluster_feedbacks = [
             {
-                'id': valid_feedbacks[idx].id,
-                'content': feedbacks_info[idx]['content'],
-                'full_content': valid_feedbacks[idx].content,
+                "id": valid_feedbacks[idx].id,
+                "content": feedbacks_info[idx]["content"],
+                "full_content": valid_feedbacks[idx].content,
             }
             for idx in cluster_indices
         ]
 
         # 计算簇内平均相似度
-        cluster_similarities = []
+        cluster_similarities: list[float] = []
         for i in range(len(cluster_indices)):
             cluster_similarities.extend(
                 similarity_matrix[cluster_indices[i]][cluster_indices[j]] for j in range(i + 1, len(cluster_indices))
@@ -422,20 +426,22 @@ async def debug_similarity_matrix(
 
         avg_similarity = float(np.mean(cluster_similarities)) if cluster_similarities else 0.0
 
-        clusters_result.append({
-            'cluster_id': int(label),
-            'size': len(cluster_feedbacks),
-            'feedbacks': cluster_feedbacks,
-            'avg_similarity': round(avg_similarity, 4),
-        })
+        clusters_result.append(
+            {
+                "cluster_id": int(label),
+                "size": len(cluster_feedbacks),
+                "feedbacks": cluster_feedbacks,
+                "avg_similarity": round(avg_similarity, 4),
+            }
+        )
 
     # 噪声样本
     noise_indices = np.where(labels == -1)[0]
     noise_feedbacks = [
         {
-            'id': valid_feedbacks[idx].id,
-            'content': feedbacks_info[idx]['content'],
-            'full_content': valid_feedbacks[idx].content,
+            "id": valid_feedbacks[idx].id,
+            "content": feedbacks_info[idx]["content"],
+            "full_content": valid_feedbacks[idx].content,
         }
         for idx in noise_indices
     ]
@@ -448,15 +454,15 @@ async def debug_similarity_matrix(
 
     if n_clusters == 0:
         quality_pass = False
-        quality_issues.append('未形成任何聚类簇')
+        quality_issues.append("未形成任何聚类簇")
 
     if noise_ratio > settings.CLUSTERING_MAX_NOISE_RATIO:
         quality_pass = False
-        quality_issues.append(f'噪声率过高: {noise_ratio:.2%} > {settings.CLUSTERING_MAX_NOISE_RATIO:.2%}')
+        quality_issues.append(f"噪声率过高: {noise_ratio:.2%} > {settings.CLUSTERING_MAX_NOISE_RATIO:.2%}")
 
     if silhouette is not None and silhouette < settings.CLUSTERING_MIN_SILHOUETTE:
         quality_pass = False
-        quality_issues.append(f'轮廓系数过低: {silhouette:.3f} < {settings.CLUSTERING_MIN_SILHOUETTE:.3f}')
+        quality_issues.append(f"轮廓系数过低: {silhouette:.3f} < {settings.CLUSTERING_MIN_SILHOUETTE:.3f}")
 
     # ========================================
     # 返回完整数据
@@ -464,40 +470,40 @@ async def debug_similarity_matrix(
     return response_base.success(
         data={
             # 原有数据
-            'feedbacks': feedbacks_info,
-            'similarity_matrix': similarity_matrix.tolist(),
-            'high_similarity_pairs': high_similarity_pairs,
-            'stats': {
-                'total_feedbacks': len(valid_feedbacks),
-                'avg_similarity': float(np.mean(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
-                'max_similarity': float(np.max(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
-                'min_similarity': float(np.min(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
-                'pairs_above_075': len(high_similarity_pairs),
+            "feedbacks": feedbacks_info,
+            "similarity_matrix": similarity_matrix.tolist(),
+            "high_similarity_pairs": high_similarity_pairs,
+            "stats": {
+                "total_feedbacks": len(valid_feedbacks),
+                "avg_similarity": float(np.mean(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
+                "max_similarity": float(np.max(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
+                "min_similarity": float(np.min(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
+                "pairs_above_075": len(high_similarity_pairs),
             },
             # 新增：聚类结果
-            'clustering': {
-                'parameters': {
-                    'similarity_threshold': threshold,
-                    'min_samples': min_samples_val,
-                    'eps': round(eps, 4),
+            "clustering": {
+                "parameters": {
+                    "similarity_threshold": threshold,
+                    "min_samples": min_samples_val,
+                    "eps": round(eps, 4),
                 },
-                'results': {
-                    'n_clusters': n_clusters,
-                    'clusters': clusters_result,
-                    'noise': {
-                        'count': int(noise_count),
-                        'ratio': round(noise_ratio, 4),
-                        'feedbacks': noise_feedbacks,
+                "results": {
+                    "n_clusters": n_clusters,
+                    "clusters": clusters_result,
+                    "noise": {
+                        "count": int(noise_count),
+                        "ratio": round(noise_ratio, 4),
+                        "feedbacks": noise_feedbacks,
                     },
                 },
-                'quality': {
-                    'silhouette_score': round(silhouette, 4) if silhouette is not None else None,
-                    'noise_ratio': round(noise_ratio, 4),
-                    'pass': quality_pass,
-                    'issues': quality_issues,
-                    'thresholds': {
-                        'min_silhouette': settings.CLUSTERING_MIN_SILHOUETTE,
-                        'max_noise_ratio': settings.CLUSTERING_MAX_NOISE_RATIO,
+                "quality": {
+                    "silhouette_score": round(silhouette, 4) if silhouette is not None else None,
+                    "noise_ratio": round(noise_ratio, 4),
+                    "pass": quality_pass,
+                    "issues": quality_issues,
+                    "thresholds": {
+                        "min_silhouette": settings.CLUSTERING_MIN_SILHOUETTE,
+                        "max_noise_ratio": settings.CLUSTERING_MAX_NOISE_RATIO,
                     },
                 },
             },

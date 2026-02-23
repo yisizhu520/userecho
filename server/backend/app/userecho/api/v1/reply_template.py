@@ -15,7 +15,7 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/reply-templates', tags=['UserEcho - 回复模板'])
+router = APIRouter(prefix="/reply-templates", tags=["UserEcho - 回复模板"])
 
 
 def get_current_user_id() -> int:
@@ -24,7 +24,7 @@ def get_current_user_id() -> int:
     return 1
 
 
-@router.get('', summary='获取回复模板列表')
+@router.get("", summary="获取回复模板列表")
 async def get_templates(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -44,7 +44,7 @@ async def get_templates(
     return response_base.success(data=ReplyTemplateListResponse(items=templates_out, total=len(templates_out)))
 
 
-@router.get('/{template_id}', summary='获取模板详情')
+@router.get("/{template_id}", summary="获取模板详情")
 async def get_template(
     template_id: str,
     db: CurrentSession,
@@ -53,12 +53,12 @@ async def get_template(
     """获取模板详情"""
     template = await crud_reply_template.get_by_id(db, tenant_id, template_id)
     if not template:
-        return response_base.fail(res=CustomResponse(code=400, msg='模板不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="模板不存在"))
 
     return response_base.success(data=ReplyTemplateOut.model_validate(template))
 
 
-@router.post('', summary='创建回复模板')
+@router.post("", summary="创建回复模板")
 async def create_template(
     data: ReplyTemplateCreate,
     db: CurrentSession,
@@ -85,11 +85,11 @@ async def create_template(
 
     return response_base.success(
         data=ReplyTemplateOut.model_validate(template),
-        res=CustomResponse(code=200, msg='创建成功'),
+        res=CustomResponse(code=200, msg="创建成功"),
     )
 
 
-@router.put('/{template_id}', summary='更新回复模板')
+@router.put("/{template_id}", summary="更新回复模板")
 async def update_template(
     template_id: str,
     data: ReplyTemplateUpdate,
@@ -99,11 +99,11 @@ async def update_template(
     """更新回复模板"""
     template = await crud_reply_template.get_by_id(db, tenant_id, template_id)
     if not template:
-        return response_base.fail(res=CustomResponse(code=400, msg='模板不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="模板不存在"))
 
     # 系统模板不允许修改
     if template.is_system:
-        return response_base.fail(res=CustomResponse(code=403, msg='系统模板不允许修改'))
+        return response_base.fail(res=CustomResponse(code=403, msg="系统模板不允许修改"))
 
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
@@ -114,11 +114,11 @@ async def update_template(
 
     return response_base.success(
         data=ReplyTemplateOut.model_validate(template),
-        res=CustomResponse(code=200, msg='更新成功'),
+        res=CustomResponse(code=200, msg="更新成功"),
     )
 
 
-@router.delete('/{template_id}', summary='删除回复模板')
+@router.delete("/{template_id}", summary="删除回复模板")
 async def delete_template(
     template_id: str,
     db: CurrentSession,
@@ -127,19 +127,19 @@ async def delete_template(
     """删除回复模板"""
     template = await crud_reply_template.get_by_id(db, tenant_id, template_id)
     if not template:
-        return response_base.fail(res=CustomResponse(code=400, msg='模板不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="模板不存在"))
 
     # 系统模板不允许删除
     if template.is_system:
-        return response_base.fail(res=CustomResponse(code=403, msg='系统模板不允许删除'))
+        return response_base.fail(res=CustomResponse(code=403, msg="系统模板不允许删除"))
 
     await db.delete(template)
     await db.commit()
 
-    return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
+    return response_base.success(res=CustomResponse(code=200, msg="删除成功"))
 
 
-@router.post('/{template_id}/use', summary='使用模板（增加使用次数）')
+@router.post("/{template_id}/use", summary="使用模板（增加使用次数）")
 async def use_template(
     template_id: str,
     db: CurrentSession,
@@ -148,6 +148,6 @@ async def use_template(
     """使用模板，增加使用次数计数"""
     template = await crud_reply_template.increment_usage(db, tenant_id, template_id)
     if not template:
-        return response_base.fail(res=CustomResponse(code=400, msg='模板不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="模板不存在"))
 
-    return response_base.success(data={'content': template.content})
+    return response_base.success(data={"content": template.content})

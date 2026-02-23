@@ -1,6 +1,6 @@
 """积分管理 API"""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 
@@ -9,14 +9,14 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/credits', tags=['UserEcho - 积分管理'])
+router = APIRouter(prefix="/credits", tags=["UserEcho - 积分管理"])
 
 
-@router.get('/balance', summary='获取积分余额')
+@router.get("/balance", summary="获取积分余额")
 async def get_credits_balance(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     获取当前租户的积分余额信息
 
@@ -33,13 +33,13 @@ async def get_credits_balance(
     return response_base.success(data=balance)
 
 
-@router.get('/usage', summary='获取积分使用记录')
+@router.get("/usage", summary="获取积分使用记录")
 async def get_credits_usage(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    operation_type: Annotated[str | None, Query(description='操作类型过滤')] = None,
-    limit: Annotated[int, Query(ge=1, le=500, description='返回记录数')] = 100,
-):
+    operation_type: Annotated[str | None, Query(description="操作类型过滤")] = None,
+    limit: Annotated[int, Query(ge=1, le=500, description="返回记录数")] = 100,
+) -> Any:
     """
     获取积分使用记录列表
 
@@ -54,11 +54,11 @@ async def get_credits_usage(
     return response_base.success(data=history)
 
 
-@router.get('/stats', summary='获取积分统计')
+@router.get("/stats", summary="获取积分统计")
 async def get_credits_stats(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     获取积分使用统计（按类型分组）
 

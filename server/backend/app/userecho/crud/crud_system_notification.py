@@ -152,12 +152,12 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         notification = SystemNotification(
             tenant_id=tenant_id,
             user_id=user_id,
-            type='topic_completed',
-            title='需求已完成，待通知用户',
-            message=f'「{topic_title}」已完成，有 {pending_count} 位用户等待通知',
+            type="topic_completed",
+            title="需求已完成，待通知用户",
+            message=f"「{topic_title}」已完成，有 {pending_count} 位用户等待通知",
             avatar=None,
-            action_url=f'/app/userecho/topic/{topic_id}?tab=notify',
-            extra_data={'topic_id': topic_id, 'pending_notifications': pending_count},
+            action_url=f"/app/userecho/topic/{topic_id}?tab=notify",
+            extra_data={"topic_id": topic_id, "pending_notifications": pending_count},
         )
 
         db.add(notification)

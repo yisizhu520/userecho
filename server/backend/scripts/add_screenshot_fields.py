@@ -17,9 +17,9 @@ from backend.database.db import async_engine
 
 async def add_screenshot_fields() -> bool:
     """添加截图相关字段"""
-    print('=' * 70)
-    print('📦 添加截图相关字段到 feedbacks 表')
-    print('=' * 70)
+    print("=" * 70)
+    print("📦 添加截图相关字段到 feedbacks 表")
+    print("=" * 70)
 
     sqls = [
         # 添加新字段
@@ -61,18 +61,18 @@ async def add_screenshot_fields() -> bool:
             for sql in sqls:
                 await conn.execute(sa.text(sql))
 
-        print('✅ 字段添加成功！')
+        print("✅ 字段添加成功！")
         print()
-        print('新增字段:')
-        print('  - screenshot_url (TEXT): 截图 OSS 地址')
-        print('  - source_platform (VARCHAR(50)): 来源平台')
-        print('  - source_user_name (VARCHAR(255)): 来源平台用户昵称')
-        print('  - source_user_id (VARCHAR(255)): 来源平台用户 ID')
-        print('  - ai_confidence (FLOAT): AI 识别置信度')
-        print('  - submitter_id (BIGINT): 内部提交者 ID (外键 → sys_user.id)')
+        print("新增字段:")
+        print("  - screenshot_url (TEXT): 截图 OSS 地址")
+        print("  - source_platform (VARCHAR(50)): 来源平台")
+        print("  - source_user_name (VARCHAR(255)): 来源平台用户昵称")
+        print("  - source_user_id (VARCHAR(255)): 来源平台用户 ID")
+        print("  - ai_confidence (FLOAT): AI 识别置信度")
+        print("  - submitter_id (BIGINT): 内部提交者 ID (外键 → sys_user.id)")
 
     except Exception as e:
-        print(f'❌ 执行失败: {e}')
+        print(f"❌ 执行失败: {e}")
         import traceback
 
         traceback.print_exc()
@@ -81,7 +81,7 @@ async def add_screenshot_fields() -> bool:
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sqlalchemy as sa
 
     success = asyncio.run(add_screenshot_fields())

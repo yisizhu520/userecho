@@ -55,7 +55,7 @@ class CRUDDataScope(CRUDPlus[DataScope]):
             ],
         )
 
-        return select_join_serialize(result, relationships=['DataScope-m2m-DataRule:rules'])
+        return select_join_serialize(result, relationships=["DataScope-m2m-DataRule:rules"])
 
     async def get_all(self, db: AsyncSession) -> Sequence[DataScope]:
         """
@@ -77,11 +77,11 @@ class CRUDDataScope(CRUDPlus[DataScope]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
 
-        return await self.select_order('id', **filters)
+        return await self.select_order("id", **filters)
 
     async def create(self, db: AsyncSession, obj: CreateDataScopeParam) -> None:
         """

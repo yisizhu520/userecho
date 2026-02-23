@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '3b88fd02d888'
-down_revision = '4f5g6h7i8j9k'
+revision = "3b88fd02d888"
+down_revision = "4f5g6h7i8j9k"
 branch_labels = None
 depends_on = None
 
@@ -20,9 +20,9 @@ depends_on = None
 def upgrade() -> None:
     # 重命名列: metadata -> extra_data
     op.alter_column(
-        'credits_usage_log',
-        'metadata',
-        new_column_name='extra_data',
+        "credits_usage_log",
+        "metadata",
+        new_column_name="extra_data",
         existing_type=sa.dialects.postgresql.JSONB(),
         existing_nullable=True,
     )
@@ -31,9 +31,9 @@ def upgrade() -> None:
 def downgrade() -> None:
     # 回滚: extra_data -> metadata
     op.alter_column(
-        'credits_usage_log',
-        'extra_data',
-        new_column_name='metadata',
+        "credits_usage_log",
+        "extra_data",
+        new_column_name="metadata",
         existing_type=sa.dialects.postgresql.JSONB(),
         existing_nullable=True,
     )

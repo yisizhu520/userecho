@@ -18,13 +18,13 @@ router = APIRouter()
 
 
 @router.post(
-    '/screenshot/upload',
-    summary='上传截图',
-    description='上传反馈截图到对象存储',
+    "/screenshot/upload",
+    summary="上传截图",
+    description="上传反馈截图到对象存储",
     dependencies=[DependsJwtAuth, DependsRBAC],
 )
 async def upload_feedback_screenshot(
-    file: Annotated[UploadFile, File(description='截图文件')],
+    file: Annotated[UploadFile, File(description="截图文件")],
     tenant_id: int,
 ) -> ResponseSchemaModel[dict]:
     """
@@ -44,17 +44,17 @@ async def upload_feedback_screenshot(
     # 上传到对象存储
     screenshot_url = await upload_screenshot(file, tenant_id)
 
-    return response_base.success(data={'screenshot_url': screenshot_url})
+    return response_base.success(data={"screenshot_url": screenshot_url})
 
 
 @router.post(
-    '/screenshot/analyze',
-    summary='上传并 AI 识别截图',
-    description='上传截图后使用 AI 自动识别平台和内容',
+    "/screenshot/analyze",
+    summary="上传并 AI 识别截图",
+    description="上传截图后使用 AI 自动识别平台和内容",
     dependencies=[DependsJwtAuth, DependsRBAC],
 )
 async def analyze_feedback_screenshot(
-    file: Annotated[UploadFile, File(description='截图文件')],
+    file: Annotated[UploadFile, File(description="截图文件")],
     tenant_id: int,
 ) -> ResponseSchemaModel[ScreenshotAnalyzeResponse]:
     """
@@ -86,18 +86,18 @@ async def analyze_feedback_screenshot(
 
     # 临时返回示例数据
     extracted = {
-        'platform': 'wechat',
-        'user_name': '小王',
-        'user_id': '',
-        'content': '产品闪退了，iOS 16.3',
-        'feedback_type': 'bug',
-        'sentiment': 'negative',
-        'confidence': 0.95,
+        "platform": "wechat",
+        "user_name": "小王",
+        "user_id": "",
+        "content": "产品闪退了，iOS 16.3",
+        "feedback_type": "bug",
+        "sentiment": "negative",
+        "confidence": 0.95,
     }
 
     return response_base.success(
         data={
-            'screenshot_url': screenshot_url,
-            'extracted': extracted,
+            "screenshot_url": screenshot_url,
+            "extracted": extracted,
         }
     )

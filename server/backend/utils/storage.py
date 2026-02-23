@@ -72,7 +72,7 @@ class LocalStorage(StorageBackend):
 
     def __init__(self) -> None:
         self.base_dir = UPLOAD_DIR
-        self.base_url = settings.STORAGE_LOCAL_BASE_URL or '/static/upload'
+        self.base_url = settings.STORAGE_LOCAL_BASE_URL or "/static/upload"
 
     async def upload(
         self,
@@ -86,16 +86,16 @@ class LocalStorage(StorageBackend):
 
         try:
             if isinstance(file, UploadFile):
-                with open(full_path, 'wb') as f:
+                with open(full_path, "wb") as f:
                     while chunk := await file.read(settings.UPLOAD_READ_SIZE):
                         f.write(chunk)
             else:
                 Path(full_path).write_bytes(file.read())
 
-            return f'{self.base_url}/{path}'
+            return f"{self.base_url}/{path}"
         except Exception as e:
-            log.error(f'本地上传文件失败 {path}: {e}')
-            raise errors.ServerError(msg='文件上传失败')
+            log.error(f"本地上传文件失败 {path}: {e}")
+            raise errors.ServerError(msg="文件上传失败")
 
     async def delete(self, path: str) -> bool:
         """删除本地文件"""
@@ -106,12 +106,12 @@ class LocalStorage(StorageBackend):
                 return True
             return False
         except Exception as e:
-            log.error(f'删除本地文件失败 {path}: {e}')
+            log.error(f"删除本地文件失败 {path}: {e}")
             return False
 
     async def get_url(self, path: str, expire_seconds: int = 3600) -> str:
         """获取本地文件 URL（无过期时间）"""
-        return f'{self.base_url}/{path}'
+        return f"{self.base_url}/{path}"
 
     async def exists(self, path: str) -> bool:
         """检查本地文件是否存在"""
@@ -125,13 +125,13 @@ class AliyunOSSStorage(StorageBackend):
         try:
             import oss2
         except ImportError:
-            raise ImportError('请安装 oss2: pip install oss2')
+            raise ImportError("请安装 oss2: pip install oss2")
 
         self.access_key_id = settings.ALIYUN_OSS_ACCESS_KEY_ID
         self.access_key_secret = settings.ALIYUN_OSS_ACCESS_KEY_SECRET
         self.endpoint = settings.ALIYUN_OSS_ENDPOINT
         self.bucket_name = settings.ALIYUN_OSS_BUCKET_NAME
-        self.base_path = settings.ALIYUN_OSS_BASE_PATH or ''
+        self.base_path = settings.ALIYUN_OSS_BASE_PATH or ""
 
         auth = oss2.Auth(self.access_key_id, self.access_key_secret)
         self.bucket = oss2.Bucket(auth, self.endpoint, self.bucket_name)
@@ -143,7 +143,7 @@ class AliyunOSSStorage(StorageBackend):
         content_type: str | None = None,
     ) -> str:
         """上传到阿里云 OSS"""
-        oss_path = f'{self.base_path}/{path}'.lstrip('/')
+        oss_path = f"{self.base_path}/{path}".lstrip("/")
 
         try:
             if isinstance(file, UploadFile):
@@ -153,40 +153,40 @@ class AliyunOSSStorage(StorageBackend):
 
             headers = {}
             if content_type:
-                headers['Content-Type'] = content_type
+                headers["Content-Type"] = content_type
 
             self.bucket.put_object(oss_path, content, headers=headers)
 
             # 返回 CDN 域名或 OSS 域名
-            if hasattr(settings, 'ALIYUN_OSS_CDN_DOMAIN') and settings.ALIYUN_OSS_CDN_DOMAIN:
-                return f'{settings.ALIYUN_OSS_CDN_DOMAIN}/{oss_path}'
-            return f'https://{self.bucket_name}.{self.endpoint}/{oss_path}'
+            if hasattr(settings, "ALIYUN_OSS_CDN_DOMAIN") and settings.ALIYUN_OSS_CDN_DOMAIN:
+                return f"{settings.ALIYUN_OSS_CDN_DOMAIN}/{oss_path}"
+            return f"https://{self.bucket_name}.{self.endpoint}/{oss_path}"
         except Exception as e:
-            log.error(f'上传到阿里云 OSS 失败 {oss_path}: {e}')
-            raise errors.ServerError(msg='文件上传失败')
+            log.error(f"上传到阿里云 OSS 失败 {oss_path}: {e}")
+            raise errors.ServerError(msg="文件上传失败")
 
     async def delete(self, path: str) -> bool:
         """删除 OSS 文件"""
-        oss_path = f'{self.base_path}/{path}'.lstrip('/')
+        oss_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             self.bucket.delete_object(oss_path)
             return True
         except Exception as e:
-            log.error(f'删除 OSS 文件失败 {oss_path}: {e}')
+            log.error(f"删除 OSS 文件失败 {oss_path}: {e}")
             return False
 
     async def get_url(self, path: str, expire_seconds: int = 3600) -> str:
         """获取签名 URL"""
-        oss_path = f'{self.base_path}/{path}'.lstrip('/')
+        oss_path = f"{self.base_path}/{path}".lstrip("/")
         try:
-            return self.bucket.sign_url('GET', oss_path, expire_seconds)
+            return self.bucket.sign_url("GET", oss_path, expire_seconds)
         except Exception as e:
-            log.error(f'生成 OSS 签名 URL 失败 {oss_path}: {e}')
-            raise errors.ServerError(msg='生成访问链接失败')
+            log.error(f"生成 OSS 签名 URL 失败 {oss_path}: {e}")
+            raise errors.ServerError(msg="生成访问链接失败")
 
     async def exists(self, path: str) -> bool:
         """检查 OSS 文件是否存在"""
-        oss_path = f'{self.base_path}/{path}'.lstrip('/')
+        oss_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             return self.bucket.object_exists(oss_path)
         except Exception:
@@ -200,13 +200,13 @@ class TencentCOSStorage(StorageBackend):
         try:
             from qcloud_cos import CosConfig, CosS3Client
         except ImportError:
-            raise ImportError('请安装 cos-python-sdk-v5: pip install cos-python-sdk-v5')
+            raise ImportError("请安装 cos-python-sdk-v5: pip install cos-python-sdk-v5")
 
         self.secret_id = settings.TENCENT_COS_SECRET_ID
         self.secret_key = settings.TENCENT_COS_SECRET_KEY
         self.region = settings.TENCENT_COS_REGION
         self.bucket_name = settings.TENCENT_COS_BUCKET_NAME
-        self.base_path = settings.TENCENT_COS_BASE_PATH or ''
+        self.base_path = settings.TENCENT_COS_BASE_PATH or ""
 
         config = CosConfig(Region=self.region, SecretId=self.secret_id, SecretKey=self.secret_key)
         self.client = CosS3Client(config)
@@ -218,7 +218,7 @@ class TencentCOSStorage(StorageBackend):
         content_type: str | None = None,
     ) -> str:
         """上传到腾讯云 COS"""
-        cos_path = f'{self.base_path}/{path}'.lstrip('/')
+        cos_path = f"{self.base_path}/{path}".lstrip("/")
 
         try:
             # 读取文件内容
@@ -229,8 +229,8 @@ class TencentCOSStorage(StorageBackend):
 
             # 确保 content 是 bytes 类型
             if not isinstance(content, bytes):
-                log.error(f'Content type error: expected bytes, got {type(content)}')
-                raise errors.ServerError(msg='文件内容类型错误')
+                log.error(f"Content type error: expected bytes, got {type(content)}")
+                raise errors.ServerError(msg="文件内容类型错误")
 
             # 使用 BytesIO 包装以确保兼容性
             from io import BytesIO
@@ -239,46 +239,46 @@ class TencentCOSStorage(StorageBackend):
 
             kwargs = {}
             if content_type:
-                kwargs['ContentType'] = content_type
+                kwargs["ContentType"] = content_type
 
             self.client.put_object(Bucket=self.bucket_name, Body=file_obj, Key=cos_path, **kwargs)
 
             # 返回 CDN 域名或 COS 域名
-            if hasattr(settings, 'TENCENT_COS_CDN_DOMAIN') and settings.TENCENT_COS_CDN_DOMAIN:
-                return f'{settings.TENCENT_COS_CDN_DOMAIN}/{cos_path}'
-            return f'https://{self.bucket_name}.cos.{self.region}.myqcloud.com/{cos_path}'
+            if hasattr(settings, "TENCENT_COS_CDN_DOMAIN") and settings.TENCENT_COS_CDN_DOMAIN:
+                return f"{settings.TENCENT_COS_CDN_DOMAIN}/{cos_path}"
+            return f"https://{self.bucket_name}.cos.{self.region}.myqcloud.com/{cos_path}"
         except Exception as e:
-            log.error(f'上传到腾讯云 COS 失败 {cos_path}: {e}')
-            raise errors.ServerError(msg='文件上传失败')
+            log.error(f"上传到腾讯云 COS 失败 {cos_path}: {e}")
+            raise errors.ServerError(msg="文件上传失败")
 
     async def delete(self, path: str) -> bool:
         """删除 COS 文件"""
-        cos_path = f'{self.base_path}/{path}'.lstrip('/')
+        cos_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             self.client.delete_object(Bucket=self.bucket_name, Key=cos_path)
             return True
         except Exception as e:
-            log.error(f'删除 COS 文件失败 {cos_path}: {e}')
+            log.error(f"删除 COS 文件失败 {cos_path}: {e}")
             return False
 
     async def get_url(self, path: str, expire_seconds: int = 3600) -> str:
         """获取签名 URL"""
-        cos_path = f'{self.base_path}/{path}'.lstrip('/')
+        cos_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             url = self.client.get_presigned_url(
-                Method='GET',
+                Method="GET",
                 Bucket=self.bucket_name,
                 Key=cos_path,
                 Expired=expire_seconds,
             )
             return url
         except Exception as e:
-            log.error(f'生成 COS 签名 URL 失败 {cos_path}: {e}')
-            raise errors.ServerError(msg='生成访问链接失败')
+            log.error(f"生成 COS 签名 URL 失败 {cos_path}: {e}")
+            raise errors.ServerError(msg="生成访问链接失败")
 
     async def exists(self, path: str) -> bool:
         """检查 COS 文件是否存在"""
-        cos_path = f'{self.base_path}/{path}'.lstrip('/')
+        cos_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             self.client.head_object(Bucket=self.bucket_name, Key=cos_path)
             return True
@@ -293,16 +293,16 @@ class AWSS3Storage(StorageBackend):
         try:
             import boto3
         except ImportError:
-            raise ImportError('请安装 boto3: pip install boto3')
+            raise ImportError("请安装 boto3: pip install boto3")
 
         self.access_key_id = settings.AWS_S3_ACCESS_KEY_ID
         self.secret_access_key = settings.AWS_S3_SECRET_ACCESS_KEY
         self.region = settings.AWS_S3_REGION
         self.bucket_name = settings.AWS_S3_BUCKET_NAME
-        self.base_path = settings.AWS_S3_BASE_PATH or ''
+        self.base_path = settings.AWS_S3_BASE_PATH or ""
 
         self.client = boto3.client(
-            's3',
+            "s3",
             aws_access_key_id=self.access_key_id,
             aws_secret_access_key=self.secret_access_key,
             region_name=self.region,
@@ -315,7 +315,7 @@ class AWSS3Storage(StorageBackend):
         content_type: str | None = None,
     ) -> str:
         """上传到 AWS S3"""
-        s3_path = f'{self.base_path}/{path}'.lstrip('/')
+        s3_path = f"{self.base_path}/{path}".lstrip("/")
 
         try:
             # 读取文件内容
@@ -326,8 +326,8 @@ class AWSS3Storage(StorageBackend):
 
             # 确保 content 是 bytes 类型
             if not isinstance(content, bytes):
-                log.error(f'Content type error: expected bytes, got {type(content)}')
-                raise errors.ServerError(msg='文件内容类型错误')
+                log.error(f"Content type error: expected bytes, got {type(content)}")
+                raise errors.ServerError(msg="文件内容类型错误")
 
             # 使用 BytesIO 包装以确保兼容性
             from io import BytesIO
@@ -336,45 +336,45 @@ class AWSS3Storage(StorageBackend):
 
             extra_args = {}
             if content_type:
-                extra_args['ContentType'] = content_type
+                extra_args["ContentType"] = content_type
 
             self.client.put_object(Bucket=self.bucket_name, Key=s3_path, Body=file_obj, **extra_args)
 
             # 返回 CloudFront 域名或 S3 域名
-            if hasattr(settings, 'AWS_S3_CDN_DOMAIN') and settings.AWS_S3_CDN_DOMAIN:
-                return f'{settings.AWS_S3_CDN_DOMAIN}/{s3_path}'
-            return f'https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{s3_path}'
+            if hasattr(settings, "AWS_S3_CDN_DOMAIN") and settings.AWS_S3_CDN_DOMAIN:
+                return f"{settings.AWS_S3_CDN_DOMAIN}/{s3_path}"
+            return f"https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{s3_path}"
         except Exception as e:
-            log.error(f'上传到 AWS S3 失败 {s3_path}: {e}')
-            raise errors.ServerError(msg='文件上传失败')
+            log.error(f"上传到 AWS S3 失败 {s3_path}: {e}")
+            raise errors.ServerError(msg="文件上传失败")
 
     async def delete(self, path: str) -> bool:
         """删除 S3 文件"""
-        s3_path = f'{self.base_path}/{path}'.lstrip('/')
+        s3_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             self.client.delete_object(Bucket=self.bucket_name, Key=s3_path)
             return True
         except Exception as e:
-            log.error(f'删除 S3 文件失败 {s3_path}: {e}')
+            log.error(f"删除 S3 文件失败 {s3_path}: {e}")
             return False
 
     async def get_url(self, path: str, expire_seconds: int = 3600) -> str:
         """获取签名 URL"""
-        s3_path = f'{self.base_path}/{path}'.lstrip('/')
+        s3_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             url = self.client.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': self.bucket_name, 'Key': s3_path},
+                "get_object",
+                Params={"Bucket": self.bucket_name, "Key": s3_path},
                 ExpiresIn=expire_seconds,
             )
             return url
         except Exception as e:
-            log.error(f'生成 S3 签名 URL 失败 {s3_path}: {e}')
-            raise errors.ServerError(msg='生成访问链接失败')
+            log.error(f"生成 S3 签名 URL 失败 {s3_path}: {e}")
+            raise errors.ServerError(msg="生成访问链接失败")
 
     async def exists(self, path: str) -> bool:
         """检查 S3 文件是否存在"""
-        s3_path = f'{self.base_path}/{path}'.lstrip('/')
+        s3_path = f"{self.base_path}/{path}".lstrip("/")
         try:
             self.client.head_object(Bucket=self.bucket_name, Key=s3_path)
             return True
@@ -401,20 +401,20 @@ class StorageManager:
         """初始化存储后端"""
         storage_type = settings.STORAGE_TYPE.lower()
 
-        if storage_type == 'local':
+        if storage_type == "local":
             self._backend = LocalStorage()
-            log.info('Storage backend initialized: Local')
-        elif storage_type == 'aliyun_oss':
+            log.info("Storage backend initialized: Local")
+        elif storage_type == "aliyun_oss":
             self._backend = AliyunOSSStorage()
-            log.info('Storage backend initialized: Aliyun OSS')
-        elif storage_type == 'tencent_cos':
+            log.info("Storage backend initialized: Aliyun OSS")
+        elif storage_type == "tencent_cos":
             self._backend = TencentCOSStorage()
-            log.info('Storage backend initialized: Tencent COS')
-        elif storage_type == 'aws_s3':
+            log.info("Storage backend initialized: Tencent COS")
+        elif storage_type == "aws_s3":
             self._backend = AWSS3Storage()
-            log.info('Storage backend initialized: AWS S3')
+            log.info("Storage backend initialized: AWS S3")
         else:
-            log.warning(f'Unknown storage type: {storage_type}, fallback to local')
+            log.warning(f"Unknown storage type: {storage_type}, fallback to local")
             self._backend = LocalStorage()
 
     @property
@@ -450,7 +450,7 @@ storage = StorageManager()
 
 def build_storage_path(
     file: UploadFile,
-    prefix: str = '',
+    prefix: str = "",
     use_hash: bool = False,
 ) -> str:
     """
@@ -462,11 +462,11 @@ def build_storage_path(
     :return: 存储路径
     """
     now = datetime.now()
-    date_path = now.strftime('%Y/%m/%d')
+    date_path = now.strftime("%Y/%m/%d")
 
     # 提取文件扩展名
-    filename = file.filename or 'unnamed'
-    file_ext = filename.split('.')[-1].lower() if '.' in filename else 'bin'
+    filename = file.filename or "unnamed"
+    file_ext = filename.split(".")[-1].lower() if "." in filename else "bin"
 
     # 生成文件名
     if use_hash:
@@ -474,15 +474,15 @@ def build_storage_path(
         content = file.file.read()
         file.file.seek(0)  # 重置文件指针
         file_hash = hashlib.md5(content).hexdigest()
-        new_filename = f'{file_hash}.{file_ext}'
+        new_filename = f"{file_hash}.{file_ext}"
     else:
         # 使用时间戳
         timestamp = int(now.timestamp() * 1000)  # 毫秒级时间戳
-        new_filename = f'{timestamp}_{os.urandom(4).hex()}.{file_ext}'
+        new_filename = f"{timestamp}_{os.urandom(4).hex()}.{file_ext}"
 
     # 组合路径
     parts = [prefix, date_path, new_filename] if prefix else [date_path, new_filename]
-    return '/'.join(parts)
+    return "/".join(parts)
 
 
 async def upload_screenshot(file: UploadFile, tenant_id: int) -> str:
@@ -494,10 +494,10 @@ async def upload_screenshot(file: UploadFile, tenant_id: int) -> str:
     :return: 文件访问 URL
     """
     # 构建路径：screenshots/{tenant_id}/{year}/{month}/{day}/{filename}
-    path = build_storage_path(file, prefix=f'screenshots/{tenant_id}')
+    path = build_storage_path(file, prefix=f"screenshots/{tenant_id}")
 
     # 上传
     url = await storage.upload(file, path, content_type=file.content_type)
 
-    log.info(f'Screenshot uploaded: {path} -> {url}')
+    log.info(f"Screenshot uploaded: {path} -> {url}")
     return url

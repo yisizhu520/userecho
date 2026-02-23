@@ -15,23 +15,23 @@ class RedisCli(Redis):
         # 优先使用完整的 REDIS_URL（例如 Upstash 提供的 rediss://... 格式）
         if settings.REDIS_URL:
             # 检测是否是 TLS 连接（Upstash 等云服务）
-            is_tls = settings.REDIS_URL.startswith('rediss://')
+            is_tls = settings.REDIS_URL.startswith("rediss://")
 
             # 为远程 Redis（Upstash）配置更长的超时时间
             timeout = 30 if is_tls else settings.REDIS_TIMEOUT
 
             # 构建连接参数
             connection_kwargs = {
-                'socket_timeout': timeout,
-                'socket_connect_timeout': timeout,
-                'socket_keepalive': True,
-                'health_check_interval': 30,
-                'decode_responses': True,
+                "socket_timeout": timeout,
+                "socket_connect_timeout": timeout,
+                "socket_keepalive": True,
+                "health_check_interval": 30,
+                "decode_responses": True,
             }
 
             # TLS 连接跳过证书验证（适用于 Upstash 等云服务）
             if is_tls:
-                connection_kwargs['ssl_cert_reqs'] = None
+                connection_kwargs["ssl_cert_reqs"] = None
 
             super().__init__(connection_pool=Redis.from_url(settings.REDIS_URL, **connection_kwargs).connection_pool)
         else:
@@ -54,13 +54,13 @@ class RedisCli(Redis):
         try:
             await self.ping()
         except TimeoutError:
-            log.error('❌ 数据库 redis 连接超时')
+            log.error("❌ 数据库 redis 连接超时")
             sys.exit()
         except AuthenticationError:
-            log.error('❌ 数据库 redis 连接认证失败')
+            log.error("❌ 数据库 redis 连接认证失败")
             sys.exit()
         except Exception as e:
-            log.error('❌ 数据库 redis 连接异常 {}', e)
+            log.error("❌ 数据库 redis 连接异常 {}", e)
             sys.exit()
 
     async def delete_prefix(self, prefix: str, exclude: str | list[str] | None = None, batch_size: int = 1000) -> None:
@@ -75,7 +75,7 @@ class RedisCli(Redis):
         exclude_set = set(exclude) if isinstance(exclude, list) else {exclude} if isinstance(exclude, str) else set()
         batch_keys = []
 
-        async for key in self.scan_iter(match=f'{prefix}*'):
+        async for key in self.scan_iter(match=f"{prefix}*"):
             if key not in exclude_set:
                 batch_keys.append(key)
 
@@ -94,7 +94,7 @@ class RedisCli(Redis):
         :param count: 每次扫描批次的数量，值越大扫描速度越快，但会占用更多服务器资源
         :return:
         """
-        return [key async for key in self.scan_iter(match=f'{prefix}*', count=count)]
+        return [key async for key in self.scan_iter(match=f"{prefix}*", count=count)]
 
 
 # 创建 redis 客户端单例

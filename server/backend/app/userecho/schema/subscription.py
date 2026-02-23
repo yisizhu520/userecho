@@ -15,17 +15,17 @@ from backend.common.schema import SchemaBase
 
 
 class SubscriptionPlanBase(BaseModel):
-    code: str = Field(..., description='套餐代号')
-    name: str = Field(..., description='套餐名称')
-    description: str | None = Field(None, description='套餐描述')
-    price_monthly: int = Field(..., description='月付价格（分）')
-    price_yearly: int = Field(..., description='年付价格（分）')
-    seat_limit: int = Field(..., description='席位上限')
-    feedback_limit: int = Field(..., description='反馈存储上限')
-    ai_credits_monthly: int = Field(..., description='月度 AI 积分')
-    features: dict = Field(..., description='功能配置')
-    is_active: bool = Field(True, description='是否启用')
-    sort_order: int = Field(0, description='排序')
+    code: str = Field(..., description="套餐代号")
+    name: str = Field(..., description="套餐名称")
+    description: str | None = Field(None, description="套餐描述")
+    price_monthly: int = Field(..., description="月付价格（分）")
+    price_yearly: int = Field(..., description="年付价格（分）")
+    seat_limit: int = Field(..., description="席位上限")
+    feedback_limit: int = Field(..., description="反馈存储上限")
+    ai_credits_monthly: int = Field(..., description="月度 AI 积分")
+    features: dict = Field(..., description="功能配置")
+    is_active: bool = Field(True, description="是否启用")
+    sort_order: int = Field(0, description="排序")
 
 
 class SubscriptionPlanSchema(SubscriptionPlanBase, SchemaBase):
@@ -40,19 +40,19 @@ class SubscriptionPlanSchema(SubscriptionPlanBase, SchemaBase):
 class SubscriptionCreateReq(BaseModel):
     """创建/设置订阅请求"""
 
-    plan_code: PlanCode = Field(..., description='套餐代号')
-    expires_at: datetime = Field(..., description='过期时间')
-    status: SubscriptionStatus = Field(SubscriptionStatus.ACTIVE, description='状态')
-    notes: str | None = Field(None, description='备注')
+    plan_code: PlanCode = Field(..., description="套餐代号")
+    expires_at: datetime = Field(..., description="过期时间")
+    status: SubscriptionStatus = Field(SubscriptionStatus.ACTIVE, description="状态")
+    notes: str | None = Field(None, description="备注")
 
 
 class SubscriptionUpdateReq(BaseModel):
     """更新订阅请求"""
 
-    plan_code: PlanCode = Field(..., description='套餐代号')
-    expires_at: datetime = Field(..., description='过期时间')
-    status: SubscriptionStatus = Field(..., description='状态')
-    notes: str | None = Field(None, description='备注')
+    plan_code: PlanCode = Field(..., description="套餐代号")
+    expires_at: datetime = Field(..., description="过期时间")
+    status: SubscriptionStatus = Field(..., description="状态")
+    notes: str | None = Field(None, description="备注")
 
 
 class TenantSubscriptionSchema(SchemaBase):

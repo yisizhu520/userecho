@@ -13,7 +13,7 @@ from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 from backend.utils.timezone import timezone
 
-router = APIRouter(prefix='/notifications', tags=['UserEcho - 系统提醒'])
+router = APIRouter(prefix="/notifications", tags=["UserEcho - 系统提醒"])
 
 
 def get_current_user_id() -> int:
@@ -25,24 +25,24 @@ def get_current_user_id() -> int:
 def format_relative_time(dt) -> str:
     """格式化相对时间"""
     if not dt:
-        return ''
+        return ""
 
     now = timezone.now()
     diff = now - dt
 
     seconds = diff.total_seconds()
     if seconds < 60:
-        return '刚刚'
+        return "刚刚"
     if seconds < 3600:
-        return f'{int(seconds / 60)}分钟前'
+        return f"{int(seconds / 60)}分钟前"
     if seconds < 86400:
-        return f'{int(seconds / 3600)}小时前'
+        return f"{int(seconds / 3600)}小时前"
     if seconds < 604800:
-        return f'{int(seconds / 86400)}天前'
-    return dt.strftime('%Y-%m-%d')
+        return f"{int(seconds / 86400)}天前"
+    return dt.strftime("%Y-%m-%d")
 
 
-@router.get('', summary='获取系统提醒列表')
+@router.get("", summary="获取系统提醒列表")
 async def get_notifications(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -83,7 +83,7 @@ async def get_notifications(
     )
 
 
-@router.post('/{notification_id}/read', summary='标记通知为已读')
+@router.post("/{notification_id}/read", summary="标记通知为已读")
 async def mark_as_read(
     notification_id: str,
     db: CurrentSession,
@@ -99,12 +99,12 @@ async def mark_as_read(
     )
 
     if not notification:
-        return response_base.fail(res=CustomResponse(code=400, msg='通知不存在或无权限'))
+        return response_base.fail(res=CustomResponse(code=400, msg="通知不存在或无权限"))
 
-    return response_base.success(res=CustomResponse(code=200, msg='已标记为已读'))
+    return response_base.success(res=CustomResponse(code=200, msg="已标记为已读"))
 
 
-@router.post('/read-all', summary='标记所有通知为已读')
+@router.post("/read-all", summary="标记所有通知为已读")
 async def mark_all_as_read(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -114,12 +114,12 @@ async def mark_all_as_read(
     count = await crud_system_notification.mark_all_as_read(db=db, tenant_id=tenant_id, user_id=current_user_id)
 
     return response_base.success(
-        data={'marked_count': count},
-        res=CustomResponse(code=200, msg=f'已标记 {count} 条通知为已读'),
+        data={"marked_count": count},
+        res=CustomResponse(code=200, msg=f"已标记 {count} 条通知为已读"),
     )
 
 
-@router.delete('/clear', summary='清空所有通知')
+@router.delete("/clear", summary="清空所有通知")
 async def clear_all_notifications(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -129,6 +129,6 @@ async def clear_all_notifications(
     count = await crud_system_notification.clear_all(db=db, tenant_id=tenant_id, user_id=current_user_id)
 
     return response_base.success(
-        data={'deleted_count': count},
-        res=CustomResponse(code=200, msg=f'已清空 {count} 条通知'),
+        data={"deleted_count": count},
+        res=CustomResponse(code=200, msg=f"已清空 {count} 条通知"),
     )

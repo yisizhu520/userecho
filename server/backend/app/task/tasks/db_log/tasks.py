@@ -10,7 +10,7 @@ async def delete_db_opera_log() -> str:
     """自动删除数据库操作日志"""
     async with async_db_session.begin() as db:
         await opera_log_service.delete_all(db=db)
-        return 'Success'
+        return "Success"
 
 
 @shared_task
@@ -18,4 +18,4 @@ async def delete_db_login_log() -> str:
     """自动删除数据库登录日志"""
     async with async_db_session.begin() as db:
         await login_log_service.delete_all(db=db)
-        return 'Success'
+        return "Success"

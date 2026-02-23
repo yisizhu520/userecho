@@ -15,16 +15,16 @@ class TaskBase(Task):
     autoretry_for = (SQLAlchemyError,)
     max_retries = settings.CELERY_TASK_MAX_RETRIES
 
-    async def before_start(self, task_id: str, args, kwargs) -> None:  # noqa: ANN001
+    async def before_start(self, task_id: str, args, kwargs) -> None:
         """
         任务开始前执行钩子
 
         :param task_id: 任务 ID
         :return:
         """
-        await task_notification(msg=f'任务 {task_id} 开始执行')
+        await task_notification(msg=f"任务 {task_id} 开始执行")
 
-    async def on_success(self, retval: Any, task_id: str, args, kwargs) -> None:  # noqa: ANN001
+    async def on_success(self, retval: Any, task_id: str, args, kwargs) -> None:
         """
         任务成功后执行钩子
 
@@ -32,9 +32,9 @@ class TaskBase(Task):
         :param task_id: 任务 ID
         :return:
         """
-        await task_notification(msg=f'任务 {task_id} 执行成功')
+        await task_notification(msg=f"任务 {task_id} 执行成功")
 
-    def on_failure(self, exc: Exception, task_id: str, args, kwargs, einfo) -> None:  # noqa: ANN001
+    def on_failure(self, exc: Exception, task_id: str, args, kwargs, einfo) -> None:
         """
         任务失败后执行钩子
 
@@ -52,4 +52,4 @@ class TaskBase(Task):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        loop.run_until_complete(task_notification(msg=f'任务 {task_id} 执行失败'))
+        loop.run_until_complete(task_notification(msg=f"任务 {task_id} 执行失败"))

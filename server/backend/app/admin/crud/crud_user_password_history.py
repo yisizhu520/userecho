@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy_crud_plus import CRUDPlus
@@ -28,7 +29,10 @@ class CRUDUserPasswordHistory(CRUDPlus[UserPasswordHistory]):
         :param user_id: 用户 ID
         :return:
         """
-        return await self.select_models_order(db, 'id', 'desc', self.model.user_id == user_id)
+        return cast(
+            "Sequence[UserPasswordHistory]",
+            await self.select_models_order(db, "id", "desc", self.model.user_id == user_id),
+        )
 
 
 user_password_history_dao: CRUDUserPasswordHistory = CRUDUserPasswordHistory(UserPasswordHistory)

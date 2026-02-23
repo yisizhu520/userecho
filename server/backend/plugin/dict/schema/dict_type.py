@@ -8,9 +8,9 @@ from backend.common.schema import SchemaBase
 class DictTypeSchemaBase(SchemaBase):
     """字典类型基础模型"""
 
-    name: str = Field(description='字典名称')
-    code: str = Field(description='字典编码')
-    remark: str | None = Field(None, description='备注')
+    name: str = Field(description="字典名称")
+    code: str = Field(description="字典编码")
+    remark: str | None = Field(None, description="备注")
 
 
 class CreateDictTypeParam(DictTypeSchemaBase):
@@ -24,7 +24,7 @@ class UpdateDictTypeParam(DictTypeSchemaBase):
 class DeleteDictTypeParam(SchemaBase):
     """删除字典类型参数"""
 
-    pks: list[int] = Field(description='字典类型 ID 列表')
+    pks: list[int] = Field(description="字典类型 ID 列表")
 
 
 class GetDictTypeDetail(DictTypeSchemaBase):
@@ -32,6 +32,6 @@ class GetDictTypeDetail(DictTypeSchemaBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(description='字典类型 ID')
-    created_time: datetime = Field(description='创建时间')
-    updated_time: datetime | None = Field(None, description='更新时间')
+    id: int = Field(description="字典类型 ID")
+    created_time: datetime = Field(description="创建时间")
+    updated_time: datetime | None = Field(None, description="更新时间")

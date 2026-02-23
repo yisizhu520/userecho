@@ -18,7 +18,7 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/topics', tags=['UserEcho - 需求主题'])
+router = APIRouter(prefix="/topics", tags=["UserEcho - 需求主题"])
 
 
 def get_current_user_id() -> int:
@@ -27,7 +27,7 @@ def get_current_user_id() -> int:
     return 1
 
 
-@router.get('', summary='获取主题列表')
+@router.get("", summary="获取主题列表")
 async def get_topics(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -36,10 +36,10 @@ async def get_topics(
     status: Annotated[list[str] | None, Query()] = None,
     category: Annotated[list[str] | None, Query()] = None,
     board_ids: Annotated[list[str] | None, Query()] = None,
-    sort_by: str = 'created_time',
-    sort_order: str = 'desc',
+    sort_by: str = "created_time",
+    sort_order: str = "desc",
     search_query: str | None = None,  # ✅ 添加搜索参数
-    search_mode: str = 'keyword',  # ✅ 添加搜索模式
+    search_mode: str = "keyword",  # ✅ 添加搜索模式
     date_from: str | None = None,
     date_to: str | None = None,
 ):
@@ -64,14 +64,14 @@ async def get_topics(
     注意：搜索与过滤条件同时生效（AND关系）
     """
     # ✅ 第一时间打印原始参数
-    log.info(f'[SEARCH_DEBUG] API Layer - RAW params: search_query={search_query!r}, search_mode={search_mode!r}')
+    log.info(f"[SEARCH_DEBUG] API Layer - RAW params: search_query={search_query!r}, search_mode={search_mode!r}")
 
     # 清理空字符串：将空字符串转换为 None
-    if search_query is not None and search_query.strip() == '':
-        log.info('[SEARCH_DEBUG] API Layer - Cleaned empty search_query')
+    if search_query is not None and search_query.strip() == "":
+        log.info("[SEARCH_DEBUG] API Layer - Cleaned empty search_query")
         search_query = None
 
-    log.info(f'[SEARCH_DEBUG] API Layer - After cleanup: search_query={search_query!r}')
+    log.info(f"[SEARCH_DEBUG] API Layer - After cleanup: search_query={search_query!r}")
 
     topics = await topic_service.get_list_sorted(
         db=db,
@@ -93,7 +93,7 @@ async def get_topics(
     return response_base.success(data=topics_out)
 
 
-@router.get('/stats/pending-count', summary='获取待确认主题数量')
+@router.get("/stats/pending-count", summary="获取待确认主题数量")
 async def get_pending_count(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -102,10 +102,10 @@ async def get_pending_count(
     获取待确认主题数量（用于 badge 显示）
     """
     count = await topic_service.get_pending_count(db=db, tenant_id=tenant_id)
-    return response_base.success(data={'count': count})
+    return response_base.success(data={"count": count})
 
 
-@router.get('/{topic_id}', summary='获取主题详情')
+@router.get("/{topic_id}", summary="获取主题详情")
 async def get_topic_detail(
     topic_id: str,
     db: CurrentSession,
@@ -120,7 +120,7 @@ async def get_topic_detail(
     )
 
     if not detail:
-        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="主题不存在"))
 
     # ✅ 手动转换嵌套结构（ORM → Pydantic）
     from backend.app.userecho.schema.feedback import FeedbackOut
@@ -128,18 +128,18 @@ async def get_topic_detail(
     from backend.app.userecho.schema.status_history import StatusHistoryOut
 
     detail_out = {
-        'topic': TopicOut.model_validate(detail['topic']),
-        'feedbacks': [FeedbackOut.model_validate(fb) for fb in detail['feedbacks']],
-        'priority_score': PriorityScoreOut.model_validate(detail['priority_score'])
-        if detail['priority_score']
+        "topic": TopicOut.model_validate(detail["topic"]),
+        "feedbacks": [FeedbackOut.model_validate(fb) for fb in detail["feedbacks"]],
+        "priority_score": PriorityScoreOut.model_validate(detail["priority_score"])
+        if detail["priority_score"]
         else None,
-        'status_history': [StatusHistoryOut.model_validate(sh) for sh in detail['status_history']],
+        "status_history": [StatusHistoryOut.model_validate(sh) for sh in detail["status_history"]],
     }
 
     return response_base.success(data=detail_out)
 
 
-@router.post('', summary='创建主题')
+@router.post("", summary="创建主题")
 async def create_topic(
     data: TopicCreate,
     db: CurrentSession,
@@ -152,7 +152,7 @@ async def create_topic(
     return response_base.success(data=topic_out)
 
 
-@router.put('/{topic_id}', summary='更新主题')
+@router.put("/{topic_id}", summary="更新主题")
 async def update_topic(
     topic_id: str,
     data: TopicUpdate,
@@ -162,13 +162,13 @@ async def update_topic(
     """更新主题"""
     topic = await topic_service.update_topic(db=db, tenant_id=tenant_id, topic_id=topic_id, data=data)
     if not topic:
-        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="主题不存在"))
     # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut
     topic_out = TopicOut.model_validate(topic)
     return response_base.success(data=topic_out)
 
 
-@router.api_route('/{topic_id}/status', methods=['PUT', 'PATCH'], summary='更新主题状态')
+@router.api_route("/{topic_id}/status", methods=["PUT", "PATCH"], summary="更新主题状态")
 async def update_topic_status(
     topic_id: str,
     data: TopicStatusUpdateParam,
@@ -186,13 +186,13 @@ async def update_topic_status(
         db=db, tenant_id=tenant_id, topic_id=topic_id, data=data, current_user_id=current_user_id
     )
     if not topic:
-        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="主题不存在"))
     # ✅ Pydantic 自动将 ORM 对象转换为 TopicOut
     topic_out = TopicOut.model_validate(topic)
-    return response_base.success(data=topic_out, res=CustomResponse(code=200, msg='状态更新成功'))
+    return response_base.success(data=topic_out, res=CustomResponse(code=200, msg="状态更新成功"))
 
 
-@router.delete('/{topic_id}', summary='删除主题')
+@router.delete("/{topic_id}", summary="删除主题")
 async def delete_topic(
     topic_id: str,
     db: CurrentSession,
@@ -203,11 +203,11 @@ async def delete_topic(
 
     success = await crud_topic.delete(db=db, tenant_id=tenant_id, id=topic_id, soft=True)
     if not success:
-        return response_base.fail(res=CustomResponse(code=400, msg='主题不存在'))
-    return response_base.success(res=CustomResponse(code=200, msg='删除成功'))
+        return response_base.fail(res=CustomResponse(code=400, msg="主题不存在"))
+    return response_base.success(res=CustomResponse(code=200, msg="删除成功"))
 
 
-@router.post('/{topic_id}/feedbacks', summary='关联反馈到主题')
+@router.post("/{topic_id}/feedbacks", summary="关联反馈到主题")
 async def link_feedbacks(
     topic_id: str,
     data: TopicFeedbackLinkBatch,
@@ -220,10 +220,10 @@ async def link_feedbacks(
     count = await topic_service.link_feedbacks(
         db=db, tenant_id=tenant_id, topic_id=topic_id, feedback_ids=data.feedback_ids
     )
-    return response_base.success(data={'count': count}, res=CustomResponse(code=200, msg=f'成功关联 {count} 条反馈'))
+    return response_base.success(data={"count": count}, res=CustomResponse(code=200, msg=f"成功关联 {count} 条反馈"))
 
 
-@router.delete('/{topic_id}/feedbacks/{feedback_id}', summary='移除反馈关联')
+@router.delete("/{topic_id}/feedbacks/{feedback_id}", summary="移除反馈关联")
 async def unlink_feedback(
     topic_id: str,
     feedback_id: str,
@@ -237,5 +237,5 @@ async def unlink_feedback(
         db=db, tenant_id=tenant_id, topic_id=topic_id, feedback_id=feedback_id
     )
     if not success:
-        return response_base.fail(res=CustomResponse(code=400, msg='关联移除失败，可能是ID不匹配'))
-    return response_base.success(res=CustomResponse(code=200, msg='关联已移除'))
+        return response_base.fail(res=CustomResponse(code=400, msg="关联移除失败，可能是ID不匹配"))
+    return response_base.success(res=CustomResponse(code=200, msg="关联已移除"))

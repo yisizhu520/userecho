@@ -42,10 +42,10 @@ class UserSocialService:
         :return:
         """
         if await user_social_dao.check_binding(db, user_id, source.value):
-            raise errors.RequestError(msg=f'用户已绑定 {source.value} 账号')
+            raise errors.RequestError(msg=f"用户已绑定 {source.value} 账号")
 
         if await user_social_dao.get_by_sid(db, sid, source.value):
-            raise errors.RequestError(msg=f'该 {source.value} 账号已被其他用户绑定')
+            raise errors.RequestError(msg=f"该 {source.value} 账号已被其他用户绑定")
 
         new_user_social = CreateUserSocialParam(sid=sid, source=source.value, user_id=user_id)
         await user_social_dao.create(db, new_user_social)
@@ -62,7 +62,7 @@ class UserSocialService:
         """
         bind = await user_social_dao.check_binding(db, user_id, source.value)
         if not bind:
-            raise errors.NotFoundError(msg=f'用户未绑定 {source.value} 账号')
+            raise errors.NotFoundError(msg=f"用户未绑定 {source.value} 账号")
         return await user_social_dao.delete(db, user_id, source.value)
 
     @staticmethod
@@ -70,9 +70,9 @@ class UserSocialService:
         state = str(uuid.uuid4())
 
         await redis_client.setex(
-            f'{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}',
+            f"{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}",
             settings.OAUTH2_STATE_EXPIRE_SECONDS,
-            json.dumps({'type': UserSocialAuthType.binding.value, 'user_id': user_id}),
+            json.dumps({"type": UserSocialAuthType.binding.value, "user_id": user_id}),
         )
 
         match source:
@@ -98,7 +98,7 @@ class UserSocialService:
                     state=state,
                 )
             case _:
-                raise errors.ForbiddenError(msg=f'暂不支持 {source} 绑定')
+                raise errors.ForbiddenError(msg=f"暂不支持 {source} 绑定")
 
         return auth_url
 

@@ -14,8 +14,8 @@ import asyncpg
 from dotenv import load_dotenv
 
 # Windows 平台 UTF-8 输出支持
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 # 加载 .env 文件
 load_dotenv()
@@ -23,129 +23,129 @@ load_dotenv()
 
 async def create_database_if_not_exists() -> bool | None:
     """创建数据库（如果不存在）"""
-    host = os.getenv('DATABASE_HOST', 'localhost')
-    port = int(os.getenv('DATABASE_PORT', '5432'))
-    user = os.getenv('DATABASE_USER', 'postgres')
-    password = os.getenv('DATABASE_PASSWORD', '')
-    db_name = os.getenv('DATABASE_SCHEMA', 'userecho')
+    host = os.getenv("DATABASE_HOST", "localhost")
+    port = int(os.getenv("DATABASE_PORT", "5432"))
+    user = os.getenv("DATABASE_USER", "postgres")
+    password = os.getenv("DATABASE_PASSWORD", "")
+    db_name = os.getenv("DATABASE_SCHEMA", "userecho")
 
-    print('📦 检查数据库是否存在...')
+    print("📦 检查数据库是否存在...")
 
     try:
         # 连接到 postgres 默认数据库
-        conn = await asyncpg.connect(host=host, port=port, user=user, password=password, database='postgres')
+        conn = await asyncpg.connect(host=host, port=port, user=user, password=password, database="postgres")
 
         # 检查数据库是否存在
-        existing = await conn.fetchval('SELECT 1 FROM pg_database WHERE datname = $1', db_name)
+        existing = await conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", db_name)
 
         if existing:
-            print(f'   ✅ 数据库 {db_name} 已存在')
+            print(f"   ✅ 数据库 {db_name} 已存在")
         else:
             await conn.execute(f'CREATE DATABASE "{db_name}"')
-            print(f'   ✅ 数据库 {db_name} 创建成功')
+            print(f"   ✅ 数据库 {db_name} 创建成功")
 
         await conn.close()
         return True
     except Exception as e:
-        print(f'   ❌ 数据库检查/创建失败: {e}')
+        print(f"   ❌ 数据库检查/创建失败: {e}")
         return False
 
 
 async def install_pgvector() -> bool | None:
     """安装 pgvector 扩展"""
-    host = os.getenv('DATABASE_HOST', 'localhost')
-    port = int(os.getenv('DATABASE_PORT', '5432'))
-    user = os.getenv('DATABASE_USER', 'postgres')
-    password = os.getenv('DATABASE_PASSWORD', '')
-    db_name = os.getenv('DATABASE_SCHEMA', 'userecho')
+    host = os.getenv("DATABASE_HOST", "localhost")
+    port = int(os.getenv("DATABASE_PORT", "5432"))
+    user = os.getenv("DATABASE_USER", "postgres")
+    password = os.getenv("DATABASE_PASSWORD", "")
+    db_name = os.getenv("DATABASE_SCHEMA", "userecho")
 
-    print('🔌 检查 pgvector 扩展...')
+    print("🔌 检查 pgvector 扩展...")
 
     try:
         conn = await asyncpg.connect(host=host, port=port, user=user, password=password, database=db_name)
 
         # 检查扩展是否已安装
-        existing = await conn.fetchval('SELECT 1 FROM pg_extension WHERE extname = $1', 'vector')
+        existing = await conn.fetchval("SELECT 1 FROM pg_extension WHERE extname = $1", "vector")
 
         if existing:
-            version = await conn.fetchval('SELECT extversion FROM pg_extension WHERE extname = $1', 'vector')
-            print(f'   ✅ pgvector 扩展已安装 (版本: {version})')
+            version = await conn.fetchval("SELECT extversion FROM pg_extension WHERE extname = $1", "vector")
+            print(f"   ✅ pgvector 扩展已安装 (版本: {version})")
         else:
-            await conn.execute('CREATE EXTENSION IF NOT EXISTS vector')
-            version = await conn.fetchval('SELECT extversion FROM pg_extension WHERE extname = $1', 'vector')
-            print(f'   ✅ pgvector 扩展安装成功 (版本: {version})')
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+            version = await conn.fetchval("SELECT extversion FROM pg_extension WHERE extname = $1", "vector")
+            print(f"   ✅ pgvector 扩展安装成功 (版本: {version})")
 
         await conn.close()
         return True
     except Exception as e:
-        print(f'   ❌ pgvector 扩展安装失败: {e}')
+        print(f"   ❌ pgvector 扩展安装失败: {e}")
         print()
-        print('   可能的原因：')
-        print('   1. PostgreSQL 服务器未安装 pgvector 扩展包')
-        print('   2. 当前用户没有 CREATE EXTENSION 权限')
+        print("   可能的原因：")
+        print("   1. PostgreSQL 服务器未安装 pgvector 扩展包")
+        print("   2. 当前用户没有 CREATE EXTENSION 权限")
         return False
 
 
 def configure_redis() -> bool | None:
     """配置 Redis"""
-    print('🔧 检查 Redis 配置...')
+    print("🔧 检查 Redis 配置...")
 
     # 检查 REDIS_URL 是否已配置
-    redis_url = os.getenv('REDIS_URL', '').strip()
-    if redis_url and not redis_url.startswith('#'):
-        print('   ✅ Redis 已配置（使用 REDIS_URL）')
+    redis_url = os.getenv("REDIS_URL", "").strip()
+    if redis_url and not redis_url.startswith("#"):
+        print("   ✅ Redis 已配置（使用 REDIS_URL）")
         return True
 
     # 检查本地 Redis 是否可用
     try:
         import redis
 
-        host = os.getenv('REDIS_HOST', 'localhost')
-        port = int(os.getenv('REDIS_PORT', '6379'))
-        password = os.getenv('REDIS_PASSWORD', '')
+        host = os.getenv("REDIS_HOST", "localhost")
+        port = int(os.getenv("REDIS_PORT", "6379"))
+        password = os.getenv("REDIS_PASSWORD", "")
 
         r = redis.Redis(host=host, port=port, password=password or None, socket_connect_timeout=2)
         r.ping()
-        print(f'   ✅ 本地 Redis 可用 ({host}:{port})')
+        print(f"   ✅ 本地 Redis 可用 ({host}:{port})")
         return True
     except:
-        print('   ⚠️  本地 Redis 不可用')
+        print("   ⚠️  本地 Redis 不可用")
 
         # 检查是否有 Upstash Redis URL（注释状态）
-        env_file = '.env'
+        env_file = ".env"
         if os.path.exists(env_file):
-            with open(env_file, encoding='utf-8') as f:
+            with open(env_file, encoding="utf-8") as f:
                 lines = f.readlines()
 
             has_upstash = False
             for line in lines:
-                if line.strip().startswith('# REDIS_URL='):
+                if line.strip().startswith("# REDIS_URL="):
                     has_upstash = True
                     break
 
             if has_upstash:
-                print('   ℹ️  检测到 Upstash Redis 配置')
-                print('   ℹ️  正在切换到 Upstash Redis...')
+                print("   ℹ️  检测到 Upstash Redis 配置")
+                print("   ℹ️  正在切换到 Upstash Redis...")
 
                 # 修改配置
                 new_lines = []
                 for line in lines:
                     # 注释本地 Redis 配置
-                    if line.strip().startswith('REDIS_HOST='):
-                        new_lines.append(f'# {line}')
+                    if line.strip().startswith("REDIS_HOST="):
+                        new_lines.append(f"# {line}")
                     # 启用 Upstash Redis URL
-                    elif line.strip().startswith('# REDIS_URL='):
+                    elif line.strip().startswith("# REDIS_URL="):
                         new_lines.append(line[2:])  # 移除前面的 '#'
                     else:
                         new_lines.append(line)
 
-                with open(env_file, 'w', encoding='utf-8') as f:
+                with open(env_file, "w", encoding="utf-8") as f:
                     f.writelines(new_lines)
 
-                print('   ✅ 已切换到 Upstash Redis')
+                print("   ✅ 已切换到 Upstash Redis")
                 return True
-            print('   ⚠️  未找到可用的 Redis 配置')
-            print('   ⚠️  继续执行可能会失败，建议配置 Redis')
+            print("   ⚠️  未找到可用的 Redis 配置")
+            print("   ⚠️  继续执行可能会失败，建议配置 Redis")
             return False
 
         return False
@@ -153,9 +153,9 @@ def configure_redis() -> bool | None:
 
 async def main() -> int:
     """主函数"""
-    print('=' * 80)
-    print('🔧 数据库环境准备')
-    print('=' * 80)
+    print("=" * 80)
+    print("🔧 数据库环境准备")
+    print("=" * 80)
     print()
 
     success = True
@@ -177,16 +177,16 @@ async def main() -> int:
     print()
 
     if success:
-        print('=' * 80)
-        print('✅ 数据库环境准备完成')
-        print('=' * 80)
+        print("=" * 80)
+        print("✅ 数据库环境准备完成")
+        print("=" * 80)
         return 0
-    print('=' * 80)
-    print('❌ 数据库环境准备失败')
-    print('=' * 80)
+    print("=" * 80)
+    print("❌ 数据库环境准备失败")
+    print("=" * 80)
     return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit_code = asyncio.run(main())
     sys.exit(exit_code)

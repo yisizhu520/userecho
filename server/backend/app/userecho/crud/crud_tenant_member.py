@@ -30,7 +30,7 @@ class CRUDTenantMember:
 
         # 子查询：统计每个成员提交的反馈数
         feedback_count_subq = (
-            select(Feedback.submitter_id, func.count(Feedback.id).label('count'))
+            select(Feedback.submitter_id, func.count(Feedback.id).label("count"))
             .where(Feedback.tenant_id == tenant_id)
             .where(Feedback.deleted_at.is_(None))  # 排除已删除的反馈
             .group_by(Feedback.submitter_id)
@@ -43,7 +43,7 @@ class CRUDTenantMember:
         from backend.app.admin.model.user import User
 
         stmt = (
-            select(TenantUser, func.coalesce(feedback_count_subq.c.count, 0).label('real_feedback_count'))
+            select(TenantUser, func.coalesce(feedback_count_subq.c.count, 0).label("real_feedback_count"))
             .options(
                 selectinload(TenantUser.user),
                 selectinload(TenantUser.roles),
@@ -70,7 +70,7 @@ class CRUDTenantMember:
         return members
 
     @staticmethod
-    async def create(db: AsyncSession, *, tenant_id: str, user_id: int, user_type: str = 'member') -> TenantUser:
+    async def create(db: AsyncSession, *, tenant_id: str, user_id: int, user_type: str = "member") -> TenantUser:
         """创建成员"""
         member = TenantUser(tenant_id=tenant_id, user_id=user_id, user_type=user_type)
         db.add(member)

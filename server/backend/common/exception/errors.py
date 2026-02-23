@@ -40,7 +40,7 @@ class RequestError(BaseExceptionError):
         self,
         *,
         code: int = StandardResponseCode.HTTP_400,
-        msg: str = 'Bad Request',
+        msg: str = "Bad Request",
         data: Any = None,
         background: BackgroundTask | None = None,
     ) -> None:
@@ -53,7 +53,7 @@ class ForbiddenError(BaseExceptionError):
 
     code = StandardResponseCode.HTTP_403
 
-    def __init__(self, *, msg: str = 'Forbidden', data: Any = None, background: BackgroundTask | None = None) -> None:
+    def __init__(self, *, msg: str = "Forbidden", data: Any = None, background: BackgroundTask | None = None) -> None:
         super().__init__(msg=msg, data=data, background=background)
 
 
@@ -62,7 +62,7 @@ class NotFoundError(BaseExceptionError):
 
     code = StandardResponseCode.HTTP_404
 
-    def __init__(self, *, msg: str = 'Not Found', data: Any = None, background: BackgroundTask | None = None) -> None:
+    def __init__(self, *, msg: str = "Not Found", data: Any = None, background: BackgroundTask | None = None) -> None:
         super().__init__(msg=msg, data=data, background=background)
 
 
@@ -74,7 +74,7 @@ class ServerError(BaseExceptionError):
     def __init__(
         self,
         *,
-        msg: str = 'Internal Server Error',
+        msg: str = "Internal Server Error",
         data: Any = None,
         background: BackgroundTask | None = None,
     ) -> None:
@@ -86,7 +86,7 @@ class GatewayError(BaseExceptionError):
 
     code = StandardResponseCode.HTTP_502
 
-    def __init__(self, *, msg: str = 'Bad Gateway', data: Any = None, background: BackgroundTask | None = None) -> None:
+    def __init__(self, *, msg: str = "Bad Gateway", data: Any = None, background: BackgroundTask | None = None) -> None:
         super().__init__(msg=msg, data=data, background=background)
 
 
@@ -98,7 +98,7 @@ class AuthorizationError(BaseExceptionError):
     def __init__(
         self,
         *,
-        msg: str = 'Permission Denied',
+        msg: str = "Permission Denied",
         data: Any = None,
         background: BackgroundTask | None = None,
     ) -> None:
@@ -110,8 +110,8 @@ class TokenError(HTTPError):
 
     code = StandardResponseCode.HTTP_401
 
-    def __init__(self, *, msg: str = 'Not Authenticated', headers: dict[str, Any] | None = None) -> None:
-        super().__init__(code=self.code, msg=msg, headers=headers or {'WWW-Authenticate': 'Bearer'})
+    def __init__(self, *, msg: str = "Not Authenticated", headers: dict[str, Any] | None = None) -> None:
+        super().__init__(code=self.code, msg=msg, headers=headers or {"WWW-Authenticate": "Bearer"})
 
 
 class ConflictError(BaseExceptionError):
@@ -119,5 +119,5 @@ class ConflictError(BaseExceptionError):
 
     code = StandardResponseCode.HTTP_409
 
-    def __init__(self, *, msg: str = 'Conflict', data: Any = None, background: BackgroundTask | None = None) -> None:
+    def __init__(self, *, msg: str = "Conflict", data: Any = None, background: BackgroundTask | None = None) -> None:
         super().__init__(msg=msg, data=data, background=background)

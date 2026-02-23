@@ -14,8 +14,8 @@ from backend.utils.timezone import timezone
 class Task(MappedBase):
     """Task result/status."""
 
-    __tablename__ = 'task_result'
-    __table_args__ = {'comment': '任务结果表'}
+    __tablename__ = "task_result"
+    __table_args__ = {"comment": "任务结果表"}
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
@@ -34,20 +34,20 @@ class Task(MappedBase):
 
     def to_dict(self) -> dict:
         return {
-            'task_id': self.task_id,
-            'status': self.status,
-            'result': self.result,
-            'traceback': self.traceback,
-            'date_done': self.date_done,
+            "task_id": self.task_id,
+            "status": self.status,
+            "result": self.result,
+            "traceback": self.traceback,
+            "date_done": self.date_done,
         }
 
     def __repr__(self) -> str:
-        return f'<Task {self.task_id} state: {self.status}>'
+        return f"<Task {self.task_id} state: {self.status}>"
 
     @classmethod
-    def configure(cls, schema=None, name=None) -> None:  # noqa: ANN001
+    def configure(cls, schema=None, name=None) -> None:
         cls.__table__.schema = schema
-        if cls.id.default is not None and hasattr(cls.id.default, 'schema'):
+        if cls.id.default is not None and hasattr(cls.id.default, "schema"):
             cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
 
@@ -55,8 +55,8 @@ class Task(MappedBase):
 class TaskExtended(Task):
     """For the extend result."""
 
-    __tablename__ = 'task_result'
-    __table_args__ = {'extend_existing': True, 'comment': '任务结果表'}
+    __tablename__ = "task_result"
+    __table_args__ = {"extend_existing": True, "comment": "任务结果表"}
 
     name = sa.Column(sa.String(155), nullable=True)
     args = sa.Column(sa.LargeBinary, nullable=True)
@@ -67,45 +67,47 @@ class TaskExtended(Task):
 
     def to_dict(self) -> dict:
         task_dict = super().to_dict()
-        task_dict.update({
-            'name': self.name,
-            'args': self.args,
-            'kwargs': self.kwargs,
-            'worker': self.worker,
-            'retries': self.retries,
-            'queue': self.queue,
-        })
+        task_dict.update(
+            {
+                "name": self.name,
+                "args": self.args,
+                "kwargs": self.kwargs,
+                "worker": self.worker,
+                "retries": self.retries,
+                "queue": self.queue,
+            }
+        )
         return task_dict
 
 
 class TaskSet(MappedBase):
     """TaskSet result."""
 
-    __tablename__ = 'task_set_result'
-    __table_args__ = {'comment': '任务集结果表'}
+    __tablename__ = "task_set_result"
+    __table_args__ = {"comment": "任务集结果表"}
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(TimeZone, default=timezone.now, nullable=True)
 
-    def __init__(self, taskset_id, result) -> None:  # noqa: ANN001
+    def __init__(self, taskset_id, result) -> None:
         self.taskset_id = taskset_id
         self.result = result
 
     def to_dict(self) -> dict:
         return {
-            'taskset_id': self.taskset_id,
-            'result': self.result,
-            'date_done': self.date_done,
+            "taskset_id": self.taskset_id,
+            "result": self.result,
+            "date_done": self.date_done,
         }
 
     def __repr__(self) -> str:
-        return f'<TaskSet: {self.taskset_id}>'
+        return f"<TaskSet: {self.taskset_id}>"
 
     @classmethod
-    def configure(cls, schema=None, name=None) -> None:  # noqa: ANN001
+    def configure(cls, schema=None, name=None) -> None:
         cls.__table__.schema = schema
-        if cls.id.default is not None and hasattr(cls.id.default, 'schema'):
+        if cls.id.default is not None and hasattr(cls.id.default, "schema"):
             cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__

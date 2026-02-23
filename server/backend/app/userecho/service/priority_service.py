@@ -46,15 +46,15 @@ class PriorityService:
         customers = await self._get_related_customers(db, topic_id, tenant_id)
 
         if not customers:
-            log.warning(f'Topic {topic_id} has no related customers, using default business_value=1')
+            log.warning(f"Topic {topic_id} has no related customers, using default business_value=1")
             return 1  # 匿名反馈默认最低价值
 
         # 客户类型映射
         type_scores = {
-            'normal': 1,  # 普通客户
-            'paid': 3,  # 付费客户
-            'major': 5,  # 大客户
-            'strategic': 10,  # 战略客户
+            "normal": 1,  # 普通客户
+            "paid": 3,  # 付费客户
+            "major": 5,  # 大客户
+            "strategic": 10,  # 战略客户
         }
 
         max_score = max(type_scores.get(c.customer_type, 1) for c in customers)
@@ -63,16 +63,16 @@ class PriorityService:
         unique_customers = {c.id for c in customers}
         if len(unique_customers) >= 3:
             max_score += 1
-            log.debug(f'Multi-customer bonus: {len(unique_customers)} customers, +1 point')
+            log.debug(f"Multi-customer bonus: {len(unique_customers)} customers, +1 point")
 
         # 大客户加成（+2 分）
-        has_major_customer = any(c.customer_type in ['major', 'strategic'] for c in customers)
+        has_major_customer = any(c.customer_type in ["major", "strategic"] for c in customers)
         if has_major_customer:
             max_score += 2
-            log.debug('Major customer bonus: +2 points')
+            log.debug("Major customer bonus: +2 points")
 
         final_score = min(10, max_score)
-        log.info(f'Calculated business_value for topic {topic_id}: {final_score}')
+        log.info(f"Calculated business_value for topic {topic_id}: {final_score}")
         return final_score
 
     async def _get_related_customers(
@@ -110,7 +110,7 @@ class PriorityService:
         result = await db.execute(query)
         customers = list(result.scalars().all())
 
-        log.debug(f'Found {len(customers)} related customers for topic {topic_id}')
+        log.debug(f"Found {len(customers)} related customers for topic {topic_id}")
         return customers
 
     async def suggest_impact_scope_fast(
@@ -136,15 +136,15 @@ class PriorityService:
         """
         # 基于客户数量的规则判断
         if customer_count >= 10:
-            return {'scope': 10, 'confidence': 0.7, 'reason': f'影响 {customer_count} 个客户，判定为全部用户'}
+            return {"scope": 10, "confidence": 0.7, "reason": f"影响 {customer_count} 个客户，判定为全部用户"}
         if customer_count >= 5:
-            return {'scope': 5, 'confidence': 0.7, 'reason': f'影响 {customer_count} 个客户，判定为大多数用户'}
+            return {"scope": 5, "confidence": 0.7, "reason": f"影响 {customer_count} 个客户，判定为大多数用户"}
         if customer_count >= 2:
-            return {'scope': 3, 'confidence': 0.6, 'reason': f'影响 {customer_count} 个客户，判定为部分用户'}
+            return {"scope": 3, "confidence": 0.6, "reason": f"影响 {customer_count} 个客户，判定为部分用户"}
         # 仅 1 个客户，但反馈数量较多也可能是高影响
         if feedback_count >= 5:
-            return {'scope': 3, 'confidence': 0.5, 'reason': f'1 个客户提交 {feedback_count} 条反馈，可能影响范围较大'}
-        return {'scope': 1, 'confidence': 0.6, 'reason': '仅影响 1 个客户，判定为个别用户'}
+            return {"scope": 3, "confidence": 0.5, "reason": f"1 个客户提交 {feedback_count} 条反馈，可能影响范围较大"}
+        return {"scope": 1, "confidence": 0.6, "reason": "仅影响 1 个客户，判定为个别用户"}
 
     async def suggest_dev_cost_fast(
         self,
@@ -168,27 +168,27 @@ class PriorityService:
             }
         """
         # 关键词匹配（紧急问题）
-        urgent_keywords = ['崩溃', '闪退', '无法', '不能', '失败', 'crash', 'bug']
+        urgent_keywords = ["崩溃", "闪退", "无法", "不能", "失败", "crash", "bug"]
         if any(keyword in title.lower() for keyword in urgent_keywords):
-            return {'days': 1, 'confidence': 0.7, 'reason': '检测到紧急问题关键词，预估 1 天可修复'}
+            return {"days": 1, "confidence": 0.7, "reason": "检测到紧急问题关键词，预估 1 天可修复"}
 
         # 新功能关键词
-        feature_keywords = ['新增', '增加', '添加', '支持', 'add', 'new']
+        feature_keywords = ["新增", "增加", "添加", "支持", "add", "new"]
         if any(keyword in title.lower() for keyword in feature_keywords):
-            return {'days': 5, 'confidence': 0.6, 'reason': '检测到新功能关键词，预估 5 天开发'}
+            return {"days": 5, "confidence": 0.6, "reason": "检测到新功能关键词，预估 5 天开发"}
 
         # 基于分类的默认成本
         category_costs = {
-            'bug': (1, '紧急 Bug 修复'),
-            'improvement': (1, '体验优化'),
-            'feature': (5, '新功能开发'),
-            'performance': (3, '性能优化'),
-            'other': (3, '其他需求'),
+            "bug": (1, "紧急 Bug 修复"),
+            "improvement": (1, "体验优化"),
+            "feature": (5, "新功能开发"),
+            "performance": (3, "性能优化"),
+            "other": (3, "其他需求"),
         }
 
-        days, reason = category_costs.get(category, (3, '未分类需求'))
+        days, reason = category_costs.get(category, (3, "未分类需求"))
 
-        return {'days': days, 'confidence': 0.5, 'reason': f'基于分类 {category} 的经验值：{reason}'}
+        return {"days": days, "confidence": 0.5, "reason": f"基于分类 {category} 的经验值：{reason}"}
 
     async def create_default_priority_score(
         self,
@@ -221,11 +221,11 @@ class PriorityService:
 
         # 影响范围：快速规则判断
         impact_suggestion = await self.suggest_impact_scope_fast(customer_count, feedback_count)
-        impact_scope = impact_suggestion['scope']
+        impact_scope = impact_suggestion["scope"]
 
         # 开发成本：快速规则判断
         dev_cost_suggestion = await self.suggest_dev_cost_fast(category, title)
-        dev_cost = dev_cost_suggestion['days']
+        dev_cost = dev_cost_suggestion["days"]
 
         # 紧急系数
         urgency_factor = 1.5 if is_urgent else 1.0
@@ -242,8 +242,8 @@ class PriorityService:
         )
 
         log.info(
-            f'Created default priority score for topic {topic_id}: '
-            f'impact={impact_scope}, business={business_value}, cost={dev_cost}, urgent={urgency_factor}'
+            f"Created default priority score for topic {topic_id}: "
+            f"impact={impact_scope}, business={business_value}, cost={dev_cost}, urgent={urgency_factor}"
         )
 
     async def create_or_update_priority_score(
@@ -280,7 +280,7 @@ class PriorityService:
             details=details,
         )
 
-        log.info(f'Updated priority score for topic {topic_id}')
+        log.info(f"Updated priority score for topic {topic_id}")
 
 
 priority_service = PriorityService()

@@ -17,9 +17,9 @@ from backend.database.db import async_engine
 
 async def check_schema() -> bool | None:
     """检查表结构"""
-    print('=' * 70)
-    print('📊 检查 feedbacks 表结构')
-    print('=' * 70)
+    print("=" * 70)
+    print("📊 检查 feedbacks 表结构")
+    print("=" * 70)
 
     sql = """
     SELECT
@@ -47,16 +47,16 @@ async def check_schema() -> bool | None:
             rows = result.fetchall()
 
             if not rows:
-                print('❌ 字段不存在！')
+                print("❌ 字段不存在！")
                 return False
 
-            print('\n✅ 字段已存在：\n')
-            print(f'{"字段名":<25} {"类型":<20} {"可空":<10} {"长度":<10}')
-            print('-' * 70)
+            print("\n✅ 字段已存在：\n")
+            print(f"{'字段名':<25} {'类型':<20} {'可空':<10} {'长度':<10}")
+            print("-" * 70)
 
             for row in rows:
                 col_name, data_type, is_null, _default, max_len = row
-                print(f'{col_name:<25} {data_type:<20} {is_null:<10} {max_len!s:<10}')
+                print(f"{col_name:<25} {data_type:<20} {is_null:<10} {max_len!s:<10}")
 
             # 检查外键约束
             fk_sql = """
@@ -80,27 +80,27 @@ async def check_schema() -> bool | None:
             result = await conn.execute(text(fk_sql))
             fk_rows = result.fetchall()
 
-            print('\n✅ 外键约束：\n')
+            print("\n✅ 外键约束：\n")
             if fk_rows:
                 for row in fk_rows:
                     constraint_name, col, foreign_table, foreign_col = row
-                    print(f'  {constraint_name}: {col} -> {foreign_table}({foreign_col})')
+                    print(f"  {constraint_name}: {col} -> {foreign_table}({foreign_col})")
             else:
-                print('  无外键约束')
+                print("  无外键约束")
 
-        print('\n' + '=' * 70)
-        print('✅ 字段检查完成！所有字段正确添加。')
-        print('=' * 70)
+        print("\n" + "=" * 70)
+        print("✅ 字段检查完成！所有字段正确添加。")
+        print("=" * 70)
         return True
 
     except Exception as e:
-        print(f'❌ 检查失败: {e}')
+        print(f"❌ 检查失败: {e}")
         import traceback
 
         traceback.print_exc()
         return False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     success = asyncio.run(check_schema())
     sys.exit(0 if success else 1)

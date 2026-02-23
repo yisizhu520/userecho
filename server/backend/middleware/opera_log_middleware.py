@@ -44,7 +44,7 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         response = None
         path = request.url.path
 
-        if path in settings.OPERA_LOG_PATH_EXCLUDE or not path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+        if path in settings.OPERA_LOG_PATH_EXCLUDE or not path.startswith(f"{settings.FASTAPI_API_V1_PATH}"):
             response = await call_next(request)
         else:
             method = request.method
@@ -56,23 +56,23 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
 
             # 执行请求
             code = 200
-            msg = 'Success'
+            msg = "Success"
             status = StatusType.enable
             error = None
             try:
                 response = await call_next(request)
                 elapsed = round((time.perf_counter() - ctx.perf_time) * 1000, 3)
                 for e in [
-                    '__request_http_exception__',
-                    '__request_validation_exception__',
-                    '__request_assertion_error__',
-                    '__request_custom_exception__',
+                    "__request_http_exception__",
+                    "__request_validation_exception__",
+                    "__request_assertion_error__",
+                    "__request_custom_exception__",
                 ]:
                     exception = ctx.get(e)
                     if exception:
-                        code = exception.get('code')
-                        msg = exception.get('msg')
-                        log.error(f'请求异常: {msg}')
+                        code = exception.get("code")
+                        msg = exception.get("msg")
+                        log.error(f"请求异常: {msg}")
                         PROMETHEUS_EXCEPTION_COUNTER.labels(
                             app_name=settings.GRAFANA_APP_NAME,
                             method=method,
@@ -82,18 +82,18 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                         break
             except Exception as e:
                 elapsed = round((time.perf_counter() - ctx.perf_time) * 1000, 3)
-                code = getattr(e, 'code', StandardResponseCode.HTTP_500)  # 兼容 SQLAlchemy 异常用法
-                msg = getattr(e, 'msg', str(e))  # 不建议使用 traceback 模块获取错误信息，会暴漏代码信息
+                code = getattr(e, "code", StandardResponseCode.HTTP_500)  # 兼容 SQLAlchemy 异常用法
+                msg = getattr(e, "msg", str(e))  # 不建议使用 traceback 模块获取错误信息，会暴漏代码信息
                 status = StatusType.disable
                 error = e
-                log.error(f'请求异常: {e!s}')
+                log.error(f"请求异常: {e!s}")
                 PROMETHEUS_EXCEPTION_COUNTER.labels(
                     app_name=settings.GRAFANA_APP_NAME, method=method, path=path, exception_type=type(e).__name__
                 ).inc()
             else:
                 PROMETHEUS_REQUEST_COST_TIME_HISTOGRAM.labels(
                     app_name=settings.GRAFANA_APP_NAME, method=method, path=path
-                ).observe(elapsed, exemplar={'TraceID': get_request_trace_id()})
+                ).observe(elapsed, exemplar={"TraceID": get_request_trace_id()})
             finally:
                 PROMETHEUS_RESPONSE_COUNTER.labels(
                     app_name=settings.GRAFANA_APP_NAME, method=method, path=path, status_code=code
@@ -103,8 +103,8 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 ).dec()
 
             # 此信息只能在请求后获取
-            route = request.scope.get('route')
-            summary = route.summary or '' if route else ''
+            route = request.scope.get("route")
+            summary = route.summary or "" if route else ""
 
             try:
                 # 此信息来源于 JWT 认证中间件
@@ -127,19 +127,19 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 trace_id = get_request_trace_id()
                 if code_int >= 500:
                     log.error(
-                        f'请求失败上下文 | trace_id={trace_id} | ip={ctx.ip} | method={method} | path={path} | args={args}'
+                        f"请求失败上下文 | trace_id={trace_id} | ip={ctx.ip} | method={method} | path={path} | args={args}"
                     )
                 else:
                     log.warning(
-                        f'请求失败上下文 | trace_id={trace_id} | ip={ctx.ip} | method={method} | path={path} | args={args}'
+                        f"请求失败上下文 | trace_id={trace_id} | ip={ctx.ip} | method={method} | path={path} | args={args}"
                     )
             else:
-                log.debug(f'接口摘要：[{summary}]')
-                log.debug(f'请求地址：[{ctx.ip}]')
-                log.debug(f'请求参数：{args}')
-            log.info(f'{ctx.ip: <15} | {request.method: <8} | {code!s: <6} | {path} | {elapsed:.3f}ms')
-            if request.method != 'OPTIONS':
-                log.debug('<-- 请求结束')
+                log.debug(f"接口摘要：[{summary}]")
+                log.debug(f"请求地址：[{ctx.ip}]")
+                log.debug(f"请求参数：{args}")
+            log.info(f"{ctx.ip: <15} | {request.method: <8} | {code!s: <6} | {path} | {elapsed:.3f}ms")
+            if request.method != "OPTIONS":
+                log.debug("<-- 请求结束")
 
             # 日志创建
             opera_log_in = CreateOperaLogParam(
@@ -183,28 +183,28 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         # 查询参数
         query_params = dict(request.query_params)
         if query_params:
-            args['query_params'] = await self.desensitization(query_params)
+            args["query_params"] = await self.desensitization(query_params)
 
         # 路径参数
         path_params = request.path_params
         if path_params:
-            args['path_params'] = await self.desensitization(path_params)
+            args["path_params"] = await self.desensitization(path_params)
 
-        content_type_header = request.headers.get('Content-Type', '')
-        content_type_value = content_type_header.split(';', 1)[0].strip().lower()
-        is_json = 'application/json' in content_type_value
-        is_form = content_type_value in {'application/x-www-form-urlencoded', 'multipart/form-data'} or (
-            'multipart/form-data' in content_type_header.lower()
+        content_type_header = request.headers.get("Content-Type", "")
+        content_type_value = content_type_header.split(";", 1)[0].strip().lower()
+        is_json = "application/json" in content_type_value
+        is_form = content_type_value in {"application/x-www-form-urlencoded", "multipart/form-data"} or (
+            "multipart/form-data" in content_type_header.lower()
         )
 
         if is_form:
             # ⚠️ 不能调用 request.form()，会消费 body stream，导致业务代码拿不到数据
             # multipart/form-data 的 stream 只能被读取一次，不能在中间件里提前消费
             # 只记录 Content-Type，具体字段由业务代码处理
-            if 'multipart/form-data' in content_type_header.lower():
-                args['form-data'] = '<multipart/form-data>'
+            if "multipart/form-data" in content_type_header.lower():
+                args["form-data"] = "<multipart/form-data>"
             else:
-                args['x-www-form-urlencoded'] = '<application/x-www-form-urlencoded>'
+                args["x-www-form-urlencoded"] = "<application/x-www-form-urlencoded>"
             return args or None
 
         body_data = await request.body()
@@ -212,14 +212,14 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
             if is_json:
                 json_data = await request.json()
                 if isinstance(json_data, dict):
-                    args['json'] = await self.desensitization(json_data)
+                    args["json"] = await self.desensitization(json_data)
                 else:
-                    args['data'] = str(json_data)
+                    args["data"] = str(json_data)
             else:
                 preview = body_data[:2048]
-                args['data'] = {
-                    'size': len(body_data),
-                    'preview': preview.decode('utf-8', errors='replace'),
+                args["data"] = {
+                    "size": len(body_data),
+                    "preview": preview.decode("utf-8", errors="replace"),
                 }
 
         return args or None
@@ -245,7 +245,7 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                     case OperaLogCipherType.plan:
                         pass
                     case _:
-                        args[key] = '******'
+                        args[key] = "******"
 
         return args
 
@@ -261,7 +261,7 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
             if logs:
                 try:
                     if settings.DATABASE_ECHO:
-                        log.info('自动执行【操作日志批量创建】任务...')
+                        log.info("自动执行【操作日志批量创建】任务...")
                     async with async_db_session.begin() as db:
                         await opera_log_service.bulk_create(db=db, objs=logs)
                 finally:

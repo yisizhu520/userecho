@@ -31,12 +31,12 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         """
         from backend.common.log import log
 
-        statuses = ['pending']
+        statuses = ["pending"]
         if include_failed:
-            statuses.append('failed')
+            statuses.append("failed")
         if force_recluster:
             # 仅针对 topic_id IS NULL 的反馈，允许重新跑（包括已 clustered 的噪声点）
-            statuses.append('clustered')
+            statuses.append("clustered")
 
         query = (
             select(self.model)
@@ -49,10 +49,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             .limit(limit)
         )
 
-        log.debug(f'Query pending clustering: tenant={tenant_id}, statuses={statuses}, limit={limit}')
+        log.debug(f"Query pending clustering: tenant={tenant_id}, statuses={statuses}, limit={limit}")
         result = await db.execute(query)
         feedbacks = list(result.scalars().all())
-        log.debug(f'Found {len(feedbacks)} pending feedbacks')
+        log.debug(f"Found {len(feedbacks)} pending feedbacks")
         return feedbacks
 
     async def get_unclustered(
@@ -96,11 +96,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         if not feedback_ids:
             return 0
 
-        values: dict = {'clustering_status': clustering_status}
+        values: dict = {"clustering_status": clustering_status}
         if topic_id is not _UNSET:
-            values['topic_id'] = topic_id
+            values["topic_id"] = topic_id
         if clustering_metadata is not _UNSET:
-            values['clustering_metadata'] = clustering_metadata
+            values["clustering_metadata"] = clustering_metadata
 
         stmt = (
             update(self.model)
@@ -282,7 +282,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         result = await db.execute(
             query,
-            {'tenant_id': tenant_id, 'query_vector': embedding_str, 'min_similarity': min_similarity, 'limit': limit},
+            {"tenant_id": tenant_id, "query_vector": embedding_str, "min_similarity": min_similarity, "limit": limit},
         )
 
         # 获取完整的反馈对象
@@ -344,10 +344,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         query = (
             select(
                 self.model,
-                CustomerAlias.name.label('customer_name'),
-                TopicAlias.title.label('topic_title'),
-                TopicAlias.status.label('topic_status'),
-                User.username.label('submitter_name'),
+                CustomerAlias.name.label("customer_name"),
+                TopicAlias.title.label("topic_title"),
+                TopicAlias.status.label("topic_status"),
+                User.username.label("submitter_name"),
             )
             .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
             .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
@@ -364,7 +364,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         # 多选过滤：is_urgent
         if is_urgent is not None and len(is_urgent) > 0:
             # 将字符串 'true'/'false' 转换为布尔值
-            bool_values = [v.lower() == 'true' for v in is_urgent]
+            bool_values = [v.lower() == "true" for v in is_urgent]
             query = query.where(self.model.is_urgent.in_(bool_values))
 
         # 多选过滤：derived_status（派生状态筛选）
@@ -378,19 +378,19 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         if derived_status is not None and len(derived_status) > 0:
             conditions = []
             for status in derived_status:
-                if status == 'pending':
+                if status == "pending":
                     # 待处理: 所有未归类到主题的反馈
                     conditions.append(self.model.topic_id.is_(None))
-                elif status == 'review':
-                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'pending'))
-                elif status == 'planned':
-                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'planned'))
-                elif status == 'in_progress':
-                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'in_progress'))
-                elif status == 'completed':
-                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'completed'))
-                elif status == 'ignored':
-                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == 'ignored'))
+                elif status == "review":
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == "pending"))
+                elif status == "planned":
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == "planned"))
+                elif status == "in_progress":
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == "in_progress"))
+                elif status == "completed":
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == "completed"))
+                elif status == "ignored":
+                    conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == "ignored"))
             if conditions:
                 query = query.where(or_(*conditions))
 
@@ -400,7 +400,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         # 关键词搜索（搜索 content + ai_summary）
         if search_query:
-            search_pattern = f'%{search_query}%'
+            search_pattern = f"%{search_query}%"
             query = query.where(
                 or_(self.model.content.ilike(search_pattern), self.model.ai_summary.ilike(search_pattern))
             )
@@ -433,11 +433,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         feedback_list = []
         for row in rows:
             feedback_dict = {
-                **{c.name: getattr(row[0], c.name) for c in row[0].__table__.columns if c.name != 'embedding'},
-                'customer_name': row.customer_name,
-                'topic_title': row.topic_title,
-                'topic_status': row.topic_status,
-                'submitter_name': row.submitter_name,
+                **{c.name: getattr(row[0], c.name) for c in row[0].__table__.columns if c.name != "embedding"},
+                "customer_name": row.customer_name,
+                "topic_title": row.topic_title,
+                "topic_status": row.topic_status,
+                "submitter_name": row.submitter_name,
             }
             feedback_list.append(feedback_dict)
 
@@ -484,8 +484,8 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         # 构建过滤条件 SQL（使用 f-string 直接嵌入，避免参数绑定问题）
         filter_conditions = [
             f"f.tenant_id = '{tenant_id}'",
-            'f.embedding IS NOT NULL',
-            'f.deleted_at IS NULL',
+            "f.embedding IS NOT NULL",
+            "f.deleted_at IS NULL",
             f"(1 - (f.embedding <=> '{embedding_str}'::vector)) >= {min_similarity}",
         ]
 
@@ -495,16 +495,16 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         if customer_id is not None:
             filter_conditions.append(f"f.customer_id = '{customer_id}'")
         if is_urgent is not None:
-            filter_conditions.append(f'f.is_urgent = {is_urgent}')
+            filter_conditions.append(f"f.is_urgent = {is_urgent}")
         if has_topic is not None:
             if has_topic:
-                filter_conditions.append('f.topic_id IS NOT NULL')
+                filter_conditions.append("f.topic_id IS NOT NULL")
             else:
-                filter_conditions.append('f.topic_id IS NULL')
+                filter_conditions.append("f.topic_id IS NULL")
         if clustering_status is not None:
             filter_conditions.append(f"f.clustering_status = '{clustering_status}'")
 
-        where_clause = ' AND '.join(filter_conditions)
+        where_clause = " AND ".join(filter_conditions)
 
         # pgvector 相似度搜索 + 关联查询
         query_sql = f"""

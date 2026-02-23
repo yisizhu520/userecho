@@ -62,7 +62,7 @@ class CRUDRole(CRUDPlus[Role]):
             ],
         )
 
-        return select_join_serialize(result, relationships=['Role-m2m-Menu', 'Role-m2m-DataScope:scopes'])
+        return select_join_serialize(result, relationships=["Role-m2m-Menu", "Role-m2m-DataScope:scopes"])
 
     async def get_all(self, db: AsyncSession) -> Sequence[Role]:
         """
@@ -85,11 +85,11 @@ class CRUDRole(CRUDPlus[Role]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
 
-        return await self.select_order('id', **filters)
+        return await self.select_order("id", **filters)
 
     async def get_by_name(self, db: AsyncSession, name: str) -> Role | None:
         """

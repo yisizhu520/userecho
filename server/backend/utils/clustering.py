@@ -39,7 +39,7 @@ class FeedbackClustering:
             labels: shape (n_samples,) 聚类标签，-1 表示噪声点
         """
         if embeddings.shape[0] < self.min_samples:
-            log.warning(f'Too few samples for clustering: {embeddings.shape[0]} < {self.min_samples}')
+            log.warning(f"Too few samples for clustering: {embeddings.shape[0]} < {self.min_samples}")
             return np.full(embeddings.shape[0], -1)
 
         try:
@@ -55,7 +55,7 @@ class FeedbackClustering:
             clustering = DBSCAN(
                 eps=1 - self.threshold,  # 距离阈值
                 min_samples=self.min_samples,  # 最小聚类大小
-                metric='precomputed',
+                metric="precomputed",
             )
 
             labels = clustering.fit_predict(distance_matrix)
@@ -64,12 +64,12 @@ class FeedbackClustering:
             n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
             n_noise = list(labels).count(-1)
 
-            log.info(f'Clustering completed: {n_clusters} clusters, {n_noise} noise points')
+            log.info(f"Clustering completed: {n_clusters} clusters, {n_noise} noise points")
 
             return labels
 
         except Exception as e:
-            log.error(f'Clustering failed: {e}')
+            log.error(f"Clustering failed: {e}")
             return np.full(embeddings.shape[0], -1)
 
     def find_similar_feedbacks(
@@ -97,7 +97,7 @@ class FeedbackClustering:
             return [(int(idx), float(similarities[idx])) for idx in top_indices]
 
         except Exception as e:
-            log.error(f'Failed to find similar feedbacks: {e}')
+            log.error(f"Failed to find similar feedbacks: {e}")
             return []
 
     def calculate_cluster_quality(self, embeddings: np.ndarray, labels: np.ndarray) -> dict[str, float | None]:
@@ -126,12 +126,12 @@ class FeedbackClustering:
             if n_unique_labels < 2:
                 # 只有 0 或 1 个聚类，无法计算质量指标
                 noise_ratio = (labels == -1).sum() / len(labels)
-                return {'silhouette': 0.0, 'davies_bouldin': None, 'noise_ratio': float(noise_ratio)}
+                return {"silhouette": 0.0, "davies_bouldin": None, "noise_ratio": float(noise_ratio)}
 
             filtered_embeddings = embeddings[mask]
 
             # 轮廓系数 (-1 到 1，越接近 1 越好)
-            silhouette = silhouette_score(filtered_embeddings, filtered_labels, metric='cosine')
+            silhouette = silhouette_score(filtered_embeddings, filtered_labels, metric="cosine")
 
             # Davies-Bouldin 指数 (越小越好)
             davies_bouldin = davies_bouldin_score(filtered_embeddings, filtered_labels)
@@ -143,14 +143,14 @@ class FeedbackClustering:
             noise_ratio = (labels == -1).sum() / len(labels)
 
             return {
-                'silhouette': float(silhouette),
-                'davies_bouldin': davies_bouldin,
-                'noise_ratio': float(noise_ratio),
+                "silhouette": float(silhouette),
+                "davies_bouldin": davies_bouldin,
+                "noise_ratio": float(noise_ratio),
             }
 
         except Exception as e:
-            log.error(f'Failed to calculate cluster quality: {e}')
-            return {'silhouette': 0.0, 'davies_bouldin': None, 'noise_ratio': 1.0}
+            log.error(f"Failed to calculate cluster quality: {e}")
+            return {"silhouette": 0.0, "davies_bouldin": None, "noise_ratio": 1.0}
 
 
 # 全局单例

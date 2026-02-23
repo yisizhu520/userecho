@@ -52,11 +52,11 @@ class CRUDConfig(CRUDPlus[Config]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if type is not None:
-            filters['type__like'] = f'%{type}%'
+            filters["type__like"] = f"%{type}%"
 
-        return await self.select_order('created_time', 'desc', **filters)
+        return await self.select_order("created_time", "desc", **filters)
 
     async def create(self, db: AsyncSession, obj: CreateConfigParam) -> None:
         """

@@ -8,14 +8,14 @@ from backend.common.model import Base, id_key
 class DataRule(Base):
     """数据规则表"""
 
-    __tablename__ = 'sys_data_rule'
+    __tablename__ = "sys_data_rule"
 
     id: Mapped[id_key] = mapped_column(init=False)
-    name: Mapped[str] = mapped_column(sa.String(512), unique=True, comment='名称')
-    model: Mapped[str] = mapped_column(sa.String(64), comment='模型名称')
-    column: Mapped[str] = mapped_column(sa.String(32), comment='模型字段名')
-    operator: Mapped[int] = mapped_column(comment='运算符（0：and、1：or）')
+    name: Mapped[str] = mapped_column(sa.String(512), unique=True, comment="名称")
+    model: Mapped[str] = mapped_column(sa.String(64), comment="模型名称")
+    column: Mapped[str] = mapped_column(sa.String(32), comment="模型字段名")
+    operator: Mapped[int] = mapped_column(comment="运算符（0：and、1：or）")
     expression: Mapped[int] = mapped_column(
-        comment='表达式（0：==、1：!=、2：>、3：>=、4：<、5：<=、6：in、7：not_in）',
+        comment="表达式（0：==、1：!=、2：>、3：>=、4：<、5：<=、6：in、7：not_in）",
     )
-    value: Mapped[str] = mapped_column(sa.String(256), comment='规则值')
+    value: Mapped[str] = mapped_column(sa.String(256), comment="规则值")

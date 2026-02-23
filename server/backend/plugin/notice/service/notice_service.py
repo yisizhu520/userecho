@@ -25,7 +25,7 @@ class NoticeService:
 
         notice = await notice_dao.get(db, pk)
         if not notice:
-            raise errors.NotFoundError(msg='通知公告不存在')
+            raise errors.NotFoundError(msg="通知公告不存在")
         return notice
 
     @staticmethod
@@ -79,7 +79,7 @@ class NoticeService:
 
         notice = await notice_dao.get(db, pk)
         if not notice:
-            raise errors.NotFoundError(msg='通知公告不存在')
+            raise errors.NotFoundError(msg="通知公告不存在")
         count = await notice_dao.update(db, pk, obj)
         return count
 

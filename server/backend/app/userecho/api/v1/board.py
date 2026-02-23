@@ -9,10 +9,10 @@ from backend.common.response.response_schema import ResponseSchemaModel, respons
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/boards', tags=['UserEcho - 看板'])
+router = APIRouter(prefix="/boards", tags=["UserEcho - 看板"])
 
 
-@router.get('', summary='获取看板列表')
+@router.get("", summary="获取看板列表")
 async def get_boards(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,

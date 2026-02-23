@@ -46,10 +46,10 @@ class RequestPermission:
 
 def get_data_permission_models() -> dict[str, object]:
     """获取所有可用于数据权限的模型"""
-    return {getattr(model, '__name__', str(model)): model for model in get_all_models()}
+    return {getattr(model, "__name__", str(model)): model for model in get_all_models()}
 
 
-def filter_data_permission(  # noqa: C901
+def filter_data_permission(
     request: Request, *models: type[Model] | AliasedClass | Alias | Table
 ) -> ColumnElement[bool]:
     """
@@ -83,7 +83,7 @@ def filter_data_permission(  # noqa: C901
 
     # 获取目标模型
     model_map = (
-        {getattr(model, '__name__', str(model)): model for model in models} if models else get_data_permission_models()
+        {getattr(model, "__name__", str(model)): model for model in models} if models else get_data_permission_models()
     )
 
     where_and_list = []
@@ -129,10 +129,10 @@ def filter_data_permission(  # noqa: C901
             case RoleDataRuleExpressionType.le:
                 condition = column_obj <= cast_value(data_rule.value)
             case RoleDataRuleExpressionType.in_:
-                values = [cast_value(v.strip()) for v in data_rule.value.split(',')]
+                values = [cast_value(v.strip()) for v in data_rule.value.split(",")]
                 condition = column_obj.in_(values)
             case RoleDataRuleExpressionType.not_in:
-                values = [cast_value(v.strip()) for v in data_rule.value.split(',')]
+                values = [cast_value(v.strip()) for v in data_rule.value.split(",")]
                 condition = column_obj.not_in(values)
 
         # 根据运算符添加到对应列表

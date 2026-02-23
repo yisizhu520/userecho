@@ -35,42 +35,42 @@ from .topic import (
 
 __all__ = [
     # Customer
-    'CustomerCreate',
-    'CustomerOut',
-    'CustomerUpdate',
+    "CustomerCreate",
+    "CustomerOut",
+    "CustomerUpdate",
     # Feedback
-    'FeedbackCreate',
-    'FeedbackImportRow',
-    'FeedbackListParams',
-    'FeedbackOut',
-    'FeedbackUpdate',
+    "FeedbackCreate",
+    "FeedbackImportRow",
+    "FeedbackListParams",
+    "FeedbackOut",
+    "FeedbackUpdate",
     # Priority
-    'PriorityScoreCreate',
-    'PriorityScoreOut',
-    'PriorityScoreUpdate',
+    "PriorityScoreCreate",
+    "PriorityScoreOut",
+    "PriorityScoreUpdate",
     # Status History
-    'StatusHistoryOut',
+    "StatusHistoryOut",
     # Subscription
-    'SubscriptionCreateReq',
-    'SubscriptionHistorySchema',
-    'SubscriptionPlanSchema',
-    'SubscriptionUpdateReq',
+    "SubscriptionCreateReq",
+    "SubscriptionHistorySchema",
+    "SubscriptionPlanSchema",
+    "SubscriptionUpdateReq",
     # Tenant Config
-    'TenantConfigCreate',
-    'TenantConfigOut',
-    'TenantConfigUpdate',
+    "TenantConfigCreate",
+    "TenantConfigOut",
+    "TenantConfigUpdate",
     # Tenant
-    'TenantCreate',
-    'TenantOut',
-    'TenantSubscriptionSchema',
-    'TenantUpdate',
+    "TenantCreate",
+    "TenantOut",
+    "TenantSubscriptionSchema",
+    "TenantUpdate",
     # Topic
-    'TopicCreate',
-    'TopicDetailOut',
-    'TopicListParams',
-    'TopicOut',
-    'TopicStatusUpdateParam',
-    'TopicUpdate',
+    "TopicCreate",
+    "TopicDetailOut",
+    "TopicListParams",
+    "TopicOut",
+    "TopicStatusUpdateParam",
+    "TopicUpdate",
 ]
 
 # ✅ 统一解析前向引用（此时 PriorityScoreOut、FeedbackOut、StatusHistoryOut 都已加载）

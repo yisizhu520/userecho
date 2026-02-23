@@ -3,15 +3,24 @@
 提供自动租户过滤和软删除支持的 CRUD 基类
 """
 
-from typing import Any, Generic, TypeVar
+from datetime import datetime
+from typing import Any, Generic, Protocol, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.model import Base
 from backend.database.db import uuid4_str
 
-ModelType = TypeVar('ModelType', bound=Base)
+
+class TenantAwareModel(Protocol):
+    """多租户模型协议"""
+
+    id: Any
+    tenant_id: str
+    deleted_at: datetime | None
+
+
+ModelType = TypeVar("ModelType", bound=TenantAwareModel)
 
 
 class TenantAwareCRUD(Generic[ModelType]):
@@ -102,7 +111,7 @@ class TenantAwareCRUD(Generic[ModelType]):
             创建的模型实例
         """
         # 自动注入租户ID和UUID主键
-        obj_data = {'id': uuid4_str(), 'tenant_id': tenant_id, **data}
+        obj_data = {"id": uuid4_str(), "tenant_id": tenant_id, **data}
         obj = self.model(**obj_data)
         db.add(obj)
         await db.commit()

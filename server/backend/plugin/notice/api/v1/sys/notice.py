@@ -19,17 +19,17 @@ from backend.plugin.notice.service.notice_service import notice_service
 router = APIRouter()
 
 
-@router.get('/{pk}', summary='获取通知公告详情', dependencies=[DependsJwtAuth])
+@router.get("/{pk}", summary="获取通知公告详情", dependencies=[DependsJwtAuth])
 async def get_notice(
-    db: CurrentSession, pk: Annotated[int, Path(description='通知公告 ID')]
+    db: CurrentSession, pk: Annotated[int, Path(description="通知公告 ID")]
 ) -> ResponseSchemaModel[GetNoticeDetail]:
     notice = await notice_service.get(db=db, pk=pk)
     return response_base.success(data=notice)
 
 
 @router.get(
-    '',
-    summary='分页获取所有通知公告',
+    "",
+    summary="分页获取所有通知公告",
     dependencies=[
         DependsJwtAuth,
         DependsPagination,
@@ -37,19 +37,19 @@ async def get_notice(
 )
 async def get_notices_paginated(
     db: CurrentSession,
-    title: Annotated[str | None, Query(description='标题')] = None,
-    type: Annotated[int | None, Query(description='类型')] = None,
-    status: Annotated[int | None, Query(description='状态')] = None,
+    title: Annotated[str | None, Query(description="标题")] = None,
+    type: Annotated[int | None, Query(description="类型")] = None,
+    status: Annotated[int | None, Query(description="状态")] = None,
 ) -> ResponseSchemaModel[PageData[GetNoticeDetail]]:
     page_data = await notice_service.get_list(db=db, title=title, type=type, status=status)
     return response_base.success(data=page_data)
 
 
 @router.post(
-    '',
-    summary='创建通知公告',
+    "",
+    summary="创建通知公告",
     dependencies=[
-        Depends(RequestPermission('sys:notice:add')),
+        Depends(RequestPermission("sys:notice:add")),
         DependsRBAC,
     ],
 )
@@ -59,15 +59,15 @@ async def create_notice(db: CurrentSessionTransaction, obj: CreateNoticeParam) -
 
 
 @router.put(
-    '/{pk}',
-    summary='更新通知公告',
+    "/{pk}",
+    summary="更新通知公告",
     dependencies=[
-        Depends(RequestPermission('sys:notice:edit')),
+        Depends(RequestPermission("sys:notice:edit")),
         DependsRBAC,
     ],
 )
 async def update_notice(
-    db: CurrentSessionTransaction, pk: Annotated[int, Path(description='通知公告 ID')], obj: UpdateNoticeParam
+    db: CurrentSessionTransaction, pk: Annotated[int, Path(description="通知公告 ID")], obj: UpdateNoticeParam
 ) -> ResponseModel:
     count = await notice_service.update(db=db, pk=pk, obj=obj)
     if count > 0:
@@ -76,10 +76,10 @@ async def update_notice(
 
 
 @router.delete(
-    '',
-    summary='批量删除通知公告',
+    "",
+    summary="批量删除通知公告",
     dependencies=[
-        Depends(RequestPermission('sys:notice:del')),
+        Depends(RequestPermission("sys:notice:del")),
         DependsRBAC,
     ],
 )

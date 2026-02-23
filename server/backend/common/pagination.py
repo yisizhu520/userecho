@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from math import ceil
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
@@ -12,19 +11,21 @@ from fastapi_pagination.links.bases import create_links
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from sqlalchemy import Select
     from sqlalchemy.ext.asyncio import AsyncSession
     from typing_extensions import Self
 
-T = TypeVar('T')
-SchemaT = TypeVar('SchemaT')
+T = TypeVar("T")
+SchemaT = TypeVar("SchemaT")
 
 
 class _CustomPageParams(BaseModel, AbstractParams):
     """自定义分页参数"""
 
-    page: int = Query(1, ge=1, description='页码')
-    size: int = Query(20, gt=0, le=200, description='每页数量')
+    page: int = Query(1, ge=1, description="页码")
+    size: int = Query(20, gt=0, le=200, description="每页数量")
 
     def to_raw_params(self) -> RawParams:
         return RawParams(
@@ -36,22 +37,22 @@ class _CustomPageParams(BaseModel, AbstractParams):
 class _Links(BaseModel):
     """分页链接"""
 
-    first: str = Field(description='首页链接')
-    last: str = Field(description='尾页链接')
-    self: str = Field(description='当前页链接')
-    next: str | None = Field(None, description='下一页链接')
-    prev: str | None = Field(None, description='上一页链接')
+    first: str = Field(description="首页链接")
+    last: str = Field(description="尾页链接")
+    self: str = Field(description="当前页链接")
+    next: str | None = Field(None, description="下一页链接")
+    prev: str | None = Field(None, description="上一页链接")
 
 
 class _PageDetails(BaseModel):
     """分页详情"""
 
-    items: list = Field([], description='当前页数据列表')
-    total: int = Field(description='数据总条数')
-    page: int = Field(description='当前页码')
-    size: int = Field(description='每页数量')
-    total_pages: int = Field(description='总页数')
-    links: _Links = Field(description='分页链接')
+    items: list = Field([], description="当前页数据列表")
+    total: int = Field(description="数据总条数")
+    page: int = Field(description="当前页码")
+    size: int = Field(description="每页数量")
+    total_pages: int = Field(description="总页数")
+    links: _Links = Field(description="分页链接")
 
 
 class _CustomPage(_PageDetails, AbstractPage[T], Generic[T]):
@@ -62,22 +63,25 @@ class _CustomPage(_PageDetails, AbstractPage[T], Generic[T]):
     @classmethod
     def create(
         cls,
-        items: list,
-        params: _CustomPageParams,
+        items: Sequence[T],
+        params: AbstractParams,
         total: int = 0,
     ) -> Self:
+        if not isinstance(params, _CustomPageParams):
+            raise ValueError("Params must be _CustomPageParams")
+
         page = params.page
         size = params.size
         total_pages = ceil(total / size)
         links = create_links(
-            first={'page': 1, 'size': size},
-            last={'page': total_pages, 'size': size} if total > 0 else {'page': 1, 'size': size},
-            next={'page': page + 1, 'size': size} if (page + 1) <= total_pages else None,
-            prev={'page': page - 1, 'size': size} if (page - 1) >= 1 else None,
+            first={"page": 1, "size": size},
+            last={"page": total_pages, "size": size} if total > 0 else {"page": 1, "size": size},
+            next={"page": page + 1, "size": size} if (page + 1) <= total_pages else None,
+            prev={"page": page - 1, "size": size} if (page - 1) >= 1 else None,
         ).model_dump()
 
         return cls(
-            items=items,
+            items=list(items),
             total=total,
             page=page,
             size=size,
@@ -108,7 +112,7 @@ class PageData(_PageDetails, Generic[SchemaT]):
             return ResponseSchemaModel[PageData[GetApiDetail]](code=res.code, msg=res.msg, data=GetApiDetail(...))
     """
 
-    items: Sequence[SchemaT]
+    items: list[SchemaT]
 
 
 async def paging_data(db: AsyncSession, select: Select, **kwargs) -> dict[str, Any]:

@@ -11,10 +11,10 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId, CurrentUser
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/subscription', tags=['UserEcho - 订阅信息'])
+router = APIRouter(prefix="/subscription", tags=["UserEcho - 订阅信息"])
 
 
-@router.get('/me', summary='获取当前订阅')
+@router.get("/me", summary="获取当前订阅")
 async def get_current_subscription(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,

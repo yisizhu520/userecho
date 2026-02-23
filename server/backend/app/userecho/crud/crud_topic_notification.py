@@ -78,7 +78,7 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         topic_id: str,
     ) -> list[TopicNotification]:
         """获取议题的待处理通知记录"""
-        return await self.get_by_topic_id(db, tenant_id, topic_id, status='pending')
+        return await self.get_by_topic_id(db, tenant_id, topic_id, status="pending")
 
     async def update_reply(
         self,
@@ -95,7 +95,7 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
             return None
 
         notification.ai_reply = ai_reply
-        notification.status = 'generated'
+        notification.status = "generated"
         if reply_tone:
             notification.reply_tone = reply_tone
         if reply_language:
@@ -111,7 +111,7 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         tenant_id: str,
         notification_id: str,
         notified_by: int,
-        status: str = 'sent',
+        status: str = "sent",
         notification_channel: str | None = None,
         notes: str | None = None,
     ) -> TopicNotification | None:
@@ -147,10 +147,10 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         query = (
             select(
                 self.model,
-                Customer.company_name.label('customer_company'),
-                Customer.customer_tier.label('customer_tier'),
-                Feedback.ai_summary.label('feedback_summary'),
-                Feedback.content.label('feedback_content'),
+                Customer.company_name.label("customer_company"),
+                Customer.customer_tier.label("customer_tier"),
+                Feedback.ai_summary.label("feedback_summary"),
+                Feedback.content.label("feedback_content"),
             )
             .outerjoin(Customer, self.model.customer_id == Customer.id)
             .outerjoin(Feedback, self.model.feedback_id == Feedback.id)
@@ -168,10 +168,10 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         for row in rows:
             notification = row[0]
             notification_dict = {c.name: getattr(notification, c.name) for c in notification.__table__.columns}
-            notification_dict['customer_company'] = row.customer_company
-            notification_dict['customer_tier'] = row.customer_tier
-            notification_dict['feedback_summary'] = row.feedback_summary
-            notification_dict['feedback_content'] = row.feedback_content
+            notification_dict["customer_company"] = row.customer_company
+            notification_dict["customer_tier"] = row.customer_tier
+            notification_dict["feedback_summary"] = row.feedback_summary
+            notification_dict["feedback_content"] = row.feedback_content
             notifications.append(notification_dict)
 
         return notifications

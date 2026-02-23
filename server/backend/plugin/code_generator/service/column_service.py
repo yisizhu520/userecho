@@ -27,7 +27,7 @@ class GenColumnService:
 
         column = await gen_column_dao.get(db, pk)
         if not column:
-            raise errors.NotFoundError(msg='代码生成模型列不存在')
+            raise errors.NotFoundError(msg="代码生成模型列不存在")
         return column
 
     @staticmethod
@@ -64,7 +64,7 @@ class GenColumnService:
 
         gen_columns = await gen_column_dao.get_all_by_business(db, obj.gen_business_id)
         if obj.name in [gen_column.name for gen_column in gen_columns]:
-            raise errors.ForbiddenError(msg='模型列已存在')
+            raise errors.ForbiddenError(msg="模型列已存在")
 
         pd_type = sql_type_to_pydantic(obj.type)
         await gen_column_dao.create(db, obj, pd_type=pd_type)
@@ -84,7 +84,7 @@ class GenColumnService:
         if obj.name != column.name:
             gen_columns = await gen_column_dao.get_all_by_business(db, obj.gen_business_id)
             if obj.name in [gen_column.name for gen_column in gen_columns]:
-                raise errors.ConflictError(msg='模型列名已存在')
+                raise errors.ConflictError(msg="模型列名已存在")
 
         pd_type = sql_type_to_pydantic(obj.type)
         return await gen_column_dao.update(db, pk, obj, pd_type=pd_type)

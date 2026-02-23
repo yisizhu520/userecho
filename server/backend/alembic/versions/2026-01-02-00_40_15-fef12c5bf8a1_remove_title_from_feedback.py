@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'fef12c5bf8a1'
-down_revision = '20260102a'  # 正确：这个迁移在 add_board_stats_triggers 之后
+revision = "fef12c5bf8a1"
+down_revision = "20260102a"  # 正确：这个迁移在 add_board_stats_triggers 之后
 branch_labels = None
 depends_on = None
 
@@ -34,7 +34,7 @@ def upgrade() -> None:
     """)
 
     # 步骤 2: 删除 title 列
-    op.drop_column('feedbacks', 'title')
+    op.drop_column("feedbacks", "title")
 
 
 def downgrade() -> None:
@@ -44,7 +44,7 @@ def downgrade() -> None:
     注意：无法完全恢复原始数据，因为 title 已经合并到 content 中
     """
     # 重新添加 title 列
-    op.add_column('feedbacks', sa.Column('title', sa.String(400), nullable=True, comment='反馈标题（可选）'))
+    op.add_column("feedbacks", sa.Column("title", sa.String(400), nullable=True, comment="反馈标题（可选）"))
 
     # 尝试从 content 中提取 title（如果以【标题】开头）
     op.execute("""

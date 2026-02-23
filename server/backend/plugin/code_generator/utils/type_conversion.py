@@ -19,7 +19,7 @@ def sql_type_to_sqlalchemy(typing: str) -> str:
     else:
         if typing in GenPostgreSQLColumnType.get_member_keys():
             return typing
-    return 'String'
+    return "String"
 
 
 @lru_cache(maxsize=128)
@@ -33,8 +33,8 @@ def sql_type_to_pydantic(typing: str) -> str:
     try:
         if DataBaseType.mysql == settings.DATABASE_TYPE:
             return GenMySQLColumnType[typing].value
-        if typing == 'CHARACTER VARYING':  # postgresql 中 DDL VARCHAR 的别名
-            return 'str'
+        if typing == "CHARACTER VARYING":  # postgresql 中 DDL VARCHAR 的别名
+            return "str"
         return GenPostgreSQLColumnType[typing].value
     except KeyError:
-        return 'str'
+        return "str"

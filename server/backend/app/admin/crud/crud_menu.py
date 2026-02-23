@@ -43,11 +43,11 @@ class CRUDMenu(CRUDPlus[Menu]):
         filters = {}
 
         if title is not None:
-            filters['title__like'] = f'%{title}%'
+            filters["title__like"] = f"%{title}%"
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
 
-        return await self.select_models_order(db, 'sort', **filters)
+        return await self.select_models_order(db, "sort", **filters)
 
     async def get_sidebar(self, db: AsyncSession, menu_ids: list[int] | None) -> Sequence[Menu]:
         """
@@ -57,12 +57,12 @@ class CRUDMenu(CRUDPlus[Menu]):
         :param menu_ids: 菜单 ID 列表
         :return:
         """
-        filters = {'type__in': [0, 1, 3, 4]}
+        filters = {"type__in": [0, 1, 3, 4]}
 
         if menu_ids:
-            filters['id__in'] = menu_ids
+            filters["id__in"] = menu_ids
 
-        return await self.select_models_order(db, 'sort', 'asc', **filters)
+        return await self.select_models_order(db, "sort", "asc", **filters)
 
     async def create(self, db: AsyncSession, obj: CreateMenuParam) -> None:
         """

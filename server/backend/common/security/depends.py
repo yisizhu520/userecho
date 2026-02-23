@@ -21,13 +21,13 @@ async def require_turnstile(
         return
 
     if not x_turnstile_token:
-        raise HTTPException(status_code=400, detail='请完成人机验证')
+        raise HTTPException(status_code=400, detail="请完成人机验证")
 
     client_ip = request.client.host if request.client else None
     is_valid = await verify_turnstile(x_turnstile_token, client_ip)
 
     if not is_valid:
-        raise HTTPException(status_code=403, detail='人机验证失败，请刷新页面重试')
+        raise HTTPException(status_code=403, detail="人机验证失败，请刷新页面重试")
 
 
 # 可复用的依赖

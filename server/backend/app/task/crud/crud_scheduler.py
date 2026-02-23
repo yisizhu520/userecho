@@ -42,11 +42,11 @@ class CRUDTaskScheduler(CRUDPlus[TaskScheduler]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if type is not None:
-            filters['type'] = type
+            filters["type"] = type
 
-        return await self.select_order('id', **filters)
+        return await self.select_order("id", **filters)
 
     async def get_by_name(self, db: AsyncSession, name: str) -> TaskScheduler | None:
         """

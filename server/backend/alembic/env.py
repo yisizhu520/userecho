@@ -30,8 +30,8 @@ target_metadata = MappedBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 alembic_config.set_main_option(
-    'sqlalchemy.url',
-    SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace('%', '%%'),
+    "sqlalchemy.url",
+    SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace("%", "%%"),
 )
 
 
@@ -47,12 +47,12 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = alembic_config.get_main_option('sqlalchemy.url')
+    url = alembic_config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={'paramstyle': 'named'},
+        dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
         transaction_per_migration=True,
@@ -64,12 +64,12 @@ def run_migrations_offline() -> None:
 
 def do_run_migrations(connection: Connection) -> None:
     # 当迁移无变化时，不生成迁移记录
-    def process_revision_directives(context, revision, directives) -> None:  # noqa: ANN001
-        if getattr(alembic_config.cmd_opts, 'autogenerate', False):
+    def process_revision_directives(context, revision, directives) -> None:
+        if getattr(alembic_config.cmd_opts, "autogenerate", False):
             script = directives[0]
             if script.upgrade_ops.is_empty():
                 directives[:] = []
-                print('\nNo changes in model detected')
+                print("\nNo changes in model detected")
 
     context.configure(
         connection=connection,
@@ -92,7 +92,7 @@ async def run_async_migrations() -> None:
 
     connectable = async_engine_from_config(
         alembic_config.get_section(alembic_config.config_ini_section, {}),
-        prefix='sqlalchemy.',
+        prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 

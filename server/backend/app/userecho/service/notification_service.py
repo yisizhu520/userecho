@@ -31,17 +31,17 @@ class NotificationService:
 """
 
     TONE_GUIDES = {
-        'formal': '请使用正式商务风格，措辞严谨，体现专业感。',
-        'friendly': '请使用亲切友好的语气，自然随和，像朋友交流。',
-        'concise': '请使用简洁高效的风格，只说重点，不废话。',
+        "formal": "请使用正式商务风格，措辞严谨，体现专业感。",
+        "friendly": "请使用亲切友好的语气，自然随和，像朋友交流。",
+        "concise": "请使用简洁高效的风格，只说重点，不废话。",
     }
 
     TIER_NAMES = {
-        'free': '普通用户',
-        'normal': '普通客户',
-        'paid': '付费客户',
-        'vip': '大客户',
-        'strategic': '战略客户',
+        "free": "普通用户",
+        "normal": "普通客户",
+        "paid": "付费客户",
+        "vip": "大客户",
+        "strategic": "战略客户",
     }
 
     async def generate_reply(
@@ -49,8 +49,8 @@ class NotificationService:
         db: AsyncSession,
         tenant_id: str,
         notification_id: str,
-        tone: str = 'friendly',
-        language: str = 'zh-CN',
+        tone: str = "friendly",
+        language: str = "zh-CN",
         custom_context: str | None = None,
     ) -> str:
         """生成单条 AI 回复"""
@@ -62,7 +62,7 @@ class NotificationService:
         # 获取通知记录
         notification = await crud_topic_notification.get_by_id(db, tenant_id, notification_id)
         if not notification:
-            raise ValueError('通知记录不存在')
+            raise ValueError("通知记录不存在")
 
         # 获取关联数据
         from sqlalchemy import select
@@ -84,11 +84,11 @@ class NotificationService:
         # 构建 Prompt
         user_prompt = self._build_user_prompt(
             recipient_name=notification.recipient_name,
-            customer_tier=customer.customer_tier if customer else 'normal',
+            customer_tier=customer.customer_tier if customer else "normal",
             company_name=customer.company_name if customer else None,
-            feedback_content=feedback.content if feedback else '',
-            topic_title=topic.title if topic else '',
-            topic_description=topic.description if topic else '',
+            feedback_content=feedback.content if feedback else "",
+            topic_title=topic.title if topic else "",
+            topic_description=topic.description if topic else "",
             release_date=str(topic.actual_release_date) if topic and topic.actual_release_date else None,
             tone=tone,
             language=language,
@@ -97,7 +97,7 @@ class NotificationService:
 
         # 调用 AI 生成
         ai_reply = await ai_client.chat(
-            prompt=f'{self.SYSTEM_PROMPT}\n\n{user_prompt}',
+            prompt=f"{self.SYSTEM_PROMPT}\n\n{user_prompt}",
             max_tokens=300,
             temperature=0.7,
         )
@@ -119,8 +119,8 @@ class NotificationService:
         db: AsyncSession,
         tenant_id: str,
         topic_id: str,
-        tone: str = 'friendly',
-        language: str = 'zh-CN',
+        tone: str = "friendly",
+        language: str = "zh-CN",
     ) -> dict:
         """批量生成 AI 回复"""
         # 获取待处理的通知记录
@@ -144,14 +144,14 @@ class NotificationService:
                 success_count += 1
             except Exception as e:
                 failed_count += 1
-                errors.append({'id': notification.id, 'error': str(e)})
-                log.error(f'Failed to generate reply for notification {notification.id}: {e}')
+                errors.append({"id": notification.id, "error": str(e)})
+                log.error(f"Failed to generate reply for notification {notification.id}: {e}")
 
         return {
-            'success': success_count,
-            'failed': failed_count,
-            'total': len(notifications),
-            'errors': errors or None,
+            "success": success_count,
+            "failed": failed_count,
+            "total": len(notifications),
+            "errors": errors or None,
         }
 
     async def create_notifications_for_topic(
@@ -185,16 +185,16 @@ class NotificationService:
         for feedback, customer in rows:
             # 确定收件人标识
             if customer:
-                recipient_key = f'customer:{customer.id}'
+                recipient_key = f"customer:{customer.id}"
                 recipient_name = customer.name
                 recipient_contact = customer.contact_email or customer.contact_phone
-                recipient_type = 'customer'
+                recipient_type = "customer"
                 customer_id = customer.id
             elif feedback.external_user_name:
-                recipient_key = f'external:{feedback.external_user_name}'
+                recipient_key = f"external:{feedback.external_user_name}"
                 recipient_name = feedback.external_user_name
                 recipient_contact = feedback.external_contact
-                recipient_type = 'external'
+                recipient_type = "external"
                 customer_id = None
             else:
                 continue  # 无法识别收件人，跳过
@@ -234,25 +234,25 @@ class NotificationService:
         custom_context: str | None,
     ) -> str:
         """构建用户 Prompt"""
-        tier_name = self.TIER_NAMES.get(customer_tier, '客户')
-        tone_guide = self.TONE_GUIDES.get(tone, self.TONE_GUIDES['friendly'])
+        tier_name = self.TIER_NAMES.get(customer_tier, "客户")
+        tone_guide = self.TONE_GUIDES.get(tone, self.TONE_GUIDES["friendly"])
 
         prompt = f"""请为以下用户生成通知消息：
 
 用户姓名：{recipient_name}
 客户等级：{tier_name}
-客户公司：{company_name or '未知'}
+客户公司：{company_name or "未知"}
 原始反馈：{feedback_content[:200]}...
 需求主题：{topic_title}
-需求描述：{topic_description or '无'}
-发布日期：{release_date or '最新版本'}
+需求描述：{topic_description or "无"}
+发布日期：{release_date or "最新版本"}
 
 语气风格：{tone_guide}
-输出语言：{'中文' if language == 'zh-CN' else 'English'}
+输出语言：{"中文" if language == "zh-CN" else "English"}
 """
 
         if custom_context:
-            prompt += f'\n额外说明：{custom_context}'
+            prompt += f"\n额外说明：{custom_context}"
 
         return prompt
 

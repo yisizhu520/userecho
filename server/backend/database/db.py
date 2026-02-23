@@ -27,15 +27,15 @@ def create_database_url(*, unittest: bool = False) -> URL:
     :return:
     """
     url = URL.create(
-        drivername='mysql+asyncmy' if DataBaseType.mysql == settings.DATABASE_TYPE else 'postgresql+asyncpg',
+        drivername="mysql+asyncmy" if DataBaseType.mysql == settings.DATABASE_TYPE else "postgresql+asyncpg",
         username=settings.DATABASE_USER,
         password=settings.DATABASE_PASSWORD,
         host=settings.DATABASE_HOST,
         port=settings.DATABASE_PORT,
-        database=settings.DATABASE_SCHEMA if not unittest else f'{settings.DATABASE_SCHEMA}_test',
+        database=settings.DATABASE_SCHEMA if not unittest else f"{settings.DATABASE_SCHEMA}_test",
     )
     if DataBaseType.mysql == settings.DATABASE_TYPE:
-        url.update_query_dict({'charset': settings.DATABASE_CHARSET})
+        url.update_query_dict({"charset": settings.DATABASE_CHARSET})
     return url
 
 
@@ -62,7 +62,7 @@ def create_async_engine_and_session(url: str | URL) -> tuple[AsyncEngine, async_
             pool_use_lifo=False,  # 低：False 高：True
         )
     except Exception as e:
-        log.error('❌ 数据库链接失败 {}', e)
+        log.error("❌ 数据库链接失败 {}", e)
         sys.exit()
     else:
         db_session = async_sessionmaker(

@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '07e015954d69'
-down_revision = '03e4ac7514e6'
+revision = "07e015954d69"
+down_revision = "03e4ac7514e6"
 branch_labels = None
 depends_on = None
 
@@ -28,10 +28,10 @@ def upgrade() -> None:
     """)
 
     # 2. 修改 email 字段为 NOT NULL
-    op.alter_column('sys_user', 'email', existing_type=sa.String(256), nullable=False, existing_nullable=True)
+    op.alter_column("sys_user", "email", existing_type=sa.String(256), nullable=False, existing_nullable=True)
 
     # 3. 修改 username 字段为可选（保留用于显示）
-    op.alter_column('sys_user', 'username', existing_type=sa.String(64), nullable=True, existing_nullable=False)
+    op.alter_column("sys_user", "username", existing_type=sa.String(64), nullable=True, existing_nullable=False)
 
 
 def downgrade() -> None:
@@ -45,7 +45,7 @@ def downgrade() -> None:
         WHERE username IS NULL OR username = ''
     """)
 
-    op.alter_column('sys_user', 'username', existing_type=sa.String(64), nullable=False, existing_nullable=True)
+    op.alter_column("sys_user", "username", existing_type=sa.String(64), nullable=False, existing_nullable=True)
 
     # 2. 恢复 email 为可选
-    op.alter_column('sys_user', 'email', existing_type=sa.String(256), nullable=True, existing_nullable=False)
+    op.alter_column("sys_user", "email", existing_type=sa.String(256), nullable=True, existing_nullable=False)

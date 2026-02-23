@@ -1,0 +1,15 @@
+warning: `VIRTUAL_ENV=D:/workspace/indie/feedalyze/server/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+fix end of files.........................................................Passed
+- hook id: end-of-file-fixer
+- duration: 1.02s
+check json...............................................................Passed
+- hook id: check-json
+- duration: 0.94s
+check yaml...............................................................Passed
+- hook id: check-yaml
+- duration: 5.97s
+check toml...............................................................Passed
+- hook id: check-toml
+- duration: 0.33s
+ruff.....................................................................Interrupted (^C): KeyboardInterrupt: 
+Check the log at C:\Users\maoku\.cache\pre-commit\pre-commit.log

@@ -18,21 +18,21 @@ async def verify() -> None:
         perm_count = await db.scalar(select(func.count()).select_from(TenantPermission))
         role_count = await db.scalar(select(func.count()).select_from(TenantRole))
 
-        print('Tenant Permissions:', perm_count)
-        print('Tenant Roles:', role_count)
+        print("Tenant Permissions:", perm_count)
+        print("Tenant Roles:", role_count)
 
         stmt = select(TenantPermission.code, TenantPermission.name).order_by(TenantPermission.sort)
         result = await db.execute(stmt)
-        print('\nPermissions:')
+        print("\nPermissions:")
         for code, name in result:
-            print(f'  {code}: {name}')
+            print(f"  {code}: {name}")
 
         stmt = select(TenantRole.code, TenantRole.name).order_by(TenantRole.sort)
         result = await db.execute(stmt)
-        print('\nRoles:')
+        print("\nRoles:")
         for code, name in result:
-            print(f'  {code}: {name}')
+            print(f"  {code}: {name}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(verify())

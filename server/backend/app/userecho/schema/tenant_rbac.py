@@ -4,24 +4,24 @@ from pydantic import BaseModel, Field
 class TenantRoleCreate(BaseModel):
     """创建租户角色"""
 
-    name: str = Field(..., max_length=64, description='角色名称')
-    code: str = Field(..., max_length=64, description='角色代码')
-    description: str | None = Field(None, max_length=500, description='角色描述')
-    permission_ids: list[str] | None = Field(None, description='权限 ID 列表')
+    name: str = Field(..., max_length=64, description="角色名称")
+    code: str = Field(..., max_length=64, description="角色代码")
+    description: str | None = Field(None, max_length=500, description="角色描述")
+    permission_ids: list[str] | None = Field(None, description="权限 ID 列表")
 
 
 class TenantRoleUpdate(BaseModel):
     """更新租户角色"""
 
-    name: str | None = Field(None, max_length=64, description='角色名称')
-    description: str | None = Field(None, max_length=500, description='角色描述')
-    status: str | None = Field(None, description='状态')
+    name: str | None = Field(None, max_length=64, description="角色名称")
+    description: str | None = Field(None, max_length=500, description="角色描述")
+    status: str | None = Field(None, description="状态")
 
 
 class TenantRolePermissionUpdate(BaseModel):
     """更新角色权限"""
 
-    permission_ids: list[str] = Field(..., description='权限 ID 列表')
+    permission_ids: list[str] = Field(..., description="权限 ID 列表")
 
 
 class TenantRoleOut(BaseModel):
@@ -57,27 +57,27 @@ class TenantPermissionOut(BaseModel):
 class TenantMemberCreate(BaseModel):
     """创建租户成员"""
 
-    email: str = Field(..., max_length=256, description='邮箱')
-    nickname: str = Field(..., max_length=64, description='昵称')
-    password: str = Field(..., min_length=6, max_length=32, description='密码')
-    username: str | None = Field(None, max_length=64, description='用户名(可选，用于显示)')
-    role_ids: list[str] | None = Field(None, description='角色 ID 列表')
+    email: str = Field(..., max_length=256, description="邮箱")
+    nickname: str = Field(..., max_length=64, description="昵称")
+    password: str = Field(..., min_length=6, max_length=32, description="密码")
+    username: str | None = Field(None, max_length=64, description="用户名(可选，用于显示)")
+    role_ids: list[str] | None = Field(None, description="角色 ID 列表")
 
 
 class TenantMemberUpdate(BaseModel):
     """更新租户成员"""
 
-    username: str | None = Field(None, max_length=64, description='用户名')
-    nickname: str | None = Field(None, max_length=64, description='昵称')
-    role_ids: list[str] | None = Field(None, description='角色 ID 列表')
-    user_type: str | None = Field(None, description='用户类型')
-    status: str | None = Field(None, description='状态')
+    username: str | None = Field(None, max_length=64, description="用户名")
+    nickname: str | None = Field(None, max_length=64, description="昵称")
+    role_ids: list[str] | None = Field(None, description="角色 ID 列表")
+    user_type: str | None = Field(None, description="用户类型")
+    status: str | None = Field(None, description="状态")
 
 
 class TenantMemberRoleUpdate(BaseModel):
     """更新成员角色"""
 
-    role_ids: list[str] = Field(..., description='角色 ID 列表')
+    role_ids: list[str] = Field(..., description="角色 ID 列表")
 
 
 class TenantMemberOut(BaseModel):

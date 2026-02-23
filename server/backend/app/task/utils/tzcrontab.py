@@ -10,7 +10,7 @@ from backend.utils.timezone import timezone
 class TzAwareCrontab(schedules.crontab):
     """时区感知 Crontab"""
 
-    def __init__(self, minute='*', hour='*', day_of_week='*', day_of_month='*', month_of_year='*', app=None) -> None:  # noqa: ANN001
+    def __init__(self, minute="*", hour="*", day_of_week="*", day_of_month="*", month_of_year="*", app=None) -> None:
         super().__init__(
             minute=minute,
             hour=hour,
@@ -57,10 +57,10 @@ def crontab_verify(crontab_str: str) -> None:
     :param crontab_str: 计划表达式
     :return:
     """
-    crontab_split = crontab_str.split(' ')
+    crontab_split = crontab_str.split(" ")
     if len(crontab_split) != 5:
-        raise errors.RequestError(msg='Crontab 表达式非法')
+        raise errors.RequestError(msg="Crontab 表达式非法")
     try:
         crontab(*crontab_split)
     except ParseException:
-        raise errors.RequestError(msg='Crontab 表达式非法')
+        raise errors.RequestError(msg="Crontab 表达式非法")

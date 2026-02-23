@@ -1,7 +1,5 @@
-from typing import Any
-
 from opentelemetry import trace
-from starlette.requests import Request
+from starlette.requests import HTTPConnection, Request
 from starlette_context.plugins import Plugin
 
 from backend.common.context import ctx
@@ -20,7 +18,7 @@ class OtelTraceIdPlugin(Plugin):
 
     key = settings.TRACE_ID_REQUEST_HEADER_KEY
 
-    async def process_request(self, request: Request) -> Any:
+    async def process_request(self, request: Request | HTTPConnection) -> str | None:
         """从 OpenTelemetry span 中提取 trace_id"""
         span = trace.get_current_span()
         span_ctx = span.get_span_context()

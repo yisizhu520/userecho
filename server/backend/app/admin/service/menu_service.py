@@ -16,8 +16,8 @@ class MenuService:
     """菜单服务类"""
 
     # 路由前缀常量
-    BUSINESS_PREFIX = '/app'  # 业务功能前缀
-    SYSTEM_PREFIX = '/admin'  # 系统管理前缀
+    BUSINESS_PREFIX = "/app"  # 业务功能前缀
+    SYSTEM_PREFIX = "/system"  # 系统管理前缀
 
     @staticmethod
     async def get(*, db: AsyncSession, pk: int) -> Menu:
@@ -31,7 +31,7 @@ class MenuService:
 
         menu = await menu_dao.get(db, menu_id=pk)
         if not menu:
-            raise errors.NotFoundError(msg='菜单不存在')
+            raise errors.NotFoundError(msg="菜单不存在")
         return menu
 
     @staticmethod
@@ -77,7 +77,7 @@ class MenuService:
 
             if roles:
                 # 只处理系统角色 (role_type='system')
-                system_roles = [r for r in roles if getattr(r, 'role_type', 'business') == 'system']
+                system_roles = [r for r in roles if getattr(r, "role_type", "business") == "system"]
 
                 # 收集系统角色关联的菜单 ID
                 for role in system_roles:
@@ -98,15 +98,19 @@ class MenuService:
     @staticmethod
     def _is_system_menu(menu: Menu) -> bool:
         """判断是否为系统菜单"""
-        path = menu.path or ''
+        path = menu.path or ""
         # 空路径或根路径保留（用于目录结构）
-        if not path or path == '/':
+        if not path or path == "/":
             return True
         # 只保留 /admin/* 菜单
         return path.startswith(MenuService.SYSTEM_PREFIX)
 
     @staticmethod
-    def _filter_menus_by_role_type(menus: Sequence[Menu], has_system_role: bool, has_business_role: bool) -> list[Menu]:
+    def _filter_menus_by_role_type(
+        menus: Sequence[Menu],
+        has_system_role: bool,
+        has_business_role: bool,
+    ) -> list[Menu]:
         """
         根据角色类型过滤菜单
 
@@ -126,10 +130,10 @@ class MenuService:
 
         filtered_menus = []
         for menu in menus:
-            path = menu.path or ''
+            path = menu.path or ""
 
             # 根菜单或空路径：保留（用于目录结构）
-            if not path or path == '/':
+            if not path or path == "/":
                 filtered_menus.append(menu)
                 continue
 
@@ -153,11 +157,11 @@ class MenuService:
 
         title = await menu_dao.get_by_title(db, obj.title)
         if title:
-            raise errors.ConflictError(msg='菜单标题已存在')
+            raise errors.ConflictError(msg="菜单标题已存在")
         if obj.parent_id:
             parent_menu = await menu_dao.get(db, obj.parent_id)
             if not parent_menu:
-                raise errors.NotFoundError(msg='父级菜单不存在')
+                raise errors.NotFoundError(msg="父级菜单不存在")
         await menu_dao.create(db, obj)
 
     @staticmethod
@@ -173,15 +177,15 @@ class MenuService:
 
         menu = await menu_dao.get(db, pk)
         if not menu:
-            raise errors.NotFoundError(msg='菜单不存在')
+            raise errors.NotFoundError(msg="菜单不存在")
         if menu.title != obj.title and await menu_dao.get_by_title(db, obj.title):
-            raise errors.ConflictError(msg='菜单标题已存在')
+            raise errors.ConflictError(msg="菜单标题已存在")
         if obj.parent_id:
             parent_menu = await menu_dao.get(db, obj.parent_id)
             if not parent_menu:
-                raise errors.NotFoundError(msg='父级菜单不存在')
+                raise errors.NotFoundError(msg="父级菜单不存在")
         if obj.parent_id == menu.id:
-            raise errors.ForbiddenError(msg='禁止关联自身为父级')
+            raise errors.ForbiddenError(msg="禁止关联自身为父级")
         count = await menu_dao.update(db, pk, obj)
         await user_cache_manager.clear_by_menu_id(db, [pk])
         return count
@@ -198,7 +202,7 @@ class MenuService:
 
         children = await menu_dao.get_children(db, pk)
         if children:
-            raise errors.ConflictError(msg='菜单下存在子菜单，无法删除')
+            raise errors.ConflictError(msg="菜单下存在子菜单，无法删除")
         count = await menu_dao.delete(db, pk)
         if count:
             await user_cache_manager.clear_by_menu_id(db, [pk])

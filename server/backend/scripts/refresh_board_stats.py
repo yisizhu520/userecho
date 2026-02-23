@@ -29,7 +29,7 @@ async def refresh_board_stats() -> None:
             """)
         )
         triggers = [row[0] for row in trigger_check.fetchall()]
-        print(f'触发器状态: {triggers or "⚠️  未找到触发器！"}')
+        print(f"触发器状态: {triggers or '⚠️  未找到触发器！'}")
 
         # 1. 修复 Topic 的 board_id（从关联的 Feedback 推断）
         result0 = await conn.execute(
@@ -47,7 +47,7 @@ async def refresh_board_stats() -> None:
                 WHERE board_id IS NULL AND deleted_at IS NULL
             """)
         )
-        print(f'✅ 已修复 {result0.rowcount} 个 Topic 的 board_id')
+        print(f"✅ 已修复 {result0.rowcount} 个 Topic 的 board_id")
 
         # 2. 更新 feedback_count
         result1 = await conn.execute(
@@ -59,7 +59,7 @@ async def refresh_board_stats() -> None:
                 )
             """)
         )
-        print(f'✅ 已更新 {result1.rowcount} 个 Board 的 feedback_count')
+        print(f"✅ 已更新 {result1.rowcount} 个 Board 的 feedback_count")
 
         # 3. 更新 topic_count
         result2 = await conn.execute(
@@ -71,7 +71,7 @@ async def refresh_board_stats() -> None:
                 )
             """)
         )
-        print(f'✅ 已更新 {result2.rowcount} 个 Board 的 topic_count')
+        print(f"✅ 已更新 {result2.rowcount} 个 Board 的 topic_count")
 
         # 4. 验证结果
         boards = await conn.execute(
@@ -82,10 +82,10 @@ async def refresh_board_stats() -> None:
                 ORDER BY name
             """)
         )
-        print('\n📊 当前 Board 统计:')
+        print("\n📊 当前 Board 统计:")
         for row in boards.fetchall():
-            print(f'   {row[1]}: feedback={row[2]}, topic={row[3]}')
+            print(f"   {row[1]}: feedback={row[2]}, topic={row[3]}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(refresh_board_stats())

@@ -26,7 +26,7 @@ class DictDataService:
 
         dict_data = await dict_data_dao.get(db, pk)
         if not dict_data:
-            raise errors.NotFoundError(msg='字典数据不存在')
+            raise errors.NotFoundError(msg="字典数据不存在")
         return dict_data
 
     @staticmethod
@@ -41,7 +41,7 @@ class DictDataService:
 
         dict_datas = await dict_data_dao.get_by_type_code(db, code)
         if not dict_datas:
-            raise errors.NotFoundError(msg='字典数据不存在')
+            raise errors.NotFoundError(msg="字典数据不存在")
         return dict_datas
 
     @staticmethod
@@ -96,10 +96,10 @@ class DictDataService:
         """
         dict_type = await dict_type_dao.get(db, obj.type_id)
         if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+            raise errors.NotFoundError(msg="字典类型不存在")
         dict_data = await dict_data_dao.get_by_label_and_type_code(db, obj.label, dict_type.code)
         if dict_data:
-            raise errors.ConflictError(msg='字典数据已存在')
+            raise errors.ConflictError(msg="字典数据已存在")
         await dict_data_dao.create(db, obj, dict_type.code)
 
     @staticmethod
@@ -115,14 +115,14 @@ class DictDataService:
 
         dict_data = await dict_data_dao.get(db, pk)
         if not dict_data:
-            raise errors.NotFoundError(msg='字典数据不存在')
+            raise errors.NotFoundError(msg="字典数据不存在")
         dict_type = await dict_type_dao.get(db, obj.type_id)
         if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+            raise errors.NotFoundError(msg="字典类型不存在")
         if dict_data.label != obj.label and await dict_data_dao.get_by_label_and_type_code(
             db, obj.label, dict_type.code
         ):
-            raise errors.ConflictError(msg='字典数据已存在')
+            raise errors.ConflictError(msg="字典数据已存在")
         count = await dict_data_dao.update(db, pk, obj, dict_type.code)
         return count
 

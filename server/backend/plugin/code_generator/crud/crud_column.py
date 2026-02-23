@@ -28,7 +28,7 @@ class CRUDGenColumn(CRUDPlus[GenColumn]):
         :param business_id: 业务 ID
         :return:
         """
-        return await self.select_models_order(db, sort_columns='sort', gen_business_id=business_id)
+        return await self.select_models_order(db, sort_columns="sort", gen_business_id=business_id)
 
     async def create(self, db: AsyncSession, obj: CreateGenColumnParam, pd_type: str | None) -> None:
         """

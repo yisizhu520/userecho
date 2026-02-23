@@ -21,33 +21,33 @@ from backend.database.db import CurrentSession, CurrentSessionTransaction
 router = APIRouter()
 
 
-@router.get('/all', summary='获取所有数据范围', dependencies=[DependsJwtAuth])
+@router.get("/all", summary="获取所有数据范围", dependencies=[DependsJwtAuth])
 async def get_all_data_scope(db: CurrentSession) -> ResponseSchemaModel[list[GetDataScopeDetail]]:
     data = await data_scope_service.get_all(db=db)
     return response_base.success(data=data)
 
 
-@router.get('/{pk}', summary='获取数据范围详情', dependencies=[DependsJwtAuth])
+@router.get("/{pk}", summary="获取数据范围详情", dependencies=[DependsJwtAuth])
 async def get_data_scope(
     db: CurrentSession,
-    pk: Annotated[int, Path(description='数据范围 ID')],
+    pk: Annotated[int, Path(description="数据范围 ID")],
 ) -> ResponseSchemaModel[GetDataScopeDetail]:
     data = await data_scope_service.get(db=db, pk=pk)
     return response_base.success(data=data)
 
 
-@router.get('/{pk}/rules', summary='获取数据范围所有规则', dependencies=[DependsJwtAuth])
+@router.get("/{pk}/rules", summary="获取数据范围所有规则", dependencies=[DependsJwtAuth])
 async def get_data_scope_rules(
     db: CurrentSession,
-    pk: Annotated[int, Path(description='数据范围 ID')],
+    pk: Annotated[int, Path(description="数据范围 ID")],
 ) -> ResponseSchemaModel[GetDataScopeWithRelationDetail]:
     data = await data_scope_service.get_rules(db=db, pk=pk)
     return response_base.success(data=data)
 
 
 @router.get(
-    '',
-    summary='分页获取所有数据范围',
+    "",
+    summary="分页获取所有数据范围",
     dependencies=[
         DependsJwtAuth,
         DependsPagination,
@@ -55,18 +55,18 @@ async def get_data_scope_rules(
 )
 async def get_data_scopes_paginated(
     db: CurrentSession,
-    name: Annotated[str | None, Query(description='范围名称')] = None,
-    status: Annotated[int | None, Query(description='状态')] = None,
+    name: Annotated[str | None, Query(description="范围名称")] = None,
+    status: Annotated[int | None, Query(description="状态")] = None,
 ) -> ResponseSchemaModel[PageData[GetDataScopeDetail]]:
     page_data = await data_scope_service.get_list(db=db, name=name, status=status)
     return response_base.success(data=page_data)
 
 
 @router.post(
-    '',
-    summary='创建数据范围',
+    "",
+    summary="创建数据范围",
     dependencies=[
-        Depends(RequestPermission('data:scope:add')),
+        Depends(RequestPermission("data:scope:add")),
         DependsRBAC,
     ],
 )
@@ -76,16 +76,16 @@ async def create_data_scope(db: CurrentSessionTransaction, obj: CreateDataScopeP
 
 
 @router.put(
-    '/{pk}',
-    summary='更新数据范围',
+    "/{pk}",
+    summary="更新数据范围",
     dependencies=[
-        Depends(RequestPermission('data:scope:edit')),
+        Depends(RequestPermission("data:scope:edit")),
         DependsRBAC,
     ],
 )
 async def update_data_scope(
     db: CurrentSessionTransaction,
-    pk: Annotated[int, Path(description='数据范围 ID')],
+    pk: Annotated[int, Path(description="数据范围 ID")],
     obj: UpdateDataScopeParam,
 ) -> ResponseModel:
     count = await data_scope_service.update(db=db, pk=pk, obj=obj)
@@ -95,16 +95,16 @@ async def update_data_scope(
 
 
 @router.put(
-    '/{pk}/rules',
-    summary='更新数据范围规则',
+    "/{pk}/rules",
+    summary="更新数据范围规则",
     dependencies=[
-        Depends(RequestPermission('data:scope:rule:edit')),
+        Depends(RequestPermission("data:scope:rule:edit")),
         DependsRBAC,
     ],
 )
 async def update_data_scope_rules(
     db: CurrentSessionTransaction,
-    pk: Annotated[int, Path(description='数据范围 ID')],
+    pk: Annotated[int, Path(description="数据范围 ID")],
     rule_ids: UpdateDataScopeRuleParam,
 ) -> ResponseModel:
     count = await data_scope_service.update_data_scope_rule(db=db, pk=pk, rule_ids=rule_ids)
@@ -114,10 +114,10 @@ async def update_data_scope_rules(
 
 
 @router.delete(
-    '',
-    summary='批量删除数据范围',
+    "",
+    summary="批量删除数据范围",
     dependencies=[
-        Depends(RequestPermission('data:scope:del')),
+        Depends(RequestPermission("data:scope:del")),
         DependsRBAC,
     ],
 )

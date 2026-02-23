@@ -49,14 +49,14 @@ class TopicService:
             status_history = await crud_status_history.get_by_topic(db, tenant_id, topic_id, limit=50)
 
             return {
-                'topic': topic_data['topic'],
-                'feedbacks': topic_data['feedbacks'],
-                'priority_score': priority_score,
-                'status_history': status_history,
+                "topic": topic_data["topic"],
+                "feedbacks": topic_data["feedbacks"],
+                "priority_score": priority_score,
+                "status_history": status_history,
             }
 
         except Exception as e:
-            log.error(f'Failed to get topic detail for topic {topic_id}, tenant {tenant_id}: {e}')
+            log.error(f"Failed to get topic detail for topic {topic_id}, tenant {tenant_id}: {e}")
             return None
 
     async def update_status_with_history(
@@ -108,7 +108,7 @@ class TopicService:
                 )
 
                 # 当状态变更为 completed 时，自动创建通知记录
-                if old_status != 'completed' and new_status == 'completed':
+                if old_status != "completed" and new_status == "completed":
                     from backend.app.userecho.service.notification_service import (
                         notification_service,
                     )
@@ -117,15 +117,15 @@ class TopicService:
                         created_count = await notification_service.create_notifications_for_topic(
                             db=db, tenant_id=tenant_id, topic_id=topic_id
                         )
-                        log.info(f'Auto-created {created_count} notification records for topic {topic_id}')
+                        log.info(f"Auto-created {created_count} notification records for topic {topic_id}")
                     except Exception as e:
-                        log.error(f'Failed to auto-create notifications for topic {topic_id}: {e}')
+                        log.error(f"Failed to auto-create notifications for topic {topic_id}: {e}")
                         # 不抛出异常，避免影响状态更新的主流程
 
             return topic
 
         except Exception as e:
-            log.error(f'Failed to update topic {topic_id} status to {data.status} for tenant {tenant_id}: {e}')
+            log.error(f"Failed to update topic {topic_id} status to {data.status} for tenant {tenant_id}: {e}")
             raise
 
     async def create_topic(
@@ -163,12 +163,12 @@ class TopicService:
             from backend.app.task.celery import celery_app
 
             celery_app.send_task(
-                'userecho.generate_topic_centroid',
+                "userecho.generate_topic_centroid",
                 args=[topic.id, tenant_id],
             )
         except Exception as e:
             # 失败不影响主流程
-            log.warning(f'Failed to trigger centroid generation for topic {topic.id}: {e}')
+            log.warning(f"Failed to trigger centroid generation for topic {topic.id}: {e}")
 
         return topic
 
@@ -203,10 +203,10 @@ class TopicService:
         status: list[str] | None = None,
         category: list[str] | None = None,
         board_ids: list[str] | None = None,
-        sort_by: str = 'created_time',
-        sort_order: str = 'desc',
+        sort_by: str = "created_time",
+        sort_order: str = "desc",
         search_query: str | None = None,
-        search_mode: str = 'keyword',
+        search_mode: str = "keyword",
         date_from: str | None = None,
         date_to: str | None = None,
     ):
@@ -235,20 +235,20 @@ class TopicService:
 
         # ✅ 使用 INFO 级别确保日志输出
         log.info(
-            f'[SEARCH_DEBUG] Service Layer - Received params: search_query={search_query!r}, search_mode={search_mode!r}'
+            f"[SEARCH_DEBUG] Service Layer - Received params: search_query={search_query!r}, search_mode={search_mode!r}"
         )
 
         # 语义搜索模式
-        if search_query and search_mode == 'semantic':
-            log.info('[SEARCH_DEBUG] Service Layer - Using semantic search')
+        if search_query and search_mode == "semantic":
+            log.info("[SEARCH_DEBUG] Service Layer - Using semantic search")
             # 1. 生成搜索词的 embedding
             query_embedding = await ai_client.get_embedding(search_query)
             if not query_embedding:
                 log.warning(
-                    f'Failed to generate embedding for search query: {search_query}, fallback to keyword search'
+                    f"Failed to generate embedding for search query: {search_query}, fallback to keyword search"
                 )
                 # Fallback 到关键词搜索
-                search_mode = 'keyword'
+                search_mode = "keyword"
             else:
                 # 2. 使用 pgvector 语义搜索
                 return await crud_topic.search_by_semantic(
@@ -263,9 +263,9 @@ class TopicService:
                 )
 
         # 关键词搜索模式（默认）
-        effective_search_query = search_query if (search_query and search_mode == 'keyword') else None
+        effective_search_query = search_query if (search_query and search_mode == "keyword") else None
         log.info(
-            f'[SEARCH_DEBUG] Service Layer - Using keyword search: effective_search_query={effective_search_query!r}'
+            f"[SEARCH_DEBUG] Service Layer - Using keyword search: effective_search_query={effective_search_query!r}"
         )
 
         return await crud_topic.get_list_sorted(
@@ -298,7 +298,7 @@ class TopicService:
         Returns:
             待确认主题数量
         """
-        return await crud_topic.count(db=db, tenant_id=tenant_id, status='pending')
+        return await crud_topic.count(db=db, tenant_id=tenant_id, status="pending")
 
     async def link_feedbacks(
         self,
@@ -369,7 +369,7 @@ class TopicService:
             db=db,
             tenant_id=tenant_id,
             feedback_ids=[feedback_id],
-            clustering_status='pending',
+            clustering_status="pending",
             topic_id=None,
         )
         return True

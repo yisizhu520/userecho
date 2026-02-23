@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '2d29d603a01b'
-down_revision = 'fef12c5bf8a1'
+revision = "2d29d603a01b"
+down_revision = "fef12c5bf8a1"
 branch_labels = None
 depends_on = None
 
@@ -31,12 +31,12 @@ def upgrade() -> None:
     """)
 
     # 2. 修改 board_id 为 NOT NULL
-    op.alter_column('feedbacks', 'board_id', existing_type=sa.String(36), nullable=False, comment='看板ID (必填)')
+    op.alter_column("feedbacks", "board_id", existing_type=sa.String(36), nullable=False, comment="看板ID (必填)")
 
     # 3. 更新 images_metadata 字段注释
     op.alter_column(
-        'feedbacks',
-        'images_metadata',
+        "feedbacks",
+        "images_metadata",
         existing_type=sa.JSON(),
         nullable=True,
         comment='图片元数据 JSONB: {"images": [{"url": "...", "platform": "wechat", "user_name": "...", "confidence": 0.95, "uploaded_at": "..."}]}',
@@ -45,7 +45,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # 1. 恢复 board_id 为可空
-    op.alter_column('feedbacks', 'board_id', existing_type=sa.String(36), nullable=True, comment='看板ID')
+    op.alter_column("feedbacks", "board_id", existing_type=sa.String(36), nullable=True, comment="看板ID")
 
     # 2. 恢复 images_metadata 注释
-    op.alter_column('feedbacks', 'images_metadata', existing_type=sa.JSON(), nullable=True, comment='图片元数据数组')
+    op.alter_column("feedbacks", "images_metadata", existing_type=sa.JSON(), nullable=True, comment="图片元数据数组")

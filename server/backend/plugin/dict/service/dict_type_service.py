@@ -25,7 +25,7 @@ class DictTypeService:
 
         dict_type = await dict_type_dao.get(db, pk)
         if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+            raise errors.NotFoundError(msg="字典类型不存在")
         return dict_type
 
     @staticmethod
@@ -64,7 +64,7 @@ class DictTypeService:
 
         dict_type = await dict_type_dao.get_by_code(db, obj.code)
         if dict_type:
-            raise errors.ConflictError(msg='字典类型已存在')
+            raise errors.ConflictError(msg="字典类型已存在")
         await dict_type_dao.create(db, obj)
 
     @staticmethod
@@ -80,9 +80,9 @@ class DictTypeService:
 
         dict_type = await dict_type_dao.get(db, pk)
         if not dict_type:
-            raise errors.NotFoundError(msg='字典类型不存在')
+            raise errors.NotFoundError(msg="字典类型不存在")
         if dict_type.code != obj.code and await dict_type_dao.get_by_code(db, obj.code):
-            raise errors.ConflictError(msg='字典类型已存在')
+            raise errors.ConflictError(msg="字典类型已存在")
         count = await dict_type_dao.update(db, pk, obj)
         return count
 

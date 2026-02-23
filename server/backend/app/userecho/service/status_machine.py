@@ -15,15 +15,15 @@ class TopicStatusMachine:
     """需求状态机"""
 
     # 所有合法状态
-    VALID_STATUSES = {'pending', 'planned', 'in_progress', 'completed', 'ignored'}
+    VALID_STATUSES = {"pending", "planned", "in_progress", "completed", "ignored"}
 
     # 状态流转规则：key 为当前状态，value 为允许流转的目标状态集合
     TRANSITIONS: dict[str, set[str]] = {
-        'pending': {'planned', 'ignored'},
-        'planned': {'pending', 'in_progress', 'ignored'},
-        'in_progress': {'planned', 'completed'},
-        'completed': set(),  # 终态，不可变更
-        'ignored': {'pending', 'planned'},
+        "pending": {"planned", "ignored"},
+        "planned": {"pending", "in_progress", "ignored"},
+        "in_progress": {"planned", "completed"},
+        "completed": set(),  # 终态，不可变更
+        "ignored": {"pending", "planned"},
     }
 
     @classmethod
@@ -73,5 +73,5 @@ class TopicStatusMachine:
         if not cls.can_transition(from_status, to_status):
             allowed = cls.get_allowed_transitions(from_status)
             if not allowed:
-                raise ValueError(f'状态 {from_status} 为终态，不可变更')
-            raise ValueError(f'非法状态流转: {from_status} → {to_status}。允许的目标状态: {allowed}')
+                raise ValueError(f"状态 {from_status} 为终态，不可变更")
+            raise ValueError(f"非法状态流转: {from_status} → {to_status}。允许的目标状态: {allowed}")

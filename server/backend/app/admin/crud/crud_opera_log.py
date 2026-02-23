@@ -22,13 +22,13 @@ class CRUDOperaLogDao(CRUDPlus[OperaLog]):
         filters = {}
 
         if username is not None:
-            filters['username__like'] = f'%{username}%'
+            filters["username__like"] = f"%{username}%"
         if status is not None:
-            filters['status__eq'] = status
+            filters["status__eq"] = status
         if ip is not None:
-            filters['ip__like'] = f'%{ip}%'
+            filters["ip__like"] = f"%{ip}%"
 
-        return await self.select_order('created_time', 'desc', **filters)
+        return await self.select_order("created_time", "desc", **filters)
 
     async def create(self, db: AsyncSession, obj: CreateOperaLogParam) -> None:
         """

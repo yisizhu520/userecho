@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '2025122201'
-down_revision = '9a2de98df5fb'
+revision = "2025122201"
+down_revision = "9a2de98df5fb"
 branch_labels = None
 depends_on = None
 
@@ -22,13 +22,13 @@ def upgrade() -> None:
 
     # 1. 添加 role_type 字段到 sys_role 表
     op.add_column(
-        'sys_role',
+        "sys_role",
         sa.Column(
-            'role_type',
+            "role_type",
             sa.String(20),
             nullable=False,
-            server_default='business',
-            comment='角色类型（system=系统角色，business=业务角色）',
+            server_default="business",
+            comment="角色类型（system=系统角色，business=业务角色）",
         ),
     )
 
@@ -175,4 +175,4 @@ def downgrade() -> None:
     """)
 
     # 2. 删除 role_type 字段
-    op.drop_column('sys_role', 'role_type')
+    op.drop_column("sys_role", "role_type")

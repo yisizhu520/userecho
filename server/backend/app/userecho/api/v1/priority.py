@@ -23,7 +23,7 @@ def get_current_user_id() -> int:
     return 1
 
 
-@router.post('/topics/{topic_id}/priority/analyze', summary='AI 分析优先级')
+@router.post("/topics/{topic_id}/priority/analyze", summary="AI 分析优先级")
 async def analyze_priority(
     topic_id: str,
     db: CurrentSession,
@@ -45,7 +45,7 @@ async def analyze_priority(
         # 1. 获取 Topic
         topic = await crud_topic.get_by_id(db, tenant_id, topic_id)
         if not topic:
-            return response_base.fail(msg='Topic 不存在')
+            return response_base.fail(msg="Topic 不存在")
 
         # 2. 获取关联的反馈
         feedbacks = await crud_feedback.get_list_with_relations(
@@ -56,39 +56,39 @@ async def analyze_priority(
         )
 
         if not feedbacks:
-            return response_base.fail(msg='该 Topic 没有关联的反馈')
+            return response_base.fail(msg="该 Topic 没有关联的反馈")
 
         # 3. 提取客户信息
         try:
-            customer_ids = {fb.get('customer_id') for fb in feedbacks if fb.get('customer_id')}
+            customer_ids = {fb.get("customer_id") for fb in feedbacks if fb.get("customer_id")}
             customer_count = len(customer_ids)
-            log.debug(f'Extracted {customer_count} unique customers from feedbacks')
+            log.debug(f"Extracted {customer_count} unique customers from feedbacks")
         except Exception as e:
             log.error(
-                f'Failed to extract customer_ids: {e}, feedbacks keys: {[list(fb.keys()) if isinstance(fb, dict) else type(fb) for fb in feedbacks[:1]]}'
+                f"Failed to extract customer_ids: {e}, feedbacks keys: {[list(fb.keys()) if isinstance(fb, dict) else type(fb) for fb in feedbacks[:1]]}"
             )
             raise
 
         # 4. AI 完整分析
-        log.info(f'Analyzing priority for topic {topic_id} with {len(feedbacks)} feedbacks, {customer_count} customers')
+        log.info(f"Analyzing priority for topic {topic_id} with {len(feedbacks)} feedbacks, {customer_count} customers")
 
         # 影响范围：AI 分析
         try:
             impact = await ai_client.suggest_impact_scope_ai(
-                feedbacks=[fb.get('content', '') for fb in feedbacks],
+                feedbacks=[fb.get("content", "") for fb in feedbacks],
                 customer_count=customer_count,
                 title=topic.title,
                 category=topic.category,
             )
         except Exception as e:
-            log.error(f'AI impact scope analysis failed: {e}')
+            log.error(f"AI impact scope analysis failed: {e}")
             raise
 
         # 开发成本：AI 建议
         dev_cost = await ai_client.suggest_dev_cost_ai(
             title=topic.title,
             category=topic.category,
-            feedbacks=[fb.get('content', '') for fb in feedbacks[:5]],
+            feedbacks=[fb.get("content", "") for fb in feedbacks[:5]],
         )
 
         # 商业价值：自动计算（基于客户等级）
@@ -98,27 +98,27 @@ async def analyze_priority(
                 topic_id=topic_id,
                 tenant_id=tenant_id,
             )
-            log.debug(f'Calculated business_value: {business_value}')
+            log.debug(f"Calculated business_value: {business_value}")
         except Exception as e:
-            log.error(f'Failed to calculate business value: {e}')
+            log.error(f"Failed to calculate business value: {e}")
             raise
 
         return response_base.success(
             data={
-                'impact_scope': impact,
-                'business_value': {'value': business_value, 'confidence': 1.0, 'reason': '基于客户等级自动计算'},
-                'dev_cost': dev_cost,
+                "impact_scope": impact,
+                "business_value": {"value": business_value, "confidence": 1.0, "reason": "基于客户等级自动计算"},
+                "dev_cost": dev_cost,
             }
         )
 
     except Exception as e:
         import traceback
 
-        log.error(f'Analyze priority failed: {e}\n{traceback.format_exc()}')
-        return response_base.fail(msg=f'AI 分析失败: {e!s}')
+        log.error(f"Analyze priority failed: {e}\n{traceback.format_exc()}")
+        return response_base.fail(msg=f"AI 分析失败: {e!s}")
 
 
-@router.post('/topics/{topic_id}/priority', summary='创建或更新优先级评分')
+@router.post("/topics/{topic_id}/priority", summary="创建或更新优先级评分")
 async def create_or_update_priority(
     topic_id: str,
     data: PriorityScoreCreate,
@@ -136,7 +136,7 @@ async def create_or_update_priority(
     # 验证 Topic 是否存在
     topic = await crud_topic.get_by_id(db, tenant_id, topic_id)
     if not topic:
-        return response_base.fail(msg='Topic 不存在')
+        return response_base.fail(msg="Topic 不存在")
 
     # 获取关联的反馈以计算详细数据
     feedbacks = await crud_feedback.get_list_with_relations(
@@ -145,8 +145,8 @@ async def create_or_update_priority(
         topic_id=topic_id,
         limit=100,
     )
-    feedback_contents = [fb.get('content', '') for fb in feedbacks] if feedbacks else []
-    last_feedback_time = feedbacks[0].get('created_time') if feedbacks else None
+    feedback_contents = [fb.get("content", "") for fb in feedbacks] if feedbacks else []
+    last_feedback_time = feedbacks[0].get("created_time") if feedbacks else None
 
     # 计算详细数据
     calc_result = priority_calculator.calculate_score(
@@ -168,12 +168,12 @@ async def create_or_update_priority(
         details=calc_result,
     )
 
-    log.info(f'Priority score saved for topic {topic_id} by user {current_user_id}')
+    log.info(f"Priority score saved for topic {topic_id} by user {current_user_id}")
 
-    return response_base.success(msg='评分已保存')
+    return response_base.success(msg="评分已保存")
 
 
-@router.get('/topics/{topic_id}/priority', summary='获取优先级评分')
+@router.get("/topics/{topic_id}/priority", summary="获取优先级评分")
 async def get_priority_score(
     topic_id: str,
     db: CurrentSession,
@@ -195,7 +195,7 @@ async def get_priority_score(
     return response_base.success(data=PriorityScoreOut.model_validate(score))
 
 
-@router.delete('/topics/{topic_id}/priority', summary='删除优先级评分')
+@router.delete("/topics/{topic_id}/priority", summary="删除优先级评分")
 async def delete_priority_score(
     topic_id: str,
     db: CurrentSession,
@@ -208,10 +208,10 @@ async def delete_priority_score(
     score = await crud_priority_score.get_by_topic(db, tenant_id, topic_id)
 
     if not score:
-        return response_base.fail(msg='评分不存在')
+        return response_base.fail(msg="评分不存在")
 
     await crud_priority_score.delete(db, score.id)
 
-    log.info(f'Priority score deleted for topic {topic_id} by user {current_user_id}')
+    log.info(f"Priority score deleted for topic {topic_id} by user {current_user_id}")
 
-    return response_base.success(msg='评分已删除')
+    return response_base.success(msg="评分已删除")

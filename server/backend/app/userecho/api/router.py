@@ -25,7 +25,7 @@ from backend.app.userecho.api.v1 import (
 from backend.core.conf import settings
 
 # 创建 v1 路由 - 使用 /app 前缀（业务功能区）
-v1 = APIRouter(prefix=f'{settings.FASTAPI_API_V1_PATH}/app', tags=['Business'])
+v1 = APIRouter(prefix=f"{settings.FASTAPI_API_V1_PATH}/app", tags=["Business"])
 
 # 注册所有子路由
 v1.include_router(feedback.router)
@@ -46,5 +46,5 @@ v1.include_router(system_notification.router)
 v1.include_router(reply_template.router)
 
 # 租户权限管理
-v1.include_router(tenant_role.router, prefix='/tenant/roles', tags=['TenantRole'])
-v1.include_router(tenant_member.router, prefix='/tenant/members', tags=['TenantMember'])
+v1.include_router(tenant_role.router, prefix="/tenant/roles", tags=["TenantRole"])
+v1.include_router(tenant_member.router, prefix="/tenant/members", tags=["TenantMember"])

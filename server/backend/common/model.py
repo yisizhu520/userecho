@@ -23,7 +23,7 @@ id_key = Annotated[
         index=True,
         autoincrement=True,
         sort_order=-999,
-        comment='主键 ID',
+        comment="主键 ID",
     )
     if PrimaryKeyType.autoincrement == settings.DATABASE_PK_MODE
     # 雪花算法 Mapped 类型主键
@@ -35,7 +35,7 @@ id_key = Annotated[
         index=True,
         default=snowflake.generate,
         sort_order=-999,
-        comment='雪花算法主键 ID',
+        comment="雪花算法主键 ID",
     ),
 ]
 
@@ -46,10 +46,10 @@ class UniversalText(TypeDecorator[str]):
     impl = LONGTEXT if DataBaseType.mysql == settings.DATABASE_TYPE else Text
     cache_ok = True
 
-    def process_bind_param(self, value: str | None, dialect) -> str | None:  # noqa: ANN001
+    def process_bind_param(self, value: str | None, dialect) -> str | None:
         return value
 
-    def process_result_value(self, value: str | None, dialect) -> str | None:  # noqa: ANN001
+    def process_result_value(self, value: str | None, dialect) -> str | None:
         return value
 
 
@@ -63,13 +63,13 @@ class TimeZone(TypeDecorator[datetime]):
     def python_type(self) -> type[datetime]:
         return datetime
 
-    def process_bind_param(self, value: datetime | None, dialect) -> datetime | None:  # noqa: ANN001
+    def process_bind_param(self, value: datetime | None, dialect) -> datetime | None:
         if value is not None and value.utcoffset() != timezone.now().utcoffset():
             # TODO 处理夏令时偏移
             value = timezone.from_datetime(value)
         return value
 
-    def process_result_value(self, value: datetime | None, dialect) -> datetime | None:  # noqa: ANN001
+    def process_result_value(self, value: datetime | None, dialect) -> datetime | None:
         if value is not None and value.tzinfo is None:
             value = value.replace(tzinfo=timezone.tz_info)
         return value
@@ -79,8 +79,8 @@ class TimeZone(TypeDecorator[datetime]):
 class UserMixin(MappedAsDataclass):
     """用户 Mixin 数据类"""
 
-    created_by: Mapped[int] = mapped_column(sort_order=998, comment='创建者')
-    updated_by: Mapped[int | None] = mapped_column(init=False, default=None, sort_order=998, comment='修改者')
+    created_by: Mapped[int] = mapped_column(sort_order=998, comment="创建者")
+    updated_by: Mapped[int | None] = mapped_column(init=False, default=None, sort_order=998, comment="修改者")
 
 
 class DateTimeMixin(MappedAsDataclass):
@@ -91,14 +91,14 @@ class DateTimeMixin(MappedAsDataclass):
         init=False,
         default_factory=timezone.now,
         sort_order=999,
-        comment='创建时间',
+        comment="创建时间",
     )
     updated_time: Mapped[datetime | None] = mapped_column(
         TimeZone,
         init=False,
         onupdate=timezone.now,
         sort_order=999,
-        comment='更新时间',
+        comment="更新时间",
     )
 
 
@@ -121,7 +121,7 @@ class MappedBase(AsyncAttrs, DeclarativeBase):
     @declared_attr.directive
     def __table_args__(self) -> dict | tuple:
         """表配置"""
-        return {'comment': self.__doc__ or ''}
+        return {"comment": self.__doc__ or ""}
 
 
 class DataClassBase(MappedAsDataclass, MappedBase):

@@ -43,7 +43,7 @@ class OnboardingService:
             引导状态信息
         """
         # 检查用户是否有关联的租户
-        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == "active")
         result = await db.execute(stmt)
         tenant_user = result.scalar_one_or_none()
 
@@ -67,19 +67,19 @@ class OnboardingService:
                     current_step=None,
                     tenant_id=tenant_user.tenant_id,
                     board_id=board.id,
-                    completed_steps=['create-tenant', 'create-board', 'complete'],
+                    completed_steps=["create-tenant", "create-board", "complete"],
                 )
             # 有租户但没有看板
             return OnboardingStatusOut(
                 needs_onboarding=True,
-                current_step='create-board',
+                current_step="create-board",
                 tenant_id=tenant_user.tenant_id,
                 board_id=None,
-                completed_steps=['create-tenant'],
+                completed_steps=["create-tenant"],
             )
         # 没有租户，需要从头开始
         return OnboardingStatusOut(
-            needs_onboarding=True, current_step='create-tenant', tenant_id=None, board_id=None, completed_steps=[]
+            needs_onboarding=True, current_step="create-tenant", tenant_id=None, board_id=None, completed_steps=[]
         )
 
     async def check_slug_available(
@@ -126,7 +126,7 @@ class OnboardingService:
         """
         counter = 1
         while True:
-            new_slug = f'{base_slug}-{counter}'
+            new_slug = f"{base_slug}-{counter}"
             stmt = select(Tenant).where(Tenant.slug == new_slug)
             result = await db.execute(stmt)
             if result.scalar_one_or_none() is None:
@@ -134,7 +134,7 @@ class OnboardingService:
             counter += 1
             if counter > 100:
                 # 防止无限循环
-                return f'{base_slug}-{uuid4_str()[:8]}'
+                return f"{base_slug}-{uuid4_str()[:8]}"
 
     def generate_slug_from_name(self, name: str) -> str:
         """
@@ -150,17 +150,17 @@ class OnboardingService:
         slug = name.lower()
 
         # 替换中文字符为拼音（简化处理，只去除中文）
-        slug = re.sub(r'[\u4e00-\u9fff]+', '', slug)
+        slug = re.sub(r"[\u4e00-\u9fff]+", "", slug)
 
         # 替换空格和特殊字符为连字符
-        slug = re.sub(r'[^a-z0-9]+', '-', slug)
+        slug = re.sub(r"[^a-z0-9]+", "-", slug)
 
         # 去除开头和结尾的连字符
-        slug = slug.strip('-')
+        slug = slug.strip("-")
 
         # 如果为空，生成一个随机的
         if not slug:
-            slug = f'team-{uuid4_str()[:8]}'
+            slug = f"team-{uuid4_str()[:8]}"
 
         return slug[:100]  # 限制长度
 
@@ -187,21 +187,21 @@ class OnboardingService:
             raise ValueError(f'URL标识 "{data.slug}" 已被使用，建议使用: {slug_check.suggestion}')
 
         # 检查用户是否已有租户
-        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == "active")
         result = await db.execute(stmt)
         existing = result.scalar_one_or_none()
         if existing:
-            raise ValueError('您已经属于一个团队，无法再创建新团队')
+            raise ValueError("您已经属于一个团队，无法再创建新团队")
 
         try:
             # 创建租户
-            tenant = Tenant(id=uuid4_str(), name=data.name, slug=data.slug, status='active')
+            tenant = Tenant(id=uuid4_str(), name=data.name, slug=data.slug, status="active")
             db.add(tenant)
             await db.flush()
 
             # 创建 TenantUser 关联（设为 admin）
             tenant_user = TenantUser(
-                id=uuid4_str(), tenant_id=tenant.id, user_id=user_id, user_type='admin', status='active'
+                id=uuid4_str(), tenant_id=tenant.id, user_id=user_id, user_type="admin", status="active"
             )
             db.add(tenant_user)
             await db.flush()
@@ -211,7 +211,7 @@ class OnboardingService:
             return CreateTenantOut(id=tenant.id, name=tenant.name, slug=tenant.slug, created_time=tenant.created_time)
 
         except Exception as e:
-            log.error(f'Failed to create tenant for user {user_id}: {e}')
+            log.error(f"Failed to create tenant for user {user_id}: {e}")
             raise
 
     async def create_board(
@@ -232,12 +232,12 @@ class OnboardingService:
             创建的看板信息
         """
         # 获取用户的租户
-        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == "active")
         result = await db.execute(stmt)
         tenant_user = result.scalar_one_or_none()
 
         if not tenant_user:
-            raise ValueError('请先创建团队')
+            raise ValueError("请先创建团队")
 
         # 生成 url_name
         url_name = self._generate_url_name(data.name)
@@ -272,7 +272,7 @@ class OnboardingService:
             )
 
         except Exception as e:
-            log.error(f'Failed to create board for user {user_id}: {e}')
+            log.error(f"Failed to create board for user {user_id}: {e}")
             raise
 
     def _generate_url_name(self, name: str) -> str:
@@ -289,17 +289,17 @@ class OnboardingService:
         url_name = name.lower()
 
         # 替换中文字符
-        url_name = re.sub(r'[\u4e00-\u9fff]+', '', url_name)
+        url_name = re.sub(r"[\u4e00-\u9fff]+", "", url_name)
 
         # 替换空格和特殊字符为连字符
-        url_name = re.sub(r'[^a-z0-9]+', '-', url_name)
+        url_name = re.sub(r"[^a-z0-9]+", "-", url_name)
 
         # 去除开头和结尾的连字符
-        url_name = url_name.strip('-')
+        url_name = url_name.strip("-")
 
         # 如果为空，使用默认值
         if not url_name:
-            url_name = 'board'
+            url_name = "board"
 
         return url_name[:100]
 
@@ -328,10 +328,10 @@ class OnboardingService:
             result = await db.execute(stmt)
             if result.scalar_one_or_none() is None:
                 return url_name
-            url_name = f'{original}-{counter}'
+            url_name = f"{original}-{counter}"
             counter += 1
             if counter > 100:
-                return f'{original}-{uuid4_str()[:8]}'
+                return f"{original}-{uuid4_str()[:8]}"
 
     async def complete_onboarding(
         self,
@@ -349,12 +349,12 @@ class OnboardingService:
             完成信息
         """
         # 获取用户的租户和看板
-        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == 'active')
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id, TenantUser.status == "active")
         result = await db.execute(stmt)
         tenant_user = result.scalar_one_or_none()
 
         if not tenant_user:
-            raise ValueError('请先创建团队')
+            raise ValueError("请先创建团队")
 
         # 检查是否有看板（租户可能有多个看板，只需确认存在即可）
         board_stmt = (
@@ -369,12 +369,12 @@ class OnboardingService:
         board = board_result.scalar_one_or_none()
 
         if not board:
-            raise ValueError('请先创建看板')
+            raise ValueError("请先创建看板")
 
-        log.info(f'User {user_id} completed onboarding for tenant {tenant_user.tenant_id}')
+        log.info(f"User {user_id} completed onboarding for tenant {tenant_user.tenant_id}")
 
         return OnboardingCompleteOut(
-            success=True, tenant_id=tenant_user.tenant_id, board_id=board.id, redirect_path='/dashboard'
+            success=True, tenant_id=tenant_user.tenant_id, board_id=board.id, redirect_path="/dashboard"
         )
 
 

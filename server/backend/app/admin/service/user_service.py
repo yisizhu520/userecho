@@ -44,7 +44,7 @@ class UserService:
         """
         user = await user_dao.get_join(db, user_id=pk, username=username)
         if not user:
-            raise errors.NotFoundError(msg='用户不存在')
+            raise errors.NotFoundError(msg="用户不存在")
         return user
 
     @staticmethod
@@ -58,7 +58,7 @@ class UserService:
         """
         user = await user_dao.get_join(db, user_id=pk)
         if not user:
-            raise errors.NotFoundError(msg='用户不存在')
+            raise errors.NotFoundError(msg="用户不存在")
         return user.roles
 
     @staticmethod
@@ -75,10 +75,10 @@ class UserService:
         """
         user_select = await user_dao.get_select(dept=dept, username=username, phone=phone, status=status)
         data = await paging_data(db, user_select)
-        if data['items']:
-            serialized_items = select_join_serialize(data['items'], relationships=['User-m2o-Dept', 'User-m2m-Role'])
+        if data["items"]:
+            serialized_items = select_join_serialize(data["items"], relationships=["User-m2o-Dept", "User-m2m-Role"])
             # 确保返回的是列表，即使只有一个元素
-            data['items'] = [serialized_items] if not isinstance(serialized_items, list) else serialized_items
+            data["items"] = [serialized_items] if not isinstance(serialized_items, list) else serialized_items
         return data
 
     @staticmethod
@@ -91,15 +91,15 @@ class UserService:
         :return:
         """
         if await user_dao.get_by_username(db, obj.username):
-            raise errors.ConflictError(msg='用户名已注册')
-        obj.nickname = obj.nickname or f'#{random.randrange(88888, 99999)}'
+            raise errors.ConflictError(msg="用户名已注册")
+        obj.nickname = obj.nickname or f"#{random.randrange(88888, 99999)}"
         if not obj.password:
-            raise errors.RequestError(msg='密码不允许为空')
+            raise errors.RequestError(msg="密码不允许为空")
         if not await dept_dao.get(db, obj.dept_id):
-            raise errors.NotFoundError(msg='部门不存在')
+            raise errors.NotFoundError(msg="部门不存在")
         for role_id in obj.roles:
             if not await role_dao.get(db, role_id):
-                raise errors.NotFoundError(msg='角色不存在')
+                raise errors.NotFoundError(msg="角色不存在")
         await user_dao.add(db, obj)
 
     @staticmethod
@@ -114,20 +114,20 @@ class UserService:
         """
         user = await user_dao.get_join(db, user_id=pk)
         if not user:
-            raise errors.NotFoundError(msg='用户不存在')
+            raise errors.NotFoundError(msg="用户不存在")
         if obj.username != user.username and await user_dao.get_by_username(db, obj.username):
-            raise errors.ConflictError(msg='用户名已注册')
+            raise errors.ConflictError(msg="用户名已注册")
         if obj.dept_id and obj.dept_id != user.dept_id and not await dept_dao.get(db, dept_id=obj.dept_id):
-            raise errors.NotFoundError(msg='部门不存在')
+            raise errors.NotFoundError(msg="部门不存在")
         for role_id in obj.roles:
             if not await role_dao.get(db, role_id):
-                raise errors.NotFoundError(msg='角色不存在')
+                raise errors.NotFoundError(msg="角色不存在")
         count = await user_dao.update(db, user.id, obj)
-        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user.id}')
+        await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user.id}")
         return count
 
     @staticmethod
-    async def update_permission(*, db: AsyncSession, request: Request, pk: int, type: UserPermissionType) -> int:  # noqa: C901
+    async def update_permission(*, db: AsyncSession, request: Request, pk: int, type: UserPermissionType) -> int:
         """
         更新用户权限
 
@@ -141,28 +141,28 @@ class UserService:
             case UserPermissionType.superuser:
                 user = await user_dao.get(db, pk)
                 if not user:
-                    raise errors.NotFoundError(msg='用户不存在')
+                    raise errors.NotFoundError(msg="用户不存在")
                 if pk == request.user.id:
-                    raise errors.ForbiddenError(msg='禁止修改自身权限')
+                    raise errors.ForbiddenError(msg="禁止修改自身权限")
                 count = await user_dao.set_super(db, pk, is_super=not user.is_superuser)
             case UserPermissionType.staff:
                 user = await user_dao.get(db, pk)
                 if not user:
-                    raise errors.NotFoundError(msg='用户不存在')
+                    raise errors.NotFoundError(msg="用户不存在")
                 if pk == request.user.id:
-                    raise errors.ForbiddenError(msg='禁止修改自身权限')
+                    raise errors.ForbiddenError(msg="禁止修改自身权限")
                 count = await user_dao.set_staff(db, pk, is_staff=not user.is_staff)
             case UserPermissionType.status:
                 user = await user_dao.get(db, pk)
                 if not user:
-                    raise errors.NotFoundError(msg='用户不存在')
+                    raise errors.NotFoundError(msg="用户不存在")
                 if pk == request.user.id:
-                    raise errors.ForbiddenError(msg='禁止修改自身权限')
+                    raise errors.ForbiddenError(msg="禁止修改自身权限")
                 count = await user_dao.set_status(db, pk, 0 if user.status == 1 else 1)
             case UserPermissionType.multi_login:
                 user = await user_dao.get(db, pk)
                 if not user:
-                    raise errors.NotFoundError(msg='用户不存在')
+                    raise errors.NotFoundError(msg="用户不存在")
                 multi_login = user.is_multi_login if pk != user.id else request.user.is_multi_login
                 new_multi_login = not multi_login
                 count = await user_dao.set_multi_login(db, pk, multi_login=new_multi_login)
@@ -171,20 +171,20 @@ class UserService:
                 if pk == user.id:
                     # 系统管理员修改自身时，除当前 token 外，其他 token 失效
                     if not new_multi_login:
-                        key_prefix = f'{settings.TOKEN_REDIS_PREFIX}:{user.id}'
+                        key_prefix = f"{settings.TOKEN_REDIS_PREFIX}:{user.id}"
                         await redis_client.delete_prefix(
                             key_prefix,
-                            exclude=f'{key_prefix}:{token_payload.session_uuid}',
+                            exclude=f"{key_prefix}:{token_payload.session_uuid}",
                         )
                 else:
                     # 系统管理员修改他人时，他人 token 全部失效
                     if not new_multi_login:
-                        key_prefix = f'{settings.TOKEN_REDIS_PREFIX}:{user.id}'
+                        key_prefix = f"{settings.TOKEN_REDIS_PREFIX}:{user.id}"
                         await redis_client.delete_prefix(key_prefix)
             case _:
-                raise errors.RequestError(msg='权限类型不存在')
+                raise errors.RequestError(msg="权限类型不存在")
 
-        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user.id}')
+        await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user.id}")
         return count
 
     @staticmethod
@@ -199,7 +199,7 @@ class UserService:
         """
         user = await user_dao.get(db, pk)
         if not user:
-            raise errors.NotFoundError(msg='用户不存在')
+            raise errors.NotFoundError(msg="用户不存在")
 
         await validate_new_password(db, user.id, password)
         count = await user_dao.reset_password(db, user.id, password)
@@ -209,9 +209,9 @@ class UserService:
         await user_dao.update_password_changed_time(db, user.id)
 
         key_prefix = [
-            f'{settings.TOKEN_REDIS_PREFIX}:{user.id}',
-            f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user.id}',
-            f'{settings.JWT_USER_REDIS_PREFIX}:{user.id}',
+            f"{settings.TOKEN_REDIS_PREFIX}:{user.id}",
+            f"{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user.id}",
+            f"{settings.JWT_USER_REDIS_PREFIX}:{user.id}",
         ]
         for prefix in key_prefix:
             await redis_client.delete(prefix)
@@ -228,7 +228,7 @@ class UserService:
         :return:
         """
         count = await user_dao.update_nickname(db, user_id, nickname)
-        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}')
+        await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user_id}")
         return count
 
     @staticmethod
@@ -242,7 +242,7 @@ class UserService:
         :return:
         """
         count = await user_dao.update_avatar(db, user_id, avatar)
-        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}')
+        await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user_id}")
         return count
 
     @staticmethod
@@ -256,14 +256,14 @@ class UserService:
         :param email: 邮箱
         :return:
         """
-        captcha_code = await redis_client.get(f'{settings.EMAIL_CAPTCHA_REDIS_PREFIX}:{ctx.ip}')
+        captcha_code = await redis_client.get(f"{settings.EMAIL_CAPTCHA_REDIS_PREFIX}:{ctx.ip}")
         if not captcha_code:
-            raise errors.RequestError(msg='验证码已失效，请重新获取')
+            raise errors.RequestError(msg="验证码已失效，请重新获取")
         if captcha != captcha_code:
             raise errors.CustomError(error=CustomErrorCode.CAPTCHA_ERROR)
-        await redis_client.delete(f'{settings.EMAIL_CAPTCHA_REDIS_PREFIX}:{ctx.ip}')
+        await redis_client.delete(f"{settings.EMAIL_CAPTCHA_REDIS_PREFIX}:{ctx.ip}")
         count = await user_dao.update_email(db, user_id, email)
-        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}')
+        await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user_id}")
         return count
 
     @staticmethod
@@ -279,10 +279,10 @@ class UserService:
         user = await user_dao.get(db, user_id)
 
         if user.password and not password_verify(obj.old_password, user.password):
-            raise errors.RequestError(msg='原密码错误')
+            raise errors.RequestError(msg="原密码错误")
 
         if obj.new_password != obj.confirm_password:
-            raise errors.RequestError(msg='两次密码输入不一致')
+            raise errors.RequestError(msg="两次密码输入不一致")
 
         await validate_new_password(db, user_id, obj.new_password)
         count = await user_dao.reset_password(db, user_id, obj.new_password)
@@ -292,9 +292,9 @@ class UserService:
         await user_dao.update_password_changed_time(db, user.id)
 
         key_prefix = [
-            f'{settings.TOKEN_REDIS_PREFIX}:{user_id}',
-            f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}',
-            f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}',
+            f"{settings.TOKEN_REDIS_PREFIX}:{user_id}",
+            f"{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}",
+            f"{settings.JWT_USER_REDIS_PREFIX}:{user_id}",
         ]
         for prefix in key_prefix:
             await redis_client.delete_prefix(prefix)
@@ -311,11 +311,11 @@ class UserService:
         """
         user = await user_dao.get(db, pk)
         if not user:
-            raise errors.NotFoundError(msg='用户不存在')
+            raise errors.NotFoundError(msg="用户不存在")
         count = await user_dao.delete(db, user.id)
         key_prefix = [
-            f'{settings.TOKEN_REDIS_PREFIX}:{user.id}',
-            f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user.id}',
+            f"{settings.TOKEN_REDIS_PREFIX}:{user.id}",
+            f"{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user.id}",
         ]
         for key in key_prefix:
             await redis_client.delete_prefix(key)

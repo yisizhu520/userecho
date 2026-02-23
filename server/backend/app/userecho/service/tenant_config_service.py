@@ -22,7 +22,7 @@ class TenantConfigService:
 
     def _cache_key(self, tenant_id: str, config_group: str) -> str:
         """生成缓存 key"""
-        return f'{tenant_id}:{config_group}'
+        return f"{tenant_id}:{config_group}"
 
     async def get_config(
         self,
@@ -86,19 +86,19 @@ class TenantConfigService:
         # 清除缓存
         self._clear_cache(tenant_id, config_group)
 
-        log.info(f'Updated config for tenant {tenant_id}, group: {config_group}')
+        log.info(f"Updated config for tenant {tenant_id}, group: {config_group}")
 
     def _clear_cache(self, tenant_id: str, config_group: str) -> None:
         """清除指定租户和配置组的缓存"""
         cache_key = self._cache_key(tenant_id, config_group)
         if cache_key in self._cache:
             del self._cache[cache_key]
-            log.debug(f'Cleared cache for {cache_key}')
+            log.debug(f"Cleared cache for {cache_key}")
 
     def clear_all_cache(self) -> None:
         """清除所有缓存（用于测试或维护）"""
         self._cache.clear()
-        log.info('Cleared all tenant config cache')
+        log.info("Cleared all tenant config cache")
 
 
 # 全局单例

@@ -11,8 +11,8 @@ class TaskSchedulerType(IntEnum):
 class PeriodType(StrEnum):
     """周期类型"""
 
-    DAYS = 'days'
-    HOURS = 'hours'
-    MINUTES = 'minutes'
-    SECONDS = 'seconds'
-    MICROSECONDS = 'microseconds'
+    DAYS = "days"
+    HOURS = "hours"
+    MINUTES = "minutes"
+    SECONDS = "seconds"
+    MICROSECONDS = "microseconds"

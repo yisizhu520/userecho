@@ -22,7 +22,7 @@ from backend.database.db import CurrentSession, CurrentSessionTransaction
 router = APIRouter()
 
 
-@router.get('/me', summary='获取当前用户信息', dependencies=[DependsJwtAuth])
+@router.get("/me", summary="获取当前用户信息", dependencies=[DependsJwtAuth])
 async def get_current_user(
     request: Request, db: CurrentSession
 ) -> ResponseSchemaModel[GetCurrentUserInfoWithRelationDetail]:
@@ -33,14 +33,14 @@ async def get_current_user(
     # 获取用户的租户权限码（用于前端业务菜单渲染）
     tenant_permissions: list[str] = []
     tenant_id = request.user.tenant_id
-    log.info(f'Getting tenant permissions for user {request.user.id}, tenant_id: {tenant_id}')
+    log.info(f"Getting tenant permissions for user {request.user.id}, tenant_id: {tenant_id}")
     if tenant_id:
         from backend.app.userecho.service.tenant_member_service import tenant_member_service
 
         tenant_permissions = await tenant_member_service.get_user_permission_codes(db, tenant_id, request.user.id)
-        log.info(f'Got tenant permissions: {tenant_permissions}')
+        log.info(f"Got tenant permissions: {tenant_permissions}")
 
-    data['tenantPermissions'] = tenant_permissions
+    data["tenantPermissions"] = tenant_permissions
 
     # 判断用户类型（用于前端智能路由重定向）
     user = request.user
@@ -49,7 +49,7 @@ async def get_current_user(
     has_system_role = (
         user.is_staff
         or user.is_superuser
-        or any(getattr(role, 'role_type', 'business') == 'system' for role in (user.roles or []))
+        or any(getattr(role, "role_type", "business") == "system" for role in (user.roles or []))
     )
 
     # 检查是否有业务角色（通过 tenant_id 判断）
@@ -57,48 +57,48 @@ async def get_current_user(
 
     # 确定用户类型
     if user.is_superuser:
-        user_type = 'admin'  # 超级管理员
+        user_type = "admin"  # 超级管理员
         has_system_role = True
         has_business_role = True  # 超级管理员可以访问所有功能
     elif has_system_role and has_business_role:
-        user_type = 'hybrid'  # 混合用户（既有系统角色又有业务角色）
+        user_type = "hybrid"  # 混合用户（既有系统角色又有业务角色）
     elif has_system_role:
-        user_type = 'staff'  # 系统管理员
+        user_type = "staff"  # 系统管理员
     elif has_business_role:
-        user_type = 'business'  # 业务用户
+        user_type = "business"  # 业务用户
     else:
-        user_type = 'unknown'  # 未知类型（通常不应该出现）
+        user_type = "unknown"  # 未知类型（通常不应该出现）
 
-    data['userType'] = user_type
-    data['hasSystemRole'] = has_system_role
-    data['hasBusinessRole'] = has_business_role
+    data["userType"] = user_type
+    data["hasSystemRole"] = has_system_role
+    data["hasBusinessRole"] = has_business_role
 
     log.info(
-        f'Returning data with userType: {user_type}, hasSystemRole: {has_system_role}, hasBusinessRole: {has_business_role}'
+        f"Returning data with userType: {user_type}, hasSystemRole: {has_system_role}, hasBusinessRole: {has_business_role}"
     )
     return response_base.success(data=data)
 
 
-@router.get('/{pk}', summary='获取用户信息', dependencies=[DependsJwtAuth])
+@router.get("/{pk}", summary="获取用户信息", dependencies=[DependsJwtAuth])
 async def get_userinfo(
     db: CurrentSession,
-    pk: Annotated[int, Path(description='用户 ID')],
+    pk: Annotated[int, Path(description="用户 ID")],
 ) -> ResponseSchemaModel[GetUserInfoWithRelationDetail]:
     data = await user_service.get_userinfo(db=db, pk=pk)
     return response_base.success(data=data)
 
 
-@router.get('/{pk}/roles', summary='获取用户所有角色', dependencies=[DependsJwtAuth])
+@router.get("/{pk}/roles", summary="获取用户所有角色", dependencies=[DependsJwtAuth])
 async def get_user_roles(
-    db: CurrentSession, pk: Annotated[int, Path(description='用户 ID')]
+    db: CurrentSession, pk: Annotated[int, Path(description="用户 ID")]
 ) -> ResponseSchemaModel[list[GetRoleDetail]]:
     data = await user_service.get_roles(db=db, pk=pk)
     return response_base.success(data=data)
 
 
 @router.get(
-    '',
-    summary='分页获取所有用户',
+    "",
+    summary="分页获取所有用户",
     dependencies=[
         DependsJwtAuth,
         DependsPagination,
@@ -106,16 +106,16 @@ async def get_user_roles(
 )
 async def get_users_paginated(
     db: CurrentSession,
-    dept: Annotated[int | None, Query(description='部门 ID')] = None,
-    username: Annotated[str | None, Query(description='用户名')] = None,
-    phone: Annotated[str | None, Query(description='手机号')] = None,
-    status: Annotated[int | None, Query(description='状态')] = None,
+    dept: Annotated[int | None, Query(description="部门 ID")] = None,
+    username: Annotated[str | None, Query(description="用户名")] = None,
+    phone: Annotated[str | None, Query(description="手机号")] = None,
+    status: Annotated[int | None, Query(description="状态")] = None,
 ) -> ResponseSchemaModel[PageData[GetUserInfoWithRelationDetail]]:
     page_data = await user_service.get_list(db=db, dept=dept, username=username, phone=phone, status=status)
     return response_base.success(data=page_data)
 
 
-@router.post('', summary='创建用户', dependencies=[DependsSuperUser])
+@router.post("", summary="创建用户", dependencies=[DependsSuperUser])
 async def create_user(
     db: CurrentSessionTransaction, obj: AddUserParam
 ) -> ResponseSchemaModel[GetUserInfoWithRelationDetail]:
@@ -124,10 +124,10 @@ async def create_user(
     return response_base.success(data=data)
 
 
-@router.put('/{pk}', summary='更新用户信息', dependencies=[DependsSuperUser])
+@router.put("/{pk}", summary="更新用户信息", dependencies=[DependsSuperUser])
 async def update_user(
     db: CurrentSessionTransaction,
-    pk: Annotated[int, Path(description='用户 ID')],
+    pk: Annotated[int, Path(description="用户 ID")],
     obj: UpdateUserParam,
 ) -> ResponseModel:
     count = await user_service.update(db=db, pk=pk, obj=obj)
@@ -136,12 +136,12 @@ async def update_user(
     return response_base.fail()
 
 
-@router.put('/{pk}/permissions', summary='更新用户权限', dependencies=[DependsSuperUser])
+@router.put("/{pk}/permissions", summary="更新用户权限", dependencies=[DependsSuperUser])
 async def update_user_permission(
     db: CurrentSessionTransaction,
     request: Request,
-    pk: Annotated[int, Path(description='用户 ID')],
-    type: Annotated[UserPermissionType, Query(description='权限类型')],
+    pk: Annotated[int, Path(description="用户 ID")],
+    type: Annotated[UserPermissionType, Query(description="权限类型")],
 ) -> ResponseModel:
     count = await user_service.update_permission(db=db, request=request, pk=pk, type=type)
     if count > 0:
@@ -149,7 +149,7 @@ async def update_user_permission(
     return response_base.fail()
 
 
-@router.put('/me/password', summary='更新当前用户密码', dependencies=[DependsJwtAuth])
+@router.put("/me/password", summary="更新当前用户密码", dependencies=[DependsJwtAuth])
 async def update_user_password(
     db: CurrentSessionTransaction, request: Request, obj: ResetPasswordParam
 ) -> ResponseModel:
@@ -159,11 +159,11 @@ async def update_user_password(
     return response_base.fail()
 
 
-@router.put('/{pk}/password', summary='重置用户密码', dependencies=[DependsSuperUser])
+@router.put("/{pk}/password", summary="重置用户密码", dependencies=[DependsSuperUser])
 async def reset_user_password(
     db: CurrentSessionTransaction,
-    pk: Annotated[int, Path(description='用户 ID')],
-    password: Annotated[str, Body(embed=True, description='新密码')],
+    pk: Annotated[int, Path(description="用户 ID")],
+    password: Annotated[str, Body(embed=True, description="新密码")],
 ) -> ResponseModel:
     count = await user_service.reset_password(db=db, pk=pk, password=password)
     if count > 0:
@@ -171,11 +171,11 @@ async def reset_user_password(
     return response_base.fail()
 
 
-@router.put('/me/nickname', summary='更新当前用户昵称', dependencies=[DependsJwtAuth])
+@router.put("/me/nickname", summary="更新当前用户昵称", dependencies=[DependsJwtAuth])
 async def update_user_nickname(
     db: CurrentSessionTransaction,
     request: Request,
-    nickname: Annotated[str, Body(embed=True, description='用户昵称')],
+    nickname: Annotated[str, Body(embed=True, description="用户昵称")],
 ) -> ResponseModel:
     count = await user_service.update_nickname(db=db, user_id=request.user.id, nickname=nickname)
     if count > 0:
@@ -183,11 +183,11 @@ async def update_user_nickname(
     return response_base.fail()
 
 
-@router.put('/me/avatar', summary='更新当前用户头像', dependencies=[DependsJwtAuth])
+@router.put("/me/avatar", summary="更新当前用户头像", dependencies=[DependsJwtAuth])
 async def update_user_avatar(
     db: CurrentSessionTransaction,
     request: Request,
-    avatar: Annotated[str, Body(embed=True, description='用户头像地址')],
+    avatar: Annotated[str, Body(embed=True, description="用户头像地址")],
 ) -> ResponseModel:
     count = await user_service.update_avatar(db=db, user_id=request.user.id, avatar=avatar)
     if count > 0:
@@ -195,12 +195,12 @@ async def update_user_avatar(
     return response_base.fail()
 
 
-@router.put('/me/email', summary='更新当前用户邮箱', dependencies=[DependsJwtAuth])
+@router.put("/me/email", summary="更新当前用户邮箱", dependencies=[DependsJwtAuth])
 async def update_user_email(
     db: CurrentSessionTransaction,
     request: Request,
-    captcha: Annotated[str, Body(embed=True, description='邮箱验证码')],
-    email: Annotated[str, Body(embed=True, description='用户邮箱')],
+    captcha: Annotated[str, Body(embed=True, description="邮箱验证码")],
+    email: Annotated[str, Body(embed=True, description="用户邮箱")],
 ) -> ResponseModel:
     count = await user_service.update_email(db=db, user_id=request.user.id, captcha=captcha, email=email)
     if count > 0:
@@ -209,14 +209,14 @@ async def update_user_email(
 
 
 @router.delete(
-    path='/{pk}',
-    summary='删除用户',
+    path="/{pk}",
+    summary="删除用户",
     dependencies=[
-        Depends(RequestPermission('sys:user:del')),
+        Depends(RequestPermission("sys:user:del")),
         DependsRBAC,
     ],
 )
-async def delete_user(db: CurrentSessionTransaction, pk: Annotated[int, Path(description='用户 ID')]) -> ResponseModel:
+async def delete_user(db: CurrentSessionTransaction, pk: Annotated[int, Path(description="用户 ID")]) -> ResponseModel:
     count = await user_service.delete(db=db, pk=pk)
     if count > 0:
         return response_base.success()

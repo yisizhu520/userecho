@@ -45,17 +45,17 @@ class FeedbackService:
             # 1. 验证 Board 归属（board_id 必填）
             board = await crud_board.get_by_id(db, tenant_id, data.board_id)
             if not board:
-                raise ValueError(f'Board {data.board_id} not found for tenant {tenant_id}')
+                raise ValueError(f"Board {data.board_id} not found for tenant {tenant_id}")
 
             # 2. 根据 author_type 处理不同来源模式
             customer_id = None
-            author_type = 'customer'
+            author_type = "customer"
             external_user_name = None
             external_contact = None
             source_platform = None
             source_user_name = None
 
-            if data.author_type == 'customer':
+            if data.author_type == "customer":
                 # 内部客户模式：关联或创建客户
                 customer_id = data.customer_id
                 if data.customer_name and not customer_id:
@@ -77,16 +77,16 @@ class FeedbackService:
                             tenant_id=tenant_id,
                             id=uuid4_str(),
                             name=data.customer_name,
-                            customer_type=data.customer_type or 'normal',
+                            customer_type=data.customer_type or "normal",
                         )
                         log.info(
-                            f'Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or "normal"}'
+                            f"Auto-created customer {customer.id} for feedback: {data.customer_name}, type={data.customer_type or 'normal'}"
                         )
 
                     customer_id = customer.id
             else:
                 # 外部用户模式：存储外部用户信息，不入客户表
-                author_type = 'external'
+                author_type = "external"
                 external_user_name = data.external_user_name
                 external_contact = data.external_contact
                 source_platform = data.source_platform
@@ -96,7 +96,7 @@ class FeedbackService:
             images_metadata = None
             if data.screenshots:
                 images_metadata = {
-                    'images': [{'url': url, 'uploaded_at': timezone.now().isoformat()} for url in data.screenshots]
+                    "images": [{"url": url, "uploaded_at": timezone.now().isoformat()} for url in data.screenshots]
                 }
 
             # 4. 生成 AI 摘要（仅长文本，失败不影响创建）
@@ -105,10 +105,10 @@ class FeedbackService:
                 try:
                     ai_summary = await ai_client.generate_summary(data.content, max_length=20)
                 except Exception as e:
-                    log.warning(f'Failed to generate summary for feedback: {e}')
+                    log.warning(f"Failed to generate summary for feedback: {e}")
 
             # 5. 确定聚类状态
-            clustering_status = 'clustered' if data.topic_id else 'pending'
+            clustering_status = "clustered" if data.topic_id else "pending"
 
             # 6. 创建反馈
             feedback = await crud_feedback.create(
@@ -139,17 +139,17 @@ class FeedbackService:
                 from backend.app.task.celery import celery_app
 
                 celery_app.send_task(
-                    'userecho.generate_feedback_embedding',
+                    "userecho.generate_feedback_embedding",
                     args=[feedback.id, data.content, tenant_id],
                 )
             except Exception as e:
                 # 失败不影响主流程
-                log.warning(f'Failed to trigger embedding generation for feedback {feedback.id}: {e}')
+                log.warning(f"Failed to trigger embedding generation for feedback {feedback.id}: {e}")
 
             return feedback
 
         except Exception as e:
-            log.error(f'Failed to create feedback for tenant {tenant_id}: {e}')
+            log.error(f"Failed to create feedback for tenant {tenant_id}: {e}")
             raise
 
     async def get_list(
@@ -159,7 +159,7 @@ class FeedbackService:
         skip: int = 0,
         limit: int = 100,
         search_query: str | None = None,
-        search_mode: str = 'keyword',
+        search_mode: str = "keyword",
         **filters: Any,
     ) -> list[dict]:
         """
@@ -178,15 +178,15 @@ class FeedbackService:
             反馈列表
         """
         # 语义搜索模式
-        if search_query and search_mode == 'semantic':
+        if search_query and search_mode == "semantic":
             # 1. 生成搜索词的 embedding
             query_embedding = await ai_client.get_embedding(search_query)
             if not query_embedding:
                 log.warning(
-                    f'Failed to generate embedding for search query: {search_query}, fallback to keyword search'
+                    f"Failed to generate embedding for search query: {search_query}, fallback to keyword search"
                 )
                 # Fallback 到关键词搜索
-                search_mode = 'keyword'
+                search_mode = "keyword"
             else:
                 # 2. 使用 pgvector 语义搜索
                 return await crud_feedback.search_by_semantic(
@@ -199,7 +199,7 @@ class FeedbackService:
             tenant_id=tenant_id,
             skip=skip,
             limit=limit,
-            search_query=search_query if search_mode == 'keyword' else None,
+            search_query=search_query if search_mode == "keyword" else None,
             **filters,
         )
 

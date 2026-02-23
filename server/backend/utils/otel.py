@@ -30,9 +30,9 @@ def init_otel(app: FastAPI) -> None:
 
     resource = Resource(
         attributes={
-            'service.name': settings.GRAFANA_APP_NAME,
-            'service.version': __version__,
-            'deployment.environment': settings.ENVIRONMENT,
+            "service.name": settings.GRAFANA_APP_NAME,
+            "service.version": __version__,
+            "deployment.environment": settings.ENVIRONMENT,
         },
     )
 

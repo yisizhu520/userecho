@@ -33,13 +33,13 @@ class CRUDNotice(CRUDPlus[Notice]):
         filters = {}
 
         if title is not None:
-            filters['title__like'] = f'%{title}%'
+            filters["title__like"] = f"%{title}%"
         if type is not None:
-            filters['type'] = type
+            filters["type"] = type
         if status is not None:
-            filters['status'] = status
+            filters["status"] = status
 
-        return await self.select_order('created_time', 'desc', **filters)
+        return await self.select_order("created_time", "desc", **filters)
 
     async def get_all(self, db: AsyncSession) -> Sequence[Notice]:
         """

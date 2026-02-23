@@ -74,7 +74,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
         from backend.app.admin.model.user import User
 
         query = (
-            select(self.model, User.nickname.label('changed_by_name'))
+            select(self.model, User.nickname.label("changed_by_name"))
             .outerjoin(User, self.model.changed_by == User.id)
             .where(self.model.tenant_id == tenant_id, self.model.topic_id == topic_id)
             .order_by(self.model.changed_at.desc())
@@ -89,7 +89,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
             # 或者直接依赖 Pydantic 从 attributes 读取（如果 history 对象上能动态 setattr）
             # 最稳妥：转字典
             h_dict = {c.name: getattr(history, c.name) for c in history.__table__.columns}
-            h_dict['changed_by_name'] = changed_by_name
+            h_dict["changed_by_name"] = changed_by_name
             history_list.append(h_dict)
 
         return history_list

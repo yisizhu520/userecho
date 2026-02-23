@@ -4,6 +4,9 @@ import os
 import re
 import sys
 
+from pathlib import Path
+from typing import Any
+
 from loguru import logger
 
 from backend.core.conf import settings
@@ -21,6 +24,7 @@ class InterceptHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         # 获取对应的 Loguru 级别（如果存在）
+        level: str | int
         try:
             level = logger.level(record.levelname).name
         except ValueError:
@@ -35,27 +39,27 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-def default_formatter(record: logging.LogRecord) -> str:
+def default_formatter(record: dict[str, Any]) -> str:
     """默认日志格式化程序"""
 
     # 重写 sqlalchemy echo 输出
     # https://github.com/sqlalchemy/sqlalchemy/discussions/12791
-    record_name = record['name'] or ''
-    if record_name.startswith('sqlalchemy'):
-        message = record['message']
+    record_name = record["name"] or ""
+    if record_name.startswith("sqlalchemy"):
+        message = record["message"]
         # 1. 压缩多余空格
-        message = re.sub(r'\s+', ' ', message).strip()
+        message = re.sub(r"\s+", " ", message).strip()
         # 2. 截断超长向量数据 (匹配长度 > 200 的向量字符串: '[-0.123, ...]')
         message = re.sub(r"'\[[\d\.,\s-eE]{200,}\]'", "'[VECTOR_TRUNCATED]'", message)
-        record['message'] = message
+        record["message"] = message
 
-    return settings.LOG_FORMAT if settings.LOG_FORMAT.endswith('\n') else f'{settings.LOG_FORMAT}\n'
+    return settings.LOG_FORMAT if settings.LOG_FORMAT.endswith("\n") else f"{settings.LOG_FORMAT}\n"
 
 
-def request_id_filter(record: logging.LogRecord) -> logging.LogRecord:
+def request_id_filter(record: dict[str, Any]) -> dict[str, Any]:
     """请求 ID 过滤器"""
     rid = get_request_trace_id()
-    record['request_id'] = rid[: settings.TRACE_ID_LOG_LENGTH]
+    record["request_id"] = rid[: settings.TRACE_ID_LOG_LENGTH]
     return record
 
 
@@ -76,7 +80,7 @@ def setup_logging() -> None:
         logging.getLogger(name).handlers = []
 
         # 配置日志传播规则
-        if 'uvicorn.access' in name or 'watchfiles.main' in name:
+        if "uvicorn.access" in name or "watchfiles.main" in name:
             logging.getLogger(name).propagate = False
         else:
             logging.getLogger(name).propagate = True
@@ -91,10 +95,10 @@ def setup_logging() -> None:
     logger.configure(
         handlers=[
             {
-                'sink': sys.stdout,
-                'level': settings.LOG_STD_LEVEL,
-                'format': default_formatter,
-                'filter': lambda record: request_id_filter(record),
+                "sink": sys.stdout,
+                "level": settings.LOG_STD_LEVEL,
+                "format": default_formatter,
+                "filter": lambda record: request_id_filter(record),
             },
         ],
     )
@@ -110,28 +114,28 @@ def set_custom_logfile() -> None:
     log_error_file = LOG_DIR / settings.LOG_ERROR_FILENAME
 
     # 日志压缩回调
-    def compression(filepath: str) -> str:
+    def compression(filepath: str) -> Path:
         filename = filepath.split(os.sep)[-1]
-        original_filename = filename.split('.')[0]
-        if '-' in original_filename:
-            return LOG_DIR / f'{original_filename}.log'
-        return LOG_DIR / f'{original_filename}_{timezone.now().strftime("%Y-%m-%d")}.log'
+        original_filename = filename.split(".")[0]
+        if "-" in original_filename:
+            return LOG_DIR / f"{original_filename}.log"
+        return LOG_DIR / f"{original_filename}_{timezone.now().strftime('%Y-%m-%d')}.log"
 
     # 日志文件通用配置
     # https://loguru.readthedocs.io/en/stable/api/logger.html#loguru._logger.Logger.add
     log_config = {
-        'format': default_formatter,
-        'enqueue': True,
-        'rotation': '00:00',
-        'retention': '7 days',
-        'compression': lambda filepath: os.rename(filepath, compression(filepath)),
+        "format": default_formatter,
+        "enqueue": True,
+        "rotation": "00:00",
+        "retention": "7 days",
+        "compression": lambda filepath: os.rename(filepath, compression(filepath)),
     }
 
     # 标准输出文件
     logger.add(
         str(log_access_file),
         level=settings.LOG_FILE_ACCESS_LEVEL,
-        filter=lambda record: record['level'].no <= 25,
+        filter=lambda record: record["level"].no <= 25,
         backtrace=False,
         diagnose=False,
         **log_config,
@@ -141,7 +145,7 @@ def set_custom_logfile() -> None:
     logger.add(
         str(log_error_file),
         level=settings.LOG_FILE_ERROR_LEVEL,
-        filter=lambda record: record['level'].no >= 30,
+        filter=lambda record: record["level"].no >= 30,
         backtrace=True,
         diagnose=True,
         **log_config,

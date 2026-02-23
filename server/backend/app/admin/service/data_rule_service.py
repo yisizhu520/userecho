@@ -34,13 +34,13 @@ class DataRuleService:
 
         data_rule = await data_rule_dao.get(db, pk)
         if not data_rule:
-            raise errors.NotFoundError(msg='数据规则不存在')
+            raise errors.NotFoundError(msg="数据规则不存在")
         return data_rule
 
     @staticmethod
     async def get_models() -> list[str]:
         """获取所有数据规则可用模型"""
-        model_exclude = ['DataScope', 'DataRule', 'sys_role_data_scope', 'sys_data_scope_rule']
+        model_exclude = ["DataScope", "DataRule", "sys_role_data_scope", "sys_data_scope_rule"]
         return [m for m in list(get_data_permission_models().keys()) if m not in model_exclude]
 
     @staticmethod
@@ -53,7 +53,7 @@ class DataRuleService:
         """
         available_models = get_data_permission_models()
         if model not in available_models:
-            raise errors.NotFoundError(msg='数据规则可用模型不存在')
+            raise errors.NotFoundError(msg="数据规则可用模型不存在")
         model_ins = available_models[model]
 
         table = model_ins if isinstance(model_ins, Table) else model_ins.__table__
@@ -99,7 +99,7 @@ class DataRuleService:
         """
         data_rule = await data_rule_dao.get_by_name(db, obj.name)
         if data_rule:
-            raise errors.ConflictError(msg='数据规则已存在')
+            raise errors.ConflictError(msg="数据规则已存在")
         await data_rule_dao.create(db, obj)
 
     @staticmethod
@@ -114,9 +114,9 @@ class DataRuleService:
         """
         data_rule = await data_rule_dao.get(db, pk)
         if not data_rule:
-            raise errors.NotFoundError(msg='数据规则不存在')
+            raise errors.NotFoundError(msg="数据规则不存在")
         if data_rule.name != obj.name and await data_rule_dao.get_by_name(db, obj.name):
-            raise errors.ConflictError(msg='数据规则已存在')
+            raise errors.ConflictError(msg="数据规则已存在")
         count = await data_rule_dao.update(db, pk, obj)
         await user_cache_manager.clear_by_data_rule_id(db, [pk])
         return count

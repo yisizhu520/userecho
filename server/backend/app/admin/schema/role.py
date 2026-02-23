@@ -11,10 +11,10 @@ from backend.common.schema import SchemaBase
 class RoleSchemaBase(SchemaBase):
     """角色基础模型"""
 
-    name: str = Field(description='角色名称')
-    status: StatusType = Field(description='状态')
-    is_filter_scopes: bool = Field(True, description='过滤数据权限')
-    remark: str | None = Field(None, description='备注')
+    name: str = Field(description="角色名称")
+    status: StatusType = Field(description="状态")
+    is_filter_scopes: bool = Field(True, description="过滤数据权限")
+    remark: str | None = Field(None, description="备注")
 
 
 class CreateRoleParam(RoleSchemaBase):
@@ -28,33 +28,33 @@ class UpdateRoleParam(RoleSchemaBase):
 class DeleteRoleParam(SchemaBase):
     """删除角色参数"""
 
-    pks: list[int] = Field(description='角色 ID 列表')
+    pks: list[int] = Field(description="角色 ID 列表")
 
 
 class CreateRoleMenuParam(SchemaBase):
     """创建角色菜单参数"""
 
-    role_id: int = Field(description='角色 ID')
-    menu_id: int = Field(description='菜单 ID')
+    role_id: int = Field(description="角色 ID")
+    menu_id: int = Field(description="菜单 ID")
 
 
 class UpdateRoleMenuParam(SchemaBase):
     """更新角色菜单参数"""
 
-    menus: list[int] = Field(description='菜单 ID 列表')
+    menus: list[int] = Field(description="菜单 ID 列表")
 
 
 class CreateRoleScopeParam(SchemaBase):
     """创建角色数据范围参数"""
 
-    role_id: int = Field(description='角色 ID')
-    data_scope_id: int = Field(description='数据范围 ID')
+    role_id: int = Field(description="角色 ID")
+    data_scope_id: int = Field(description="数据范围 ID")
 
 
 class UpdateRoleScopeParam(SchemaBase):
     """更新角色数据范围参数"""
 
-    scopes: list[int] = Field(description='数据范围 ID 列表')
+    scopes: list[int] = Field(description="数据范围 ID 列表")
 
 
 class GetRoleDetail(RoleSchemaBase):
@@ -62,13 +62,13 @@ class GetRoleDetail(RoleSchemaBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(description='角色 ID')
-    created_time: datetime = Field(description='创建时间')
-    updated_time: datetime | None = Field(None, description='更新时间')
+    id: int = Field(description="角色 ID")
+    created_time: datetime = Field(description="创建时间")
+    updated_time: datetime | None = Field(None, description="更新时间")
 
 
 class GetRoleWithRelationDetail(GetRoleDetail):
     """角色关联详情"""
 
-    menus: list[GetMenuDetail | None] = Field([], description='菜单详情列表')
-    scopes: list[GetDataScopeWithRelationDetail | None] = Field([], description='数据范围列表')
+    menus: list[GetMenuDetail | None] = Field([], description="菜单详情列表")
+    scopes: list[GetDataScopeWithRelationDetail | None] = Field([], description="数据范围列表")

@@ -42,11 +42,11 @@ class CRUDDictType(CRUDPlus[DictType]):
         filters = {}
 
         if name is not None:
-            filters['name__like'] = f'%{name}%'
+            filters["name__like"] = f"%{name}%"
         if code is not None:
-            filters['code__like'] = f'%{code}%'
+            filters["code__like"] = f"%{code}%"
 
-        return await self.select_order('id', 'desc', **filters)
+        return await self.select_order("id", "desc", **filters)
 
     async def get_by_code(self, db: AsyncSession, code: str) -> DictType | None:
         """

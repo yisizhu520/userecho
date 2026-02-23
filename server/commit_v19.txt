@@ -1,0 +1,1951 @@
+╭───────────────────────────────────────╮
+│ 🥊 lefthook v1.13.6  hook: pre-commit │
+╰───────────────────────────────────────╯
+warning: `VIRTUAL_ENV=D:/workspace/indie/feedalyze/server/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+┃  backend-linter ❯ 
+
+fix end of files.........................................................Passed
+- hook id: end-of-file-fixer
+- duration: 0.78s
+check json...............................................................Passed
+- hook id: check-json
+- duration: 0.69s
+check yaml...............................................................Passed
+- hook id: check-yaml
+- duration: 4.91s
+check toml...............................................................Passed
+- hook id: check-toml
+- duration: 0.31s
+ruff.....................................................................Failed
+- hook id: ruff
+- duration: 0.22s
+- exit code: 1
+
+server\diagnose_db_connections.py:73:41: F823 Local variable `text` referenced before assignment
+   |
+71 |     try:
+72 |         async with async_engine.connect() as conn:
+73 |             result = await conn.execute(text("SELECT 1"))
+   |                                         ^^^^ F823
+74 |             row = result.fetchone()
+75 |             if row and row[0] == 1:
+   |
+
+Found 1 error.
+
+ruff-format..............................................................Passed
+- hook id: ruff-format
+- duration: 0.33s
+
+488 files left unchanged
+
+mypy.....................................................................Failed
+- hook id: mypy
+- duration: 18.44s
+- exit code: 1
+
+server\gen_report.py:8: error: Cannot find implementation or library stub for
+module named "analyze_migrations"  [import-not-found]
+    from analyze_migrations import analyze_migrations
+    ^
+server\check_chain.py:30: error: Argument "key" to "sorted" has incompatible
+type "Callable[[str | Any], str | Any | None]"; expected
+"Callable[[str | Any], SupportsDunderLT[Any] | SupportsDunderGT[Any]]" 
+[arg-type]
+    for rev in sorted(migrations.keys(), key=lambda r: migrations[r]["time...
+                                             ^
+server\check_chain.py:30: error: Incompatible return value type (got
+"str | Any | None", expected "SupportsDunderLT[Any] | SupportsDunderGT[Any]") 
+[return-value]
+    ...r rev in sorted(migrations.keys(), key=lambda r: migrations[r]["time"]...
+                                                        ^~~~~~~~~~~~~~~~~~~~~
+server\check_chain.py:33: error: Value of type "str | Any | None" is not
+indexable  [index]
+        print(f"{down_exists} {m['time']} | rev={rev:25s} | down={m['down'...
+              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\utils\console.py:1: error: Cannot find implementation or library
+stub for module named "rich"  [import-not-found]
+    from rich import get_console
+    ^
+server\backend\app\userecho\constants.py:43: error: Unpacked dict entry 1 has
+incompatible type "Collection[str]"; expected "SupportsKeysAndGetItem[str, str]"
+ [dict-item]
+        **CLUSTERING_PRESETS["standard"]["params"],
+          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\alembic\versions\2026-01-18-23_19_51-de3ddd4d73c9_fix_system_menu_component_paths.py:9: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-14-23_43_04-e526c5099435_add_deleted_at_to_topic_notifications.py:9: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-02-00_15_00-add_board_stats_triggers.py:14: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-29-11_00_00-add_topic_fulltext_search_indexes.py:21: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-29-10_00_00-add_fulltext_search_indexes.py:22: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\check_dependencies.py:10: error: Cannot find implementation or library
+stub for module named "tomllib"  [import-not-found]
+        import tomllib  # Python 3.11+
+    ^
+server\check_dependencies.py:12: error: Cannot find implementation or library
+stub for module named "tomli"  [import-not-found]
+        import tomli as tomllib  # Python 3.10
+    ^
+server\check_dependencies.py:24: error: Need type annotation for "imports"
+(hint: "imports: set[<type>] = ...")  [var-annotated]
+        imports = set()
+        ^~~~~~~
+server\backend\run.py:3: error: Cannot find implementation or library stub for
+module named "uvicorn"  [import-not-found]
+    import uvicorn
+    ^
+server\backend\common\context.py:4: error: Cannot find implementation or
+library stub for module named "starlette_context.ctx"  [import-not-found]
+    from starlette_context.ctx import _Context, context
+    ^
+server\backend\utils\_await.py:37: error: Item "None" of
+"AbstractEventLoop | None" has no attribute "run_forever"  [union-attr]
+                self.__loop.run_forever()
+                ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\_await.py:39: error: Item "None" of
+"AbstractEventLoop | None" has no attribute "close"  [union-attr]
+                self.__loop.close()
+                ^~~~~~~~~~~~~~~~~
+server\backend\utils\_await.py:53: error: Need type annotation for
+"_runner_map"  [var-annotated]
+    _runner_map = weakref.WeakValueDictionary()
+                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\test_ai_providers.py:16: error: Cannot find
+implementation or library stub for module named "openai"  [import-not-found]
+        from openai import AsyncOpenAI
+    ^
+server\backend\scripts\test_ai_providers.py:67: error: Value of type "object"
+is not indexable  [index]
+                api_key = os.getenv(config["env_key"])
+                                    ^~~~~~~~~~~~~~~~~
+server\backend\scripts\test_ai_providers.py:72: error: Value of type "object"
+is not indexable  [index]
+                        if config["base_url"]:
+                           ^~~~~~~~~~~~~~~~~~
+server\backend\scripts\test_ai_providers.py:73: error: Value of type "object"
+is not indexable  [index]
+                            client_kwargs["base_url"] = config["base_url"]
+                                                        ^~~~~~~~~~~~~~~~~~
+server\backend\scripts\test_ai_providers.py:92: error: Value of type "object"
+is not indexable  [index]
+                embedding_model = config["embedding_model"]
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\test_ai_providers.py:120: error: Value of type "object"
+is not indexable  [index]
+                chat_model = config["chat_model"]
+                             ^~~~~~~~~~~~~~~~~~~~
+server\backend\common\queue.py:15: error: Need type annotation for "items"
+(hint: "items: list[<type>] = ...")  [var-annotated]
+        items = []
+        ^~~~~
+server\backend\temp_remove_title.py:12: error: Cannot find implementation or
+library stub for module named "backend.database.db_postgres"  [import-not-found]
+    from backend.database.db_postgres import get_db
+    ^
+server\backend\alembic\versions\2026-01-17-14_47_34-07e015954d69_email_login_support.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-16-12_50_23-03e4ac7514e6_fix_chinese_comments_encoding.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-16-07_40_00-b2c3d4e5f6g7_add_menu_fields_to_tenant_permissions.py:13: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-14-08_03_14-3b88fd02d888_rename_credits_usage_log_metadata_to_.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-14-08_03_14-3b88fd02d888_rename_credits_usage_log_metadata_to_.py:26: error:
+Module has no attribute "postgresql"  [attr-defined]
+            existing_type=sa.dialects.postgresql.JSONB(),
+                          ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\alembic\versions\2026-01-14-08_03_14-3b88fd02d888_rename_credits_usage_log_metadata_to_.py:37: error:
+Module has no attribute "postgresql"  [attr-defined]
+            existing_type=sa.dialects.postgresql.JSONB(),
+                          ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\alembic\versions\2026-01-10-20_43_00-8c9d0e1f2a3b_rename_anonymous_to_external_user.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-06-23_58_20-eb4f2977a7fb_add_details_to_priority_score.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-03-13_15_28-2d29d603a01b_make_feedback_board_id_required.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-02-00_40_15-fef12c5bf8a1_remove_title_from_feedback.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-31-21_30_00-add_weight_fields_and_triggers.py:18: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-28-17_00_00-add_insights_deleted_at.py:12: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-28-08_02_05-71cc2d84933e_add_screenshot_fields_to_feedback.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-25-14_00_00-add_tenant_config_table.py:17: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-24-23_08_15-27752692c03c_update_embedding_dimension_to_4096.py:14: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-23-13_00_00-add_clustering_status_and_topic_centroid.py:21: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-22-01_add_role_type_and_update_menu_paths.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\core\conf.py:85: error: List item 0 has incompatible type "str";
+expected "Pattern[str]"  [list-item]
+            rf"^{FASTAPI_API_V1_PATH}/monitors/(redis|server)$",
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\trace_id.py:1: error: Cannot find implementation or
+library stub for module named "opentelemetry"  [import-not-found]
+    from opentelemetry import trace
+    ^
+server\backend\utils\trace_id.py:3: error: Cannot find implementation or
+library stub for module named "starlette_context.plugins"  [import-not-found]
+    from starlette_context.plugins import Plugin
+    ^
+server\backend\utils\trace_id.py:12: error: Returning Any from function
+declared to return "str"  [no-any-return]
+            return ctx.get(settings.TRACE_ID_REQUEST_HEADER_KEY, settings....
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\utils\trace_id.py:27: error: Returning Any from function
+declared to return "str | None"  [no-any-return]
+                return trace.format_trace_id(span_ctx.trace_id)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\common\prometheus\instruments.py:1: error: Cannot find
+implementation or library stub for module named "prometheus_client" 
+[import-not-found]
+    from prometheus_client import Counter, Gauge, Histogram
+    ^
+server\backend\common\i18n.py:9: error: Cannot find implementation or library
+stub for module named "starlette_context.errors"  [import-not-found]
+    from starlette_context.errors import ContextDoesNotExistError
+    ^
+server\backend\common\i18n.py:73: error: Incompatible types in assignment
+(expression has type "str", variable has type "list[str]")  [assignment]
+                keys = "error.language_not_found"
+                       ^~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\common\i18n.py:81: error: Incompatible types in assignment
+(expression has type "str | None", variable has type "dict[str, Any]") 
+[assignment]
+                    translation = None if keys[0] == "pydantic" else key
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\common\i18n.py:84: error: "dict[str, Any]" has no attribute
+"format"  [attr-defined]
+                translation = translation.format(**kwargs)
+                              ^~~~~~~~~~~~~~~~~~
+server\backend\common\i18n.py:86: error: Incompatible return value type (got
+"dict[str, Any] | Any | None", expected "str")  [return-value]
+            return translation or default
+                   ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\server_info.py:9: error: Library stubs not installed for
+"psutil"  [import-untyped]
+    import psutil
+    ^
+server\backend\utils\server_info.py:9: note: Hint: "python3 -m pip install types-psutil"
+server\backend\common\schema.py:18: error: Incompatible return value type (got
+"str | None", expected "str")  [return-value]
+            return None if not input_value else validate_email(input_value...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\common\schema.py:34: error: Unsupported class scoped import 
+[misc]
+            from pydantic import field_serializer
+            ^
+server\backend\common\schema.py:45: error: Returning Any from function declared
+to return "str | None"  [no-any-return]
+        return value
+        ^~~~~~~~~~~~
+server\backend\common\response\response_code.py:14: error: Returning Any from
+function declared to return "int"  [no-any-return]
+            return self.value[0]
+            ^~~~~~~~~~~~~~~~~~~~
+server\backend\common\log.py:10: error: Cannot find implementation or library
+stub for module named "loguru"  [import-not-found]
+    from loguru import logger
+    ^
+server\backend\utils\encrypt.py:9: error: Cannot find implementation or library
+stub for module named "itsdangerous"  [import-not-found]
+    from itsdangerous import URLSafeSerializer
+    ^
+server\backend\utils\encrypt.py:104: error: Returning Any from function
+declared to return "str"  [no-any-return]
+            return ciphertext
+            ^~~~~~~~~~~~~~~~~
+server\backend\utils\clustering.py:8: error: Cannot find implementation or
+library stub for module named "numpy"  [import-not-found]
+    import numpy as np
+    ^
+server\backend\utils\build_tree.py:197: error: Returning Any from function
+declared to return "str | None"  [no-any-return]
+                    return path
+                    ^~~~~~~~~~~
+server\backend\utils\ai_client.py:11: error: Cannot find implementation or
+library stub for module named "openai"  [import-not-found]
+    from openai import AsyncOpenAI
+    ^
+server\backend\utils\ai_client.py:135: error: Returning Any from function
+declared to return "list[float] | None"  [no-any-return]
+                    return response.data[0].embedding
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\ai_client.py:488: error: Returning Any from function
+declared to return "dict[str, Any]"  [no-any-return]
+                return json.loads(response_text)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\ai_client.py:494: error: Returning Any from function
+declared to return "dict[str, Any]"  [no-any-return]
+                        return json.loads(json_str)
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\ai_client.py:497: error: Returning Any from function
+declared to return "dict[str, Any]"  [no-any-return]
+                        return json.loads(json_str)
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\database\redis.py:34: error: Incompatible types in assignment
+(expression has type "None", target has type "int")  [assignment]
+                    connection_kwargs["ssl_cert_reqs"] = None
+                                                         ^~~~
+server\backend\database\redis.py:36: error: No overload variant of "from_url"
+of "Redis" matches argument types "str", "dict[str, int]"  [call-overload]
+                super().__init__(connection_pool=Redis.from_url(settings.R...
+                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\database\redis.py:36: note: Possible overload variants:
+server\backend\database\redis.py:36: note:     def [_StrType: str | bytes] from_url(cls, url: str, *, host: str = ..., port: int = ..., db: str | int = ..., password: str | None = ..., socket_timeout: float | None = ..., socket_connect_timeout: float | None = ..., socket_keepalive: bool | None = ..., socket_keepalive_options: Mapping[int, int | bytes] | None = ..., connection_pool: ConnectionPool[Any] | None = ..., unix_socket_path: str | None = ..., encoding: str = ..., encoding_errors: str = ..., decode_responses: Literal[True], retry_on_timeout: bool = ..., retry_on_error: list[type[RedisError]] | None = ..., ssl: bool = ..., ssl_keyfile: str | None = ..., ssl_certfile: str | None = ..., ssl_cert_reqs: str = ..., ssl_ca_certs: str | None = ..., ssl_ca_data: str | None = ..., ssl_check_hostname: bool = ..., max_connections: int | None = ..., single_connection_client: bool = ..., health_check_interval: int = ..., client_name: str | None = ..., username: str | None = ..., retry: Retry | None = ..., auto_close_connection_pool: bool = ..., redis_connect_func: ConnectCallbackProtocol | AsyncConnectCallbackProtocol | None = ..., credential_provider: CredentialProvider | None = ...) -> Redis[str]
+server\backend\database\redis.py:36: note:     def [_StrType: str | bytes] from_url(cls, url: str, *, host: str = ..., port: int = ..., db: str | int = ..., password: str | None = ..., socket_timeout: float | None = ..., socket_connect_timeout: float | None = ..., socket_keepalive: bool | None = ..., socket_keepalive_options: Mapping[int, int | bytes] | None = ..., connection_pool: ConnectionPool[Any] | None = ..., unix_socket_path: str | None = ..., encoding: str = ..., encoding_errors: str = ..., decode_responses: Literal[False] = ..., retry_on_timeout: bool = ..., retry_on_error: list[type[RedisError]] | None = ..., ssl: bool = ..., ssl_keyfile: str | None = ..., ssl_certfile: str | None = ..., ssl_cert_reqs: str = ..., ssl_ca_certs: str | None = ..., ssl_ca_data: str | None = ..., ssl_check_hostname: bool = ..., max_connections: int | None = ..., single_connection_client: bool = ..., health_check_interval: int = ..., client_name: str | None = ..., username: str | None = ..., retry: Retry | None = ..., auto_close_connection_pool: bool = ..., redis_connect_func: ConnectCallbackProtocol | AsyncConnectCallbackProtocol | None = ..., credential_provider: CredentialProvider | None = ...) -> Redis[bytes]
+server\backend\common\security\turnstile.py:3: error: Cannot find
+implementation or library stub for module named "httpx"  [import-not-found]
+    import httpx
+    ^
+server\backend\alembic\versions\2026-01-17-23_04_14-2d6098f3eae5_add_subscription_tables.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-13-23_30_00-4f5g6h7i8j9k_add_credits_tables.py:12: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-31-22_00_00-add_boards_and_complete_schema.py:22: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-28-16_00_00-add_insights_and_sentiment.py:12: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\scripts\test_batch_embedding.py:101: error: Need type annotation
+for "texts" (hint: "texts: list[<type>] = ...")  [var-annotated]
+        texts = []
+        ^~~~~
+server\backend\scripts\test_batch_embedding.py:115: error: Unsupported operand
+types for / ("float" and "int")  [operator]
+        print(f"  平均: {elapsed / len(texts) * 1000:.0f}ms/条")
+                           ^
+server\backend\middleware\i18n_middleware.py:54: error: Returning Any from
+function declared to return "Response"  [no-any-return]
+            return response
+            ^~~~~~~~~~~~~~~
+server\backend\middleware\debug_middleware.py:11: error: Cannot find
+implementation or library stub for module named "asgiref.sync" 
+[import-not-found]
+    from asgiref.sync import sync_to_async
+    ^
+server\backend\middleware\debug_middleware.py:67: error: Returning Any from
+function declared to return "Response"  [no-any-return]
+                return await call_next(request)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\middleware\debug_middleware.py:71: error: Returning Any from
+function declared to return "Response"  [no-any-return]
+                return await call_next(request)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\middleware\debug_middleware.py:84: error: Returning Any from
+function declared to return "Response"  [no-any-return]
+            return response
+            ^~~~~~~~~~~~~~~
+server\backend\middleware\debug_middleware.py:185: error: Returning Any from
+function declared to return "dict[str, Any] | str | None"  [no-any-return]
+                            return await self._desensitize(json_data)
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\middleware\debug_middleware.py:230: error: Returning Any from
+function declared to return "dict[Any, Any] | str | None"  [no-any-return]
+                            return await self._desensitize(json_data)
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\middleware\debug_middleware.py:232: error: Item
+"memoryview[int]" of "bytes | memoryview[int]" has no attribute "decode" 
+[union-attr]
+                            return body.decode("utf-8", errors="replace")[...
+                                   ^~~~~~~~~~~
+server\backend\common\pagination.py:7: error: Cannot find implementation or
+library stub for module named "fastapi_pagination"  [import-not-found]
+    from fastapi_pagination import pagination_ctx
+    ^
+server\backend\common\pagination.py:8: error: Cannot find implementation or
+library stub for module named "fastapi_pagination.bases"  [import-not-found]
+    from fastapi_pagination.bases import AbstractPage, AbstractParams, Raw...
+    ^
+server\backend\common\pagination.py:9: error: Cannot find implementation or
+library stub for module named "fastapi_pagination.ext.sqlalchemy" 
+[import-not-found]
+    from fastapi_pagination.ext.sqlalchemy import apaginate
+    ^
+server\backend\common\pagination.py:10: error: Cannot find implementation or
+library stub for module named "fastapi_pagination.links.bases" 
+[import-not-found]
+    from fastapi_pagination.links.bases import create_links
+    ^
+server\backend\utils\storage.py:182: error: Returning Any from function
+declared to return "str"  [no-any-return]
+                return self.bucket.sign_url("GET", oss_path, expire_second...
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\storage.py:191: error: Returning Any from function
+declared to return "bool"  [no-any-return]
+                return self.bucket.object_exists(oss_path)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\storage.py:274: error: Returning Any from function
+declared to return "str"  [no-any-return]
+                return url
+                ^~~~~~~~~~
+server\backend\utils\storage.py:294: error: Cannot find implementation or
+library stub for module named "boto3"  [import-not-found]
+                import boto3
+    ^
+server\backend\utils\storage.py:370: error: Returning Any from function
+declared to return "str"  [no-any-return]
+                return url
+                ^~~~~~~~~~
+server\backend\utils\storage.py:423: error: Incompatible return value type (got
+"StorageBackend | None", expected "StorageBackend")  [return-value]
+            return self._backend
+                   ^~~~~~~~~~~~~
+server\backend\utils\storage.py:432: error: Item "None" of
+"StorageBackend | None" has no attribute "upload"  [union-attr]
+            return await self._backend.upload(file, path, content_type)
+                         ^~~~~~~~~~~~~~~~~~~~
+server\backend\utils\storage.py:436: error: Item "None" of
+"StorageBackend | None" has no attribute "delete"  [union-attr]
+            return await self._backend.delete(path)
+                         ^~~~~~~~~~~~~~~~~~~~
+server\backend\utils\storage.py:440: error: Item "None" of
+"StorageBackend | None" has no attribute "get_url"  [union-attr]
+            return await self._backend.get_url(path, expire_seconds)
+                         ^~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\storage.py:444: error: Item "None" of
+"StorageBackend | None" has no attribute "exists"  [union-attr]
+            return await self._backend.exists(path)
+                         ^~~~~~~~~~~~~~~~~~~~
+server\backend\utils\request_parse.py:1: error: Cannot find implementation or
+library stub for module named "httpx"  [import-not-found]
+    import httpx
+    ^
+server\backend\utils\request_parse.py:30: error: Item "None" of
+"Address | None" has no attribute "host"  [union-attr]
+        if request.client.host == "testclient":
+           ^~~~~~~~~~~~~~~~~~~
+server\backend\utils\request_parse.py:32: error: Item "None" of
+"Address | None" has no attribute "host"  [union-attr]
+        return request.client.host
+               ^~~~~~~~~~~~~~~~~~~
+server\backend\utils\request_parse.py:35: error: Missing return statement 
+[return]
+    async def get_location_online(ip: str, user_agent: str) -> dict | None...
+    ^
+server\backend\utils\request_parse.py:49: error: Returning Any from function
+declared to return "dict[Any, Any] | None"  [no-any-return]
+                    return response.json()
+                    ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\request_parse.py:95: error: Argument 2 to
+"get_location_online" has incompatible type "str | None"; expected "str" 
+[arg-type]
+    ...   location_info = await get_location_online(ip, request.headers.get("...
+                                                        ^~~~~~~~~~~~~~~~~~~~~...
+server\backend\utils\request_parse.py:123: error: Argument "user_agent" to
+"UserAgentInfo" has incompatible type "str | None"; expected "str"  [arg-type]
+        return UserAgentInfo(user_agent=user_agent, device=device, os=os, ...
+                                        ^~~~~~~~~~
+server\backend\utils\health_check.py:73: error: Incompatible types in
+assignment (expression has type "float", variable has type "int")  [assignment]
+                unit, factor = "ms", 1e3
+                                     ^~~
+server\backend\utils\import_parse.py:37: error: Returning Any from function
+declared to return "type[T]"  [no-any-return]
+            return getattr(module, class_name)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\import_parse.py:65: error: Incompatible return value type
+(got "list[type[Any] | Table]", expected "list[object] | None")  [return-value]
+        return classes
+               ^~~~~~~
+server\backend\common\exception\exception_handler.py:6: error: Cannot find
+implementation or library stub for module named
+"uvicorn.protocols.http.h11_impl"  [import-not-found]
+    from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
+    ^
+server\backend\common\exception\exception_handler.py:64: error: Value of type
+"Any | tuple[int | str, ...] | None" is not indexable  [index]
+            field = str(error.get("loc")[-1])
+                        ^~~~~~~~~~~~~~~~~~~~
+server\backend\common\exception\exception_handler.py:66: error: Incompatible
+types in assignment (expression has type "str | Any | None", variable has type
+"str")  [assignment]
+            message = f"{field} {error_msg}，输入：{error_input}" if settings....
+                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\landing.py:7: error: Cannot find
+implementation or library stub for module named "aiosmtplib"  [import-not-found]
+    from aiosmtplib import SMTP
+    ^
+server\backend\app\task\utils\tzcrontab.py:37: error: Returning Any from
+function declared to return "tuple[bool, int | float]"  [no-any-return]
+            return schedules.schedstate(is_due=due, next=rem)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\file_ops.py:11: error: Cannot find implementation or
+library stub for module named "sqlparse"  [import-not-found]
+    from sqlparse import split
+    ^
+server\backend\utils\file_ops.py:33: error: Item "None" of "str | None" has no
+attribute "split"  [union-attr]
+        file_ext = filename.split(".")[-1].lower()
+                   ^~~~~~~~~~~~~~
+server\backend\utils\file_ops.py:34: error: Item "None" of "str | None" has no
+attribute "replace"  [union-attr]
+        new_filename = f"{filename.replace(f'.{file_ext}', f'_{timestamp}'...
+                          ^~~~~~~~~~~~~~~~
+server\backend\utils\file_ops.py:46: error: Item "None" of "str | None" has no
+attribute "split"  [union-attr]
+        file_ext = filename.split(".")[-1].lower()
+                   ^~~~~~~~~~~~~~
+server\backend\utils\file_ops.py:53: error: Unsupported operand types for <
+("int" and "None")  [operator]
+            if file.size > settings.UPLOAD_IMAGE_SIZE_MAX:
+               ^
+server\backend\utils\file_ops.py:53: note: Left operand is of type "int | None"
+server\backend\utils\file_ops.py:58: error: Unsupported operand types for <
+("int" and "None")  [operator]
+            if file.size > settings.UPLOAD_VIDEO_SIZE_MAX:
+               ^
+server\backend\utils\file_ops.py:58: note: Left operand is of type "int | None"
+server\backend\utils\file_ops.py:113: error: Item "None" of "Match[str] | None"
+has no attribute "group"  [union-attr]
+            plugin_name = re.match(
+                          ^
+server\backend\utils\file_ops.py:117: error: Item "None" of "str | None" has no
+attribute "split"  [union-attr]
+                else file.filename.split(".")[0].strip(),
+                     ^~~~~~~~~~~~~~~~~~~
+server\backend\utils\file_ops.py:187: error: Returning Any from function
+declared to return "list[str]"  [no-any-return]
+        return statements
+        ^~~~~~~~~~~~~~~~~
+server\backend\common\security\permission.py:67: error: Argument 1 to "or_" has
+incompatible type "bool"; expected
+"Literal[False] | ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+            return or_(1 == 1)
+                       ^~~~~~
+server\backend\common\security\permission.py:72: error: Argument 1 to "or_" has
+incompatible type "bool"; expected
+"Literal[False] | ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+                return or_(1 == 1)
+                           ^~~~~~
+server\backend\common\security\permission.py:82: error: Argument 1 to "or_" has
+incompatible type "bool"; expected
+"Literal[False] | ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+            return or_(1 == 1)
+                       ^~~~~~
+server\backend\common\security\permission.py:97: error: "object" has no
+attribute "__table__"  [attr-defined]
+    ...et_model if isinstance(target_model, Table) else target_model.__table_...
+                                                        ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\common\security\permission.py:153: error: Argument 1 to "or_"
+has incompatible type "bool"; expected
+"Literal[False] | ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+        return or_(*where_list) if where_list else or_(1 == 1)
+                                                       ^~~~~~
+server\backend\__init__.py:12: error: "object" has no attribute "__name__";
+maybe "__ne__" or "__new__"?  [attr-defined]
+            class_name = cls.__name__
+                         ^~~~~~~~~~~~
+server\backend\app\task\model\scheduler.py:20: error: Incompatible types in
+assignment (expression has type "str", base class "MappedBase" defined the type
+as "Callable[[MappedBase], str]")  [assignment]
+        __tablename__ = "task_scheduler"
+                        ^~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:17: error: Incompatible types in
+assignment (expression has type "str", base class "MappedBase" defined the type
+as "Callable[[MappedBase], str]")  [assignment]
+        __tablename__ = "task_result"
+                        ^~~~~~~~~~~~~
+server\backend\app\task\model\result.py:18: error: Incompatible types in
+assignment (expression has type "dict[str, str]", base class "MappedBase"
+defined the type as "Callable[[MappedBase], dict[Any, Any] | tuple[Any, ...]]") 
+[assignment]
+        __table_args__ = {"comment": "任务结果表"}
+                         ^~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:33: error: Incompatible types in
+assignment (expression has type "str", variable has type "Column[str]") 
+[assignment]
+            self.task_id = task_id
+                           ^~~~~~~
+server\backend\app\task\model\result.py:52: error: "FromClause" has no
+attribute "name"  [attr-defined]
+            cls.__table__.name = name or cls.__tablename__
+            ^~~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:52: error: Cannot determine type of
+"__tablename__"  [has-type]
+            cls.__table__.name = name or cls.__tablename__
+                                         ^~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:58: error: Incompatible types in
+assignment (expression has type "str", base class "MappedBase" defined the type
+as "Callable[[MappedBase], str]")  [assignment]
+        __tablename__ = "task_result"
+                        ^~~~~~~~~~~~~
+server\backend\app\task\model\result.py:59: error: Incompatible types in
+assignment (expression has type "dict[str, object]", base class "MappedBase"
+defined the type as "Callable[[MappedBase], dict[Any, Any] | tuple[Any, ...]]") 
+[assignment]
+        __table_args__ = {"extend_existing": True, "comment": "任务结果表"}
+                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:86: error: Incompatible types in
+assignment (expression has type "str", base class "MappedBase" defined the type
+as "Callable[[MappedBase], str]")  [assignment]
+        __tablename__ = "task_set_result"
+                        ^~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:87: error: Incompatible types in
+assignment (expression has type "dict[str, str]", base class "MappedBase"
+defined the type as "Callable[[MappedBase], dict[Any, Any] | tuple[Any, ...]]") 
+[assignment]
+        __table_args__ = {"comment": "任务集结果表"}
+                         ^~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:113: error: "FromClause" has no
+attribute "name"  [attr-defined]
+            cls.__table__.name = name or cls.__tablename__
+            ^~~~~~~~~~~~~~~~~~
+server\backend\app\task\model\result.py:113: error: Cannot determine type of
+"__tablename__"  [has-type]
+            cls.__table__.name = name or cls.__tablename__
+                                         ^~~~~~~~~~~~~~~~~
+server\backend\alembic\versions\2026-01-14-08_54_43-008f26350dd0_add_reply_template.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-14-08_33_57-ea767bb5a3c5_add_topic_notification_and_system_.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2026-01-04-21_50_00-3a4b5c6d7e8f_add_deleted_at_to_boards.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-22-18_50_00-add_timestamps_to_userecho_tables.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\versions\2025-12-21-15_15_51-9a2de98df5fb_create_userecho_tables.py:11: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\diagnose_db_connections.py:27: error: "Pool" has no attribute "size" 
+[attr-defined]
+        log.info(f"  - pool_size (基础连接数): {pool.size()}")
+                                                     ^~~~
+server\diagnose_db_connections.py:28: error: "Pool" has no attribute "overflow"
+ [attr-defined]
+        log.info(f"  - overflow (溢出连接数): {pool.overflow()}")
+                                                    ^~~~~~~~
+server\diagnose_db_connections.py:29: error: "Pool" has no attribute "_timeout"
+ [attr-defined]
+        log.info(f"  - timeout (超时时间): {pool._timeout}s")
+                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\diagnose_db_connections.py:34: error: "Pool" has no attribute
+"checkedout"  [attr-defined]
+        log.info(f"  - 已签出连接数 (checked out): {pool.checkedout()}")
+                                                          ^~~~~~~~
+server\diagnose_db_connections.py:35: error: "Pool" has no attribute
+"checkedin"  [attr-defined]
+        log.info(f"  - 池中可用连接数 (checked in): {pool.checkedin()}")
+                                                            ^~~~~
+server\diagnose_db_connections.py:38: error: "Pool" has no attribute
+"checkedout"  [attr-defined]
+        checked_out = pool.checkedout()
+                      ^~~~~~~~~~~~~~~
+server\diagnose_db_connections.py:39: error: "Pool" has no attribute
+"checkedin"  [attr-defined]
+        checked_in = pool.checkedin()
+                     ^~~~~~~~~~~~~~
+server\diagnose_db_connections.py:44: error: "Pool" has no attribute "size" 
+[attr-defined]
+        total_possible = pool.size() + max_overflow
+                         ^~~~~~~~~
+server\diagnose_db_connections.py:102: error: Value of type "Row[Any] | None"
+is not indexable  [index]
+                log.info(f"  - 总连接数: {row[0]}")
+                         ^~~~~~~~~~~~~~~~~~~~~~
+server\diagnose_db_connections.py:103: error: Value of type "Row[Any] | None"
+is not indexable  [index]
+                log.info(f"  - 活跃连接: {row[1]}")
+                         ^~~~~~~~~~~~~~~~~~~~~~
+server\diagnose_db_connections.py:104: error: Value of type "Row[Any] | None"
+is not indexable  [index]
+                log.info(f"  - 空闲连接: {row[2]}")
+                         ^~~~~~~~~~~~~~~~~~~~~~
+server\diagnose_db_connections.py:105: error: Value of type "Row[Any] | None"
+is not indexable  [index]
+                log.info(f"  - 事务中空闲: {row[3]}")
+                         ^~~~~~~~~~~~~~~~~~~~~~~
+server\diagnose_db_connections.py:107: error: Value of type "Row[Any] | None"
+is not indexable  [index]
+                if row[3] > 0:
+                   ^~~~~~
+server\diagnose_db_connections.py:108: error: Value of type "Row[Any] | None"
+is not indexable  [index]
+                    log.warning(f"  ⚠️  发现 {row[3]} 个空闲事务连接，可能存在连接泄漏！")
+                                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\otel.py:2: error: Cannot find implementation or library
+stub for module named "opentelemetry"  [import-not-found]
+    from opentelemetry import trace
+    ^
+server\backend\utils\otel.py:3: error: Cannot find implementation or library
+stub for module named "opentelemetry._logs"  [import-not-found]
+    from opentelemetry._logs import set_logger_provider
+    ^
+server\backend\utils\otel.py:4: error: Cannot find implementation or library
+stub for module named "opentelemetry.exporter.otlp.proto.grpc._log_exporter" 
+[import-not-found]
+    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPL...
+    ^
+server\backend\utils\otel.py:5: error: Cannot find implementation or library
+stub for module named "opentelemetry.exporter.otlp.proto.grpc.trace_exporter" 
+[import-not-found]
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLP...
+    ^
+server\backend\utils\otel.py:6: error: Cannot find implementation or library
+stub for module named "opentelemetry.instrumentation.fastapi" 
+[import-not-found]
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    ^
+server\backend\utils\otel.py:7: error: Cannot find implementation or library
+stub for module named "opentelemetry.instrumentation.logging" 
+[import-not-found]
+    from opentelemetry.instrumentation.logging import LoggingInstrumentor
+    ^
+server\backend\utils\otel.py:8: error: Cannot find implementation or library
+stub for module named "opentelemetry.instrumentation.redis"  [import-not-found]
+    from opentelemetry.instrumentation.redis import RedisInstrumentor
+    ^
+server\backend\utils\otel.py:9: error: Cannot find implementation or library
+stub for module named "opentelemetry.instrumentation.sqlalchemy" 
+[import-not-found]
+    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrum...
+    ^
+server\backend\utils\otel.py:10: error: Cannot find implementation or library
+stub for module named "opentelemetry.sdk._logs"  [import-not-found]
+    from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+    ^
+server\backend\utils\otel.py:11: error: Cannot find implementation or library
+stub for module named "opentelemetry.sdk._logs._internal.export" 
+[import-not-found]
+    from opentelemetry.sdk._logs._internal.export import BatchLogRecordPro...
+    ^
+server\backend\utils\otel.py:12: error: Cannot find implementation or library
+stub for module named "opentelemetry.sdk.resources"  [import-not-found]
+    from opentelemetry.sdk.resources import Resource
+    ^
+server\backend\utils\otel.py:13: error: Cannot find implementation or library
+stub for module named "opentelemetry.sdk.trace"  [import-not-found]
+    from opentelemetry.sdk.trace import TracerProvider
+    ^
+server\backend\utils\otel.py:14: error: Cannot find implementation or library
+stub for module named "opentelemetry.sdk.trace.export"  [import-not-found]
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    ^
+server\backend\utils\otel.py:52: error: Unused "type: ignore" comment 
+[unused-ignore]
+        log.add(  # type: ignore
+        ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\otel.py:61: error: Unused "type: ignore" comment 
+[unused-ignore]
+        RedisInstrumentor().instrument_client(redis_client)  # type: ignor...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\test_db_connection_simple.py:70: error: Value of type
+"Row[Any] | None" is not indexable  [index]
+                        version = version_result.fetchone()[0]
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\test_db_connection_simple.py:75: error: Value of type
+"Row[Any] | None" is not indexable  [index]
+                        version = version_result.fetchone()[0]
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\diagnose_connection.py:148: error: "RedisCli" has no attribute
+"aclose"  [attr-defined]
+            await redis.aclose()
+                  ^~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:115: error: Returning Any from
+function declared to return "tuple[bool, int | float]"  [no-any-return]
+                return schedules.schedstate(is_due=False, next=5)
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:123: error: Returning Any from
+function declared to return "tuple[bool, int | float]"  [no-any-return]
+                    return schedules.schedstate(is_due=False, next=delay)
+                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:132: error: Returning Any from
+function declared to return "tuple[bool, int | float]"  [no-any-return]
+                return schedules.schedstate(is_due=False, next=1000000000)...
+                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:134: error: Returning Any from
+function declared to return "tuple[bool, int | float]"  [no-any-return]
+            return self.schedule.is_due(self.last_run_at)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:286: error: Need type annotation
+for "_dirty" (hint: "_dirty: set[<type>] = ...")  [var-annotated]
+            self._dirty = set()
+            ^~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:293: error: Need type annotation
+for "entries" (hint: "entries: dict[<type>, <type>] = ...")  [var-annotated]
+            entries = {}
+            ^~~~~~~
+server\backend\app\task\utils\schedulers.py:310: error: Returning Any from
+function declared to return "bool"  [no-any-return]
+            return super().schedules_equal(*args, **kwargs)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:355: error: Returning Any from
+function declared to return "float"  [no-any-return]
+            return super().tick(**kwargs)
+            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:383: error: Missing return
+statement  [return]
+        def schedule_changed(self) -> bool | None:
+        ^
+server\backend\app\task\utils\schedulers.py:428: error: Need type annotation
+for "_heap" (hint: "_heap: list[<type>] = ...")  [var-annotated]
+                    self._heap = []
+                    ^~~~~~~~~~
+server\backend\app\task\utils\schedulers.py:436: error: Incompatible return
+value type (got "dict[Any, Any] | None", expected "dict[str, ModelEntry]") 
+[return-value]
+            return self._schedule
+                   ^~~~~~~~~~~~~~
+server\backend\app\task\database.py:67: error: Returning Any from function
+declared to return "Session"  [no-any-return]
+            return session_manager.session_factory(
+            ^
+server\backend\app\task\database.py:120: error: Incompatible types in
+assignment (expression has type "None", variable has type "Column[object]") 
+[assignment]
+                    task_obj.result = None
+                                      ^~~~
+server\backend\alembic\versions\2026-01-15-22_50_00-a1b2c3d4e5f6_add_tenant_rbac_tables.py:13: error:
+Cannot find implementation or library stub for module named "alembic" 
+[import-not-found]
+    from alembic import op
+    ^
+server\backend\alembic\env.py:6: error: Cannot find implementation or library
+stub for module named "alembic"  [import-not-found]
+    from alembic import context
+    ^
+server\backend\alembic\env.py:6: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+server\test_board_api.py:19: error: Argument 1 to "where" of "Select" has
+incompatible type "bool"; expected
+"ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+            stmt = select(Board).where(not Board.is_archived)
+                                       ^~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\verify_init.py:39: error: Incompatible types in
+assignment (expression has type "Select[tuple[TenantRole]]", variable has type
+"Select[tuple[TenantPermission]]")  [assignment]
+            stmt = select(TenantRole).order_by(TenantRole.sort)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\verify_init.py:45: error: "TenantPermission" has no
+attribute "is_builtin"  [attr-defined]
+                print(f"   - {role.code}: {role.name} (内置: {role.is_builti...
+                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\init_business_permissions.py:131: error: Invalid index
+type "object" for "dict[str, str]"; expected type "str"  [index]
+                parent_id = permission_ids[parent_code]
+                                           ^~~~~~~~~~~
+server\backend\scripts\init_business_permissions.py:135: error: Invalid index
+type "object" for "dict[str, TenantPermission]"; expected type "str"  [index]
+                existing = existing_permissions[code]
+                                                ^~~~
+server\backend\scripts\init_business_permissions.py:139: error: Incompatible
+types in assignment (expression has type "object", variable has type
+"SQLCoreOperations[str | None] | str | None")  [assignment]
+                    existing.menu_path = perm_data.get("menu_path")
+                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_permissions.py:142: error: Incompatible
+types in assignment (expression has type "object", variable has type
+"SQLCoreOperations[str | None] | str | None")  [assignment]
+                    existing.menu_icon = perm_data.get("menu_icon")
+                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_permissions.py:148: error: Incompatible
+types in assignment (expression has type "object", variable has type
+"SQLCoreOperations[int] | int")  [assignment]
+                    existing.sort = perm_data.get("sort", 0)
+                                    ^~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_permissions.py:168: error: Invalid index
+type "object" for "dict[str, str]"; expected type "str"  [index]
+                permission_ids[code] = new_perm.id
+                               ^~~~
+server\backend\scripts\fix_updated_time.py:37: error: "type[MappedBase]" has no
+attribute "updated_time"  [attr-defined]
+                    stmt = update(model).where(model.updated_time.is_(None...
+                                               ^~~~~~~~~~~~~~~~~~
+server\backend\scripts\fix_updated_time.py:37: error: "type[MappedBase]" has no
+attribute "created_time"  [attr-defined]
+    ...(model.updated_time.is_(None)).values(updated_time=model.created_time)
+                                                          ^~~~~~~~~~~~~~~~~~
+server\backend\scripts\fix_updated_time.py:39: error: "Result[Any]" has no
+attribute "rowcount"  [attr-defined]
+                    fixed = result.rowcount
+                            ^~~~~~~~~~~~~~~
+server\backend\scripts\cleanup_credits_permission.py:52: error: Incompatible
+types in assignment (expression has type "Delete", variable has type
+"Select[tuple[TenantPermission]]")  [assignment]
+            stmt = delete(TenantRolePermission).where(TenantRolePermission...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\cleanup_credits_permission.py:54: error:
+"Result[tuple[TenantPermission]]" has no attribute "rowcount"  [attr-defined]
+            deleted_count = result.rowcount
+                            ^~~~~~~~~~~~~~~
+server\backend\app\userecho\service\credits_service.py:158: error: Incompatible
+types in assignment (expression has type "str", target has type "int") 
+[assignment]
+                    result["warning"] = warning
+                                        ^~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:23: error: Incompatible return
+value type (got
+"Sequence[Row[tuple[TaskScheduler, ...]] | None] | TaskScheduler | None",
+expected "TaskScheduler | None")  [return-value]
+            return await task_scheduler_dao.select_model(db, pk)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:32: error: Incompatible return
+value type (got
+"Sequence[Row[tuple[TaskScheduler, ...] | Any] | TaskScheduler]", expected
+"Sequence[TaskScheduler]")  [return-value]
+            return await self.select_models(db)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:47: error: Incompatible types in
+assignment (expression has type "int", target has type "str")  [assignment]
+                filters["type"] = type
+                                  ^~~~
+server\backend\app\task\crud\crud_scheduler.py:49: error: Argument 2 to
+"select_order" of "CRUDPlus" has incompatible type "**dict[str, str]"; expected
+"list[ExecutableOption] | None"  [arg-type]
+            return await self.select_order("id", **filters)
+                                                   ^~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:49: error: Argument 2 to
+"select_order" of "CRUDPlus" has incompatible type "**dict[str, str]"; expected
+"list[str] | dict[str, Literal['contains_eager', 'defaultload', 'immediateload', 'joinedload', 'lazyload', 'noload', 'raiseload', 'selectinload', 'subqueryload', 'defer', 'load_only', 'selectin_polymorphic', 'undefer', 'undefer_group', 'with_expression']] | dict[str, Literal['defer', 'deferred', 'load_only', 'query_expression', 'undefer', 'undefer_group', 'with_expression']] | None"
+ [arg-type]
+            return await self.select_order("id", **filters)
+                                                   ^~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:49: error: Argument 2 to
+"select_order" of "CRUDPlus" has incompatible type "**dict[str, str]"; expected
+"list[str | JoinConfig] | dict[str, Literal['inner', 'left', 'full']] | None" 
+[arg-type]
+            return await self.select_order("id", **filters)
+                                                   ^~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:59: error: Incompatible return
+value type (got
+"Sequence[Row[tuple[TaskScheduler, ...]] | None] | TaskScheduler | None",
+expected "TaskScheduler | None")  [return-value]
+            return await self.select_model_by_column(db, name=name)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\crud\crud_scheduler.py:97: error: Item "None" of
+"TaskScheduler | None" has no attribute "enabled"  [union-attr]
+            task_scheduler.enabled = status
+            ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\crud\crud_result.py:19: error: Incompatible return
+value type (got
+"Sequence[Row[tuple[TaskExtended, ...]] | None] | TaskExtended | None", expected
+"TaskExtended | None")  [return-value]
+            return await self.select_model(db, pk)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\crud\crud_result.py:36: error: Argument 3 to
+"select_order" of "CRUDPlus" has incompatible type "**dict[str, str]"; expected
+"list[ExecutableOption] | None"  [arg-type]
+            return await self.select_order("id", "desc", **filters)
+                                                           ^~~~~~~
+server\backend\app\task\crud\crud_result.py:36: error: Argument 3 to
+"select_order" of "CRUDPlus" has incompatible type "**dict[str, str]"; expected
+"list[str] | dict[str, Literal['contains_eager', 'defaultload', 'immediateload', 'joinedload', 'lazyload', 'noload', 'raiseload', 'selectinload', 'subqueryload', 'defer', 'load_only', 'selectin_polymorphic', 'undefer', 'undefer_group', 'with_expression']] | dict[str, Literal['defer', 'deferred', 'load_only', 'query_expression', 'undefer', 'undefer_group', 'with_expression']] | None"
+ [arg-type]
+            return await self.select_order("id", "desc", **filters)
+                                                           ^~~~~~~
+server\backend\app\task\crud\crud_result.py:36: error: Argument 3 to
+"select_order" of "CRUDPlus" has incompatible type "**dict[str, str]"; expected
+"list[str | JoinConfig] | dict[str, Literal['inner', 'left', 'full']] | None" 
+[arg-type]
+            return await self.select_order("id", "desc", **filters)
+                                                           ^~~~~~~
+server\backend\utils\dynamic_config.py:51: error: Argument 1 to "int" has
+incompatible type "Any | None"; expected
+"str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+            if int(configs.get(security_config_status_key)):
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\dynamic_config.py:90: error: Argument 1 to "int" has
+incompatible type "Any | None"; expected
+"str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+            if int(configs.get(login_config_status_key)) and login_captcha...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\utils\dynamic_config.py:118: error: Argument 1 to "int" has
+incompatible type "Any | None"; expected
+"str | Buffer | SupportsInt | SupportsIndex | SupportsTrunc"  [arg-type]
+            if int(configs.get(email_config_status_key)):
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\update_role_menus.py:84: error: Incompatible types in
+assignment (expression has type "Menu | None", variable has type "Menu") 
+[assignment]
+                    menu = menu_by_path.get(menu_path)
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\run_route_migration.py:68: error: Skipping analyzing
+"scripts.init_business_menus": module is installed, but missing library stubs or
+py.typed marker  [import-untyped]
+            from scripts.init_business_menus import init_business_menus as...
+    ^
+server\backend\scripts\fix_userecho_menu_paths.py:55: error: "Result[Any]" has
+no attribute "rowcount"  [attr-defined]
+                if result.rowcount > 0:
+                   ^~~~~~~~~~~~~~~
+server\backend\scripts\fix_userecho_menu_paths.py:57: error: "Result[Any]" has
+no attribute "rowcount"  [attr-defined]
+                    updated_count += result.rowcount
+                                     ^~~~~~~~~~~~~~~
+server\backend\scripts\add_settings_menus.py:93: error: Argument 1 to "Menu"
+has incompatible type "**dict[str, object]"; expected
+"SQLCoreOperations[str] | str"  [arg-type]
+                        **menu_data,
+                          ^~~~~~~~~
+server\backend\scripts\add_settings_menus.py:93: error: Argument 1 to "Menu"
+has incompatible type "**dict[str, object]"; expected
+"SQLCoreOperations[str | None] | str | None"  [arg-type]
+                        **menu_data,
+                          ^~~~~~~~~
+server\backend\scripts\add_settings_menus.py:93: error: Argument 1 to "Menu"
+has incompatible type "**dict[str, object]"; expected
+"SQLCoreOperations[int] | int"  [arg-type]
+                        **menu_data,
+                          ^~~~~~~~~
+server\backend\app\userecho\service\tenant_role_service.py:134: error: Argument
+3 to "get_by_code" of "CRUDTenantRole" has incompatible type "Sequence[str]";
+expected "str"  [arg-type]
+    ...g = await tenant_role_dao.get_by_code(db, tenant_id, role_def["code"])
+                                                            ^~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\tenant_role_service.py:142: error: Argument
+"name" to "create" of "CRUDTenantRole" has incompatible type "Sequence[str]";
+expected "str"  [arg-type]
+                    name=role_def["name"],
+                         ^~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\tenant_role_service.py:143: error: Argument
+"code" to "create" of "CRUDTenantRole" has incompatible type "Sequence[str]";
+expected "str"  [arg-type]
+                    code=role_def["code"],
+                         ^~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\tenant_role_service.py:144: error: Argument
+"description" to "create" of "CRUDTenantRole" has incompatible type
+"Sequence[str]"; expected "str | None"  [arg-type]
+                    description=role_def["description"],
+                                ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\onboarding_service.py:211: error: Argument
+"slug" to "CreateTenantOut" has incompatible type "str | None"; expected "str" 
+[arg-type]
+    ...teTenantOut(id=tenant.id, name=tenant.name, slug=tenant.slug, created_...
+                                                        ^~~~~~~~~~~
+server\backend\app\userecho\service\notification_service.py:115: error:
+Returning Any from function declared to return "str"  [no-any-return]
+            return ai_reply
+            ^~~~~~~~~~~~~~~
+server\backend\scripts\test_query_conditions.py:51: error: Argument 1 to
+"where" of "Select" has incompatible type "bool"; expected
+"ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+    ...Board).where(Board.tenant_id == tenant_id).where(not Board.is_archived...
+                                                        ^~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\move_board_to_default_tenant.py:32: error: "Result[Any]"
+has no attribute "rowcount"  [attr-defined]
+            if result.rowcount > 0:
+               ^~~~~~~~~~~~~~~
+server\backend\scripts\init_demo_data.py:290: error: Incompatible types in
+assignment (expression has type "str | None", variable has type "str") 
+[assignment]
+                    customer_id = random.choice(customer_ids) if random.ra...
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\init_demo_data.py:291: error: Incompatible types in
+assignment (expression has type "str | None", variable has type "str") 
+[assignment]
+                    topic_id = random.choice(topic_ids) if random.random()...
+                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\init_business_menus.py:66: error: Invalid index type
+"object" for "dict[str, str]"; expected type "str"  [index]
+                parent_id = permission_ids[parent_code]
+                                           ^~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:102: error: Invalid index type
+"object" for "dict[str, str]"; expected type "str"  [index]
+                permission_ids[code] = new_perm.id
+                               ^~~~
+server\backend\scripts\init_business_menus.py:128: error: Argument 3 to
+"get_by_code" of "CRUDTenantRole" has incompatible type "Sequence[str]";
+expected "str"  [arg-type]
+    ...g = await tenant_role_dao.get_by_code(db, tenant_id, role_def["code"])
+                                                            ^~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:142: error: Argument "name" to
+"create" of "CRUDTenantRole" has incompatible type "Sequence[str]"; expected
+"str"  [arg-type]
+                name=role_def["name"],
+                     ^~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:143: error: Argument "code" to
+"create" of "CRUDTenantRole" has incompatible type "Sequence[str]"; expected
+"str"  [arg-type]
+                code=role_def["code"],
+                     ^~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:144: error: Argument
+"description" to "create" of "CRUDTenantRole" has incompatible type
+"Sequence[str]"; expected "str | None"  [arg-type]
+                description=role_def["description"],
+                            ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:343: error: Incompatible types in
+assignment (expression has type "Select[tuple[TenantRole]]", variable has type
+"Select[tuple[TenantPermission]]")  [assignment]
+                stmt = select(TenantRole).where(TenantRole.tenant_id == de...
+                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\init_business_menus.py:359: error: Incompatible types in
+assignment (expression has type "TenantPermission | None", variable has type
+"TenantPermission")  [assignment]
+                        role = await db.get(TenantRole, ur.role_id)
+                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:359: error: Argument 1 to "get"
+of "AsyncSession" has incompatible type "type[TenantRole]"; expected
+"type[TenantPermission] | Mapper[TenantPermission]"  [arg-type]
+                        role = await db.get(TenantRole, ur.role_id)
+                                            ^~~~~~~~~~
+server\backend\scripts\init_business_menus.py:365: error: Incompatible types in
+assignment (expression has type "Select[tuple[Role]]", variable has type
+"Select[tuple[TenantPermission]]")  [assignment]
+            stmt = select(Role).where(Role.role_type == "system")
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:373: error: Incompatible types in
+assignment (expression has type "Select[tuple[Menu]]", variable has type
+"Select[tuple[TenantPermission]]")  [assignment]
+            stmt = select(Menu).where(Menu.path.like("/app/%"))
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:380: error: "TenantPermission"
+has no attribute "title"  [attr-defined]
+                    print(f"   - {menu.title} ({menu.path})")
+                          ^~~~~~~~~~~~~~~~~~
+server\backend\scripts\init_business_menus.py:380: error: "TenantPermission"
+has no attribute "path"  [attr-defined]
+                    print(f"   - {menu.title} ({menu.path})")
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\diagnose_tenant_user.py:58: error: Need type annotation
+for "user_tenant_map" (hint: "user_tenant_map: dict[<type>, <type>] = ...") 
+[var-annotated]
+            user_tenant_map = {}
+            ^~~~~~~~~~~~~~~
+server\backend\scripts\diagnose_tenant_issue.py:90: error: Argument 1 to
+"where" of "Select" has incompatible type "bool"; expected
+"ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+                    .where(not Board.is_archived)
+                           ^~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\debug_board_api.py:66: error: Argument 1 to "where" of
+"Select" has incompatible type "bool"; expected
+"ColumnElement[bool] | _HasClauseElement[bool] | SQLCoreOperations[bool] | ExpressionElementRole[bool] | TypedColumnsClauseRole[bool] | Callable[[], ColumnElement[bool]] | LambdaElement"
+ [arg-type]
+                .where(not Board.is_archived)
+                       ^~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\cleanup_orphan_tenant.py:43: error: "Result[Any]" has no
+attribute "rowcount"  [attr-defined]
+            if result.rowcount > 0:
+               ^~~~~~~~~~~~~~~
+server\backend\scripts\check_boards.py:46: error: Need type annotation for
+"tenant_boards" (hint: "tenant_boards: dict[<type>, <type>] = ...") 
+[var-annotated]
+            tenant_boards = {}
+            ^~~~~~~~~~~~~
+server\backend\scripts\check_boards.py:55: error: Argument 1 to "len" has
+incompatible type "ScalarResult[Board]"; expected "Sized"  [arg-type]
+                print(f"  总看板数: {len(boards)}")
+                                             ^~
+server\backend\app\userecho\service\import_service.py:9: error: Library stubs
+not installed for "pandas"  [import-untyped]
+    import pandas as pd
+    ^
+server\backend\app\userecho\service\import_service.py:335: error: Incompatible
+types in assignment (expression has type "str", variable has type "bytes") 
+[assignment]
+                        content = str(row["反馈内容"]).strip()
+                                  ^~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\clustering_config_service.py:3: error:
+Cannot find implementation or library stub for module named "numpy" 
+[import-not-found]
+    import numpy as np
+    ^
+server\backend\app\userecho\service\clustering_config_service.py:69: error:
+Unpacked dict entry 1 has incompatible type "Collection[str]"; expected
+"SupportsKeysAndGetItem[str, str]"  [dict-item]
+                **preset_config["params"],
+                  ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\clustering_config_service.py:181: error:
+Value of type "Collection[str]" is not indexable  [index]
+                similarity_threshold=preset_params["similarity_threshold"]...
+                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\clustering_config_service.py:182: error:
+Value of type "Collection[str]" is not indexable  [index]
+                min_samples=preset_params["min_samples"],
+                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\clustering_config_service.py:196: error:
+Unsupported operand types for <= ("float" and "None")  [operator]
+            if silhouette >= 0.5:
+               ^
+server\backend\app\userecho\service\clustering_config_service.py:196: note: Left operand is of type "float | None"
+server\backend\app\userecho\service\clustering_config_service.py:198: error:
+Unsupported operand types for <= ("float" and "None")  [operator]
+            elif silhouette >= 0.3:
+                 ^
+server\backend\app\userecho\service\clustering_config_service.py:198: note: Left operand is of type "float | None"
+server\backend\app\userecho\service\clustering_config_service.py:200: error:
+Unsupported operand types for <= ("float" and "None")  [operator]
+            elif silhouette >= 0.1:
+                 ^
+server\backend\app\userecho\service\clustering_config_service.py:200: note: Left operand is of type "float | None"
+server\backend\app\userecho\service\clustering_config_service.py:214: error:
+Argument 1 to "round" has incompatible type "float | None"; expected
+"_SupportsRound2[float]"  [arg-type]
+                    "silhouette_score": round(silhouette, 3),
+                                              ^~~~~~~~~~
+server\backend\app\userecho\service\clustering_config_service.py:215: error:
+Argument 1 to "round" has incompatible type "float | None"; expected
+"_SupportsRound2[float]"  [arg-type]
+                    "noise_ratio": round(quality["noise_ratio"], 2),
+                                         ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:22: error: Cannot find
+implementation or library stub for module named "bcrypt"  [import-not-found]
+    import bcrypt
+    ^
+server\backend\scripts\create_test_users.py:111: error: Value of type "object"
+is not indexable  [index]
+                username = user_config["username"]
+                           ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:127: error: Value of type "object"
+is not indexable  [index]
+                    nickname=user_config["nickname"],
+                             ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:130: error: Value of type "object"
+is not indexable  [index]
+                    email=user_config["email"],
+                          ^~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:143: error: Value of type "object"
+is not indexable  [index]
+                role_names = user_config["role"] if isinstance(user_config...
+                             ^~~~~~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:156: error: "object" has no
+attribute "get"  [attr-defined]
+                    user_type=user_config.get("user_type", "member"),
+                              ^~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:163: error: "object" has no
+attribute "get"  [attr-defined]
+    ....join(assigned_roles)}, 租户角色: {user_config.get('user_type', 'member')}...
+                                                        ^~~~~~~~~~~~~~~
+server\backend\scripts\create_test_users.py:198: error: Value of type "object"
+is not indexable  [index]
+                username = user_config["username"]
+                           ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\create_demo_users.py:26: error: Cannot find
+implementation or library stub for module named "bcrypt"  [import-not-found]
+    import bcrypt
+    ^
+server\backend\middleware\opera_log_middleware.py:6: error: Cannot find
+implementation or library stub for module named "asgiref.sync" 
+[import-not-found]
+    from asgiref.sync import sync_to_async
+    ^
+server\backend\middleware\opera_log_middleware.py:172: error: Incompatible
+return value type (got "Any | None", expected "Response")  [return-value]
+            return response
+                   ^~~~~~~~
+server\backend\cli.py:9: error: Cannot find implementation or library stub for
+module named "cappa"  [import-not-found]
+    import cappa
+    ^
+server\backend\cli.py:10: error: Cannot find implementation or library stub for
+module named "granian"  [import-not-found]
+    import granian
+    ^
+server\backend\cli.py:12: error: Cannot find implementation or library stub for
+module named "cappa.output"  [import-not-found]
+    from cappa.output import error_format
+    ^
+server\backend\cli.py:13: error: Cannot find implementation or library stub for
+module named "rich.panel"  [import-not-found]
+    from rich.panel import Panel
+    ^
+server\backend\cli.py:14: error: Cannot find implementation or library stub for
+module named "rich.prompt"  [import-not-found]
+    from rich.prompt import IntPrompt, Prompt
+    ^
+server\backend\cli.py:15: error: Cannot find implementation or library stub for
+module named "rich.table"  [import-not-found]
+    from rich.table import Table
+    ^
+server\backend\cli.py:16: error: Cannot find implementation or library stub for
+module named "rich.text"  [import-not-found]
+    from rich.text import Text
+    ^
+server\backend\cli.py:18: error: Cannot find implementation or library stub for
+module named "watchfiles"  [import-not-found]
+    from watchfiles import PythonFilter
+    ^
+server\backend\cli.py:196: error: Argument 1 to "get_plugin_sql" has
+incompatible type "str | None"; expected "str"  [arg-type]
+            sql_file = await get_plugin_sql(plugin_name, db_type, pk_type)
+                                            ^~~~~~~~~~~
+server\backend\cli.py:224: error: Argument 2 to "get_plugin_sql" has
+incompatible type "Literal['mysql', 'postgresql']"; expected "DataBaseType" 
+[arg-type]
+    ...       plugin_sql = await get_plugin_sql(plugin, settings.DATABASE_TYP...
+                                                        ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\cli.py:224: error: Argument 3 to "get_plugin_sql" has
+incompatible type "Literal['autoincrement', 'snowflake']"; expected
+"PrimaryKeyType"  [arg-type]
+    ...t get_plugin_sql(plugin, settings.DATABASE_TYPE, settings.DATABASE_PK_...
+                                                        ^~~~~~~~~~~~~~~~~~~~~...
+server\backend\cli.py:393: error: Cannot find implementation or library stub
+for module named "rich.progress"  [import-not-found]
+            from rich.progress import Progress, SpinnerColumn, TextColumn,...
+    ^
+server\backend\cli.py:448: error: Argument 1 to "install_plugin" has
+incompatible type "str | None"; expected "str"  [arg-type]
+            await install_plugin(self.path, self.repo_url, self.no_sql, se...
+                                 ^~~~~~~~~
+server\backend\cli.py:448: error: Argument 2 to "install_plugin" has
+incompatible type "str | None"; expected "str"  [arg-type]
+            await install_plugin(self.path, self.repo_url, self.no_sql, se...
+                                            ^~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:9: error: Cannot find
+implementation or library stub for module named "jinja2"  [import-not-found]
+    from jinja2 import Template
+    ^
+server\backend\app\userecho\service\insight_service.py:252: error: Invalid
+index type "object" for "dict[str, int]"; expected type "str"  [index]
+    ...topics.sort(key=lambda x: (self.URGENCY_PRIORITY[x["urgency_level"]], ...
+                                                        ^~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:252: error: Unsupported
+operand type for unary - ("object")  [operator]
+    ...a x: (self.URGENCY_PRIORITY[x["urgency_level"]], -x["estimated_roi"]))
+                                                        ^~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:376: error: Returning
+Any from function declared to return "str"  [no-any-return]
+                return summary.strip()
+                ^~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:468: error: Unsupported
+operand type for unary - ("object")  [operator]
+                    -x["days_unresolved"],
+                    ^~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:653: error: Returning
+Any from function declared to return "str"  [no-any-return]
+                return suggestion.strip()
+                ^~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:693: error: Returning
+Any from function declared to return "str"  [no-any-return]
+            return template.render(
+            ^
+server\backend\app\userecho\service\insight_service.py:727: error: Need type
+annotation for "this_week_data" (hint:
+"this_week_data: dict[<type>, <type>] = ...")  [var-annotated]
+            this_week_data = dict(result_this.all())
+            ^~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:727: error: Argument 1
+to "dict" has incompatible type "Sequence[Row[tuple[str | None, int]]]";
+expected "Iterable[tuple[Never, Never]]"  [arg-type]
+            this_week_data = dict(result_this.all())
+                                  ^~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:738: error: Need type
+annotation for "last_week_data" (hint:
+"last_week_data: dict[<type>, <type>] = ...")  [var-annotated]
+            last_week_data = dict(result_last.all())
+            ^~~~~~~~~~~~~~
+server\backend\app\userecho\service\insight_service.py:738: error: Argument 1
+to "dict" has incompatible type "Sequence[Row[tuple[str | None, int]]]";
+expected "Iterable[tuple[Never, Never]]"  [arg-type]
+            last_week_data = dict(result_last.all())
+                                  ^~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\clustering_service.py:10: error: Cannot
+find implementation or library stub for module named "numpy"  [import-not-found]
+    import numpy as np
+    ^
+server\backend\app\userecho\service\clustering_service.py:39: error: Returning
+Any from function declared to return "bool"  [no-any-return]
+                return quality.get("silhouette", 0.0) >= config.get("min_s...
+                ^
+server\backend\app\userecho\service\clustering_service.py:224: error: Argument
+1 to "_is_clustering_acceptable" of "ClusteringService" has incompatible type
+"dict[str, float | None]"; expected "dict[str, float]"  [arg-type]
+    ...           if not self._is_clustering_acceptable(quality_metrics, tena...
+                                                        ^~~~~~~~~~~~~~~
+server\backend\app\userecho\service\clustering_service.py:412: error:
+"PriorityService" has no attribute "calculate_priority_score"; maybe
+"create_or_update_priority_score"?  [attr-defined]
+                                await priority_service.calculate_priority_...
+                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\test_menu_api.py:51: error: Argument "request" to
+"get_sidebar" of "MenuService" has incompatible type "FakeRequest"; expected
+"Request"  [arg-type]
+            menus = await menu_service.get_sidebar(db=db, request=request)
+                                                                  ^~~~~~~
+server\backend\scripts\test_embedding_cache.py:16: error: Cannot find
+implementation or library stub for module named "backend.database.db_mysql" 
+[import-not-found]
+    from backend.database.db_mysql import async_db_session
+    ^
+server\backend\scripts\test_embedding_cache.py:59: error: Argument 1 to
+"get_cached_embedding" of "CRUDFeedback" has incompatible type
+"Feedback | None"; expected "Feedback"  [arg-type]
+    ...cached_after = crud_feedback.get_cached_embedding(feedbacks_refreshed)
+                                                         ^~~~~~~~~~~~~~~~~~~
+server\backend\scripts\check_boss_system_roles.py:48: error: "type[User]" has
+no attribute "roles"  [attr-defined]
+    ...User).where(User.id == boss_user.id).options(selectinload(User.roles))
+                                                                 ^~~~~~~~~~
+server\backend\scripts\check_boss_system_roles.py:52: error: "User" has no
+attribute "roles"  [attr-defined]
+            system_roles = user_with_roles.roles
+                           ^~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\check_boss_system_roles.py:70: error: Incompatible types
+in assignment (expression has type "Select[tuple[Menu]]", variable has type
+"Select[tuple[User]]")  [assignment]
+                    stmt = select(Menu).join(role_menu).where(role_menu.c....
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\scripts\check_boss_system_roles.py:76: error: "User" has no
+attribute "title"  [attr-defined]
+                        print(f"       • {menu.title} ({menu.path})")
+                              ^~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\check_boss_system_roles.py:76: error: "User" has no
+attribute "path"  [attr-defined]
+                        print(f"       • {menu.title} ({menu.path})")
+                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\check_boss_system_roles.py:83: error: Incompatible types
+in assignment (expression has type "Select[tuple[Role]]", variable has type
+"Select[tuple[User]]")  [assignment]
+            stmt = select(Role).order_by(Role.role_type, Role.id)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\scripts\assign_boss_system_role.py:78: error: Incompatible types
+in assignment (expression has type "Insert", variable has type "Select[Any]") 
+[assignment]
+                stmt = insert(user_role).values(user_id=boss_user.id, role...
+                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\common\security\jwt.py:10: error: Library stubs not installed
+for "jose"  [import-untyped]
+    from jose import ExpiredSignatureError, JWTError, jwt
+    ^
+server\backend\common\security\jwt.py:10: note: Hint: "python3 -m pip install types-python-jose"
+server\backend\common\security\jwt.py:35: error: Returning Any from function
+declared to return "str"  [no-any-return]
+        return jwt.encode(payload, settings.TOKEN_SECRET_KEY, settings.TOK...
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\common\security\jwt.py:225: error: Returning Any from function
+declared to return "User"  [no-any-return]
+        return user
+        ^~~~~~~~~~~
+server\backend\common\security\jwt.py:239: error: Returning Any from function
+declared to return "bool"  [no-any-return]
+        return superuser
+        ^~~~~~~~~~~~~~~~
+server\backend\common\security\jwt.py:329: error: Returning Any from function
+declared to return "GetUserInfoWithRelationDetail"  [no-any-return]
+        return user
+        ^~~~~~~~~~~
+server\backend\app\userecho\service\tenant_member_service.py:99: error: Cannot
+find implementation or library stub for module named "bcrypt" 
+[import-not-found]
+                import bcrypt
+    ^
+server\backend\app\userecho\service\tenant_member_service.py:129: error: Module
+has no attribute "InternalServerError"  [attr-defined]
+                    raise errors.InternalServerError(msg="默认 viewer 角色不存在，...
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~~
+server\test_pending_count_api.py:14: error: Cannot find implementation or
+library stub for module named "backend.database.db_postgres"  [import-not-found]
+    from backend.database.db_postgres import async_session
+    ^
+server\backend\middleware\jwt_auth_middleware.py:51: error: Argument
+"status_code" to "MsgSpecJSONResponse" has incompatible type "int | None";
+expected "int"  [arg-type]
+    ..."code": exc.code, "msg": exc.msg, "data": None}, status_code=exc.code)
+                                                                    ^~~~~~~~
+server\backend\middleware\jwt_auth_middleware.py:53: error: Return type
+"Coroutine[Any, Any, tuple[AuthCredentials, GetUserInfoWithRelationDetail] | None]"
+of "authenticate" incompatible with return type
+"Coroutine[Any, Any, tuple[AuthCredentials, BaseUser] | None]" in supertype
+"AuthenticationBackend"  [override]
+        async def authenticate(self, request: Request) -> tuple[AuthCreden...
+        ^
+server\backend\middleware\jwt_auth_middleware.py:53: error: Argument 1 of
+"authenticate" is incompatible with supertype "AuthenticationBackend"; supertype
+defines the argument type as "HTTPConnection"  [override]
+        async def authenticate(self, request: Request) -> tuple[AuthCreden...
+                                     ^~~~~~~~~~~~~~~~
+server\backend\middleware\jwt_auth_middleware.py:53: note: This violates the Liskov substitution principle
+server\backend\middleware\jwt_auth_middleware.py:53: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+server\backend\middleware\jwt_auth_middleware.py:85: error: Argument "headers"
+to "_AuthenticationError" has incompatible type "Mapping[str, str] | None";
+expected "dict[str, Any] | None"  [arg-type]
+    ...uthenticationError(code=exc.code, msg=exc.detail, headers=exc.headers)
+                                                                 ^~~~~~~~~~~
+server\backend\common\socketio\server.py:3: error: Cannot find implementation
+or library stub for module named "socketio"  [import-not-found]
+    import socketio
+    ^
+server\backend\common\socketio\server.py:32: error: Incompatible types in
+assignment (expression has type "dict[str, None]", target has type "str") 
+[assignment]
+            kwargs["redis_options"] = {"ssl_cert_reqs": None}
+                                      ^~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:30: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantRoleOut.model_validate(r) f...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_role.py:30: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantRoleOut.model_validate(r) f...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_role.py:37: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantPermissionOut.model_validat...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_role.py:37: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantPermissionOut.model_validat...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_role.py:44: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantRoleOut.model_validate(role)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:44: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantRoleOut.model_validate(role)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:51: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantPermissionOut.model_validat...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_role.py:51: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantPermissionOut.model_validat...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_role.py:70: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantRoleOut.model_validate(role)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:70: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantRoleOut.model_validate(role)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:88: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantRoleOut.model_validate(role)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:88: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantRoleOut.model_validate(role)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:100: error: Missing named
+argument "code" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:100: error: Missing named
+argument "msg" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:100: error: Missing named
+argument "data" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:108: error: Missing named
+argument "code" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:108: error: Missing named
+argument "msg" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_role.py:108: error: Missing named
+argument "data" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:29: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantMemberOut.model_validate(m)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:29: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=[TenantMemberOut.model_validate(m)...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:43: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+            return ResponseSchemaModel(data=[])
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:43: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+            return ResponseSchemaModel(data=[])
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:46: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=permissions)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:46: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=permissions)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:53: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantMemberOut.model_validate(mem...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:53: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantMemberOut.model_validate(mem...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:60: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=role_ids)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:60: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=role_ids)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:82: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantMemberOut.model_validate(mem...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:82: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantMemberOut.model_validate(mem...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:104: error: Missing named
+argument "code" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantMemberOut.model_validate(mem...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:104: error: Missing named
+argument "msg" for "ResponseSchemaModel"  [call-arg]
+        return ResponseSchemaModel(data=TenantMemberOut.model_validate(mem...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\tenant_member.py:117: error: Missing named
+argument "code" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:117: error: Missing named
+argument "msg" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:117: error: Missing named
+argument "data" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:125: error: Missing named
+argument "code" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:125: error: Missing named
+argument "msg" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\tenant_member.py:125: error: Missing named
+argument "data" for "ResponseModel"  [call-arg]
+        return ResponseModel()
+               ^~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\system_notification.py:42: error: Returning
+Any from function declared to return "str"  [no-any-return]
+        return dt.strftime("%Y-%m-%d")
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\priority.py:213: error: Missing positional
+argument "id" in call to "delete" of "TenantAwareCRUD"  [call-arg]
+        await crud_priority_score.delete(db, score.id)
+              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\onboarding.py:40: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[OnboardingStatusOut]")  [return-value]
+        return response_base.success(data=status)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\onboarding.py:54: error: Incompatible return
+value type (got "ResponseModel", expected "ResponseSchemaModel[SlugCheckOut]") 
+[return-value]
+        return response_base.success(data=result)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\onboarding.py:82: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[CreateTenantOut]")  [return-value]
+            return response_base.success(data=tenant)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\onboarding.py:84: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[CreateTenantOut]")  [return-value]
+            return response_base.fail(res=CustomResponse(code=400, msg=str...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\onboarding.py:101: error: Incompatible
+return value type (got "ResponseModel", expected
+"ResponseSchemaModel[CreateBoardOut]")  [return-value]
+            return response_base.success(data=board)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\onboarding.py:103: error: Incompatible
+return value type (got "ResponseModel", expected
+"ResponseSchemaModel[CreateBoardOut]")  [return-value]
+            return response_base.fail(res=CustomResponse(code=400, msg=str...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\onboarding.py:119: error: Incompatible
+return value type (got "ResponseModel", expected
+"ResponseSchemaModel[OnboardingCompleteOut]")  [return-value]
+            return response_base.success(data=result)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\onboarding.py:121: error: Incompatible
+return value type (got "ResponseModel", expected
+"ResponseSchemaModel[OnboardingCompleteOut]")  [return-value]
+            return response_base.fail(res=CustomResponse(code=400, msg=str...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\feedback.py:8: error: Library stubs not
+installed for "pandas"  [import-untyped]
+    import pandas as pd
+    ^
+server\backend\app\userecho\api\v1\feedback.py:8: note: Hint: "python3 -m pip install pandas-stubs"
+server\backend\app\userecho\api\v1\feedback.py:8: note: (or run "mypy --install-types" to install all missing stub packages)
+server\backend\app\userecho\api\v1\feedback.py:634: error: Incompatible return
+value type (got "ResponseModel", expected "ResponseSchemaModel[FeedbackOut]") 
+[return-value]
+            return response_base.success(data=feedback_out)
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\feedback.py:642: error: Incompatible return
+value type (got "ResponseModel", expected "ResponseSchemaModel[FeedbackOut]") 
+[return-value]
+            return response_base.fail(res=CustomResponse(code=500, msg=f"创...
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\app\userecho\api\v1\clustering.py:7: error: Cannot find
+implementation or library stub for module named "numpy"  [import-not-found]
+    import numpy as np
+    ^
+server\backend\app\userecho\api\v1\board.py:35: error: Incompatible return
+value type (got "ResponseModel", expected "ResponseSchemaModel[BoardListOut]") 
+[return-value]
+        return response_base.success(data=BoardListOut(boards=boards, tota...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\backend\core\registrar.py:8: error: Cannot find implementation or
+library stub for module named "socketio"  [import-not-found]
+    import socketio
+    ^
+server\backend\core\registrar.py:11: error: Cannot find implementation or
+library stub for module named "fastapi_limiter"  [import-not-found]
+    from fastapi_limiter import FastAPILimiter
+    ^
+server\backend\core\registrar.py:12: error: Cannot find implementation or
+library stub for module named "fastapi_pagination"  [import-not-found]
+    from fastapi_pagination import add_pagination
+    ^
+server\backend\core\registrar.py:13: error: Cannot find implementation or
+library stub for module named "prometheus_client"  [import-not-found]
+    from prometheus_client import make_asgi_app
+    ^
+server\backend\core\registrar.py:17: error: Cannot find implementation or
+library stub for module named "starlette_context.middleware"  [import-not-found]
+    from starlette_context.middleware import ContextMiddleware
+    ^
+server\backend\core\registrar.py:18: error: Cannot find implementation or
+library stub for module named "starlette_context.plugins"  [import-not-found]
+    from starlette_context.plugins import RequestIdPlugin
+    ^
+server\backend\core\registrar.py:128: error: "RedisCli" has no attribute
+"aclose"  [attr-defined]
+        await redis_client.aclose()
+              ^~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\dashboard_service.py:252: error: Value
+expression in dictionary comprehension has incompatible type
+"Callable[[Any], int]"; expected type "int"  [misc]
+                feedback_counts = {row.customer_id: row.count for row in f...
+                                                    ^~~~~~~~~
+server\backend\app\userecho\service\dashboard_service.py:691: error:
+Unsupported left operand type for + ("Callable[[Any], int]")  [operator]
+            review_rate = safe_rate(pending_review + planned + in_progress...
+                                    ^~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\dashboard_service.py:691: error:
+Unsupported operand types for + ("Callable[[Any], int]" and "int")  [operator]
+            review_rate = safe_rate(pending_review + planned + in_progress...
+                                    ^
+server\backend\app\userecho\service\dashboard_service.py:691: error:
+Unsupported operand types for + ("int" and "Callable[[Any], int]")  [operator]
+            review_rate = safe_rate(pending_review + planned + in_progress...
+                                    ^
+server\backend\app\userecho\service\dashboard_service.py:691: note: Both left and right operands are unions
+server\backend\app\userecho\service\dashboard_service.py:692: error:
+Unsupported left operand type for + ("Callable[[Any], int]")  [operator]
+            planning_rate = safe_rate(planned + in_progress + completed, p...
+                                      ^~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\dashboard_service.py:692: error:
+Unsupported operand types for + ("Callable[[Any], int]" and "int")  [operator]
+            planning_rate = safe_rate(planned + in_progress + completed, p...
+                                      ^
+server\backend\app\userecho\service\dashboard_service.py:692: error:
+Unsupported operand types for + ("int" and "Callable[[Any], int]")  [operator]
+            planning_rate = safe_rate(planned + in_progress + completed, p...
+                                      ^
+server\backend\app\userecho\service\dashboard_service.py:692: note: Both left and right operands are unions
+server\backend\app\userecho\service\dashboard_service.py:693: error: Argument 1
+to "safe_rate" has incompatible type "Callable[[Any], int] | int"; expected
+"int"  [arg-type]
+            completion_rate = safe_rate(completed, planned + in_progress +...
+                                        ^~~~~~~~~
+server\backend\app\userecho\service\dashboard_service.py:693: error:
+Unsupported left operand type for + ("Callable[[Any], int]")  [operator]
+            completion_rate = safe_rate(completed, planned + in_progress +...
+                                                   ^~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\service\dashboard_service.py:693: error:
+Unsupported operand types for + ("Callable[[Any], int]" and "int")  [operator]
+            completion_rate = safe_rate(completed, planned + in_progress +...
+                                                   ^
+server\backend\app\userecho\service\dashboard_service.py:693: error:
+Unsupported operand types for + ("int" and "Callable[[Any], int]")  [operator]
+            completion_rate = safe_rate(completed, planned + in_progress +...
+                                                   ^
+server\backend\app\userecho\service\dashboard_service.py:693: note: Both left and right operands are unions
+server\backend\app\userecho\api\v1\screenshot.py:47: error: Incompatible return
+value type (got "ResponseModel", expected "ResponseSchemaModel[dict[Any, Any]]")
+ [return-value]
+        return response_base.success(data={"screenshot_url": screenshot_ur...
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\screenshot.py:98: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[ScreenshotAnalyzeResponse]")  [return-value]
+        return response_base.success(
+               ^
+server\backend\app\task\api\v1\scheduler.py:24: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[list[GetTaskSchedulerDetail]]")  [return-value]
+        return response_base.success(data=schedulers)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\api\v1\scheduler.py:33: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[GetTaskSchedulerDetail]")  [return-value]
+        return response_base.success(data=task_scheduler)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\api\v1\scheduler.py:50: error: Incompatible return
+value type (got "ResponseModel", expected
+"ResponseSchemaModel[PageData[GetTaskSchedulerDetail]]")  [return-value]
+        return response_base.success(data=page_data)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\dashboard.py:157: error: Unsupported left
+operand type for + ("Callable[[Any], int]")  [operator]
+        generation_rate = ((generated + copied + sent) / total * 100) if t...
+                            ^~~~~~~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\dashboard.py:157: error: Unsupported operand
+types for + ("Callable[[Any], int]" and "int")  [operator]
+        generation_rate = ((generated + copied + sent) / total * 100) if t...
+                            ^
+server\backend\app\userecho\api\v1\dashboard.py:157: error: Unsupported operand
+types for + ("int" and "Callable[[Any], int]")  [operator]
+        generation_rate = ((generated + copied + sent) / total * 100) if t...
+                            ^
+server\backend\app\userecho\api\v1\dashboard.py:157: note: Both left and right operands are unions
+server\backend\app\userecho\api\v1\dashboard.py:158: error: Unsupported left
+operand type for + ("Callable[[Any], int]")  [operator]
+        notification_rate = ((copied + sent) / total * 100) if total > 0 e...
+                              ^~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\dashboard.py:158: error: Unsupported operand
+types for + ("Callable[[Any], int]" and "int")  [operator]
+        notification_rate = ((copied + sent) / total * 100) if total > 0 e...
+                              ^
+server\backend\app\userecho\api\v1\dashboard.py:158: error: Unsupported operand
+types for + ("int" and "Callable[[Any], int]")  [operator]
+        notification_rate = ((copied + sent) / total * 100) if total > 0 e...
+                              ^
+server\backend\app\userecho\api\v1\dashboard.py:158: note: Both left and right operands are unions
+server\backend\app\userecho\api\v1\dashboard.py:190: error: Unsupported left
+operand type for + ("Callable[[Any], int]")  [operator]
+                "sent_count": copied + sent,
+                              ^~~~~~~~~~~~~
+server\backend\app\userecho\api\v1\dashboard.py:190: error: Unsupported operand
+types for + ("Callable[[Any], int]" and "int")  [operator]
+                "sent_count": copied + sent,
+                              ^
+server\backend\app\userecho\api\v1\dashboard.py:190: error: Unsupported operand
+types for + ("int" and "Callable[[Any], int]")  [operator]
+                "sent_count": copied + sent,
+                              ^
+server\backend\app\userecho\api\v1\dashboard.py:190: note: Both left and right operands are unions
+server\backend\app\task\api\v1\control.py:33: error: Incompatible return value
+type (got "ResponseModel", expected
+"ResponseSchemaModel[list[TaskRegisteredDetail]]")  [return-value]
+        return response_base.success(data=task_registered)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\api\v1\result.py:23: error: Incompatible return value
+type (got "ResponseModel", expected "ResponseSchemaModel[GetTaskResultDetail]") 
+[return-value]
+        return response_base.success(data=result)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+server\backend\app\task\api\v1\result.py:40: error: Incompatible return value
+type (got "ResponseModel", expected
+"ResponseSchemaModel[PageData[GetTaskResultDetail]]")  [return-value]
+        return response_base.success(data=page_data)
+               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Found 424 errors in 135 files (checked 488 source files)
+
+uv-lock..............................................(no files to check)Skipped
+- hook id: uv-lock
+uv-export............................................(no files to check)Skipped
+- hook id: uv-export
+
+exit status 1                                      
+  ────────────────────────────────────
+summary: (done in 30.96 seconds)      
+🥊 backend-linter (30.68 seconds)

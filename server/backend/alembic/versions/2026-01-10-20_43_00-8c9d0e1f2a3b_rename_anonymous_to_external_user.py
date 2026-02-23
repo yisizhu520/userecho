@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '8c9d0e1f2a3b'
-down_revision = 'eb4f2977a7fb'
+revision = "8c9d0e1f2a3b"
+down_revision = "eb4f2977a7fb"
 branch_labels = None
 depends_on = None
 
@@ -20,13 +20,13 @@ depends_on = None
 def upgrade() -> None:
     # 1. 添加新字段
     op.add_column(
-        'feedbacks',
+        "feedbacks",
         sa.Column(
-            'author_type', sa.String(20), nullable=True, comment='来源类型: customer=内部客户, external=外部用户'
+            "author_type", sa.String(20), nullable=True, comment="来源类型: customer=内部客户, external=外部用户"
         ),
     )
-    op.add_column('feedbacks', sa.Column('external_user_name', sa.String(100), nullable=True, comment='外部用户名称'))
-    op.add_column('feedbacks', sa.Column('external_contact', sa.String(255), nullable=True, comment='外部用户联系方式'))
+    op.add_column("feedbacks", sa.Column("external_user_name", sa.String(100), nullable=True, comment="外部用户名称"))
+    op.add_column("feedbacks", sa.Column("external_contact", sa.String(255), nullable=True, comment="外部用户联系方式"))
 
     # 2. 迁移现有数据
     op.execute("""
@@ -61,16 +61,16 @@ def upgrade() -> None:
 
     # 4. 设置 author_type 默认值并设为非空
     op.execute("UPDATE feedbacks SET author_type = 'customer' WHERE author_type IS NULL")
-    op.alter_column('feedbacks', 'author_type', nullable=False, server_default='customer')
+    op.alter_column("feedbacks", "author_type", nullable=False, server_default="customer")
 
     # 5. 删除旧约束（使用 IF EXISTS）
-    op.execute('ALTER TABLE feedbacks DROP CONSTRAINT IF EXISTS chk_author_exists')
+    op.execute("ALTER TABLE feedbacks DROP CONSTRAINT IF EXISTS chk_author_exists")
 
     # 6. 删除旧字段
-    op.drop_column('feedbacks', 'is_anonymous')
-    op.drop_column('feedbacks', 'anonymous_author')
-    op.drop_column('feedbacks', 'anonymous_email')
-    op.drop_column('feedbacks', 'anonymous_source')
+    op.drop_column("feedbacks", "is_anonymous")
+    op.drop_column("feedbacks", "anonymous_author")
+    op.drop_column("feedbacks", "anonymous_email")
+    op.drop_column("feedbacks", "anonymous_source")
 
     # 7. 添加新约束
     op.execute("""
@@ -81,24 +81,24 @@ def upgrade() -> None:
     """)
 
     # 8. 创建索引
-    op.create_index('ix_feedbacks_author_type', 'feedbacks', ['author_type'])
+    op.create_index("ix_feedbacks_author_type", "feedbacks", ["author_type"])
 
 
 def downgrade() -> None:
     # 1. 删除新索引
-    op.drop_index('ix_feedbacks_author_type', 'feedbacks')
+    op.drop_index("ix_feedbacks_author_type", "feedbacks")
 
     # 2. 删除新约束
-    op.drop_constraint('chk_author_info', 'feedbacks', type_='check')
+    op.drop_constraint("chk_author_info", "feedbacks", type_="check")
 
     # 3. 添加旧字段
     op.add_column(
-        'feedbacks',
-        sa.Column('is_anonymous', sa.Boolean(), nullable=True, server_default='false', comment='是否匿名反馈'),
+        "feedbacks",
+        sa.Column("is_anonymous", sa.Boolean(), nullable=True, server_default="false", comment="是否匿名反馈"),
     )
-    op.add_column('feedbacks', sa.Column('anonymous_author', sa.String(100), nullable=True, comment='匿名作者名称'))
-    op.add_column('feedbacks', sa.Column('anonymous_email', sa.String(255), nullable=True, comment='匿名作者邮箱'))
-    op.add_column('feedbacks', sa.Column('anonymous_source', sa.String(50), nullable=True, comment='匿名来源平台'))
+    op.add_column("feedbacks", sa.Column("anonymous_author", sa.String(100), nullable=True, comment="匿名作者名称"))
+    op.add_column("feedbacks", sa.Column("anonymous_email", sa.String(255), nullable=True, comment="匿名作者邮箱"))
+    op.add_column("feedbacks", sa.Column("anonymous_source", sa.String(50), nullable=True, comment="匿名来源平台"))
 
     # 4. 迁移数据回旧字段
     op.execute("""
@@ -122,10 +122,10 @@ def downgrade() -> None:
 
     # 5. 添加旧约束
     op.create_check_constraint(
-        'chk_author_exists', 'feedbacks', 'customer_id IS NOT NULL OR anonymous_author IS NOT NULL'
+        "chk_author_exists", "feedbacks", "customer_id IS NOT NULL OR anonymous_author IS NOT NULL"
     )
 
     # 6. 删除新字段
-    op.drop_column('feedbacks', 'author_type')
-    op.drop_column('feedbacks', 'external_user_name')
-    op.drop_column('feedbacks', 'external_contact')
+    op.drop_column("feedbacks", "author_type")
+    op.drop_column("feedbacks", "external_user_name")
+    op.drop_column("feedbacks", "external_contact")

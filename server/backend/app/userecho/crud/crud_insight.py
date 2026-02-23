@@ -42,7 +42,7 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
                     Insight.time_range == time_range,
                     Insight.start_date == start_date,
                     Insight.end_date == end_date,
-                    Insight.status == 'active',
+                    Insight.status == "active",
                 )
             )
             .order_by(Insight.created_time.desc())
@@ -60,7 +60,7 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
         start_date: date,
         end_date: date,
         content: dict,
-        generated_by: str = 'hybrid',
+        generated_by: str = "hybrid",
         confidence: float | None = None,
         execution_time_ms: int | None = None,
     ) -> Insight:
@@ -117,9 +117,9 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
         insight = await self.get_by_id(db, tenant_id, insight_id)
 
         if not insight:
-            raise ValueError(f'Insight {insight_id} not found')
+            raise ValueError(f"Insight {insight_id} not found")
 
-        insight.status = 'dismissed'
+        insight.status = "dismissed"
         insight.dismissed_reason = reason
 
         await db.commit()

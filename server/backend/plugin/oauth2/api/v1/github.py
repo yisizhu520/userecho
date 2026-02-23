@@ -20,14 +20,14 @@ router = APIRouter()
 github_client = GitHubOAuth20(settings.OAUTH2_GITHUB_CLIENT_ID, settings.OAUTH2_GITHUB_CLIENT_SECRET)
 
 
-@router.get('', summary='获取 Github 授权链接')
+@router.get("", summary="获取 Github 授权链接")
 async def get_github_oauth2_url() -> ResponseSchemaModel[str]:
     state = str(uuid.uuid4())
 
     await redis_client.setex(
-        f'{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}',
+        f"{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}",
         settings.OAUTH2_STATE_EXPIRE_SECONDS,
-        json.dumps({'type': UserSocialAuthType.login.value}),
+        json.dumps({"type": UserSocialAuthType.login.value}),
     )
 
     auth_url = await github_client.get_authorization_url(redirect_uri=settings.OAUTH2_GITHUB_REDIRECT_URI, state=state)
@@ -35,12 +35,12 @@ async def get_github_oauth2_url() -> ResponseSchemaModel[str]:
 
 
 @router.get(
-    '/callback',
-    summary='Github 授权自动重定向',
-    description='Github 授权后，自动重定向到当前地址并获取用户信息，通过用户信息自动创建系统用户',
+    "/callback",
+    summary="Github 授权自动重定向",
+    description="Github 授权后，自动重定向到当前地址并获取用户信息，通过用户信息自动创建系统用户",
     dependencies=[Depends(RateLimiter(times=5, minutes=1))],
 )
-async def github_oauth2_callback(  # noqa: ANN201
+async def github_oauth2_callback(
     db: CurrentSessionTransaction,
     response: Response,
     background_tasks: BackgroundTasks,
@@ -50,7 +50,7 @@ async def github_oauth2_callback(  # noqa: ANN201
     ],
 ):
     token_data, state = oauth2
-    access_token = token_data['access_token']
+    access_token = token_data["access_token"]
     user = await github_client.get_userinfo(access_token)
     data = await oauth2_service.login_or_binding(
         db=db,
@@ -67,5 +67,5 @@ async def github_oauth2_callback(  # noqa: ANN201
 
     # 登录流程
     return RedirectResponse(
-        url=f'{settings.OAUTH2_FRONTEND_LOGIN_REDIRECT_URI}?access_token={data.access_token}&session_uuid={data.session_uuid}',
+        url=f"{settings.OAUTH2_FRONTEND_LOGIN_REDIRECT_URI}?access_token={data.access_token}&session_uuid={data.session_uuid}",
     )

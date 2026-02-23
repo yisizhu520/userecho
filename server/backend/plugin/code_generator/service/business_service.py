@@ -25,7 +25,7 @@ class GenBusinessService:
 
         business = await gen_business_dao.get(db, pk)
         if not business:
-            raise errors.NotFoundError(msg='代码生成业务不存在')
+            raise errors.NotFoundError(msg="代码生成业务不存在")
         return business
 
     @staticmethod
@@ -63,7 +63,7 @@ class GenBusinessService:
 
         business = await gen_business_dao.get_by_name(db, obj.table_name)
         if business:
-            raise errors.ConflictError(msg='代码生成业务已存在')
+            raise errors.ConflictError(msg="代码生成业务已存在")
         await gen_business_dao.create(db, obj)
 
     @staticmethod

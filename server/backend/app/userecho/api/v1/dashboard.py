@@ -1,6 +1,6 @@
 """工作台 API 端点"""
 
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -11,14 +11,14 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/dashboard', tags=['UserEcho - 工作台'])
+router = APIRouter(prefix="/dashboard", tags=["UserEcho - 工作台"])
 
 
-@router.get('/stats', summary='获取工作台统计数据')
+@router.get("/stats", summary="获取工作台统计数据")
 async def get_dashboard_stats(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     获取工作台所有统计数据（一次性返回）
 
@@ -43,16 +43,16 @@ async def get_dashboard_stats(
 class QuickDecisionParam(BaseModel):
     """快速决策参数"""
 
-    action: Literal['confirm', 'ignore'] = Field(description='决策动作：confirm(确认) 或 ignore(忽略)')
+    action: Literal["confirm", "ignore"] = Field(description="决策动作：confirm(确认) 或 ignore(忽略)")
 
 
-@router.post('/topic/{topic_id}/quick-decision', summary='快速决策')
+@router.post("/topic/{topic_id}/quick-decision", summary="快速决策")
 async def quick_decision(
     topic_id: str,
     param: QuickDecisionParam,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     快速决策:确认或忽略主题
 
@@ -62,21 +62,21 @@ async def quick_decision(
     # 查询主题
     topic = await crud_topic.get_by_id(db, tenant_id, topic_id)
     if not topic:
-        raise HTTPException(status_code=404, detail='主题不存在')
+        raise HTTPException(status_code=404, detail="主题不存在")
 
-    if topic.status != 'pending':
-        raise HTTPException(status_code=400, detail=f'主题状态为 {topic.status}，无法进行决策操作')
+    if topic.status != "pending":
+        raise HTTPException(status_code=400, detail=f"主题状态为 {topic.status}，无法进行决策操作")
 
     # 更新状态
-    new_status = 'planned' if param.action == 'confirm' else 'ignored'
+    new_status = "planned" if param.action == "confirm" else "ignored"
     await crud_topic.update(db, tenant_id, topic_id, status=new_status)
     await db.commit()
 
     return response_base.success(
         data={
-            'id': topic_id,
-            'action': param.action,
-            'new_status': new_status,
+            "id": topic_id,
+            "action": param.action,
+            "new_status": new_status,
         }
     )
 
@@ -86,12 +86,12 @@ async def quick_decision(
 # ========================================
 
 
-@router.get('/my-feedbacks', summary='获取我录入的反馈统计')
+@router.get("/my-feedbacks", summary="获取我录入的反馈统计")
 async def get_my_feedbacks(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     limit: int = 10,
-):
+) -> Any:
     """
     获取当前用户录入的反馈统计
 
@@ -114,11 +114,11 @@ async def get_my_feedbacks(
 # ========================================
 
 
-@router.get('/notification-stats', summary='获取通知统计数据')
+@router.get("/notification-stats", summary="获取通知统计数据")
 async def get_notification_stats(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-):
+) -> Any:
     """
     获取通知闭环统计数据
 
@@ -139,7 +139,7 @@ async def get_notification_stats(
     status_query = (
         select(
             TopicNotification.status,
-            func.count().label('count'),
+            func.count().label("count"),
         )
         .where(TopicNotification.tenant_id == tenant_id)
         .group_by(TopicNotification.status)
@@ -148,10 +148,10 @@ async def get_notification_stats(
     status_counts = {row.status: row.count for row in result.all()}
 
     total = sum(status_counts.values())
-    pending = status_counts.get('pending', 0)
-    generated = status_counts.get('generated', 0)
-    copied = status_counts.get('copied', 0)
-    sent = status_counts.get('sent', 0)
+    pending = status_counts.get("pending", 0)
+    generated = status_counts.get("generated", 0)
+    copied = status_counts.get("copied", 0)
+    sent = status_counts.get("sent", 0)
 
     # 计算比率
     generation_rate = ((generated + copied + sent) / total * 100) if total > 0 else 0
@@ -165,7 +165,7 @@ async def get_notification_stats(
         .outerjoin(Topic, TopicNotification.topic_id == Topic.id)
         .where(
             TopicNotification.tenant_id == tenant_id,
-            TopicNotification.status.in_(['copied', 'sent']),
+            TopicNotification.status.in_(["copied", "sent"]),
         )
         .order_by(TopicNotification.notified_at.desc())
         .limit(5)
@@ -173,23 +173,23 @@ async def get_notification_stats(
     recent_result = await db.execute(recent_query)
     recent_notifications = [
         {
-            'id': row[0].id,
-            'recipient_name': row[0].recipient_name,
-            'topic_title': row[1] or '未知议题',
-            'notified_at': row[0].notified_at.isoformat() if row[0].notified_at else None,
-            'status': row[0].status,
+            "id": row[0].id,
+            "recipient_name": row[0].recipient_name,
+            "topic_title": row[1] or "未知议题",
+            "notified_at": row[0].notified_at.isoformat() if row[0].notified_at else None,
+            "status": row[0].status,
         }
         for row in recent_result.all()
     ]
 
     return response_base.success(
         data={
-            'total_notifications': total,
-            'pending_count': pending,
-            'generated_count': generated,
-            'sent_count': copied + sent,
-            'generation_rate': round(generation_rate, 1),
-            'notification_rate': round(notification_rate, 1),
-            'recent_notifications': recent_notifications,
+            "total_notifications": total,
+            "pending_count": pending,
+            "generated_count": generated,
+            "sent_count": copied + sent,
+            "generation_rate": round(generation_rate, 1),
+            "notification_rate": round(notification_rate, 1),
+            "recent_notifications": recent_notifications,
         }
     )

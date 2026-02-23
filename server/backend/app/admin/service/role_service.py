@@ -35,7 +35,7 @@ class RoleService:
 
         role = await role_dao.get_join(db, pk)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         return role
 
     @staticmethod
@@ -75,7 +75,7 @@ class RoleService:
 
         role = await role_dao.get(db, pk)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         menus = await role_dao.get_menus(db, pk)
         menu_tree = get_tree_data(menus) if menus else []
         return menu_tree
@@ -92,7 +92,7 @@ class RoleService:
 
         role = await role_dao.get_join(db, pk)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         scope_ids = [scope.id for scope in role.scopes]
         return scope_ids
 
@@ -108,7 +108,7 @@ class RoleService:
 
         role = await role_dao.get_by_name(db, obj.name)
         if role:
-            raise errors.ConflictError(msg='角色已存在')
+            raise errors.ConflictError(msg="角色已存在")
         await role_dao.create(db, obj)
 
     @staticmethod
@@ -124,9 +124,9 @@ class RoleService:
 
         role = await role_dao.get(db, pk)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         if role.name != obj.name and await role_dao.get_by_name(db, obj.name):
-            raise errors.ConflictError(msg='角色已存在')
+            raise errors.ConflictError(msg="角色已存在")
         count = await role_dao.update(db, pk, obj)
         await user_cache_manager.clear_by_role_id(db, [pk])
         return count
@@ -144,11 +144,11 @@ class RoleService:
 
         role = await role_dao.get(db, pk)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         for menu_id in menu_ids.menus:
             menu = await menu_dao.get(db, menu_id)
             if not menu:
-                raise errors.NotFoundError(msg='菜单不存在')
+                raise errors.NotFoundError(msg="菜单不存在")
         count = await role_dao.update_menus(db, pk, menu_ids)
         await user_cache_manager.clear_by_role_id(db, [pk])
         return count
@@ -166,11 +166,11 @@ class RoleService:
 
         role = await role_dao.get(db, pk)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         for scope_id in scope_ids.scopes:
             scope = await data_scope_dao.get(db, scope_id)
             if not scope:
-                raise errors.NotFoundError(msg='数据范围不存在')
+                raise errors.NotFoundError(msg="数据范围不存在")
         count = await role_dao.update_scopes(db, pk, scope_ids)
         await user_cache_manager.clear_by_role_id(db, [pk])
         return count

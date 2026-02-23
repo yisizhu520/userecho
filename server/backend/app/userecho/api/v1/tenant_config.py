@@ -9,7 +9,7 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession, CurrentSessionTransaction
 
-router = APIRouter(prefix='/config', tags=['UserEcho - 租户配置'])
+router = APIRouter(prefix="/config", tags=["UserEcho - 租户配置"])
 
 
 # ========================================
@@ -20,19 +20,19 @@ router = APIRouter(prefix='/config', tags=['UserEcho - 租户配置'])
 class UpdatePresetParam(BaseModel):
     """更新预设模式参数"""
 
-    preset_mode: str = Field(description='预设模式名称（strict/standard/relaxed）')
+    preset_mode: str = Field(description="预设模式名称（strict/standard/relaxed）")
 
 
 class UpdateParamsParam(BaseModel):
     """更新自定义参数"""
 
-    params: dict = Field(description='要更新的参数字典')
+    params: dict = Field(description="要更新的参数字典")
 
 
 class PreviewConfigParam(BaseModel):
     """预览配置参数"""
 
-    preset_mode: str = Field(description='预设模式名称')
+    preset_mode: str = Field(description="预设模式名称")
 
 
 # ========================================
@@ -40,7 +40,7 @@ class PreviewConfigParam(BaseModel):
 # ========================================
 
 
-@router.get('/clustering/presets', summary='获取聚类预设模式')
+@router.get("/clustering/presets", summary="获取聚类预设模式")
 async def get_clustering_presets():
     """
     获取所有聚类预设模式（不含技术参数）
@@ -49,9 +49,9 @@ async def get_clustering_presets():
     """
     presets = {
         mode: {
-            'display_name': config['display_name'],
-            'description': config['description'],
-            'use_case': config['use_case'],
+            "display_name": config["display_name"],
+            "description": config["description"],
+            "use_case": config["use_case"],
         }
         for mode, config in CLUSTERING_PRESETS.items()
     }
@@ -59,7 +59,7 @@ async def get_clustering_presets():
     return response_base.success(data=presets)
 
 
-@router.get('/clustering', summary='获取当前聚类配置')
+@router.get("/clustering", summary="获取当前聚类配置")
 async def get_clustering_config(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -73,7 +73,7 @@ async def get_clustering_config(
     return response_base.success(data=config)
 
 
-@router.post('/clustering/preset', summary='更新聚类预设模式')
+@router.post("/clustering/preset", summary="更新聚类预设模式")
 async def update_clustering_preset(
     param: UpdatePresetParam,
     db: CurrentSessionTransaction,
@@ -93,7 +93,7 @@ async def update_clustering_preset(
     return response_base.success(data=config)
 
 
-@router.post('/clustering/preview', summary='预览聚类配置效果')
+@router.post("/clustering/preview", summary="预览聚类配置效果")
 async def preview_clustering_config(
     param: PreviewConfigParam,
     db: CurrentSession,
@@ -114,7 +114,7 @@ async def preview_clustering_config(
     return response_base.success(data=result)
 
 
-@router.put('/clustering/params', summary='微调聚类参数')
+@router.put("/clustering/params", summary="微调聚类参数")
 async def update_clustering_params(
     param: UpdateParamsParam,
     db: CurrentSessionTransaction,
@@ -143,14 +143,14 @@ async def update_clustering_params(
 class StrategicKeywordsParam(BaseModel):
     """战略关键词参数"""
 
-    keywords: list[str] = Field(description='战略关键词列表')
+    keywords: list[str] = Field(description="战略关键词列表")
 
 
 # 默认战略关键词（用于新租户）
-DEFAULT_STRATEGIC_KEYWORDS = ['信创', '国际化', '降本增效', 'AI', '安全合规']
+DEFAULT_STRATEGIC_KEYWORDS = ["信创", "国际化", "降本增效", "AI", "安全合规"]
 
 
-@router.get('/strategic', summary='获取战略关键词配置')
+@router.get("/strategic", summary="获取战略关键词配置")
 async def get_strategic_keywords(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -165,14 +165,14 @@ async def get_strategic_keywords(
     config = await tenant_config_service.get_config(
         db=db,
         tenant_id=tenant_id,
-        config_group='strategic',
-        default={'keywords': DEFAULT_STRATEGIC_KEYWORDS},
+        config_group="strategic",
+        default={"keywords": DEFAULT_STRATEGIC_KEYWORDS},
     )
 
     return response_base.success(data=config)
 
 
-@router.put('/strategic', summary='更新战略关键词配置')
+@router.put("/strategic", summary="更新战略关键词配置")
 async def update_strategic_keywords(
     param: StrategicKeywordsParam,
     db: CurrentSessionTransaction,
@@ -185,12 +185,12 @@ async def update_strategic_keywords(
     """
     from backend.app.userecho.service.tenant_config_service import tenant_config_service
 
-    config_data = {'keywords': param.keywords}
+    config_data = {"keywords": param.keywords}
 
     await tenant_config_service.set_config(
         db=db,
         tenant_id=tenant_id,
-        config_group='strategic',
+        config_group="strategic",
         config_data=config_data,
     )
 

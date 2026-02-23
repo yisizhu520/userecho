@@ -20,7 +20,7 @@ class ClusteringConfigService:
     提供预设模式和自定义参数调整功能
     """
 
-    CONFIG_GROUP = 'clustering'
+    CONFIG_GROUP = "clustering"
 
     async def get_clustering_config(self, db: AsyncSession, tenant_id: str) -> dict:
         """
@@ -60,13 +60,13 @@ class ClusteringConfigService:
             更新后的完整配置
         """
         if preset_mode not in CLUSTERING_PRESETS:
-            raise errors.ForbiddenError(msg=f'Invalid preset mode: {preset_mode}')
+            raise errors.ForbiddenError(msg=f"Invalid preset mode: {preset_mode}")
 
         # 展开预设参数
         preset_config = CLUSTERING_PRESETS[preset_mode]
         config_data = {
-            'preset_mode': preset_mode,
-            **preset_config['params'],
+            "preset_mode": preset_mode,
+            **preset_config["params"],
         }
 
         await tenant_config_service.set_config(
@@ -76,7 +76,7 @@ class ClusteringConfigService:
             config_data=config_data,
         )
 
-        log.info(f'Updated clustering preset to {preset_mode} for tenant {tenant_id}')
+        log.info(f"Updated clustering preset to {preset_mode} for tenant {tenant_id}")
 
         return config_data
 
@@ -104,8 +104,8 @@ class ClusteringConfigService:
         current_config.update(params)
 
         # 如果修改了技术参数，preset_mode 标记为 'custom'
-        if any(k in params for k in ['similarity_threshold', 'min_samples', 'min_silhouette', 'max_noise_ratio']):
-            current_config['preset_mode'] = 'custom'
+        if any(k in params for k in ["similarity_threshold", "min_samples", "min_silhouette", "max_noise_ratio"]):
+            current_config["preset_mode"] = "custom"
 
         await tenant_config_service.set_config(
             db=db,
@@ -114,7 +114,7 @@ class ClusteringConfigService:
             config_data=current_config,
         )
 
-        log.info(f'Updated custom clustering params for tenant {tenant_id}')
+        log.info(f"Updated custom clustering params for tenant {tenant_id}")
 
         return current_config
 
@@ -138,7 +138,7 @@ class ClusteringConfigService:
             预览结果（簇数量、覆盖率、质量指标）
         """
         if preset_mode not in CLUSTERING_PRESETS:
-            raise errors.ForbiddenError(msg=f'Invalid preset mode: {preset_mode}')
+            raise errors.ForbiddenError(msg=f"Invalid preset mode: {preset_mode}")
 
         # 获取测试数据
         test_feedbacks = await crud_feedback.get_pending_clustering(
@@ -151,9 +151,9 @@ class ClusteringConfigService:
 
         if len(test_feedbacks) < 2:
             return {
-                'status': 'insufficient_data',
-                'message': '测试数据不足（至少需要2条反馈）',
-                'test_samples': len(test_feedbacks),
+                "status": "insufficient_data",
+                "message": "测试数据不足（至少需要2条反馈）",
+                "test_samples": len(test_feedbacks),
             }
 
         # 获取 embeddings
@@ -169,17 +169,17 @@ class ClusteringConfigService:
 
         if len(embeddings) < 2:
             return {
-                'status': 'embedding_failed',
-                'message': '无法获取足够的 embedding',
-                'test_samples': len(test_feedbacks),
-                'valid_embeddings': len(embeddings),
+                "status": "embedding_failed",
+                "message": "无法获取足够的 embedding",
+                "test_samples": len(test_feedbacks),
+                "valid_embeddings": len(embeddings),
             }
 
         # 使用新配置试运行聚类
-        preset_params = CLUSTERING_PRESETS[preset_mode]['params']
+        preset_params = CLUSTERING_PRESETS[preset_mode]["params"]
         engine = FeedbackClustering(
-            similarity_threshold=preset_params['similarity_threshold'],
-            min_samples=preset_params['min_samples'],
+            similarity_threshold=preset_params["similarity_threshold"],
+            min_samples=preset_params["min_samples"],
         )
 
         embeddings_array = np.array(embeddings)
@@ -192,29 +192,29 @@ class ClusteringConfigService:
         coverage_rate = 1 - (n_noise / len(labels)) if len(labels) > 0 else 0
 
         # 质量评级
-        silhouette = quality.get('silhouette', 0)
+        silhouette = quality.get("silhouette", 0)
         if silhouette >= 0.5:
-            quality_rating = '优秀'
+            quality_rating = "优秀"
         elif silhouette >= 0.3:
-            quality_rating = '良好'
+            quality_rating = "良好"
         elif silhouette >= 0.1:
-            quality_rating = '一般'
+            quality_rating = "一般"
         else:
-            quality_rating = '较差'
+            quality_rating = "较差"
 
         return {
-            'status': 'success',
-            'test_samples': len(embeddings),
-            'preview': {
-                'clusters_count': n_clusters,
-                'clusters_range': f'{max(0, n_clusters - 1)}-{n_clusters + 2}',  # 估算范围
-                'coverage_rate': round(coverage_rate, 2),
-                'coverage_percentage': f'{coverage_rate * 100:.0f}%',
-                'quality_rating': quality_rating,
-                'silhouette_score': round(silhouette, 3),
-                'noise_ratio': round(quality['noise_ratio'], 2),
+            "status": "success",
+            "test_samples": len(embeddings),
+            "preview": {
+                "clusters_count": n_clusters,
+                "clusters_range": f"{max(0, n_clusters - 1)}-{n_clusters + 2}",  # 估算范围
+                "coverage_rate": round(coverage_rate, 2),
+                "coverage_percentage": f"{coverage_rate * 100:.0f}%",
+                "quality_rating": quality_rating,
+                "silhouette_score": round(silhouette, 3),
+                "noise_ratio": round(quality["noise_ratio"], 2),
             },
-            'config': preset_params,
+            "config": preset_params,
         }
 
 

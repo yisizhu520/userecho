@@ -14,19 +14,19 @@ from backend.utils.timezone import timezone
 
 # 默认积分消耗配置（数据库无配置时使用）
 DEFAULT_OPERATION_COSTS = {
-    'clustering': 10,  # AI 聚类（每次）
-    'screenshot': 5,  # 截图识别（每张）
-    'summary': 2,  # AI 摘要（每条反馈）
-    'embedding': 1,  # 向量化（每条反馈）
-    'insight': 20,  # 洞察报告（每份）
+    "clustering": 10,  # AI 聚类（每次）
+    "screenshot": 5,  # 截图识别（每张）
+    "summary": 2,  # AI 摘要（每条反馈）
+    "embedding": 1,  # 向量化（每条反馈）
+    "insight": 20,  # 洞察报告（每份）
 }
 
 # 默认套餐月度额度
 DEFAULT_PLAN_QUOTAS = {
-    'starter': 500,  # 启航版 ¥99/月
-    'pro': 2000,  # 专业版 ¥199/月
-    'team': 10000,  # 团队版 ¥599/月
-    'enterprise': -1,  # 企业版（无限制，-1 表示不限）
+    "starter": 500,  # 启航版 ¥99/月
+    "pro": 2000,  # 专业版 ¥199/月
+    "team": 10000,  # 团队版 ¥599/月
+    "enterprise": -1,  # 企业版（无限制，-1 表示不限）
 }
 
 
@@ -35,7 +35,7 @@ class CreditsService:
 
     async def get_operation_cost(self, db: AsyncSession, operation_type: str) -> int:
         """获取操作的积分消耗值"""
-        config_key = f'cost_{operation_type}'
+        config_key = f"cost_{operation_type}"
         result = await db.execute(select(CreditsConfig).where(CreditsConfig.config_key == config_key))
         config = result.scalar_one_or_none()
 
@@ -46,7 +46,7 @@ class CreditsService:
 
     async def get_plan_quota(self, db: AsyncSession, plan_type: str) -> int:
         """获取套餐的月度积分额度"""
-        config_key = f'quota_{plan_type}'
+        config_key = f"quota_{plan_type}"
         result = await db.execute(select(CreditsConfig).where(CreditsConfig.config_key == config_key))
         config = result.scalar_one_or_none()
 
@@ -68,11 +68,11 @@ class CreditsService:
         # 创建新的租户积分配置
         now = timezone.now()
         next_refresh = now + timedelta(days=30)
-        monthly_quota = await self.get_plan_quota(db, 'starter')
+        monthly_quota = await self.get_plan_quota(db, "starter")
 
         tenant_credits = TenantCredits(
             tenant_id=tenant_id,
-            plan_type='starter',
+            plan_type="starter",
             monthly_quota=monthly_quota,
             current_balance=monthly_quota,
             total_used=0,
@@ -82,7 +82,7 @@ class CreditsService:
         db.add(tenant_credits)
         await db.flush()
 
-        log.info(f'Created tenant credits for tenant {tenant_id}: quota={monthly_quota}')
+        log.info(f"Created tenant credits for tenant {tenant_id}: quota={monthly_quota}")
         return tenant_credits
 
     async def consume(
@@ -129,8 +129,8 @@ class CreditsService:
             if not is_unlimited:
                 # 检查余额（但不阻止，仅警告）
                 if tenant_credits.current_balance < total_cost:
-                    warning = f'积分余额不足，当前余额 {tenant_credits.current_balance}，需要 {total_cost}'
-                    log.warning(f'Tenant {tenant_id} credits insufficient: {warning}')
+                    warning = f"积分余额不足，当前余额 {tenant_credits.current_balance}，需要 {total_cost}"
+                    log.warning(f"Tenant {tenant_id} credits insufficient: {warning}")
 
                 # 扣减积分（允许负数，初期不限制）
                 tenant_credits.current_balance -= total_cost
@@ -143,28 +143,28 @@ class CreditsService:
                 user_id=user_id,
                 operation_type=operation_type,
                 credits_cost=total_cost,
-                description=description or f'{operation_type} x {count}',
+                description=description or f"{operation_type} x {count}",
                 extra_data=extra_data,
             )
             db.add(usage_log)
             await db.flush()
 
             result = {
-                'success': True,
-                'credits_cost': total_cost,
-                'remaining': tenant_credits.current_balance if not is_unlimited else -1,
+                "success": True,
+                "credits_cost": total_cost,
+                "remaining": tenant_credits.current_balance if not is_unlimited else -1,
             }
             if warning:
-                result['warning'] = warning
+                result["warning"] = warning
 
             log.debug(
-                f'Credits consumed: tenant={tenant_id}, operation={operation_type}, cost={total_cost}, remaining={tenant_credits.current_balance}'
+                f"Credits consumed: tenant={tenant_id}, operation={operation_type}, cost={total_cost}, remaining={tenant_credits.current_balance}"
             )
             return result
 
         except Exception as e:
-            log.error(f'Failed to consume credits for tenant {tenant_id}: {e}')
-            return {'success': False, 'credits_cost': 0, 'remaining': 0, 'error': str(e)}
+            log.error(f"Failed to consume credits for tenant {tenant_id}: {e}")
+            return {"success": False, "credits_cost": 0, "remaining": 0, "error": str(e)}
 
     async def get_balance(self, db: AsyncSession, tenant_id: str) -> dict:
         """
@@ -189,13 +189,13 @@ class CreditsService:
             usage_percentage = round(used_this_month / tenant_credits.monthly_quota * 100, 1)
 
         return {
-            'plan_type': tenant_credits.plan_type,
-            'monthly_quota': tenant_credits.monthly_quota,
-            'current_balance': tenant_credits.current_balance,
-            'total_used': tenant_credits.total_used,
-            'next_refresh_at': tenant_credits.next_refresh_at.isoformat() if tenant_credits.next_refresh_at else None,
-            'usage_percentage': usage_percentage,
-            'is_unlimited': is_unlimited,
+            "plan_type": tenant_credits.plan_type,
+            "monthly_quota": tenant_credits.monthly_quota,
+            "current_balance": tenant_credits.current_balance,
+            "total_used": tenant_credits.total_used,
+            "next_refresh_at": tenant_credits.next_refresh_at.isoformat() if tenant_credits.next_refresh_at else None,
+            "usage_percentage": usage_percentage,
+            "is_unlimited": is_unlimited,
         }
 
     async def get_usage_history(
@@ -223,11 +223,11 @@ class CreditsService:
 
         return [
             {
-                'id': log.id,
-                'operation_type': log.operation_type,
-                'credits_cost': log.credits_cost,
-                'description': log.description,
-                'created_at': log.created_at.isoformat() if log.created_at else None,
+                "id": log.id,
+                "operation_type": log.operation_type,
+                "credits_cost": log.credits_cost,
+                "description": log.description,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
             }
             for log in logs
         ]
@@ -235,7 +235,7 @@ class CreditsService:
     async def get_usage_stats(self, db: AsyncSession, tenant_id: str) -> dict:
         """获取积分使用统计（按类型分组）"""
         query = (
-            select(CreditsUsageLog.operation_type, func.sum(CreditsUsageLog.credits_cost).label('total'))
+            select(CreditsUsageLog.operation_type, func.sum(CreditsUsageLog.credits_cost).label("total"))
             .where(CreditsUsageLog.tenant_id == tenant_id)
             .group_by(CreditsUsageLog.operation_type)
         )
@@ -243,7 +243,7 @@ class CreditsService:
         rows = result.all()
 
         breakdown = {row.operation_type: int(row.total) for row in rows}
-        return {'breakdown': breakdown, 'total': sum(breakdown.values())}
+        return {"breakdown": breakdown, "total": sum(breakdown.values())}
 
     async def _check_and_refresh_if_needed(self, db: AsyncSession, tenant_credits: TenantCredits) -> bool:
         """检查是否需要刷新积分，需要则刷新"""
@@ -269,11 +269,11 @@ class CreditsService:
             tenant_credits.next_refresh_at = now + timedelta(days=30)
 
             await db.flush()
-            log.info(f'Refreshed credits for tenant {tenant_credits.tenant_id}: quota={monthly_quota}')
+            log.info(f"Refreshed credits for tenant {tenant_credits.tenant_id}: quota={monthly_quota}")
             return True
 
         except Exception as e:
-            log.error(f'Failed to refresh credits for tenant {tenant_credits.tenant_id}: {e}')
+            log.error(f"Failed to refresh credits for tenant {tenant_credits.tenant_id}: {e}")
             return False
 
     async def sync_subscription_plan(
@@ -295,7 +295,7 @@ class CreditsService:
         tenant_credits.next_refresh_at = now + timedelta(days=30)
 
         await db.flush()
-        log.info(f'Synced credits plan for tenant {tenant_id}: plan={plan_code}, quota={monthly_quota}')
+        log.info(f"Synced credits plan for tenant {tenant_id}: plan={plan_code}, quota={monthly_quota}")
 
     async def refresh_all_expired(self, db: AsyncSession) -> int:
         """刷新所有过期的租户积分（定时任务调用）"""
@@ -310,7 +310,7 @@ class CreditsService:
                 refreshed_count += 1
 
         if refreshed_count > 0:
-            log.info(f'Batch refreshed credits for {refreshed_count} tenants')
+            log.info(f"Batch refreshed credits for {refreshed_count} tenants")
 
         return refreshed_count
 

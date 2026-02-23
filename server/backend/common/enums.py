@@ -1,8 +1,8 @@
 from enum import Enum
 from enum import IntEnum as SourceIntEnum
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
-T = TypeVar('T', bound=Enum)
+T = TypeVar("T", bound=Enum)
 
 
 class _EnumBase:
@@ -11,17 +11,17 @@ class _EnumBase:
     @classmethod
     def get_member_keys(cls) -> list[str]:
         """获取枚举成员名称列表"""
-        return list(cls.__members__.keys())
+        return list(cast("type[Enum]", cls).__members__.keys())
 
     @classmethod
     def get_member_values(cls) -> list:
         """获取枚举成员值列表"""
-        return [item.value for item in cls.__members__.values()]
+        return [item.value for item in cast("type[Enum]", cls).__members__.values()]
 
     @classmethod
     def get_member_dict(cls) -> dict[str, Any]:
         """获取枚举成员字典"""
-        return {name: item.value for name, item in cls.__members__.items()}
+        return {name: item.value for name, item in cast("type[Enum]", cls).__members__.items()}
 
 
 class IntEnum(_EnumBase, SourceIntEnum):
@@ -65,12 +65,12 @@ class RoleDataRuleExpressionType(IntEnum):
 class MethodType(StrEnum):
     """HTTP 请求方法"""
 
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
-    DELETE = 'DELETE'
-    PATCH = 'PATCH'
-    OPTIONS = 'OPTIONS'
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
+    PATCH = "PATCH"
+    OPTIONS = "OPTIONS"
 
 
 class LoginLogStatusType(IntEnum):
@@ -83,8 +83,8 @@ class LoginLogStatusType(IntEnum):
 class BuildTreeType(StrEnum):
     """构建树形结构类型"""
 
-    traversal = 'traversal'
-    recursive = 'recursive'
+    traversal = "traversal"
+    recursive = "recursive"
 
 
 class OperaLogCipherType(IntEnum):
@@ -106,35 +106,35 @@ class StatusType(IntEnum):
 class FileType(StrEnum):
     """文件类型"""
 
-    image = 'image'
-    video = 'video'
+    image = "image"
+    video = "video"
 
 
 class PluginType(StrEnum):
     """插件类型"""
 
-    zip = 'zip'
-    git = 'git'
+    zip = "zip"
+    git = "git"
 
 
 class UserPermissionType(StrEnum):
     """用户权限类型"""
 
-    superuser = 'superuser'
-    staff = 'staff'
-    status = 'status'
-    multi_login = 'multi_login'
+    superuser = "superuser"
+    staff = "staff"
+    status = "status"
+    multi_login = "multi_login"
 
 
 class DataBaseType(StrEnum):
     """数据库类型"""
 
-    mysql = 'mysql'
-    postgresql = 'postgresql'
+    mysql = "mysql"
+    postgresql = "postgresql"
 
 
 class PrimaryKeyType(StrEnum):
     """主键类型"""
 
-    autoincrement = 'autoincrement'
-    snowflake = 'snowflake'
+    autoincrement = "autoincrement"
+    snowflake = "snowflake"

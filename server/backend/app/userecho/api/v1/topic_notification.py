@@ -17,7 +17,7 @@ from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
-router = APIRouter(prefix='/topics', tags=['UserEcho - 需求通知'])
+router = APIRouter(prefix="/topics", tags=["UserEcho - 需求通知"])
 
 
 def get_current_user_id() -> int:
@@ -26,7 +26,7 @@ def get_current_user_id() -> int:
     return 1
 
 
-@router.get('/{topic_id}/notifications', summary='获取议题的待通知用户列表')
+@router.get("/{topic_id}/notifications", summary="获取议题的待通知用户列表")
 async def get_topic_notifications(
     topic_id: str,
     db: CurrentSession,
@@ -44,22 +44,22 @@ async def get_topic_notifications(
 
     # 应用状态筛选
     if status:
-        notifications = [n for n in notifications if n.get('status') == status]
+        notifications = [n for n in notifications if n.get("status") == status]
 
     notifications_out = [TopicNotificationListOut.model_validate(n) for n in notifications]
 
     # 统计各状态数量
     stats = {
-        'total': len(notifications_out),
-        'pending': len([n for n in notifications_out if n.status == 'pending']),
-        'generated': len([n for n in notifications_out if n.status == 'generated']),
-        'sent': len([n for n in notifications_out if n.status in ('copied', 'sent')]),
+        "total": len(notifications_out),
+        "pending": len([n for n in notifications_out if n.status == "pending"]),
+        "generated": len([n for n in notifications_out if n.status == "generated"]),
+        "sent": len([n for n in notifications_out if n.status in ("copied", "sent")]),
     }
 
-    return response_base.success(data={'items': notifications_out, 'stats': stats})
+    return response_base.success(data={"items": notifications_out, "stats": stats})
 
 
-@router.post('/{topic_id}/notifications/{notification_id}/generate-reply', summary='生成 AI 回复')
+@router.post("/{topic_id}/notifications/{notification_id}/generate-reply", summary="生成 AI 回复")
 async def generate_reply(
     topic_id: str,
     notification_id: str,
@@ -103,11 +103,11 @@ async def generate_reply(
     except ValueError as e:
         return response_base.fail(res=CustomResponse(code=400, msg=str(e)))
     except Exception as e:
-        log.error(f'Failed to generate reply for notification {notification_id}: {e}')
-        return response_base.fail(res=CustomResponse(code=500, msg='生成回复失败，请稍后重试'))
+        log.error(f"Failed to generate reply for notification {notification_id}: {e}")
+        return response_base.fail(res=CustomResponse(code=500, msg="生成回复失败，请稍后重试"))
 
 
-@router.post('/{topic_id}/notifications/batch-generate', summary='批量生成 AI 回复')
+@router.post("/{topic_id}/notifications/batch-generate", summary="批量生成 AI 回复")
 async def batch_generate_replies(
     topic_id: str,
     request: BatchGenerateReplyRequest,
@@ -133,14 +133,14 @@ async def batch_generate_replies(
 
         return response_base.success(
             data=result,
-            res=CustomResponse(code=200, msg=f'成功生成 {result["success"]} 条回复'),
+            res=CustomResponse(code=200, msg=f"成功生成 {result['success']} 条回复"),
         )
     except Exception as e:
-        log.error(f'Failed to batch generate replies for topic {topic_id}: {e}')
-        return response_base.fail(res=CustomResponse(code=500, msg='批量生成失败，请稍后重试'))
+        log.error(f"Failed to batch generate replies for topic {topic_id}: {e}")
+        return response_base.fail(res=CustomResponse(code=500, msg="批量生成失败，请稍后重试"))
 
 
-@router.patch('/{topic_id}/notifications/{notification_id}', summary='更新通知记录')
+@router.patch("/{topic_id}/notifications/{notification_id}", summary="更新通知记录")
 async def update_notification(
     topic_id: str,
     notification_id: str,
@@ -167,9 +167,9 @@ async def update_notification(
     )
 
     if not notification:
-        return response_base.fail(res=CustomResponse(code=400, msg='通知记录不存在'))
+        return response_base.fail(res=CustomResponse(code=400, msg="通知记录不存在"))
 
     return response_base.success(
         data=TopicNotificationOut.model_validate(notification),
-        res=CustomResponse(code=200, msg='更新成功'),
+        res=CustomResponse(code=200, msg="更新成功"),
     )

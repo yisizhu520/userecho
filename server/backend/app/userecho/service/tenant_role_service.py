@@ -11,24 +11,24 @@ from backend.common.exception import errors
 # 内置角色定义
 BUILTIN_ROLES = [
     {
-        'code': 'admin',
-        'name': '管理员',
-        'description': '租户管理员，拥有所有权限',
-        'permissions': ['feedback', 'discovery', 'topic', 'customer', 'insight', 'settings', 'member', 'role'],
+        "code": "admin",
+        "name": "管理员",
+        "description": "租户管理员，拥有所有权限",
+        "permissions": ["feedback", "discovery", "topic", "customer", "insight", "settings", "member", "role"],
     },
     {
-        'code': 'product_manager',
-        'name': '产品经理',
-        'description': '管理需求和反馈',
-        'permissions': ['feedback', 'discovery', 'topic', 'customer', 'insight'],
+        "code": "product_manager",
+        "name": "产品经理",
+        "description": "管理需求和反馈",
+        "permissions": ["feedback", "discovery", "topic", "customer", "insight"],
     },
-    {'code': 'sales', 'name': '销售', 'description': '录入客户反馈', 'permissions': ['feedback', 'customer']},
-    {'code': 'developer', 'name': '开发者', 'description': '查看需求和反馈', 'permissions': ['topic', 'discovery']},
+    {"code": "sales", "name": "销售", "description": "录入客户反馈", "permissions": ["feedback", "customer"]},
+    {"code": "developer", "name": "开发者", "description": "查看需求和反馈", "permissions": ["topic", "discovery"]},
     {
-        'code': 'viewer',
-        'name': '观察者',
-        'description': '只读权限',
-        'permissions': ['feedback', 'topic', 'customer', 'insight'],
+        "code": "viewer",
+        "name": "观察者",
+        "description": "只读权限",
+        "permissions": ["feedback", "topic", "customer", "insight"],
     },
 ]
 
@@ -41,7 +41,7 @@ class TenantRoleService:
         """获取角色详情"""
         role = await tenant_role_dao.get(db, role_id)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
         return role
 
     @staticmethod
@@ -73,7 +73,7 @@ class TenantRoleService:
         # 检查角色代码是否已存在
         existing = await tenant_role_dao.get_by_code(db, tenant_id, code)
         if existing:
-            raise errors.ConflictError(msg='角色代码已存在')
+            raise errors.ConflictError(msg="角色代码已存在")
 
         role = await tenant_role_dao.create(db, tenant_id=tenant_id, name=name, code=code, description=description)
 
@@ -95,7 +95,7 @@ class TenantRoleService:
         """更新角色"""
         role = await tenant_role_dao.get(db, role_id)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
 
         return await tenant_role_dao.update(db, role, name=name, description=description, status=status)
 
@@ -104,7 +104,7 @@ class TenantRoleService:
         """更新角色权限"""
         role = await tenant_role_dao.get(db, role_id)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
 
         await tenant_permission_dao.set_role_permissions(db, role_id, permission_ids)
 
@@ -113,10 +113,10 @@ class TenantRoleService:
         """删除角色"""
         role = await tenant_role_dao.get(db, role_id)
         if not role:
-            raise errors.NotFoundError(msg='角色不存在')
+            raise errors.NotFoundError(msg="角色不存在")
 
         if role.is_builtin:
-            raise errors.ForbiddenError(msg='内置角色不可删除')
+            raise errors.ForbiddenError(msg="内置角色不可删除")
 
         await tenant_role_dao.delete(db, role)
 
@@ -131,7 +131,7 @@ class TenantRoleService:
 
         for i, role_def in enumerate(BUILTIN_ROLES):
             # 检查是否已存在
-            existing = await tenant_role_dao.get_by_code(db, tenant_id, role_def['code'])
+            existing = await tenant_role_dao.get_by_code(db, tenant_id, role_def["code"])
             if existing:
                 continue
 
@@ -139,15 +139,15 @@ class TenantRoleService:
             role = await tenant_role_dao.create(
                 db,
                 tenant_id=tenant_id,
-                name=role_def['name'],
-                code=role_def['code'],
-                description=role_def['description'],
+                name=role_def["name"],
+                code=role_def["code"],
+                description=role_def["description"],
                 is_builtin=True,
                 sort=i,
             )
 
             # 设置权限
-            perm_ids = [perm_code_to_id[code] for code in role_def['permissions'] if code in perm_code_to_id]
+            perm_ids = [perm_code_to_id[code] for code in role_def["permissions"] if code in perm_code_to_id]
             if perm_ids:
                 await tenant_permission_dao.set_role_permissions(db, role.id, perm_ids)
 

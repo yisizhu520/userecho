@@ -29,7 +29,7 @@ class ConfigService:
 
         config = await config_dao.get(db, pk)
         if not config:
-            raise errors.NotFoundError(msg='参数配置不存在')
+            raise errors.NotFoundError(msg="参数配置不存在")
         return config
 
     @staticmethod
@@ -69,7 +69,7 @@ class ConfigService:
 
         config = await config_dao.get_by_key(db, obj.key)
         if config:
-            raise errors.ConflictError(msg=f'参数配置 {obj.key} 已存在')
+            raise errors.ConflictError(msg=f"参数配置 {obj.key} 已存在")
         await config_dao.create(db, obj)
 
     @staticmethod
@@ -85,11 +85,11 @@ class ConfigService:
 
         config = await config_dao.get(db, pk)
         if not config:
-            raise errors.NotFoundError(msg='参数配置不存在')
+            raise errors.NotFoundError(msg="参数配置不存在")
         if config.key != obj.key:
             config = await config_dao.get_by_key(db, obj.key)
             if config:
-                raise errors.ConflictError(msg=f'参数配置 {obj.key} 已存在')
+                raise errors.ConflictError(msg=f"参数配置 {obj.key} 已存在")
         count = await config_dao.update(db, pk, obj)
         return count
 
@@ -107,11 +107,11 @@ class ConfigService:
             for obj in objs:
                 config = await config_dao.get(db, obj.id)
                 if not config:
-                    raise errors.NotFoundError(msg='参数配置不存在')
+                    raise errors.NotFoundError(msg="参数配置不存在")
                 if config.key != obj.key:
                     config = await config_dao.get_by_key(db, obj.key)
                     if config:
-                        raise errors.ConflictError(msg=f'参数配置 {obj.key} 已存在')
+                        raise errors.ConflictError(msg=f"参数配置 {obj.key} 已存在")
         count = await config_dao.bulk_update(db, objs)
         return count
 

@@ -24,16 +24,16 @@ async def render_message(subject: str, from_header: str, content: str | dict, te
     :return:
     """
     message = MIMEMultipart()
-    message['Subject'] = subject
-    message['From'] = from_header
-    message['date'] = timezone.now().strftime('%a, %d %b %Y %H:%M:%S %z')
+    message["Subject"] = subject
+    message["From"] = from_header
+    message["date"] = timezone.now().strftime("%a, %d %b %Y %H:%M:%S %z")
 
     if template:
-        async with await open_file(PLUGIN_DIR / 'email' / 'templates' / template, encoding='utf-8') as f:
+        async with await open_file(PLUGIN_DIR / "email" / "templates" / template, encoding="utf-8") as f:
             html = Template(await f.read(), enable_async=True)
-        mail_body = MIMEText(await html.render_async(**content), 'html', 'utf-8')
+        mail_body = MIMEText(await html.render_async(**content), "html", "utf-8")
     else:
-        mail_body = MIMEText(content, 'plain', 'utf-8')
+        mail_body = MIMEText(content, "plain", "utf-8")
 
     message.attach(mail_body)
 
@@ -70,4 +70,4 @@ async def send_email(
             await smtp_client.login(settings.EMAIL_USERNAME, settings.EMAIL_PASSWORD)
             await smtp_client.sendmail(settings.EMAIL_USERNAME, recipients, message)
     except Exception as e:
-        log.error(f'电子邮件发送失败：{e}')
+        log.error(f"电子邮件发送失败：{e}")

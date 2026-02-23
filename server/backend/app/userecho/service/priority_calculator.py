@@ -16,39 +16,39 @@ class PriorityCalculator:
     # 紧急关键词（简化版 AI 分析）
     URGENT_KEYWORDS = [
         # 中文
-        '紧急',
-        '急需',
-        '尽快',
-        '严重',
-        '阻塞',
-        '无法使用',
-        '崩溃',
-        '数据丢失',
-        '安全漏洞',
-        '生产环境',
-        '线上问题',
-        '客户投诉',
-        '合同到期',
+        "紧急",
+        "急需",
+        "尽快",
+        "严重",
+        "阻塞",
+        "无法使用",
+        "崩溃",
+        "数据丢失",
+        "安全漏洞",
+        "生产环境",
+        "线上问题",
+        "客户投诉",
+        "合同到期",
         # 英文
-        'ASAP',
-        'urgent',
-        'critical',
-        'blocker',
-        'crash',
-        'production',
+        "ASAP",
+        "urgent",
+        "critical",
+        "blocker",
+        "crash",
+        "production",
     ]
 
     # 战略关键词（MVP 配置）
     STRATEGIC_KEYWORDS = [
-        '信创',
-        '国际化',
-        '降本',
-        'AI',
-        '安全',
-        '性能',
-        '企业级',
-        'SaaS',
-        '私有化',
+        "信创",
+        "国际化",
+        "降本",
+        "AI",
+        "安全",
+        "性能",
+        "企业级",
+        "SaaS",
+        "私有化",
     ]
 
     # 权重配置
@@ -114,15 +114,15 @@ class PriorityCalculator:
         total_score = round(feedback_count_score + urgent_score + strategic_score + recency_score, 1)
 
         return {
-            'total_score': total_score,
-            'feedback_count': feedback_count,
-            'feedback_count_score': round(feedback_count_score, 1),
-            'urgent_ratio': round(urgent_ratio, 2),
-            'urgent_score': round(urgent_score, 1),
-            'strategic_keywords_matched': matched_keywords,
-            'strategic_score': round(strategic_score, 1),
-            'recency_score': round(recency_score, 1),
-            'last_feedback_days': last_feedback_days,
+            "total_score": total_score,
+            "feedback_count": feedback_count,
+            "feedback_count_score": round(feedback_count_score, 1),
+            "urgent_ratio": round(urgent_ratio, 2),
+            "urgent_score": round(urgent_score, 1),
+            "strategic_keywords_matched": matched_keywords,
+            "strategic_score": round(strategic_score, 1),
+            "recency_score": round(recency_score, 1),
+            "last_feedback_days": last_feedback_days,
         }
 
     def _calculate_feedback_count_score(self, count: int) -> float:
@@ -175,7 +175,7 @@ class PriorityCalculator:
         if not strategic_keywords:
             return [], 0.0
 
-        content = f'{title} {description or ""}'.lower()
+        content = f"{title} {description or ''}".lower()
         matched_keywords = [kw for kw in strategic_keywords if kw.lower() in content]
 
         # 匹配到任意一个关键词即得满分（二元判断）
