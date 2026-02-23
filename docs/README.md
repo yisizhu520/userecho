@@ -21,8 +21,10 @@
 #### 插件系统 (`architecture/plugin-system/`)
 - **plugin-architecture.md** - 插件架构设计
 
-#### 路由设计 (`architecture/`)
+#### 其他架构 (`architecture/`)
 - **route-design.md** - 路由设计文档
+- **pages-relationship.md** - 页面关系与跳转流程
+- **feedback-deduplication-strategy.md** - 反馈去重策略
 
 ---
 
@@ -61,10 +63,13 @@
 开发、部署和配置相关指南
 
 #### 部署指南 (`guides/deployment/`)
+- **demo-environment-guide.md** - Demo 演示环境部署指南
+- **dokploy-deployment.md** - Dokploy 部署指南
 - **pgvector-deployment-checklist.md** - pgvector 部署检查清单
 - **pgvector-migration-guide.md** - pgvector 迁移指南
 
 #### 开发指南 (`guides/development/`)
+- **celery-logging.md** - Celery Worker 日志配置
 - **debug-middleware-guide.md** - 调试中间件指南
 - **logging-best-practices.md** - 日志最佳实践
 - **feedback-ui-simplification-summary.md** - 反馈 UI 简化总结
@@ -115,6 +120,7 @@
 - **canny-competitor-analysis.md** - Canny 竞品分析
 
 #### 其他规划 (`planning/`)
+- **ux-evaluation.md** - 交互流程专业评估报告
 - **wechat-feedback-collect.md** - 微信反馈收集
 
 ---
@@ -122,12 +128,15 @@
 ### 🗄️ Archive（已归档）
 过时或历史文档归档
 
-- **data-model-comparison.md** - 数据模型对比（已过时）
-- **database-design.md** - 旧版数据库设计（已过时）
-- **clustering-test-guide.md** - 旧版聚类测试指南（已过时）
-- **PERFORMANCE-DIAGNOSIS-REPORT.md** - 性能诊断报告（历史记录）
-- **performance-fixes.md** - 性能修复（历史记录）
-- **performance-optimization-remote-db.md** - 远程数据库性能优化（历史记录）
+- **REORGANIZATION-SUMMARY.md** - 2025-12-31 文档重组总结(历史记录)
+- **login-redirect-optimization.md** - 登录重定向优化实施记录(历史记录)
+- **migration-fix-report.md** - Alembic 迁移修复报告(历史记录)
+- **data-model-comparison.md** - 数据模型对比(已过时)
+- **database-design.md** - 旧版数据库设计(已过时)
+- **clustering-test-guide.md** - 旧版聚类测试指南(已过时)
+- **PERFORMANCE-DIAGNOSIS-REPORT.md** - 性能诊断报告(历史记录)
+- **performance-fixes.md** - 性能修复(历史记录)
+- **performance-optimization-remote-db.md** - 远程数据库性能优化(历史记录)
 
 ---
 
@@ -152,7 +161,7 @@
 
 ## 📝 文档维护
 
-本文档库于 **2025-12-31** 重新组织，遵循以下原则：
+本文档库于 **2025-12-31** 首次重新组织,并于 **2026-01-17** 进一步整理,遵循以下原则：
 - ✅ 按功能和用途分类，而非按时间或作者
 - ✅ 保留所有有价值的文档，过时文档移至 `archive/`
 - ✅ 提供清晰的导航和索引

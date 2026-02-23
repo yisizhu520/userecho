@@ -8,6 +8,8 @@ docs/
 │
 ├── 🏗️ architecture/                                # 架构设计
 │   ├── 📄 route-design.md                          # 路由设计
+│   ├── 📄 pages-relationship.md                    # 页面关系与跳转流程
+│   ├── 📄 feedback-deduplication-strategy.md       # 反馈去重策略
 │   │
 │   ├── 💾 database/                                # 数据库设计
 │   │   ├── complete-er-diagram.md                  # 完整 ER 图（MVP）
@@ -54,10 +56,13 @@ docs/
 ├── 📚 guides/                                       # 操作指南
 │   │
 │   ├── 🚀 deployment/                              # 部署指南
+│   │   ├── demo-environment-guide.md               # Demo 演示环境部署
+│   │   ├── dokploy-deployment.md                   # Dokploy 部署指南
 │   │   ├── pgvector-deployment-checklist.md        # pgvector 部署检查清单
 │   │   └── pgvector-migration-guide.md             # pgvector 迁移指南
 │   │
 │   ├── 💻 development/                             # 开发指南
+│   │   ├── celery-logging.md                       # Celery Worker 日志配置
 │   │   ├── debug-middleware-guide.md               # 调试中间件
 │   │   ├── logging-best-practices.md               # 日志最佳实践
 │   │   ├── feedback-ui-simplification-summary.md   # UI 简化
@@ -90,6 +95,7 @@ docs/
 │   └── test-users-guide.md                         # 测试用户指南
 │
 ├── 📋 planning/                                     # 规划文档
+│   ├── 📄 ux-evaluation.md                         # 交互流程专业评估报告
 │   ├── 📄 wechat-feedback-collect.md               # 微信反馈收集
 │   │
 │   ├── 🗺️ roadmap/                                 # 路线图
@@ -102,17 +108,19 @@ docs/
 │       └── canny-competitor-analysis.md            # Canny 竞品分析
 │
 └── 🗄️ archive/                                      # 已归档
-    ├── PERFORMANCE-DIAGNOSIS-REPORT.md             # 性能诊断（历史）
-    ├── performance-fixes.md                        # 性能修复（历史）
-    ├── performance-optimization-remote-db.md       # 性能优化（历史）
-    ├── data-model-comparison.md                    # 数据模型对比（过时）
-    ├── database-design.md                          # 旧版数据库设计（过时）
-    └── clustering-test-guide.md                    # 旧版测试指南（过时）
-```
+    ├── REORGANIZATION-SUMMARY.md                   # 2025-12-31 文档重组总结
+    ├── login-redirect-optimization.md              # 登录重定向优化实施记录
+    ├── migration-fix-report.md                     # Alembic 迁移修复报告
+    ├── PERFORMANCE-DIAGNOSIS-REPORT.md             # 性能诊断(历史)
+    ├── performance-fixes.md                        # 性能修复(历史)
+    ├── performance-optimization-remote-db.md       # 性能优化(历史)
+    ├── data-model-comparison.md                    # 数据模型对比(过时)
+    ├── database-design.md                          # 旧版数据库设计(过时)
+    └── clustering-test-guide.md                    # 旧版测试指南(过时)）
 
 ## 📊 统计信息
 
-- **总文件数**: 66 个文档
+- **总文件数**: 73 个文档
 - **顶级目录**: 6 个
 - **二级目录**: 14 个
 - **最大深度**: 3 层
@@ -128,13 +136,12 @@ docs/
 
 ### 我想了解...
 - **数据库设计** → `architecture/database/`
+- **页面架构** → `architecture/pages-relationship.md`
 - **AI 功能** → `features/ai-clustering/`
 - **搜索功能** → `features/search/`
 - **如何部署** → `guides/deployment/`
 - **如何配置** → `guides/configuration/`
 - **产品规划** → `planning/roadmap/`
-- **测试方法** → `testing/`
-
 ### 我想开发...
 - **新功能** → 先看 `planning/roadmap/mvp.md`
 - **数据库相关** → 先看 `architecture/database/complete-er-diagram.md`
@@ -143,4 +150,4 @@ docs/
 
 ---
 
-**最后更新**: 2025-12-31
+**最后更新**: 2026-01-17
