@@ -2,6 +2,7 @@
 
 Revision ID: 9a2de98df5fb
 Revises:
+    pass
 Create Date: 2025-12-21 15:15:51.335653
 
 """

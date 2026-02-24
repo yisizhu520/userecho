@@ -25,12 +25,15 @@ def upgrade() -> None:
     升级：修改 embedding 维度 768 -> 4096
 
     策略：删除旧列，创建新列（pgvector 不支持直接修改维度）
+    
+    注意：使用 IF EXISTS 确保幂等性
     """
     bind = op.get_bind()
 
     if bind.dialect.name == "postgresql":
         # 1. feedbacks.embedding: 768 -> 4096
-        op.drop_column("feedbacks", "embedding")
+        # 使用 IF EXISTS 确保幂等性（新数据库可能还没有此列）
+        op.execute("ALTER TABLE feedbacks DROP COLUMN IF EXISTS embedding")
         op.add_column(
             "feedbacks",
             sa.Column(
@@ -43,7 +46,7 @@ def upgrade() -> None:
         op.execute("ALTER TABLE feedbacks ALTER COLUMN embedding TYPE vector(4096) USING embedding::vector")
 
         # 2. topics.centroid: 768 -> 4096
-        op.drop_column("topics", "centroid")
+        op.execute("ALTER TABLE topics DROP COLUMN IF EXISTS centroid")
         op.add_column(
             "topics",
             sa.Column(
@@ -55,18 +58,20 @@ def upgrade() -> None:
         )
         op.execute("ALTER TABLE topics ALTER COLUMN centroid TYPE vector(4096) USING centroid::vector")
 
-        print("✅ Embedding 维度已更新为 4096。旧数据已清空，需要重新运行聚类任务。")
+        print("Embedding dimension updated to 4096. Old data cleared, need to re-run clustering tasks.")
 
 
 def downgrade() -> None:
     """
     降级：恢复 embedding 维度 4096 -> 768
+    
+    注意：使用 IF EXISTS 确保幂等性
     """
     bind = op.get_bind()
 
     if bind.dialect.name == "postgresql":
         # 1. feedbacks.embedding: 4096 -> 768
-        op.drop_column("feedbacks", "embedding")
+        op.execute("ALTER TABLE feedbacks DROP COLUMN IF EXISTS embedding")
         op.add_column(
             "feedbacks",
             sa.Column(
@@ -79,7 +84,7 @@ def downgrade() -> None:
         op.execute("ALTER TABLE feedbacks ALTER COLUMN embedding TYPE vector(768) USING embedding::vector")
 
         # 2. topics.centroid: 4096 -> 768
-        op.drop_column("topics", "centroid")
+        op.execute("ALTER TABLE topics DROP COLUMN IF EXISTS centroid")
         op.add_column(
             "topics",
             sa.Column(

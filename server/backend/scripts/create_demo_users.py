@@ -37,7 +37,7 @@ DEMO_USERS = [
     {
         "username": "demo_po",
         "nickname": "张产品",
-        "email": "po@demo.huixiang.app",
+        "email": "po@demo.userecho.app",
         "role": "PM",  # 系统角色
         "user_type": "product_manager",  # 租户角色
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=po",
@@ -46,7 +46,7 @@ DEMO_USERS = [
     {
         "username": "demo_ops",
         "nickname": "李运营",
-        "email": "ops@demo.huixiang.app",
+        "email": "ops@demo.userecho.app",
         "role": "CS",  # 系统角色
         "user_type": "customer_success",  # 租户角色
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=ops",
@@ -55,7 +55,7 @@ DEMO_USERS = [
     {
         "username": "demo_admin",
         "nickname": "王管理",
-        "email": "admin@demo.huixiang.app",
+        "email": "admin@demo.userecho.app",
         "role": "系统管理员",  # 系统角色
         "user_type": "admin",  # 租户角色
         "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",

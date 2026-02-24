@@ -1,14 +1,22 @@
 #!/bin/bash
-# Demo 环境一键初始化/重置脚本
+# Demo 数据初始化/重置脚本（仅创建账号和数据）
 # 
+# ⚠️  前置条件：
+#   - 数据库表已创建（alembic upgrade head）
+#   - 系统基础数据已初始化（fba init）
+#   - 默认租户已创建（init_default_tenant.py）
+#   - 业务菜单已初始化（init_business_menus.py）
+#
 # 用途：
-#   1. 初始化 Demo 环境的账号和数据
+#   1. 创建 Demo 预置账号和示例数据
 #   2. 定时重置 Demo 数据（配合 cron 使用）
 #
 # 执行方式：
-#   chmod +x init_demo_environment.sh
-#   ./init_demo_environment.sh           # 首次初始化
-#   ./init_demo_environment.sh --reset   # 重置数据
+#   chmod +x init_demo_data_only.sh
+#   ./init_demo_data_only.sh             # 首次初始化
+#   ./init_demo_data_only.sh --reset     # 重置数据
+#
+# 💡 提示：如果是首次部署 Demo 环境，请使用 setup_demo_full.sh
 
 set -e  # 遇到错误立即退出
 
@@ -102,6 +110,21 @@ activate_venv() {
     fi
 }
 
+check_env_file() {
+    # 检查 .env.demo 文件是否存在
+    if [ -f "../.env.demo" ]; then
+        export ENV_FILE="../.env.demo"
+        print_success "使用配置文件: .env.demo"
+    elif [ -f ".env.demo" ]; then
+        export ENV_FILE=".env.demo"
+        print_success "使用配置文件: .env.demo"
+    else
+        print_error "未找到 .env.demo 配置文件"
+        print_info "请在 server 目录或 server/backend 目录下创建 .env.demo"
+        exit 1
+    fi
+}
+
 # 步骤 1: 创建 Demo 预置账号
 step1_create_users() {
     print_header "步骤 1/3: 创建 Demo 预置账号"
@@ -150,66 +173,7 @@ step2_init_data() {
 step3_verify() {
     print_header "步骤 3/3: 验证初始化结果"
     
-    python -c "
-import sys
-import io
-import asyncio
-
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
-sys.path.insert(0, '.')
-from sqlalchemy import select, func
-from backend.database.db import async_db_session
-from backend.app.admin.model import User
-from backend.app.userecho.model import Board, Customer, Feedback, Topic
-
-async def verify():
-    async with async_db_session() as db:
-        # 检查 Demo 用户
-        demo_users = await db.scalars(
-            select(User).where(User.username.like('demo_%'))
-        )
-        user_list = list(demo_users)
-        print(f'  👤 Demo 用户: {len(user_list)} 个')
-        for u in user_list:
-            print(f'     - {u.username} ({u.nickname})')
-        
-        # 检查看板
-        board_count = await db.scalar(
-            select(func.count(Board.id)).where(Board.tenant_id == 'default-tenant')
-        )
-        print(f'  📋 看板数量: {board_count}')
-        
-        # 检查客户
-        customer_count = await db.scalar(
-            select(func.count(Customer.id)).where(Customer.tenant_id == 'default-tenant')
-        )
-        print(f'  👥 客户数量: {customer_count}')
-        
-        # 检查议题
-        topic_count = await db.scalar(
-            select(func.count(Topic.id)).where(Topic.tenant_id == 'default-tenant')
-        )
-        print(f'  📑 议题数量: {topic_count}')
-        
-        # 检查反馈
-        feedback_count = await db.scalar(
-            select(func.count(Feedback.id)).where(Feedback.tenant_id == 'default-tenant')
-        )
-        print(f'  💬 反馈数量: {feedback_count}')
-        
-        return len(user_list) >= 3 and customer_count > 0 and feedback_count > 0
-
-try:
-    if asyncio.run(verify()):
-        sys.exit(0)
-    else:
-        sys.exit(1)
-except Exception as e:
-    print(f'  ❌ 验证失败: {e}')
-    sys.exit(1)
-"
+    python scripts/verify_demo_data.py
     
     if [ $? -eq 0 ]; then
         print_success "验证通过"
@@ -231,6 +195,7 @@ main() {
     check_directory
     check_venv
     activate_venv
+    check_env_file
     
     if [ "$RESET_MODE" = true ]; then
         print_warning "⚠️  重置模式：将删除并重建所有 Demo 数据"

@@ -32,10 +32,10 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """完整数据库改造"""
 
-    print("🔧 开始完整数据库改造...")
+    # print("🔧 开始完整数据库改造...")
 
     # 1. 创建 boards 表
-    print("   ├─ [1/7] 创建 boards 表...")
+    # print("   ├─ [1/7] 创建 boards 表...")
     op.create_table(
         "boards",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -60,7 +60,7 @@ def upgrade() -> None:
     op.create_index("idx_boards_category", "boards", ["category"])
 
     # 2. 创建 tenant_users 表
-    print("   ├─ [2/7] 创建 tenant_users 表...")
+    # print("   ├─ [2/7] 创建 tenant_users 表...")
     op.create_table(
         "tenant_users",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -78,7 +78,7 @@ def upgrade() -> None:
     op.create_index("idx_tenant_users_user", "tenant_users", ["user_id"])
 
     # 3. 创建 tenant_user_roles 表
-    print("   ├─ [3/7] 创建 tenant_user_roles 表...")
+    # print("   ├─ [3/7] 创建 tenant_user_roles 表...")
     op.create_table(
         "tenant_user_roles",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -93,12 +93,12 @@ def upgrade() -> None:
     op.create_index("idx_tenant_user_roles_tenant_user", "tenant_user_roles", ["tenant_user_id"])
 
     # 4. tenants 表新增字段
-    print("   ├─ [4/7] tenants 表新增 slug、settings 字段...")
+    # print("   ├─ [4/7] tenants 表新增 slug、settings 字段...")
     op.add_column("tenants", sa.Column("slug", sa.String(100), unique=True, nullable=True))
     op.add_column("tenants", sa.Column("settings", postgresql.JSONB(), nullable=True))
 
     # 5. customers 表新增字段
-    print("   ├─ [5/7] customers 表新增多个字段...")
+    # print("   ├─ [5/7] customers 表新增多个字段...")
     op.add_column("customers", sa.Column("company_name", sa.String(200), nullable=True))
     op.add_column("customers", sa.Column("contact_email", sa.String(255), nullable=True))
     op.add_column("customers", sa.Column("contact_phone", sa.String(50), nullable=True))
@@ -112,7 +112,7 @@ def upgrade() -> None:
     op.add_column("customers", sa.Column("notes", sa.Text(), nullable=True))
 
     # 6. feedbacks 表新增字段
-    print("   ├─ [6/7] feedbacks 表新增 board_id、title 等字段...")
+    # print("   ├─ [6/7] feedbacks 表新增 board_id、title 等字段...")
     op.add_column(
         "feedbacks", sa.Column("board_id", sa.String(36), sa.ForeignKey("boards.id", ondelete="CASCADE"), nullable=True)
     )
@@ -124,7 +124,7 @@ def upgrade() -> None:
     op.create_index("idx_feedbacks_board", "feedbacks", ["board_id"])
 
     # 7. topics 表新增字段
-    print("   ├─ [7/7] topics 表新增 board_id、tech_lead_id 等字段...")
+    # print("   ├─ [7/7] topics 表新增 board_id、tech_lead_id 等字段...")
     op.add_column(
         "topics", sa.Column("board_id", sa.String(36), sa.ForeignKey("boards.id", ondelete="CASCADE"), nullable=True)
     )
@@ -142,7 +142,7 @@ def upgrade() -> None:
     # 8. 创建 Board 统计触发器（仅 PostgreSQL）
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        print("   ├─ [8/8] 创建 Board 统计触发器...")
+        # print("   ├─ [8/8] 创建 Board 统计触发器...")
 
         op.execute("""
             CREATE OR REPLACE FUNCTION update_board_stats()
@@ -197,24 +197,24 @@ def upgrade() -> None:
             EXECUTE FUNCTION update_board_stats()
         """)
 
-    print("✅ 完整数据库改造完成！")
+    # print("✅ 完整数据库改造完成！")
     print()
-    print("📊 新增表：")
-    print("   - boards: 看板表")
-    print("   - tenant_users: 租户-用户关联表")
-    print("   - tenant_user_roles: 租户用户角色关联表")
+    # print("📊 新增表：")
+    # print("   - boards: 看板表")
+    # print("   - tenant_users: 租户-用户关联表")
+    # print("   - tenant_user_roles: 租户用户角色关联表")
     print()
-    print("📝 更新表：")
-    print("   - tenants: +2 字段")
-    print("   - customers: +11 字段")
-    print("   - feedbacks: +6 字段")
-    print("   - topics: +7 字段")
+    # print("📝 更新表：")
+    # print("   - tenants: +2 字段")
+    # print("   - customers: +11 字段")
+    # print("   - feedbacks: +6 字段")
+    # print("   - topics: +7 字段")
 
 
 def downgrade() -> None:
     """回滚完整数据库改造"""
 
-    print("🔧 开始回滚...")
+    # print("🔧 开始回滚...")
 
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
@@ -265,4 +265,4 @@ def downgrade() -> None:
     op.drop_index("idx_boards_tenant", table_name="boards")
     op.drop_table("boards")
 
-    print("✅ 回滚完成！")
+    # print("✅ 回滚完成！")

@@ -43,7 +43,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    demo.huixiang.app                      │
+│                    demo.userecho.app                      │
 ├──────────────────────────────────────────────────────────┤
 │ Cloudflare (DNS + Turnstile)                             │
 ├───────────────────────┬──────────────────────────────────┤
@@ -68,7 +68,7 @@
 2. 进入 **Turnstile** 服务
 3. 创建新站点，填写：
    - 站点名称：`回响-演示`
-   - 域名：`demo.huixiang.app`
+   - 域名：`demo.userecho.app`
    - Widget 模式：`Managed`
 4. 记录生成的：
    - **Site Key**（前端使用）
@@ -100,7 +100,7 @@ Demo 环境建议使用独立的 Redis 数据库（如 db=1）以隔离数据。
 # ==================== 应用配置 ====================
 DEMO_MODE=true
 ENVIRONMENT=demo
-APP_TITLE=回响-演示
+FASTAPI_TITLE=回响-演示版
 
 # ==================== 安全配置 ====================
 ALLOW_REGISTRATION=false
@@ -141,22 +141,33 @@ export ENV_FILE=.env.demo
 alembic upgrade head
 ```
 
-### 步骤 3：初始化基础数据
+### 步骤 3：初始化 Demo 环境（一键完成）
 
 ```bash
-# 执行 fba init 初始化系统数据
-echo "y" | fba init
-
-# 初始化默认租户和业务菜单
-python scripts/init_default_tenant.py
-python scripts/init_business_menus.py
+# 一键完成所有初始化步骤（推荐）
+./setup_demo_full.sh
 ```
 
-### 步骤 4：初始化 Demo 数据
+此脚本会自动完成：
+- ✅ 系统基础数据初始化（角色、菜单、部门）
+- ✅ 默认租户创建
+- ✅ 业务菜单和权限初始化
+- ✅ Demo 预置账号和示例数据创建
+
+### 步骤 4：手动初始化（可选）
+
+如果需要手动控制每个步骤：
 
 ```bash
-# 一键初始化 Demo 环境
-./init_demo_environment.sh
+# 4.1 初始化系统数据
+echo "y" | fba init
+
+# 4.2 初始化默认租户和业务菜单
+python scripts/init_default_tenant.py
+python scripts/init_business_menus.py
+
+# 4.3 初始化 Demo 数据
+./init_demo_data_only.sh
 ```
 
 ### 步骤 5：启动服务
@@ -176,8 +187,8 @@ ENV_FILE=.env.demo uvicorn backend.main:app --host 0.0.0.0 --port 8000
 
 ```bash
 NODE_ENV=production
-VITE_APP_TITLE=回响-演示
-VITE_GLOB_API_URL=https://demo-api.huixiang.app
+VITE_APP_TITLE=回响-演示版
+VITE_GLOB_API_URL=https://demo-api.userecho.app
 VITE_APP_NAMESPACE=userecho-demo
 VITE_DEMO_MODE=true
 VITE_TURNSTILE_SITE_KEY=0x4AAAAAAxxxxxxxxxxxxxxxxxxxxxxxx
@@ -203,7 +214,7 @@ pnpm build:demo
 ```nginx
 server {
     listen 80;
-    server_name demo.huixiang.app;
+    server_name demo.userecho.app;
 
     root /var/www/demo/dist;
     index index.html;
@@ -226,31 +237,40 @@ server {
 
 ## 数据初始化
 
-### 一键初始化
+### 首次初始化（推荐）
 
 ```bash
 cd server/backend
-./init_demo_environment.sh
+
+# 一键完成所有步骤
+./setup_demo_full.sh
 ```
 
-此脚本会：
-1. 创建 3 个预置账号（demo_po, demo_ops, demo_admin）
-2. 生成示例数据：
-   - 10 个客户
-   - 4 个看板
-   - 8 个议题
-   - 100+ 条反馈
+此脚本会自动完成：
+1. ✅ 数据库表结构迁移
+2. ✅ 系统基础数据（角色、菜单、部门）
+3. ✅ 业务基础数据（租户、看板、权限）
+4. ✅ Demo 预置账号和示例数据
 
-### 手动初始化
+### 仅重置 Demo 数据
 
 ```bash
-# 仅创建账号
+cd server/backend
+
+# 仅重置账号和数据（不动系统表）
+./init_demo_data_only.sh --reset
+```
+
+### 手动分步初始化
+
+```bash
+# 步骤 1: 仅创建账号
 python scripts/create_demo_users.py
 
-# 仅初始化数据
+# 步骤 2: 仅初始化数据
 python scripts/init_demo_data.py
 
-# 重置模式（删除后重建）
+# 步骤 3: 重置模式
 python scripts/create_demo_users.py --reset
 python scripts/init_demo_data.py --reset
 ```
@@ -266,7 +286,7 @@ python scripts/init_demo_data.py --reset
 crontab -e
 
 # 添加每日凌晨 2 点重置任务
-0 2 * * * cd /path/to/server/backend && ./init_demo_environment.sh --reset --silent >> /var/log/demo-reset.log 2>&1
+0 2 * * * cd /path/to/server/backend && ./init_demo_data_only.sh --reset --silent >> /var/log/demo-reset.log 2>&1
 ```
 
 ### 方式 2：Celery Beat（可选）
@@ -290,7 +310,7 @@ CELERY_BEAT_SCHEDULE = {
 
 ### 功能验证
 
-- [ ] 访问 `https://demo.huixiang.app/demo` 显示欢迎页
+- [ ] 访问 `https://demo.userecho.app/demo` 显示欢迎页
 - [ ] 三个角色都能成功登录
 - [ ] 角色切换浮动组件正常工作
 - [ ] Demo Banner 显示"演示模式"提示
@@ -349,8 +369,9 @@ CELERY_BEAT_SCHEDULE = {
 | **前端配置** | `front/apps/web-antd/.env.demo` |
 | **Turnstile 模块** | `server/backend/common/security/turnstile.py` |
 | **Demo API** | `server/backend/app/admin/api/v1/demo.py` |
+| **完整初始化脚本** | `server/backend/setup_demo_full.sh` |
+| **数据重置脚本** | `server/backend/init_demo_data_only.sh` |
 | **账号初始化** | `server/backend/scripts/create_demo_users.py` |
 | **数据初始化** | `server/backend/scripts/init_demo_data.py` |
-| **一键脚本** | `server/backend/init_demo_environment.sh` |
 | **欢迎页组件** | `front/apps/web-antd/src/views/demo/DemoWelcome.vue` |
 | **角色切换组件** | `front/apps/web-antd/src/components/demo/DemoRoleSwitcher.vue` |

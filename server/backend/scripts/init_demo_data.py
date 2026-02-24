@@ -32,80 +32,80 @@ DEFAULT_TENANT_ID = "default-tenant"
 # ==================== 示例数据 ====================
 
 DEMO_BOARDS = [
-    {"name": "产品反馈", "description": "收集用户对产品功能的反馈和建议", "color": "#3b82f6"},
-    {"name": "客户投诉", "description": "处理客户投诉和问题报告", "color": "#ef4444"},
-    {"name": "功能需求", "description": "用户提出的新功能需求", "color": "#10b981"},
+    {"name": "产品反馈", "url_name": "product-feedback", "description": "收集用户对产品功能的反馈和建议"},
+    {"name": "客户投诉", "url_name": "customer-complaint", "description": "处理客户投诉和问题报告"},
+    {"name": "功能需求", "url_name": "feature-request", "description": "用户提出的新功能需求"},
 ]
 
 DEMO_CUSTOMERS = [
     {
         "name": "腾讯游戏",
-        "customer_type": "enterprise",
+        "company_name": "腾讯游戏",
+        "customer_type": "vip",
         "business_value": 5,
-        "contact_name": "张三",
         "contact_email": "zhangsan@tencent.com",
     },
     {
         "name": "阿里云",
-        "customer_type": "enterprise",
+        "company_name": "阿里云",
+        "customer_type": "vip",
         "business_value": 5,
-        "contact_name": "李四",
         "contact_email": "lisi@alibaba.com",
     },
     {
         "name": "字节跳动",
-        "customer_type": "enterprise",
+        "company_name": "字节跳动",
+        "customer_type": "vip",
         "business_value": 4,
-        "contact_name": "王五",
         "contact_email": "wangwu@bytedance.com",
     },
     {
         "name": "美团点评",
-        "customer_type": "enterprise",
+        "company_name": "美团点评",
+        "customer_type": "paid",
         "business_value": 4,
-        "contact_name": "赵六",
         "contact_email": "zhaoliu@meituan.com",
     },
     {
         "name": "小米科技",
-        "customer_type": "enterprise",
+        "company_name": "小米科技",
+        "customer_type": "paid",
         "business_value": 4,
-        "contact_name": "钱七",
         "contact_email": "qianqi@xiaomi.com",
     },
     {
         "name": "京东商城",
-        "customer_type": "enterprise",
+        "company_name": "京东商城",
+        "customer_type": "paid",
         "business_value": 4,
-        "contact_name": "孙八",
         "contact_email": "sunba@jd.com",
     },
     {
         "name": "网易有道",
-        "customer_type": "enterprise",
+        "company_name": "网易有道",
+        "customer_type": "normal",
         "business_value": 3,
-        "contact_name": "周九",
         "contact_email": "zhoujiu@netease.com",
     },
     {
         "name": "哔哩哔哩",
-        "customer_type": "enterprise",
+        "company_name": "哔哩哔哩",
+        "customer_type": "normal",
         "business_value": 3,
-        "contact_name": "吴十",
         "contact_email": "wushi@bilibili.com",
     },
     {
         "name": "创业公司A",
-        "customer_type": "startup",
+        "company_name": "创业公司A",
+        "customer_type": "normal",
         "business_value": 2,
-        "contact_name": "陈一",
         "contact_email": "chenyi@startup-a.com",
     },
     {
         "name": "创业公司B",
-        "customer_type": "startup",
+        "company_name": "创业公司B",
+        "customer_type": "normal",
         "business_value": 2,
-        "contact_name": "林二",
         "contact_email": "liner@startup-b.com",
     },
 ]
@@ -220,9 +220,8 @@ async def init_demo_data() -> None:
                 id=board_id,
                 tenant_id=DEFAULT_TENANT_ID,
                 name=board_data["name"],
+                url_name=board_data["url_name"],
                 description=board_data["description"],
-                color=board_data["color"],
-                status="active",
             )
             db.add(board)
             board_ids.append(board_id)
@@ -241,9 +240,9 @@ async def init_demo_data() -> None:
                 id=customer_id,
                 tenant_id=DEFAULT_TENANT_ID,
                 name=customer_data["name"],
+                company_name=customer_data.get("company_name"),
                 customer_type=customer_data["customer_type"],
                 business_value=customer_data["business_value"],
-                contact_name=customer_data.get("contact_name"),
                 contact_email=customer_data.get("contact_email"),
             )
             db.add(customer)
@@ -266,7 +265,6 @@ async def init_demo_data() -> None:
                 title=topic_data["title"],
                 description=topic_data["description"],
                 status=topic_data["status"],
-                priority_score=topic_data["priority_score"],
                 ai_generated=True,
             )
             db.add(topic)
@@ -290,6 +288,14 @@ async def init_demo_data() -> None:
                 customer_id = random.choice(customer_ids) if random.random() > 0.3 else None
                 topic_id = random.choice(topic_ids) if random.random() > 0.4 else None
 
+                # 根据是否有customer_id设置author_type
+                if customer_id:
+                    author_type = "customer"
+                    external_user_name = None
+                else:
+                    author_type = "external"
+                    external_user_name = f"匿名用户{random.randint(1000, 9999)}"
+
                 # 随机生成提交时间（最近 30 天）
                 days_ago = random.randint(0, 30)
                 submitted_at = datetime.now() - timedelta(days=days_ago)
@@ -299,6 +305,8 @@ async def init_demo_data() -> None:
                     tenant_id=DEFAULT_TENANT_ID,
                     board_id=board_id,
                     customer_id=customer_id,
+                    author_type=author_type,
+                    external_user_name=external_user_name,
                     topic_id=topic_id,
                     content=feedback_data["content"],
                     source=feedback_data["source"],

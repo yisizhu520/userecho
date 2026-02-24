@@ -23,7 +23,7 @@ const isDark = computed(() => theme.value === 'dark');
 
 // 跳转到演示环境
 const handleTryDemo = () => {
-  window.open('https://demo.huixiang.app', '_blank');
+  window.open('https://demo.userecho.app/demo', '_blank');
 };
 
 // 滚动到联系区域

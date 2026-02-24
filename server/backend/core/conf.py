@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from re import Pattern
 from typing import Any, Literal
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     """全局配置"""
 
     model_config = SettingsConfigDict(
-        env_file=f"{BASE_PATH}/.env",
+        env_file=os.getenv("ENV_FILE", f"{BASE_PATH}/.env"),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,
@@ -186,12 +187,8 @@ class Settings(BaseSettings):
 
     # 演示模式配置
     DEMO_MODE: bool = False
-    DEMO_MODE_EXCLUDE: set[tuple[str, str]] = {
-        ("POST", f"{FASTAPI_API_V1_PATH}/auth/login"),
-        ("POST", f"{FASTAPI_API_V1_PATH}/auth/logout"),
-        ("GET", f"{FASTAPI_API_V1_PATH}/auth/captcha"),
-        ("POST", f"{FASTAPI_API_V1_PATH}/auth/refresh"),
-    }
+    # 注意：Demo 模式现在默认允许所有操作，只拦截危险操作（删除预置用户、删除租户等）
+    # 这样用户可以完整体验所有功能，数据会每日自动重置
     ALLOW_REGISTRATION: bool = True  # Demo 模式下设为 False
 
     # Cloudflare Turnstile 人机验证
@@ -366,6 +363,11 @@ class Settings(BaseSettings):
 
             # task
             values["CELERY_BROKER"] = "rabbitmq"
+
+        # Demo 模式下修改应用标题
+        if values.get("DEMO_MODE"):
+            values["FASTAPI_TITLE"] = "回响-演示版"
+            values["FASTAPI_DESCRIPTION"] = "回响 - AI 驱动的用户反馈智能分析平台（演示环境）"
 
         return values
 

@@ -1,37 +1,52 @@
-import { ref } from 'vue';
+import { computed } from 'vue';
+import { usePreferences } from '@vben/preferences';
+import { preferencesManager } from '@vben/preferences';
 
 export type LandingTheme = 'dark' | 'light';
 
-const STORAGE_KEY = 'landing-theme';
+// 一次性清理旧的主题设置
+const OLD_STORAGE_KEY = 'landing-theme';
+if (typeof localStorage !== 'undefined' && localStorage.getItem(OLD_STORAGE_KEY)) {
+  localStorage.removeItem(OLD_STORAGE_KEY);
+}
 
-// Global theme state
-const currentTheme = ref<LandingTheme>(
-  (localStorage.getItem(STORAGE_KEY) as LandingTheme) || 'dark'
-);
-
+/**
+ * Landing 页面主题管理
+ * 统一使用 Vben 的 preferences 系统，确保全站主题一致
+ */
 export function useLandingTheme() {
-  const setTheme = (theme: LandingTheme) => {
-    currentTheme.value = theme;
-    localStorage.setItem(STORAGE_KEY, theme);
+  const { theme: vbenTheme, isDark: isVbenDark } = usePreferences();
+
+  // 将 vben 的 theme ('dark' | 'light') 映射为 LandingTheme
+  const theme = computed<LandingTheme>(() => vbenTheme.value as LandingTheme);
+
+  const setTheme = (newTheme: LandingTheme) => {
+    // 更新 Vben preferences
+    preferencesManager.updatePreferences({
+      theme: { mode: newTheme },
+    });
+
+    // 同步更新 Landing 页面的 CSS class
     document.documentElement.classList.remove('theme-dark', 'theme-light');
-    document.documentElement.classList.add(`theme-${theme}`);
+    document.documentElement.classList.add(`theme-${newTheme}`);
   };
 
   const toggleTheme = () => {
-    setTheme(currentTheme.value === 'dark' ? 'light' : 'dark');
+    const newTheme = theme.value === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
   };
 
   // Initialize theme on mount
   const initTheme = () => {
-    document.documentElement.classList.add(`theme-${currentTheme.value}`);
+    document.documentElement.classList.add(`theme-${theme.value}`);
   };
 
   return {
-    theme: currentTheme,
+    theme,
     setTheme,
     toggleTheme,
     initTheme,
-    isDark: () => currentTheme.value === 'dark',
-    isLight: () => currentTheme.value === 'light',
+    isDark: () => isVbenDark.value,
+    isLight: () => !isVbenDark.value,
   };
 }

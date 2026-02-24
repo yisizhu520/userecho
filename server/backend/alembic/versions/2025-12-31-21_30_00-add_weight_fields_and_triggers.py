@@ -27,14 +27,14 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """新增权重相关字段和触发器"""
 
-    print("🔧 开始数据库改造...")
+    # print("🔧 开始数据库改造...")
 
     # 1. customers 表新增 mrr 字段
-    print("   ├─ [1/4] customers 表新增 mrr 字段...")
+    # print("   ├─ [1/4] customers 表新增 mrr 字段...")
     op.add_column("customers", sa.Column("mrr", sa.Numeric(10, 2), nullable=True, comment="月收入 (MRR)"))
 
     # 2. feedbacks 表新增冗余字段
-    print("   ├─ [2/4] feedbacks 表新增冗余字段...")
+    # print("   ├─ [2/4] feedbacks 表新增冗余字段...")
     op.add_column(
         "feedbacks",
         sa.Column("customer_mrr", sa.Numeric(10, 2), nullable=True, comment="客户月收入（冗余字段，便于聚合）"),
@@ -42,7 +42,7 @@ def upgrade() -> None:
     op.add_column("feedbacks", sa.Column("customer_type", sa.String(20), nullable=True, comment="客户类型（冗余字段）"))
 
     # 3. topics 表新增权重聚合字段和产品管理字段
-    print("   ├─ [3/4] topics 表新增权重聚合和产品管理字段...")
+    # print("   ├─ [3/4] topics 表新增权重聚合和产品管理字段...")
     # 权重聚合字段
     op.add_column(
         "topics",
@@ -80,7 +80,7 @@ def upgrade() -> None:
     # 4. 创建触发器函数（仅 PostgreSQL）
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        print("   ├─ [4/4] 创建 Topic 统计触发器...")
+        # print("   ├─ [4/4] 创建 Topic 统计触发器...")
 
         # 创建触发器函数
         op.execute("""
@@ -164,33 +164,34 @@ def upgrade() -> None:
             EXECUTE FUNCTION update_topic_stats()
         """)
 
-        print("✅ 数据库改造完成！")
+        # print("✅ 数据库改造完成！")
         print()
-        print("📊 新增字段：")
-        print("   - customers.mrr: 月收入")
-        print("   - feedbacks.customer_mrr, customer_type: 冗余字段")
-        print("   - topics: 10 个新字段（权重聚合 + 产品管理 + 外部集成）")
+        # print("📊 新增字段：")
+        # print("   - customers.mrr: 月收入")
+        # print("   - feedbacks.customer_mrr, customer_type: 冗余字段")
+        # print("   - topics: 10 个新字段（权重聚合 + 产品管理 + 外部集成）")
         print()
-        print("🔄 触发器：")
-        print("   - trigger_update_topic_stats: 自动更新 Topic 统计")
+        # print("🔄 触发器：")
+        # print("   - trigger_update_topic_stats: 自动更新 Topic 统计")
     else:
-        print("   ⚠️  触发器仅支持 PostgreSQL，已跳过")
+        # Triggers only supported in PostgreSQL - skip
+        pass
 
 
 def downgrade() -> None:
     """回滚：删除新增的字段和触发器"""
 
-    print("🔧 开始回滚数据库改造...")
+    # print("🔧 开始回滚数据库改造...")
 
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         # 删除触发器和函数
-        print("   ├─ 删除触发器...")
+        # print("   ├─ 删除触发器...")
         op.execute("DROP TRIGGER IF EXISTS trigger_update_topic_stats ON feedbacks")
         op.execute("DROP FUNCTION IF EXISTS update_topic_stats")
 
     # 删除 topics 表新增字段
-    print("   ├─ 删除 topics 表新增字段...")
+    # print("   ├─ 删除 topics 表新增字段...")
     op.drop_column("topics", "tapd_story_id")
     op.drop_column("topics", "jira_issue_key")
     op.drop_column("topics", "estimated_release_date")
@@ -202,12 +203,12 @@ def downgrade() -> None:
     op.drop_column("topics", "affected_customer_count")
 
     # 删除 feedbacks 表新增字段
-    print("   ├─ 删除 feedbacks 表新增字段...")
+    # print("   ├─ 删除 feedbacks 表新增字段...")
     op.drop_column("feedbacks", "customer_type")
     op.drop_column("feedbacks", "customer_mrr")
 
     # 删除 customers 表新增字段
-    print("   ├─ 删除 customers 表新增字段...")
+    # print("   ├─ 删除 customers 表新增字段...")
     op.drop_column("customers", "mrr")
 
-    print("✅ 回滚完成！")
+    # print("✅ 回滚完成！")

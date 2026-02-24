@@ -3,10 +3,13 @@
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Response
+from sqlalchemy import select
 from starlette.background import BackgroundTasks
 
+from backend.app.admin.model import User
 from backend.app.admin.schema.user import AuthLoginParam
 from backend.app.admin.service.auth_service import auth_service
+from backend.common.log import log
 from backend.common.response.response_schema import response_base
 from backend.common.security.depends import DependsTurnstile
 from backend.core.conf import settings
@@ -15,21 +18,22 @@ from backend.database.db import CurrentSessionTransaction
 router = APIRouter(prefix="/demo", tags=["演示模式"])
 
 # 预置角色映射（3 角色方案）
+# 注意：使用 username 作为唯一标识，避免与 create_demo_users.py 中的 email 不一致
 DEMO_ROLES = {
     "product_owner": {
-        "email": "demo_po@example.com",
+        "username": "demo_po",
         "name": "产品负责人",
         "description": "查看优先级看板、AI 洞察、审批议题",
         "icon": "Target",
     },
     "user_ops": {
-        "email": "demo_ops@example.com",
+        "username": "demo_ops",
         "name": "用户运营",
         "description": "录入反馈、管理客户、触发聚类",
         "icon": "Headphones",
     },
     "admin": {
-        "email": "demo_admin@example.com",
+        "username": "demo_admin",
         "name": "系统管理员",
         "description": "用户管理、权限配置、看板设置",
         "icon": "Settings",
@@ -75,12 +79,20 @@ async def switch_role(
         raise HTTPException(status_code=400, detail="无效的角色")
 
     role_info = DEMO_ROLES[role_key]
-    email = role_info["email"]
+    username = role_info["username"]
+
+    # 查询 Demo 用户
+    result = await db.execute(select(User).where(User.username == username))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        log.error(f"Demo user not found: {username}")
+        raise HTTPException(status_code=404, detail=f"Demo 用户 {username} 不存在，请先执行初始化脚本")
 
     try:
-        # 构造登录参数
+        # 使用用户的实际邮箱进行登录
         login_param = AuthLoginParam(
-            email=email,
+            email=user.email,
             password=DEMO_PASSWORD,
             captcha=None,
         )
@@ -106,4 +118,5 @@ async def switch_role(
             }
         )
     except Exception as e:
+        log.error(f"Failed to switch to role {role_key}: {e}")
         raise HTTPException(status_code=500, detail=f"角色切换失败: {e!s}")

@@ -23,11 +23,9 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """添加 Board 统计触发器"""
 
-    print("🔧 开始添加 Board 统计触发器...")
 
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        print("   ├─ [1/3] 创建 Board Feedback 统计触发器函数...")
 
         # 创建更新 Board feedback_count 的触发器函数
         op.execute("""
@@ -76,7 +74,6 @@ def upgrade() -> None:
             $$ LANGUAGE plpgsql;
         """)
 
-        print("   ├─ [2/3] 创建 Board Topic 统计触发器函数...")
 
         # 创建更新 Board topic_count 的触发器函数
         op.execute("""
@@ -125,7 +122,6 @@ def upgrade() -> None:
             $$ LANGUAGE plpgsql;
         """)
 
-        print("   ├─ [3/3] 创建触发器...")
 
         # 先删除旧触发器（如果存在）
         op.execute("DROP TRIGGER IF EXISTS trigger_update_board_feedback_count ON feedbacks")
@@ -147,30 +143,22 @@ def upgrade() -> None:
             EXECUTE FUNCTION update_board_topic_count()
         """)
 
-        print("✅ Board 统计触发器创建完成！")
         print()
-        print("🔄 触发器：")
-        print("   - trigger_update_board_feedback_count: 自动更新 Board 的 feedback_count")
-        print("   - trigger_update_board_topic_count: 自动更新 Board 的 topic_count")
     else:
-        print("   ⚠️  触发器仅支持 PostgreSQL，已跳过")
+        pass
 
 
 def downgrade() -> None:
     """回滚：删除 Board 统计触发器"""
 
-    print("🔧 开始回滚 Board 统计触发器...")
 
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         # 删除触发器
-        print("   ├─ 删除触发器...")
         op.execute("DROP TRIGGER IF EXISTS trigger_update_board_feedback_count ON feedbacks")
         op.execute("DROP TRIGGER IF EXISTS trigger_update_board_topic_count ON topics")
 
         # 删除函数
-        print("   ├─ 删除触发器函数...")
         op.execute("DROP FUNCTION IF EXISTS update_board_feedback_count")
         op.execute("DROP FUNCTION IF EXISTS update_board_topic_count")
 
-        print("✅ 回滚完成！")

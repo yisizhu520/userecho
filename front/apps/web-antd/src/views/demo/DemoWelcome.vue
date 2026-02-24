@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Target, Headphones, Settings } from 'lucide-vue-next';
 import { requestClient } from '#/api/request';
 import { useAccessStore } from '@vben/stores';
+import { useLandingTheme } from '#/composables/useLandingTheme';
 
 const router = useRouter();
 const accessStore = useAccessStore();
+const { theme, initTheme } = useLandingTheme();
 const loading = ref(false);
 const selectedRole = ref('');
+
+onMounted(() => {
+  initTheme();
+});
 
 const roles = [
   {
@@ -59,11 +65,11 @@ const handleSelectRole = async (roleKey: string) => {
 </script>
 
 <template>
-  <div class="demo-welcome">
+  <div class="demo-welcome" :class="`theme-${theme}`">
     <div class="welcome-container">
       <div class="welcome-header">
         <div class="logo">
-          <span class="logo-icon">🔊</span>
+          <img src="/logo.png" alt="回响" class="logo-icon" />
           <span class="logo-text">回响</span>
           <span class="demo-badge">演示版</span>
         </div>
@@ -103,14 +109,47 @@ const handleSelectRole = async (roleKey: string) => {
   </div>
 </template>
 
+<style>
+/* Dark theme variables */
+.demo-welcome.theme-dark {
+  --demo-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --demo-text-primary: #f8fafc;
+  --demo-text-secondary: #cbd5e1;
+  --demo-text-muted: #94a3b8;
+  --demo-card-bg: rgba(30, 41, 59, 0.8);
+  --demo-card-hover-bg: rgba(30, 41, 59, 0.95);
+  --demo-border: rgba(148, 163, 184, 0.15);
+  --demo-border-hover: rgba(59, 130, 246, 0.4);
+  --demo-badge-bg: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --demo-notice-bg: rgba(59, 130, 246, 0.1);
+  --demo-notice-border: rgba(59, 130, 246, 0.2);
+}
+
+/* Light theme variables */
+.demo-welcome.theme-light {
+  --demo-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --demo-text-primary: #0f172a;
+  --demo-text-secondary: #334155;
+  --demo-text-muted: #64748b;
+  --demo-card-bg: #ffffff;
+  --demo-card-hover-bg: #f8fafc;
+  --demo-border: #cbd5e1;
+  --demo-border-hover: #3b82f6;
+  --demo-badge-bg: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --demo-notice-bg: rgba(59, 130, 246, 0.08);
+  --demo-notice-border: rgba(59, 130, 246, 0.2);
+}
+</style>
+
 <style scoped>
 .demo-welcome {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: var(--demo-bg-gradient);
   padding: 24px;
+  transition: background 0.3s ease;
 }
 
 .welcome-container {
@@ -131,7 +170,9 @@ const handleSelectRole = async (roleKey: string) => {
 }
 
 .logo-icon {
-  font-size: 32px;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -144,7 +185,7 @@ const handleSelectRole = async (roleKey: string) => {
 }
 
 .demo-badge {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: var(--demo-badge-bg);
   color: white;
   font-size: 12px;
   font-weight: 600;
@@ -156,14 +197,16 @@ const handleSelectRole = async (roleKey: string) => {
 .welcome-header h1 {
   font-size: 36px;
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--demo-text-primary);
   margin: 0 0 12px 0;
+  transition: color 0.3s ease;
 }
 
 .welcome-header p {
   font-size: 16px;
-  color: #94a3b8;
+  color: var(--demo-text-muted);
   margin: 0;
+  transition: color 0.3s ease;
 }
 
 .role-cards {
@@ -174,8 +217,8 @@ const handleSelectRole = async (roleKey: string) => {
 }
 
 .role-card {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: var(--demo-card-bg);
+  border: 1px solid var(--demo-border);
   border-radius: 16px;
   padding: 24px;
   cursor: pointer;
@@ -184,10 +227,14 @@ const handleSelectRole = async (roleKey: string) => {
 }
 
 .role-card:hover {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: rgba(59, 130, 246, 0.4);
+  background: var(--demo-card-hover-bg);
+  border-color: var(--demo-border-hover);
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.theme-light .role-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
 .role-card.active {
@@ -213,15 +260,17 @@ const handleSelectRole = async (roleKey: string) => {
 .role-info h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--demo-text-primary);
   margin: 0 0 8px 0;
+  transition: color 0.3s ease;
 }
 
 .role-info p {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--demo-text-muted);
   margin: 0;
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 .loading-spinner {
@@ -244,10 +293,11 @@ const handleSelectRole = async (roleKey: string) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: var(--demo-notice-bg);
+  border: 1px solid var(--demo-notice-border);
   border-radius: 12px;
   padding: 16px 20px;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .notice-icon {
@@ -259,8 +309,9 @@ const handleSelectRole = async (roleKey: string) => {
   align-items: center;
   gap: 16px;
   flex: 1;
-  color: #94a3b8;
+  color: var(--demo-text-muted);
   font-size: 14px;
+  transition: color 0.3s ease;
 }
 
 .register-link {

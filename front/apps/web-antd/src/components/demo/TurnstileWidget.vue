@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
 
+import { turnstileSiteKey } from '#/utils/env';
+
 const props = defineProps<{
   siteKey?: string;
 }>();
@@ -32,7 +34,7 @@ declare global {
 }
 
 onMounted(() => {
-  const siteKey = props.siteKey || import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const siteKey = props.siteKey || turnstileSiteKey;
 
   if (!siteKey || !window.turnstile) {
     console.warn('Turnstile not configured or script not loaded');
