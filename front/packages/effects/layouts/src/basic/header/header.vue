@@ -41,17 +41,23 @@ const { refresh } = useRefresh();
 
 // 权限控制：通过 inject 获取权限检查函数（由 apps 层 provide）
 interface PreferencesAccess {
+  canView?: () => boolean;
   isAdmin: () => boolean;
   isTenantAdmin: () => boolean;
+  isProductManager?: () => boolean;
+  canConfigureClustering?: () => boolean;
 }
 
 const preferencesAccess = inject<PreferencesAccess>('preferencesAccess', {
+  canView: () => false,
   isAdmin: () => false,
   isTenantAdmin: () => false,
+  isProductManager: () => false,
+  canConfigureClustering: () => false,
 });
 
 const hasPreferencesAccess = computed(
-  () => preferencesAccess.isAdmin() || preferencesAccess.isTenantAdmin(),
+  () => preferencesAccess.canView?.() ?? false,
 );
 
 const rightSlots = computed(() => {

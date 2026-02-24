@@ -38,9 +38,32 @@ provide('clusteringAPI', {
 });
 
 // Provide 权限检查函数给 preferences 组件使用
+// 细粒度权限控制：所有人可访问基础设置，高级功能按角色控制
 provide('preferencesAccess', {
-  isAdmin: () => userStore.userRoles.includes('admin'),
-  isTenantAdmin: () => userStore.userRoles.includes('boss'),
+  // 所有人都可以访问设置入口
+  canView: () => true,
+
+  // 超级管理员 或 系统管理员（用于系统级配置：Footer、Copyright）
+  isAdmin: () => {
+    const userType = userStore.userInfo?.userType;
+    return userType === 'admin' || userType === 'staff';
+  },
+
+  // 租户管理员（角色名称为"管理员"）
+  isTenantAdmin: () => {
+    return userStore.userRoles.includes('管理员');
+  },
+
+  // 产品经理
+  isProductManager: () => {
+    return userStore.userRoles.includes('产品经理');
+  },
+
+  // 是否可以配置聚类（管理员 + 产品经理）
+  canConfigureClustering: () => {
+    return userStore.userRoles.includes('管理员') ||
+           userStore.userRoles.includes('产品经理');
+  },
 });
 
 const userStore = useUserStore();
@@ -79,7 +102,7 @@ const showDot = computed(() =>
 const menus = computed(() => [
   {
     handler: () => {
-      router.push('/profile');
+      router.push('/app/profile');
     },
     icon: MingcuteProfileLine,
     text: $t('page.menu.profile'),
@@ -161,9 +184,9 @@ watch(
       <UserDropdown
         :avatar
         :menus
-        :text="userStore.userInfo?.realName"
-        description="ann.vben@gmail.com"
-        tag-text="Pro"
+        :text="userStore.userInfo?.nickname || userStore.userInfo?.username"
+        :description="userStore.userInfo?.email || ''"
+        :tag-text="userStore.userInfo?.userType === 'admin' ? '超级管理员' : userStore.userInfo?.userType === 'staff' ? '系统管理员' : ''"
         @logout="handleLogout"
       />
     </template>

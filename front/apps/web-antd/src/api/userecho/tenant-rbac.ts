@@ -4,6 +4,17 @@
 
 import { requestClient } from '#/api/request';
 
+/** 租户信息 */
+export interface TenantInfo {
+    id: string;
+    name: string;
+    slug: string | null;
+    status: string;
+    created_time: string;
+    updated_time: string | null;
+    deleted_at: string | null;
+}
+
 /** 租户角色 */
 export interface TenantRole {
     id: string;
@@ -72,6 +83,13 @@ export interface UpdateMemberParams {
     role_ids?: string[];
     user_type?: string;
     status?: string;
+}
+
+// ==================== 租户 API ====================
+
+/** 获取当前租户信息 */
+export async function getTenantInfo() {
+    return requestClient.get<TenantInfo>('/api/v1/app/tenant/members/tenant-info');
 }
 
 // ==================== 角色 API ====================

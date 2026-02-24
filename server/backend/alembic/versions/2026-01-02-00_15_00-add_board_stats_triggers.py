@@ -23,10 +23,8 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """添加 Board 统计触发器"""
 
-
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-
         # 创建更新 Board feedback_count 的触发器函数
         op.execute("""
             CREATE OR REPLACE FUNCTION update_board_feedback_count()
@@ -73,7 +71,6 @@ def upgrade() -> None:
             END;
             $$ LANGUAGE plpgsql;
         """)
-
 
         # 创建更新 Board topic_count 的触发器函数
         op.execute("""
@@ -122,7 +119,6 @@ def upgrade() -> None:
             $$ LANGUAGE plpgsql;
         """)
 
-
         # 先删除旧触发器（如果存在）
         op.execute("DROP TRIGGER IF EXISTS trigger_update_board_feedback_count ON feedbacks")
         op.execute("DROP TRIGGER IF EXISTS trigger_update_board_topic_count ON topics")
@@ -151,7 +147,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     """回滚：删除 Board 统计触发器"""
 
-
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         # 删除触发器
@@ -161,4 +156,3 @@ def downgrade() -> None:
         # 删除函数
         op.execute("DROP FUNCTION IF EXISTS update_board_feedback_count")
         op.execute("DROP FUNCTION IF EXISTS update_board_topic_count")
-

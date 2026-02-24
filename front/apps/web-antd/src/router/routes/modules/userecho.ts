@@ -16,6 +16,17 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    name: 'Profile',
+    path: '/app/profile',
+    component: () => import('#/views/_core/profile/index.vue'),
+    meta: {
+      title: $t('page.menu.profile'),
+      icon: 'mingcute:profile-line',
+      hideInMenu: true,
+      // 个人中心对所有登录用户可见，不需要权限
+    },
+  },
+  {
     name: 'FeedbackManagement',
     path: '/app/feedback',
     meta: {

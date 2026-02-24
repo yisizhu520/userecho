@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
+from backend.app.userecho.schema.tenant import TenantOut
 from backend.app.userecho.schema.tenant_rbac import (
     TenantMemberCreate,
     TenantMemberOut,
@@ -16,6 +17,34 @@ from backend.common.security.jwt import CurrentTenantId, CurrentUserId, DependsJ
 from backend.database.db import CurrentSession
 
 router = APIRouter()
+
+
+@router.get("/tenant-info", summary="获取当前租户信息", dependencies=[DependsJwtAuth])
+async def get_tenant_info(
+    db: CurrentSession,
+) -> ResponseSchemaModel[TenantOut]:
+    """获取当前租户的基本信息"""
+    from backend.app.userecho.model.tenant import Tenant
+    from backend.common.context import ctx
+
+    # 从上下文获取 tenant_id
+    tenant_id = ctx.tenant_id
+    if not tenant_id:
+        return ResponseSchemaModel(
+            code=400,
+            msg="租户信息缺失",
+            data=None,
+        )
+
+    tenant = await db.get(Tenant, tenant_id)
+    if not tenant:
+        return ResponseSchemaModel(
+            code=404,
+            msg="租户不存在",
+            data=None,
+        )
+
+    return ResponseSchemaModel(data=TenantOut.model_validate(tenant))
 
 
 @router.get("", summary="获取成员列表", dependencies=[DependsJwtAuth])

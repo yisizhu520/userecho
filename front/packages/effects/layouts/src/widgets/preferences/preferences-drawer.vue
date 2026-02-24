@@ -184,33 +184,35 @@ const [Drawer] = useVbenDrawer();
 interface PreferencesAccess {
   isAdmin: () => boolean;
   isTenantAdmin: () => boolean;
+  isProductManager?: () => boolean;
+  canConfigureClustering?: () => boolean;
 }
 
 const preferencesAccess = inject<PreferencesAccess>('preferencesAccess', {
   isAdmin: () => true, // 默认值，保证组件可用
   isTenantAdmin: () => true,
+  isProductManager: () => false,
+  canConfigureClustering: () => false,
 });
 
 const isAdmin = computed(() => preferencesAccess.isAdmin());
-const isTenantAdmin = computed(() => preferencesAccess.isTenantAdmin());
+const canConfigureClustering = computed(
+  () => preferencesAccess.canConfigureClustering?.() ?? false,
+);
 
 const activeTab = ref('');
 
 const tabs = computed((): SegmentedItem[] => {
-  const items: SegmentedItem[] = [];
+  const items: SegmentedItem[] = [
+    // 所有角色都能看到的基础 Tabs
+    { label: $t('preferences.general'), value: 'general' },
+    { label: $t('preferences.appearance'), value: 'appearance' },
+    { label: $t('preferences.layout'), value: 'layout' },
+    { label: $t('preferences.shortcutKeys.title'), value: 'shortcutKey' },
+  ];
 
-  // Admin 专属 Tabs
-  if (isAdmin.value) {
-    items.push(
-      { label: $t('preferences.appearance'), value: 'appearance' },
-      { label: $t('preferences.layout'), value: 'layout' },
-      { label: $t('preferences.shortcutKeys.title'), value: 'shortcutKey' },
-      { label: $t('preferences.general'), value: 'general' },
-    );
-  }
-
-  // Tenant Admin 专属 Tab
-  if (isTenantAdmin.value) {
+  // 聚类配置：仅管理员和产品经理可见
+  if (canConfigureClustering.value) {
     items.push({ label: $t('preferences.clustering'), value: 'clustering' });
   }
 
@@ -410,14 +412,15 @@ async function handleReset() {
                 v-model:widget-theme-toggle="widgetThemeToggle"
               />
             </Block>
-            <Block :title="$t('preferences.footer.title')">
+            <!-- Footer 和 Copyright：仅管理员可见 -->
+            <Block v-if="isAdmin" :title="$t('preferences.footer.title')">
               <Footer
                 v-model:footer-enable="footerEnable"
                 v-model:footer-fixed="footerFixed"
               />
             </Block>
             <Block
-              v-if="copyrightSettingShow"
+              v-if="isAdmin && copyrightSettingShow"
               :title="$t('preferences.copyright.title')"
             >
               <Copyright
@@ -452,21 +455,12 @@ async function handleReset() {
       </div>
 
       <template #footer>
+        <!-- 复制偏好设置按钮已隐藏 -->
         <VbenButton
           :disabled="!diffPreference"
           class="mx-4 w-full"
           size="sm"
           variant="default"
-          @click="handleCopy"
-        >
-          <Copy class="mr-2 size-3" />
-          {{ $t('preferences.copyPreferences') }}
-        </VbenButton>
-        <VbenButton
-          :disabled="!diffPreference"
-          class="mr-4 w-full"
-          size="sm"
-          variant="ghost"
           @click="handleClearCache"
         >
           {{ $t('preferences.clearAndLogout') }}

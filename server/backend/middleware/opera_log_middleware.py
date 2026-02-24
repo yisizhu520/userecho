@@ -142,6 +142,9 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 log.debug("<-- 请求结束")
 
             # 日志创建
+            # 确保 args 可以被 JSON 序列化（移除不可序列化的对象）
+            safe_args = await self.sanitize_args_for_json(args) if args else None
+
             opera_log_in = CreateOperaLogParam(
                 trace_id=get_request_trace_id(),
                 username=username,
@@ -156,7 +159,7 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 os=ctx.os,
                 browser=ctx.browser,
                 device=ctx.device,
-                args=args,
+                args=safe_args,
                 status=status,
                 code=str(code),
                 msg=msg,
@@ -248,6 +251,41 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                         args[key] = "******"
 
         return args
+
+    @staticmethod
+    @sync_to_async
+    def sanitize_args_for_json(args: dict[str, Any]) -> dict[str, Any]:
+        """
+        确保参数可以被 JSON 序列化
+        移除或转换不可序列化的对象（如 SQLAlchemy 模型）
+
+        :param args: 原始参数字典
+        :return: 可序列化的参数字典
+        """
+        import json
+
+        def make_serializable(obj: Any) -> Any:
+            """递归处理对象，确保可序列化"""
+            if obj is None or isinstance(obj, (str, int, float, bool)):
+                return obj
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return [make_serializable(item) for item in obj]
+            # 尝试 JSON 序列化，失败则转字符串
+            try:
+                json.dumps(obj)
+                return obj
+            except (TypeError, ValueError):
+                return str(obj)
+
+        try:
+            # 先尝试直接序列化
+            json.dumps(args)
+            return args
+        except (TypeError, ValueError):
+            # 如果失败，递归处理每个值
+            return make_serializable(args)
 
     @classmethod
     async def consumer(cls) -> None:

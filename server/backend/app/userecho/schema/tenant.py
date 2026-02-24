@@ -26,7 +26,10 @@ class TenantUpdate(SchemaBase):
 class TenantOut(TenantBase):
     """租户输出模型"""
 
+    model_config = {"from_attributes": True}
+
     id: str = Field(description="租户ID")
+    slug: str | None = Field(None, description="URL slug")
     created_time: datetime = Field(description="创建时间")
     updated_time: datetime | None = Field(None, description="更新时间")
     deleted_at: datetime | None = Field(None, description="删除时间")

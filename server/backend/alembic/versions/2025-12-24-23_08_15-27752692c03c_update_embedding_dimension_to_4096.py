@@ -25,7 +25,7 @@ def upgrade() -> None:
     升级：修改 embedding 维度 768 -> 4096
 
     策略：删除旧列，创建新列（pgvector 不支持直接修改维度）
-    
+
     注意：使用 IF EXISTS 确保幂等性
     """
     bind = op.get_bind()
@@ -64,7 +64,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     """
     降级：恢复 embedding 维度 4096 -> 768
-    
+
     注意：使用 IF EXISTS 确保幂等性
     """
     bind = op.get_bind()

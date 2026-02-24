@@ -108,9 +108,7 @@ async def verify_demo_data() -> bool:
             all_passed = False
 
         # 检查客户
-        customer_count = await db.scalar(
-            select(func.count(Customer.id)).where(Customer.tenant_id == "default-tenant")
-        )
+        customer_count = await db.scalar(select(func.count(Customer.id)).where(Customer.tenant_id == "default-tenant"))
         print(f"   客户: {customer_count} 个")
         if customer_count == 0:
             print("   ⚠️  警告：未找到客户数据")

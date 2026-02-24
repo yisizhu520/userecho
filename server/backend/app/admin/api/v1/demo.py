@@ -2,11 +2,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from sqlalchemy import select
 from starlette.background import BackgroundTasks
 
 from backend.app.admin.model import User
+from backend.app.admin.schema.demo import SwitchRoleParam
 from backend.app.admin.schema.user import AuthLoginParam
 from backend.app.admin.service.auth_service import auth_service
 from backend.common.log import log
@@ -65,7 +66,8 @@ async def get_demo_roles() -> Any:
 @router.post("/switch-role", summary="切换演示角色", dependencies=[DependsTurnstile])
 async def switch_role(
     db: CurrentSessionTransaction,
-    role_key: str,
+    obj: SwitchRoleParam | None = None,
+    role_key_query: str | None = Query(default=None, alias="role_key"),
 ) -> Any:
     """
     快速切换到指定角色
@@ -75,6 +77,9 @@ async def switch_role(
     if not settings.DEMO_MODE:
         raise HTTPException(status_code=404, detail="接口不存在")
 
+    role_key = (obj.role_key if obj else None) or role_key_query
+    if not role_key:
+        raise HTTPException(status_code=422, detail="请求参数非法: role_key 字段为必填项")
     if role_key not in DEMO_ROLES:
         raise HTTPException(status_code=400, detail="无效的角色")
 

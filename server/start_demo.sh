@@ -45,4 +45,7 @@ echo ""
 cd "$SCRIPT_DIR/backend"
 
 # 使用 .env.demo 配置启动服务（直接使用虚拟环境的 Python）
-ENV_FILE=.env.demo "$VENV_PYTHON" run.py
+# 方式1: 通过环境变量传递（export + 命令前缀）
+# 方式2: 通过命令行参数传递（更可靠）
+export ENV_FILE=.env.demo
+ENV_FILE=.env.demo "$VENV_PYTHON" run.py --env=.env.demo
