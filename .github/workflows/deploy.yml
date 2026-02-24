@@ -57,9 +57,17 @@ jobs:
           cache-from: type=gha,scope=monolith-prod
           cache-to: type=gha,mode=max,scope=monolith-prod
 
-      - name: Trigger Dokploy Deployment
+      - name: Trigger Dokploy Production Deployment
         run: |
           curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "x-github-event: registry_package" \
+            -d '{"registry_package": {"package_version": {"package_url": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master"}}}' \
+            --fail --silent --show-error
+
+      - name: Trigger Dokploy Demo Deployment
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_DEMO_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -H "x-github-event: registry_package" \
             -d '{"registry_package": {"package_version": {"package_url": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master"}}}' \
