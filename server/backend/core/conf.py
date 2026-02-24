@@ -352,6 +352,9 @@ class Settings(BaseSettings):
     # 前端 URL（用于生成邮件中的验证链接）
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # 后端 URL（用于生成 API 链接，如二维码）
+    BACKEND_URL: str = "http://127.0.0.1:8000"
+
     @model_validator(mode="before")
     @classmethod
     def check_env(cls, values: Any) -> Any:

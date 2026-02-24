@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, h, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -100,7 +100,7 @@ const columns = [
   },
   {
     title: '创建时间',
-    dataIndex: 'created_at',
+    dataIndex: 'created_time',
     width: 180,
     customRender: ({ text }: any) => dayjs(text).format('YYYY-MM-DD HH:mm'),
   },

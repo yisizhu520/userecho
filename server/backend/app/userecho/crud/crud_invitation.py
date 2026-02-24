@@ -34,7 +34,7 @@ class CRUDInvitation:
         for field, value in obj_in.items():
             if hasattr(db_obj, field):
                 setattr(db_obj, field, value)
-        db_obj.updated_at = timezone.now()
+        db_obj.updated_time = timezone.now()
         await db.flush()
         await db.refresh(db_obj)
         return db_obj
@@ -44,7 +44,7 @@ class CRUDInvitation:
         invitation = await self.get(db, invitation_id)
         if invitation:
             invitation.used_count += 1
-            invitation.updated_at = timezone.now()
+            invitation.updated_time = timezone.now()
             await db.flush()
             await db.refresh(invitation)
         return invitation
@@ -69,7 +69,7 @@ class CRUDInvitation:
             conditions.append(Invitation.campaign == campaign)
 
         # 查询列表
-        query = select(Invitation).order_by(Invitation.created_at.desc()).offset(skip).limit(limit)
+        query = select(Invitation).order_by(Invitation.created_time.desc()).offset(skip).limit(limit)
         if conditions:
             query = query.where(*conditions)
 
@@ -90,7 +90,7 @@ class CRUDInvitation:
         invitation = await self.get(db, invitation_id)
         if invitation:
             invitation.status = "disabled"
-            invitation.updated_at = timezone.now()
+            invitation.updated_time = timezone.now()
             await db.flush()
             return True
         return False

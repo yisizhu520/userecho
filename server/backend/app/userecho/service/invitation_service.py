@@ -12,7 +12,6 @@ from backend.app.userecho.schema.invitation import InvitationCreateReq, Invitati
 from backend.common.exception.errors import NotFoundError
 from backend.common.log import log
 from backend.core.conf import settings
-from backend.database.db import uuid4_str
 from backend.utils.timezone import timezone
 
 
@@ -23,20 +22,38 @@ class InvitationService:
         """生成 URL 安全的邀请 token"""
         return secrets.token_urlsafe(24)  # 32 个字符
 
+    def get_invitation_urls(self, token: str) -> tuple[str, str, str]:
+        """
+        生成邀请相关的所有 URL
+
+        Args:
+            token: 邀请 token
+
+        Returns:
+            tuple: (url, short_url, qr_code_url)
+        """
+        base_url = settings.FRONTEND_URL or "http://localhost:5173"
+        backend_url = settings.BACKEND_URL or "http://127.0.0.1:8000"
+
+        url = f"{base_url}/register?invite={token}"
+        short_url = f"{base_url}/i/{token[:8]}"
+        qr_code_url = f"{backend_url}/api/v1/invitations/{token}/qrcode"
+
+        return url, short_url, qr_code_url
+
     async def create_invitation(
         self, db: AsyncSession, creator_id: int, req: InvitationCreateReq
-    ) -> tuple[Invitation, str, str]:
+    ) -> tuple[Invitation, str, str, str]:
         """
         创建邀请
 
         Returns:
-            tuple: (invitation, url, qr_code_url)
+            tuple: (invitation, url, short_url, qr_code_url)
         """
         token = self.generate_token()
         expires_at = timezone.now() + timedelta(days=req.expires_days)
 
         invitation = Invitation(
-            id=uuid4_str(),
             token=token,
             usage_limit=req.usage_limit,
             used_count=0,
@@ -52,14 +69,12 @@ class InvitationService:
 
         invitation = await invitation_dao.create(db, invitation)
 
-        # 生成 URL
-        base_url = settings.FRONTEND_URL or "http://localhost:5173"
-        url = f"{base_url}/register?invite={token}"
-        qr_code_url = f"{settings.BACKEND_URL}/api/v1/invitations/{token}/qrcode"
+        # 生成所有 URL
+        url, short_url, qr_code_url = self.get_invitation_urls(token)
 
         log.info(f"Created invitation: id={invitation.id}, token={token[:8]}..., creator={creator_id}")
 
-        return invitation, url, qr_code_url
+        return invitation, url, short_url, qr_code_url
 
     async def validate_invitation(self, db: AsyncSession, token: str) -> tuple[bool, Invitation | None, str | None]:
         """

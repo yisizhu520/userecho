@@ -114,7 +114,7 @@ export interface InvitationQueryParams {
  */
 export async function getInvitationList(params?: InvitationQueryParams) {
   return requestClient.get<PageResult<InvitationInfo>>(
-    '/admin/api/v1/invitations',
+    '/api/v1/invitations',
     { params },
   );
 }
@@ -124,7 +124,7 @@ export async function getInvitationList(params?: InvitationQueryParams) {
  */
 export async function createInvitation(data: CreateInvitationRequest) {
   return requestClient.post<Result<InvitationDetail>>(
-    '/admin/api/v1/invitations',
+    '/api/v1/invitations',
     data,
   );
 }
@@ -134,7 +134,7 @@ export async function createInvitation(data: CreateInvitationRequest) {
  */
 export async function getInvitationDetail(id: string) {
   return requestClient.get<Result<InvitationDetail>>(
-    `/admin/api/v1/invitations/${id}`,
+    `/api/v1/invitations/${id}`,
   );
 }
 
@@ -143,7 +143,7 @@ export async function getInvitationDetail(id: string) {
  */
 export async function getInvitationUsage(id: string, params?: { page?: number; size?: number }) {
   return requestClient.get<Result<InvitationUsageResponse>>(
-    `/admin/api/v1/invitations/${id}/usage`,
+    `/api/v1/invitations/${id}/usage`,
     { params },
   );
 }
@@ -153,7 +153,7 @@ export async function getInvitationUsage(id: string, params?: { page?: number; s
  */
 export async function updateInvitation(id: string, data: UpdateInvitationRequest) {
   return requestClient.patch<Result<InvitationInfo>>(
-    `/admin/api/v1/invitations/${id}`,
+    `/api/v1/invitations/${id}`,
     data,
   );
 }
@@ -163,6 +163,6 @@ export async function updateInvitation(id: string, data: UpdateInvitationRequest
  */
 export async function deleteInvitation(id: string) {
   return requestClient.delete<Result<{ success: boolean }>>(
-    `/admin/api/v1/invitations/${id}`,
+    `/api/v1/invitations/${id}`,
   );
 }

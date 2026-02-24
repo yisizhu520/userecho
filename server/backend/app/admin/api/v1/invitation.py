@@ -13,8 +13,8 @@ from backend.app.userecho.schema.invitation import (
 from backend.app.userecho.service.invitation_service import invitation_service
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentUser
-from backend.core.conf import settings
 from backend.database.db import CurrentSession
+
 
 router = APIRouter(prefix="/invitations", tags=["Admin - 邀请管理"])
 
@@ -26,14 +26,14 @@ async def create_invitation(
     current_user: Annotated[dict, CurrentUser],
 ) -> Any:
     """创建邀请链接"""
-    creator_id = current_user.get("id")
+    creator_id = current_user.id
 
-    invitation, url, qr_code_url = await invitation_service.create_invitation(db, creator_id, body)
+    invitation, url, short_url, qr_code_url = await invitation_service.create_invitation(db, creator_id, body)
+
+    # 提交事务
+    await db.commit()
 
     # 构造详细响应
-    base_url = settings.FRONTEND_URL or "http://localhost:5173"
-    short_url = f"{base_url}/i/{invitation.token[:8]}"  # 简单的短链接（实际项目中应使用专门的短链服务）
-
     data = {
         **InvitationSchema.model_validate(invitation).model_dump(),
         "url": url,
@@ -78,11 +78,8 @@ async def get_invitation_detail(
     """获取邀请详情"""
     invitation = await invitation_service.get_invitation_detail(db, invitation_id)
 
-    # 构造详细响应
-    base_url = settings.FRONTEND_URL or "http://localhost:5173"
-    url = f"{base_url}/register?invite={invitation.token}"
-    short_url = f"{base_url}/i/{invitation.token[:8]}"
-    qr_code_url = f"{settings.BACKEND_URL}/api/v1/invitations/{invitation.token}/qrcode"
+    # 获取所有 URL
+    url, short_url, qr_code_url = invitation_service.get_invitation_urls(invitation.token)
 
     data = {
         **InvitationSchema.model_validate(invitation).model_dump(),
@@ -164,6 +161,7 @@ async def update_invitation(
 ) -> Any:
     """更新邀请信息"""
     invitation = await invitation_service.update_invitation(db, invitation_id, body)
+    await db.commit()
     return response_base.success(data=InvitationSchema.model_validate(invitation))
 
 
@@ -175,4 +173,5 @@ async def delete_invitation(
 ) -> Any:
     """删除邀请（软删除，标记为disabled）"""
     success = await invitation_service.delete_invitation(db, invitation_id)
+    await db.commit()
     return response_base.success(data={"success": success})

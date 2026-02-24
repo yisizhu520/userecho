@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-添加额外的系统管理菜单（积分管理、订阅管理）
+添加额外的系统管理菜单（订阅管理、积分管理、邀请管理）
 这些菜单是后来添加的，不在 fba init 的基础数据中
 """
 
@@ -37,6 +37,7 @@ async def add_extra_system_menus() -> None:
         # 检查菜单是否已存在
         existing_credits = await db.scalar(select(Menu).where(Menu.name == "SysCredits"))
         existing_subscription = await db.scalar(select(Menu).where(Menu.name == "SysSubscription"))
+        existing_invitation = await db.scalar(select(Menu).where(Menu.name == "SysInvitation"))
 
         menus_added = 0
 
@@ -113,6 +114,44 @@ async def add_extra_system_menus() -> None:
             menus_added += 1
         else:
             print("  ⏭️  积分管理菜单已存在，跳过")
+
+        # 3. 添加"邀请管理"
+        existing_invitation = await db.scalar(select(Menu).where(Menu.name == "SysInvitation"))
+        if not existing_invitation:
+            await db.execute(
+                text(
+                    """
+                INSERT INTO sys_menu (
+                    title, name, path, sort, icon, type, component, 
+                    perms, status, display, cache, link, remark, parent_id, created_time
+                )
+                VALUES (
+                    :title, :name, :path, :sort, :icon, :type, :component,
+                    :perms, :status, :display, :cache, :link, :remark, :parent_id, NOW()
+                )
+            """
+                ),
+                {
+                    "title": "邀请管理",
+                    "name": "SysInvitation",
+                    "path": "/system/invitation",
+                    "sort": 12,
+                    "icon": "lucide:mail-open",
+                    "type": 1,
+                    "component": "/src/views/system/invitation/index",
+                    "perms": None,
+                    "status": 1,
+                    "display": 1,
+                    "cache": 1,
+                    "link": "",
+                    "remark": "试用邀请管理",
+                    "parent_id": system_menu_id,
+                },
+            )
+            print("  ✅ 已添加: 邀请管理")
+            menus_added += 1
+        else:
+            print("  ⏭️  邀请管理菜单已存在，跳过")
 
         # 提交事务
         if menus_added > 0:
