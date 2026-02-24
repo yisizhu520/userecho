@@ -78,6 +78,12 @@ services:
       - fba_static_upload:/fba/backend/static/upload
     networks:
       - fba_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:80/api/v1/health" ]
       interval: 30s
