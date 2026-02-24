@@ -27,6 +27,7 @@ from sqlalchemy import func, select
 
 from backend.app.admin.model import Dept, Menu, Role, User
 from backend.app.userecho.model import Board, Customer, Feedback, Tenant, Topic
+from backend.app.userecho.model.subscription import SubscriptionPlan, TenantSubscription
 from backend.database.db import async_db_session
 
 
@@ -84,6 +85,37 @@ async def verify_tenant_data() -> bool:
     return all_passed
 
 
+async def verify_subscription_data() -> bool:
+    """验证订阅数据"""
+    print("")
+    print("📦 订阅数据：")
+    all_passed = True
+
+    async with async_db_session() as db:
+        # 检查订阅套餐
+        plan_count = await db.scalar(select(func.count(SubscriptionPlan.id)))
+        print(f"   订阅套餐: {plan_count} 个")
+        if plan_count == 0:
+            print("   ⚠️  警告：未找到订阅套餐")
+        else:
+            plans = await db.scalars(select(SubscriptionPlan).order_by(SubscriptionPlan.sort_order))
+            for plan in plans:
+                print(f"      - {plan.name} ({plan.code})")
+
+        # 检查默认租户订阅
+        subscription = await db.scalar(
+            select(TenantSubscription).where(TenantSubscription.tenant_id == "default-tenant")
+        )
+        if subscription:
+            plan = await db.get(SubscriptionPlan, subscription.plan_id)
+            print(f"   ✅ 默认租户订阅: {plan.name if plan else '未知'} ({subscription.status})")
+            print(f"      到期时间: {subscription.expires_at}")
+        else:
+            print("   ⚠️  警告：默认租户未分配订阅")
+
+    return all_passed
+
+
 async def verify_demo_data() -> bool:
     """验证 Demo 预置数据"""
     print("")
@@ -137,12 +169,13 @@ async def verify_all() -> bool:
 
     system_ok = await verify_system_data()
     tenant_ok = await verify_tenant_data()
+    subscription_ok = await verify_subscription_data()
     demo_ok = await verify_demo_data()
 
     print()
     print("=" * 70)
 
-    if system_ok and tenant_ok and demo_ok:
+    if system_ok and tenant_ok and subscription_ok and demo_ok:
         print("✅ 所有验证通过！")
         return True
     else:

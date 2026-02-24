@@ -288,10 +288,27 @@ print('yes' if asyncio.run(check()) else 'no')
 step3_business_base_data() {
     print_header "步骤 3/4: 业务基础数据初始化"
     
-    # 3.1 初始化默认租户
-    print_step "3.1 创建默认租户和看板..."
+    # 3.1 初始化订阅套餐
+    print_step "3.1 初始化订阅套餐..."
+    
+    if [ -f "scripts/init_subscription_plans.py" ]; then
+        "$PYTHON" scripts/init_subscription_plans.py
+        if [ $? -eq 0 ]; then
+            print_success "订阅套餐初始化完成"
+        else
+            print_error "订阅套餐初始化失败"
+            exit 1
+        fi
+    else
+        print_warning "未找到 init_subscription_plans.py，跳过"
+    fi
+    
+    # 3.2 初始化默认租户（会自动分配专业版订阅）
+    print_step "3.2 创建默认租户和看板..."
     
     if [ -f "scripts/init_default_tenant.py" ]; then
+        # 设置 DEMO_MODE 环境变量
+        export DEMO_MODE=true
         "$PYTHON" scripts/init_default_tenant.py
         if [ $? -eq 0 ]; then
             print_success "默认租户创建完成"
@@ -303,8 +320,8 @@ step3_business_base_data() {
         print_warning "未找到 init_default_tenant.py，跳过"
     fi
     
-    # 3.2 初始化业务菜单和权限
-    print_step "3.2 初始化租户权限和角色..."
+    # 3.3 初始化业务菜单和权限
+    print_step "3.3 初始化租户权限和角色..."
     
     if [ -f "scripts/init_business_menus.py" ]; then
         "$PYTHON" scripts/init_business_menus.py

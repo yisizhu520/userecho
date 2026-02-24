@@ -165,7 +165,11 @@ class TenantMemberService:
             await tenant_member_dao.set_member_roles(db, tenant_user_id, role_ids, assigned_by=assigned_by)
 
         # 更新成员状态和类型
-        return await tenant_member_dao.update(db, member, user_type=user_type, status=status)
+        await tenant_member_dao.update(db, member, user_type=user_type, status=status)
+
+        # 重新查询以确保关联数据已加载（user, roles）
+        await db.refresh(member, ["user", "roles"])
+        return member
 
     @staticmethod
     async def update_roles(

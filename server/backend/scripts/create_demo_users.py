@@ -101,12 +101,12 @@ async def create_demo_users() -> None:
         print("=" * 60)
         print()
 
-        # 获取默认部门
+        # 获取默认部门（如果不存在则设为 None）
         default_dept = await db.scalar(select(Dept).where(Dept.name == "测试").limit(1))
         if not default_dept:
             default_dept = await db.scalar(select(Dept).limit(1))
 
-        dept_id = default_dept.id if default_dept else 1
+        dept_id = default_dept.id if default_dept else None
 
         # 获取所有角色
         roles = await db.scalars(select(Role))
