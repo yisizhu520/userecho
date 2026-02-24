@@ -8,6 +8,12 @@
 GitHub Push → GitHub Actions → GHCR (镜像仓库) → Dokploy (Webhook) → 容器部署
 ```
 
+## 核心特性
+
+- **统一镜像**：使用同一个 Docker 镜像，通过环境变量切换 demo/prod 模式
+- **运行时配置**：前端配置（API URL、Turnstile 密钥等）在容器启动时动态生成
+- **环境变量驱动**：所有配置通过环境变量控制，符合 12-Factor 原则
+
 ## 前置条件
 
 1. **外部服务**：
@@ -34,46 +40,96 @@ GitHub Push → GitHub Actions → GHCR (镜像仓库) → Dokploy (Webhook) →
 
 ### 2. 在 Dokploy 创建应用
 
+#### 生产环境
+
 1. 登录 Dokploy 面板
-2. 创建新项目（Project）
+2. 创建新项目（Project），命名如 `userecho-prod`
 3. 添加 **Compose** 类型应用
 4. 选择 GitHub 仓库，指定 `docker-compose.dokploy.yml` 文件
-5. 复制 **Webhook URL** 到 GitHub Secrets
+5. 复制 **Webhook URL** 到 GitHub Secrets（名称：`DOKPLOY_WEBHOOK_URL`）
+
+#### Demo 环境
+
+1. 在同一个或新的项目中创建另一个 Compose 应用
+2. 同样选择 `docker-compose.dokploy.yml` 文件
+3. 复制 **Webhook URL** 到 GitHub Secrets（名称：`DOKPLOY_DEMO_WEBHOOK_URL`）
 
 ### 3. 配置环境变量
 
 在 Dokploy 应用的 Environment 页面添加以下变量：
 
+#### 生产环境配置
+
 ```env
-# GitHub Repository（用于拉取镜像）
-GITHUB_REPOSITORY=yisizhu520/userecho
+# ======= 镜像标签 =======
+IMAGE_TAG=master
 
-# 运行环境
+# ======= 前端配置 =======
+VITE_APP_TITLE=回响
+VITE_GLOB_API_URL=/
+VITE_APP_NAMESPACE=userecho-admin
+VITE_DEVTOOLS=false
+VITE_DEMO_MODE=false
+
+# ======= 后端环境配置 =======
 ENVIRONMENT=prod
+DEMO_MODE=false
+ALLOW_REGISTRATION=true
 
-# 数据库配置
+# ======= 数据库配置 =======
 DATABASE_TYPE=postgresql
 DATABASE_HOST=your-db.supabase.co
 DATABASE_PORT=5432
 DATABASE_USER=postgres
 DATABASE_PASSWORD=your-password
 
-# Redis 配置
+# ======= Redis 配置 =======
 REDIS_HOST=your-redis.upstash.io
 REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
 REDIS_DATABASE=0
 
-# RabbitMQ 配置
+# ======= RabbitMQ 配置 =======
 CELERY_RABBITMQ_HOST=your-rabbitmq.cloudamqp.com
 CELERY_RABBITMQ_PORT=5672
 CELERY_RABBITMQ_USERNAME=guest
 CELERY_RABBITMQ_PASSWORD=guest
 CELERY_BROKER_REDIS_DATABASE=1
 
-# 安全密钥（使用随机生成的字符串）
+# ======= 安全密钥 =======
 TOKEN_SECRET_KEY=your-jwt-secret-key
 OPERA_LOG_ENCRYPT_SECRET_KEY=your-encrypt-key
+```
+
+#### Demo 环境额外配置
+
+Demo 环境在上述基础上，修改以下变量：
+
+```env
+# ======= 镜像标签 =======
+IMAGE_TAG=demo
+
+# ======= 前端配置 =======
+VITE_APP_TITLE=回响-演示
+VITE_DEMO_MODE=true
+VITE_TURNSTILE_SITE_KEY=0x4AAAxxxxxxxxxxxxxxxx
+
+# ======= 后端环境配置 =======
+ENVIRONMENT=demo
+DEMO_MODE=true
+ALLOW_REGISTRATION=false
+
+# ======= Turnstile 保护 =======
+TURNSTILE_ENABLED=true
+TURNSTILE_SECRET_KEY=0x4AAAxxxxxxxxxxxxxxxx
+
+# ======= 数据重置配置 =======
+DEMO_DATA_RESET_ENABLED=true
+DEMO_DATA_RESET_CRON=0 2 * * *
+
+# ======= 使用独立的 Redis Database =======
+REDIS_DATABASE=1
+CELERY_BROKER_REDIS_DATABASE=2
 ```
 
 ### 4. 触发部署
@@ -135,42 +191,39 @@ alembic upgrade head
 
 ---
 
-## Demo 演示环境部署
+## 环境变量说明
 
-Demo 环境是一个独立的演示实例，具有以下特性：
-- **DEMO_MODE 启用**：角色快速切换、禁用注册
-- **Turnstile 保护**：AI 接口人机验证防滥用
-- **每日数据重置**：凌晨 2 点自动重置数据
+### 前端环境变量（VITE_*）
 
-### 额外的 GitHub Secret
+这些变量在容器启动时动态生成前端配置文件 `_app.config.js`：
 
-| Secret 名称 | 说明 |
-|------------|------|
-| `DOKPLOY_DEMO_WEBHOOK_URL` | Demo 应用的 Dokploy Webhook URL |
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `VITE_APP_TITLE` | 应用标题 | `回响` |
+| `VITE_GLOB_API_URL` | API 基础路径 | `/` |
+| `VITE_APP_NAMESPACE` | 应用命名空间 | `userecho-admin` |
+| `VITE_DEVTOOLS` | 是否启用开发工具 | `false` |
+| `VITE_DEMO_MODE` | 是否为 Demo 模式 | `false` |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile Site Key | 空 |
 
-### Demo 专用环境变量
+### 后端环境变量
 
-除了标准环境变量外，还需配置：
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `ENVIRONMENT` | 运行环境 | `prod` |
+| `DEMO_MODE` | 是否启用 Demo 模式 | `false` |
+| `ALLOW_REGISTRATION` | 是否允许注册 | `true` |
+| `TURNSTILE_ENABLED` | 是否启用 Turnstile | `false` |
+| `DEMO_DATA_RESET_ENABLED` | 是否启用数据重置 | `false` |
 
-```env
-# Demo 模式
-DEMO_MODE=true
-ALLOW_REGISTRATION=false
+---
 
-# Turnstile 保护
-TURNSTILE_ENABLED=true
-TURNSTILE_SECRET_KEY=0x4AAAxxxxxxxxxxxxxxxx
-
-# 数据重置
-DEMO_DATA_RESET_ENABLED=true
-DEMO_DATA_RESET_CRON=0 2 * * *
-```
-
-### 相关文件
+## 相关文件
 
 | 文件 | 作用 |
 |------|------|
-| `.github/workflows/deploy-demo.yml` | Demo 部署 Workflow |
-| `docker-compose.demo.yml` | Demo docker-compose |
-| `front/Dockerfile.demo` | Demo 前端 Dockerfile |
-| `docs/demo-environment-guide.md` | 完整的 Demo 配置指南 |
+| `.github/workflows/deploy.yml` | 生产环境部署 Workflow |
+| `.github/workflows/deploy-demo.yml` | Demo 环境部署 Workflow |
+| `docker-compose.dokploy.yml` | 统一的 docker-compose 配置 |
+| `Dockerfile` | 统一的 Dockerfile |
+| `deploy/monolith/gen_app_config.sh` | 前端配置生成脚本 |

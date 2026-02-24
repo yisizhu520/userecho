@@ -1,6 +1,7 @@
 # Dokploy 部署专用 docker-compose
 # 单一镜像 (Monolithic) 部署
 # 包含：Nginx + FastAPI + Celery Worker + Celery Beat
+# 支持通过环境变量切换 demo/prod 模式
 
 networks:
   fba_network:
@@ -17,7 +18,7 @@ services:
   # Monolithic App Service
   # ============================================
   fba_monolith:
-    image: ghcr.io/yisizhu520/userecho:master
+    image: ghcr.io/yisizhu520/userecho:${IMAGE_TAG:-latest}
     container_name: fba_monolith
     restart: always
     ports:
@@ -25,29 +26,49 @@ services:
       # - "8001:8001" # API Direct Access (Optional)
     environment:
       - TZ=Asia/Shanghai
-      - ENVIRONMENT=${ENVIRONMENT:-prod}
 
-      # Database
+      # ======= 前端配置（运行时注入）=======
+      - VITE_APP_TITLE=${VITE_APP_TITLE:-回响}
+      - VITE_GLOB_API_URL=${VITE_GLOB_API_URL:-/}
+      - VITE_APP_NAMESPACE=${VITE_APP_NAMESPACE:-userecho-admin}
+      - VITE_DEVTOOLS=${VITE_DEVTOOLS:-false}
+      - VITE_DEMO_MODE=${VITE_DEMO_MODE:-false}
+      - VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY:-}
+
+      # ======= 后端环境配置 =======
+      - ENVIRONMENT=${ENVIRONMENT:-prod}
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-true}
+
+      # ======= Turnstile 保护（可选）=======
+      - TURNSTILE_ENABLED=${TURNSTILE_ENABLED:-false}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
+
+      # ======= 数据重置配置（Demo 专用）=======
+      - DEMO_DATA_RESET_ENABLED=${DEMO_DATA_RESET_ENABLED:-false}
+      - DEMO_DATA_RESET_CRON=${DEMO_DATA_RESET_CRON:-0 2 * * *}
+
+      # ======= 数据库配置 =======
       - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
       - DATABASE_HOST=${DATABASE_HOST}
       - DATABASE_PORT=${DATABASE_PORT:-5432}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
 
-      # Redis
+      # ======= Redis 配置 =======
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
 
-      # RabbitMQ (Celery Broker)
+      # ======= RabbitMQ 配置 =======
       - CELERY_RABBITMQ_HOST=${CELERY_RABBITMQ_HOST}
       - CELERY_RABBITMQ_PORT=${CELERY_RABBITMQ_PORT:-5672}
       - CELERY_RABBITMQ_USERNAME=${CELERY_RABBITMQ_USERNAME}
       - CELERY_RABBITMQ_PASSWORD=${CELERY_RABBITMQ_PASSWORD}
       - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:-1}
 
-      # Secrets
+      # ======= 安全密钥 =======
       - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
       - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY}
 

@@ -1,4 +1,4 @@
-name: Build and Deploy Demo Environment
+name: Build and Deploy Demo to Dokploy
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
     paths:
       - 'front/**'
       - 'server/**'
-      - 'docker-compose.demo.yml'
-      - 'Dockerfile.demo'
+      - 'docker-compose.dokploy.yml'
+      - 'Dockerfile'
       - 'deploy/monolith/**'
       - '.github/workflows/deploy-demo.yml'
   workflow_dispatch:
@@ -46,11 +46,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push monolithic demo image
+      - name: Build and push demo image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.demo
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

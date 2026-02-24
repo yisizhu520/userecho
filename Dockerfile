@@ -1,5 +1,6 @@
 # Unified Monolithic Dockerfile
 # Builds Frontend + Backend + Nginx + Supervisor in one image
+# 前端配置运行时动态生成，支持通过环境变量切换 demo/prod 模式
 
 # ==========================================
 # Stage 1: Build Frontend
@@ -10,7 +11,7 @@ WORKDIR /app/front
 # Copy source code and install dependencies
 COPY front/ .
 RUN pnpm install --frozen-lockfile
-# 设置构建缓存目录以加速后续构建
+# 构建前端（使用默认 production 模式，运行时配置将被覆盖）
 RUN --mount=type=cache,target=/app/front/node_modules/.cache \
     pnpm build:antd
 
@@ -60,6 +61,8 @@ COPY --from=frontend-builder /app/front/apps/web-antd/dist /var/www/fba_ui
 # Copy Configurations
 COPY deploy/monolith/supervisord.conf /etc/supervisor/supervisord.conf
 COPY deploy/monolith/nginx.conf /etc/nginx/nginx.conf
+COPY deploy/monolith/gen_app_config.sh /fba/gen_app_config.sh
+RUN chmod +x /fba/gen_app_config.sh
 
 # Prepare Directories
 RUN mkdir -p /var/log/fba /var/log/supervisor /var/run \
