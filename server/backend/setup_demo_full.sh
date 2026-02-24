@@ -15,10 +15,13 @@
 #   ./setup_demo_full.sh --skip-migration  # 跳过数据库迁移
 #
 # 前置条件：
-#   - PostgreSQL 数据库已创建
-#   - Redis 已启动
-#   - .env 文件已配置
-#   - Python 虚拟环境已安装依赖
+#   ✅ 必需：
+#      - PostgreSQL 数据库已创建
+#      - .env.demo 文件已配置
+#      - Python 虚拟环境已安装依赖（uv sync）
+#   
+#   ⚠️  可选：
+#      - Redis（仅运行应用时需要，初始化不需要）
 
 set -e  # 遇到错误立即退出
 
@@ -182,7 +185,7 @@ if not asyncio.run(check()):
 }
 
 check_redis_connection() {
-    print_step "检查 Redis 连接..."
+    print_step "检查 Redis 连接（可选）..."
     
     "$PYTHON" -c "
 import sys
@@ -209,6 +212,7 @@ if not asyncio.run(check()):
         print_success "Redis 连接正常"
     } || {
         print_warning "Redis 连接失败（非致命错误，继续执行）"
+        print_info "说明：Demo 初始化不需要 Redis，只有运行应用时才需要"
     }
 }
 

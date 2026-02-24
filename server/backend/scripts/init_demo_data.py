@@ -7,11 +7,19 @@
 
 import asyncio
 import io
+import os
 import random
 import sys
 
 from datetime import datetime, timedelta
 from pathlib import Path
+
+# 【重要】确保使用 .env.demo 配置文件（必须在导入 backend 模块之前设置）
+if "ENV_FILE" not in os.environ:
+    backend_path = Path(__file__).resolve().parent.parent
+    env_demo_path = backend_path / ".env.demo"
+    if env_demo_path.exists():
+        os.environ["ENV_FILE"] = str(env_demo_path)
 
 # 修复 Windows 控制台编码问题
 if sys.platform == "win32":

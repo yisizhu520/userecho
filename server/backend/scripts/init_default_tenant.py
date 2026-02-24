@@ -10,6 +10,14 @@ import io
 import os
 import sys
 from datetime import timedelta
+from pathlib import Path
+
+# 【重要】确保使用 .env.demo 配置文件（必须在导入 backend 模块之前设置）
+if "ENV_FILE" not in os.environ:
+    backend_path = Path(__file__).resolve().parent.parent
+    env_demo_path = backend_path / ".env.demo"
+    if env_demo_path.exists():
+        os.environ["ENV_FILE"] = str(env_demo_path)
 
 # Windows 平台 UTF-8 输出支持
 if sys.platform == "win32":
