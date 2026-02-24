@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, h, onMounted, reactive, ref } from 'vue';
+import { h, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';

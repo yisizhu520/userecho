@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { Button, Card, message } from '@vben/common-ui';
+import { VbenButton as Button } from '@vben/common-ui';
+import { Card, message } from 'ant-design-vue';
 
 import {
   resendVerificationEmail,

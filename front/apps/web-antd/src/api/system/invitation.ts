@@ -2,7 +2,7 @@
  * 邀请管理 API（管理端）
  */
 
-import type { PageResult, Result } from '#/api';
+// No PageResult or Result needed as requestClient unwraps the data field
 
 import { requestClient } from '#/api/request';
 
@@ -113,7 +113,7 @@ export interface InvitationQueryParams {
  * 获取邀请列表
  */
 export async function getInvitationList(params?: InvitationQueryParams) {
-  return requestClient.get<PageResult<InvitationInfo>>(
+  return requestClient.get<{ items: InvitationInfo[]; total: number }>(
     '/api/v1/invitations',
     { params },
   );
@@ -123,7 +123,7 @@ export async function getInvitationList(params?: InvitationQueryParams) {
  * 创建邀请
  */
 export async function createInvitation(data: CreateInvitationRequest) {
-  return requestClient.post<Result<InvitationDetail>>(
+  return requestClient.post<InvitationDetail>(
     '/api/v1/invitations',
     data,
   );
@@ -133,7 +133,7 @@ export async function createInvitation(data: CreateInvitationRequest) {
  * 获取邀请详情
  */
 export async function getInvitationDetail(id: string) {
-  return requestClient.get<Result<InvitationDetail>>(
+  return requestClient.get<InvitationDetail>(
     `/api/v1/invitations/${id}`,
   );
 }
@@ -142,7 +142,7 @@ export async function getInvitationDetail(id: string) {
  * 获取邀请使用详情
  */
 export async function getInvitationUsage(id: string, params?: { page?: number; size?: number }) {
-  return requestClient.get<Result<InvitationUsageResponse>>(
+  return requestClient.get<InvitationUsageResponse>(
     `/api/v1/invitations/${id}/usage`,
     { params },
   );
@@ -152,7 +152,7 @@ export async function getInvitationUsage(id: string, params?: { page?: number; s
  * 更新邀请
  */
 export async function updateInvitation(id: string, data: UpdateInvitationRequest) {
-  return requestClient.patch<Result<InvitationInfo>>(
+  return requestClient.patch<InvitationInfo>(
     `/api/v1/invitations/${id}`,
     data,
   );
@@ -162,7 +162,7 @@ export async function updateInvitation(id: string, data: UpdateInvitationRequest
  * 删除邀请
  */
 export async function deleteInvitation(id: string) {
-  return requestClient.delete<Result<{ success: boolean }>>(
+  return requestClient.delete<{ success: boolean }>(
     `/api/v1/invitations/${id}`,
   );
 }

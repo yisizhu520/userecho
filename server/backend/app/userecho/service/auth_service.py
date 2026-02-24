@@ -14,7 +14,7 @@ from backend.app.userecho.crud.crud_subscription import (
     subscription_plan_dao,
     tenant_subscription_dao,
 )
-from backend.app.userecho.crud.crud_tenant import tenant_dao
+from backend.app.userecho.crud.crud_tenant import crud_tenant
 from backend.app.userecho.model.invitation import Invitation
 from backend.app.userecho.model.invitation_usage import InvitationUsage
 from backend.app.userecho.model.subscription import (
@@ -90,7 +90,9 @@ class AuthService:
             email_verified=False,  # type: ignore
             invitation_id=invitation.id,  # type: ignore
         )
-        user = await user_dao.create(db, user)
+        db.add(user)
+        await db.flush()
+        await db.refresh(user)
 
         # 6. 创建邮箱验证记录并发送验证邮件
         plan_name = "专业版" if invitation.plan_code == "pro" else "启航版"
@@ -100,7 +102,6 @@ class AuthService:
 
         # 7. 记录邀请使用
         usage = InvitationUsage(
-            id=uuid4_str(),
             invitation_id=invitation.id,
             user_id=user.id,
             ip_address=ip_address,
@@ -183,7 +184,7 @@ class AuthService:
                 slug=f"team-{uuid4_str()[:8]}",
                 status="active",
             )
-            tenant = await tenant_dao.create(db, tenant)
+            tenant = await crud_tenant.create(db, tenant)
 
             # 创建租户关联
             tenant_user_obj = TenantUser(

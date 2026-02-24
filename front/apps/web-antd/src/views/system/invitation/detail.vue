@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, h, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -77,8 +77,7 @@ const usageColumns = [
 async function fetchDetail() {
   try {
     loading.value = true;
-    const result = await getInvitationDetail(invitationId.value);
-    invitation.value = result.data;
+    invitation.value = await getInvitationDetail(invitationId.value);
   } catch (error: any) {
     message.error(error.message || '获取详情失败');
   } finally {
@@ -93,13 +92,13 @@ async function fetchUsage() {
       size: pagination.pageSize,
     });
 
-    usageRecords.value = result.data.usage_records || [];
-    statistics.value = result.data.statistics || {
+    usageRecords.value = result.usage_records || [];
+    statistics.value = result.statistics || {
       total_used: 0,
       completed_onboarding: 0,
       conversion_rate: 0,
     };
-    pagination.total = result.data.total || 0;
+    pagination.total = result.total || 0;
   } catch (error: any) {
     message.error(error.message || '获取使用记录失败');
   }

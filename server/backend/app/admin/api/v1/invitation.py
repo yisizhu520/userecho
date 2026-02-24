@@ -108,7 +108,7 @@ async def get_invitation_usage(
 
     # 构造响应（包含用户和租户信息）
     from backend.app.admin.crud.crud_user import user_dao
-    from backend.app.userecho.crud.crud_tenant import tenant_dao
+    from backend.app.userecho.crud.crud_tenant import crud_tenant
 
     usage_list = []
     for record in usage_records:
@@ -125,7 +125,7 @@ async def get_invitation_usage(
         # 获取租户信息
         tenant_info = None
         if record.created_tenant_id:
-            tenant = await tenant_dao.get(db, record.created_tenant_id)
+            tenant = await crud_tenant.get(db, record.created_tenant_id)
             if tenant:
                 tenant_info = {
                     "id": tenant.id,

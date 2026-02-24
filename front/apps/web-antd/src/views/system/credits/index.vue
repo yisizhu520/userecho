@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 
 import { Page, useVbenModal, VbenButton } from '@vben/common-ui';
-import { message, Descriptions, InputNumber } from 'ant-design-vue';
+import { message, Descriptions } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 
@@ -100,7 +100,7 @@ const [Modal, modalApi] = useVbenModal({
         const values = await formApi.getValues();
         // TODO: 调用后端API保存配置
         // await updateCreditsConfig(values);
-        creditConfig.value = values;
+        creditConfig.value = values as any;
         message.success('更新成功');
         modalApi.close();
       } catch (e) {

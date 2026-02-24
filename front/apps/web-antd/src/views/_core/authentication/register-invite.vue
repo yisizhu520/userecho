@@ -4,8 +4,9 @@ import type { VbenFormSchema } from '@vben/common-ui';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { AuthenticationRegister, message, z } from '@vben/common-ui';
-import { $t } from '@vben/locales';
+import { AuthenticationRegister, z } from '@vben/common-ui';
+
+import { message } from 'ant-design-vue';
 
 import { registerWithInvitation, validateInvitation } from '#/api/userecho/invitation';
 
@@ -114,7 +115,7 @@ async function handleSubmit(values: any) {
   try {
     loading.value = true;
 
-    const result = await registerWithInvitation({
+    await registerWithInvitation({
       invitation_token: inviteToken.value,
       email: values.email,
       password: values.password,
@@ -141,6 +142,7 @@ async function handleSubmit(values: any) {
 
 <template>
   <AuthenticationRegister
+    :form-schema="invitationValid ? formSchema : []"
     :loading="loading || validating"
     :show-forget-password="false"
     :show-register-link="false"
@@ -188,18 +190,5 @@ async function handleSubmit(values: any) {
         </div>
       </div>
     </div>
-
-    <!-- 表单 -->
-    <template v-if="invitationValid" #form="{ formApi }">
-      <template v-for="schema in formSchema" :key="schema.fieldName">
-        <component
-          :is="schema.component"
-          v-bind="schema.componentProps"
-          v-model="formApi.values[schema.fieldName]"
-          :label="schema.label"
-          class="mb-4"
-        />
-      </template>
-    </template>
   </AuthenticationRegister>
 </template>

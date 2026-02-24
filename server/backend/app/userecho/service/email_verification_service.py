@@ -9,7 +9,6 @@ from backend.app.userecho.crud.crud_email_verification import email_verification
 from backend.app.userecho.model.email_verification import EmailVerification
 from backend.common.log import log
 from backend.core.conf import settings
-from backend.database.db import uuid4_str
 from backend.plugin.email.utils.send import send_email
 from backend.utils.timezone import timezone
 
@@ -43,7 +42,6 @@ class EmailVerificationService:
         expires_at = timezone.now() + timedelta(hours=24)
 
         verification = EmailVerification(
-            id=uuid4_str(),
             user_id=user_id,
             email=email,
             verification_code=verification_code,
