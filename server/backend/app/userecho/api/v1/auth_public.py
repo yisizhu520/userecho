@@ -82,9 +82,7 @@ async def resend_verification_email(
     """重新发送邮箱验证邮件"""
     user_id = current_user.get("id")
 
-    success, message, verification = await email_verification_service.resend_verification(
-        db, user_id, body.email
-    )
+    success, message, verification = await email_verification_service.resend_verification(db, user_id, body.email)
 
     if not success:
         return response_base.fail(msg=message)

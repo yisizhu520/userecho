@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from backend.app.userecho.schema.invitation import InvitationValidateResp
 from backend.app.userecho.service.invitation_service import invitation_service

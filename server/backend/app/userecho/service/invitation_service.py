@@ -9,7 +9,7 @@ from backend.app.userecho.crud.crud_invitation import invitation_dao
 from backend.app.userecho.crud.crud_invitation_usage import invitation_usage_dao
 from backend.app.userecho.model.invitation import Invitation
 from backend.app.userecho.schema.invitation import InvitationCreateReq, InvitationUpdateReq
-from backend.common.exception.errors import ForbiddenError, NotFoundError
+from backend.common.exception.errors import NotFoundError
 from backend.common.log import log
 from backend.core.conf import settings
 from backend.database.db import uuid4_str
@@ -107,9 +107,7 @@ class InvitationService:
         skip = (page - 1) * size
         return await invitation_dao.get_list(db, status, source, campaign, skip, size)
 
-    async def update_invitation(
-        self, db: AsyncSession, invitation_id: str, req: InvitationUpdateReq
-    ) -> Invitation:
+    async def update_invitation(self, db: AsyncSession, invitation_id: str, req: InvitationUpdateReq) -> Invitation:
         """更新邀请"""
         invitation = await self.get_invitation_detail(db, invitation_id)
 
@@ -144,7 +142,7 @@ class InvitationService:
         Returns:
             tuple: (usage_records, total, statistics)
         """
-        invitation = await self.get_invitation_detail(db, invitation_id)
+        await self.get_invitation_detail(db, invitation_id)
 
         # 获取使用记录
         skip = (page - 1) * size

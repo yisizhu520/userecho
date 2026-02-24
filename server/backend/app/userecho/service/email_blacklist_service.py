@@ -16,9 +16,7 @@ from backend.database.db import uuid4_str
 class EmailBlacklistService:
     """邮箱黑名单服务"""
 
-    async def add_blacklist(
-        self, db: AsyncSession, req: EmailBlacklistCreateReq, added_by: int
-    ) -> EmailBlacklist:
+    async def add_blacklist(self, db: AsyncSession, req: EmailBlacklistCreateReq, added_by: int) -> EmailBlacklist:
         """添加黑名单"""
         domain = req.domain.lower()
 

@@ -6,7 +6,6 @@ from fastapi import APIRouter, Query
 
 from backend.app.userecho.schema.invitation import (
     InvitationCreateReq,
-    InvitationDetailSchema,
     InvitationSchema,
     InvitationUpdateReq,
     InvitationUsageDetailResp,

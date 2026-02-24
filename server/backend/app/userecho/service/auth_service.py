@@ -115,8 +115,7 @@ class AuthService:
 
         # 9. 记录日志
         log.info(
-            f"User registered with invitation: "
-            f"user_id={user.id}, email={email}, invitation={invitation_token[:8]}..."
+            f"User registered with invitation: user_id={user.id}, email={email}, invitation={invitation_token[:8]}..."
         )
 
         # TODO: 发送验证邮件（阶段6实现）
@@ -250,10 +249,7 @@ class AuthService:
             # 同步积分
             await credits_service.sync_subscription_plan(db, tenant_id, plan.code, plan.ai_credits_monthly)
 
-            log.info(
-                f"Created trial subscription for tenant {tenant_id}: "
-                f"{plan.code} for {invitation.trial_days} days"
-            )
+            log.info(f"Created trial subscription for tenant {tenant_id}: {plan.code} for {invitation.trial_days} days")
 
         return {
             "verified": True,

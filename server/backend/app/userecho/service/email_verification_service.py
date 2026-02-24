@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.userecho.crud.crud_email_verification import email_verification_dao
 from backend.app.userecho.model.email_verification import EmailVerification
-from backend.common.exception.errors import ForbiddenError
 from backend.common.log import log
 from backend.core.conf import settings
 from backend.database.db import uuid4_str
@@ -23,7 +22,13 @@ class EmailVerificationService:
         return secrets.token_urlsafe(32)
 
     async def create_verification(
-        self, db: AsyncSession, user_id: int, email: str, nickname: str = "", plan_name: str = "专业版", trial_days: int = 90
+        self,
+        db: AsyncSession,
+        user_id: int,
+        email: str,
+        nickname: str = "",
+        plan_name: str = "专业版",
+        trial_days: int = 90,
     ) -> EmailVerification:
         """
         创建邮箱验证记录
@@ -51,15 +56,11 @@ class EmailVerificationService:
         log.info(f"Created email verification: user_id={user_id}, email={email}")
 
         # 发送验证邮件
-        await self._send_verification_email(
-            db, email, verification_code, nickname, plan_name, trial_days
-        )
+        await self._send_verification_email(db, email, verification_code, nickname, plan_name, trial_days)
 
         return verification
 
-    async def verify_email(
-        self, db: AsyncSession, user_id: int, verification_code: str
-    ) -> tuple[bool, str]:
+    async def verify_email(self, db: AsyncSession, user_id: int, verification_code: str) -> tuple[bool, str]:
         """
         验证邮箱
 
@@ -135,9 +136,7 @@ class EmailVerificationService:
 
         # 重新发送邮件
         if verification:
-            await self._send_verification_email(
-                db, email, verification.verification_code, "", "", 0
-            )
+            await self._send_verification_email(db, email, verification.verification_code, "", "", 0)
 
         return True, "验证邮件已发送", verification
 

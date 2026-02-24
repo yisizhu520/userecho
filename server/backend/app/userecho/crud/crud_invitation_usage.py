@@ -59,7 +59,9 @@ class CRUDInvitationUsage:
         await db.refresh(db_obj)
         return db_obj
 
-    async def mark_onboarding_completed(self, db: AsyncSession, usage_id: str, tenant_id: str) -> InvitationUsage | None:
+    async def mark_onboarding_completed(
+        self, db: AsyncSession, usage_id: str, tenant_id: str
+    ) -> InvitationUsage | None:
         """标记完成引导"""
         usage = await self.get(db, usage_id)
         if usage:

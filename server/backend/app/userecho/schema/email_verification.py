@@ -1,7 +1,5 @@
 """邮箱验证 Schemas"""
 
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 
