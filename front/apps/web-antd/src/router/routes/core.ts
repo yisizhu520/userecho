@@ -3,7 +3,6 @@ import type { RouteRecordRaw } from 'vue-router';
 import { LOGIN_PATH } from '@vben/constants';
 
 import { $t } from '#/locales';
-import { isDemoMode } from '#/utils/env';
 
 const BasicLayout = () => import('#/layouts/basic.vue');
 const AuthPageLayout = () => import('#/layouts/auth.vue');
@@ -167,29 +166,19 @@ const coreRoutes: RouteRecordRaw[] = [
     name: 'Onboarding',
     path: '/onboarding',
   },
+  // Demo 模式专用路由 - 放在核心路由中，确保运行时 demo 模式可访问
+  {
+    component: () => import('#/views/demo/DemoWelcome.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      ignoreAccess: true, // 允许未登录访问
+      title: '回响-演示',
+    },
+    name: 'DemoWelcome',
+    path: '/demo',
+  },
 ];
 
-/**
- * Demo 模式专用路由
- * 只在 VITE_DEMO_MODE=true 时注册
- */
-const demoRoutes: RouteRecordRaw[] = isDemoMode
-  ? [
-      {
-        component: () => import('#/views/demo/DemoWelcome.vue'),
-        meta: {
-          hideInBreadcrumb: true,
-          hideInMenu: true,
-          hideInTab: true,
-          title: '回响-演示',
-        },
-        name: 'DemoWelcome',
-        path: '/demo',
-      },
-    ]
-  : [];
-
-// 合并核心路由和 Demo 路由
-const finalCoreRoutes = [...coreRoutes, ...demoRoutes];
-
-export { finalCoreRoutes as coreRoutes, fallbackNotFoundRoute };
+export { coreRoutes, fallbackNotFoundRoute };
