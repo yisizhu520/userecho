@@ -52,23 +52,21 @@ services:
 
       # ======= 数据库配置 =======
       - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
-      - DATABASE_HOST=${DATABASE_HOST:-host.docker.internal}
+      - DATABASE_HOST=${DATABASE_HOST:-172.17.0.1}
       - DATABASE_PORT=${DATABASE_PORT:-5432}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
 
       # ======= Redis 配置 =======
-      - REDIS_HOST=${REDIS_HOST:-host.docker.internal}
+      - REDIS_HOST=${REDIS_HOST:-172.17.0.1}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
 
-      # ======= RabbitMQ 配置 =======
-      - CELERY_RABBITMQ_HOST=${CELERY_RABBITMQ_HOST}
-      - CELERY_RABBITMQ_PORT=${CELERY_RABBITMQ_PORT:-5672}
-      - CELERY_RABBITMQ_USERNAME=${CELERY_RABBITMQ_USERNAME}
-      - CELERY_RABBITMQ_PASSWORD=${CELERY_RABBITMQ_PASSWORD}
-      - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:-1}
+      # ======= Celery Broker 配置 =======
+      # 生产环境强制使用 Redis 作为 broker（而非默认的 RabbitMQ）
+      - CELERY_BROKER=redis
+      - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:2}
 
       # ======= 安全密钥 =======
       - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
