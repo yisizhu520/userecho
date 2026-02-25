@@ -74,23 +74,6 @@ ENV REDIS_URL="" \
     TOKEN_SECRET_KEY="" \
     OPERA_LOG_ENCRYPT_SECRET_KEY=""
 
-# Supervisor ENV_* expansion defaults
-ENV ENV_DEMO_MODE="false" \
-    ENV_DATABASE_HOST="" \
-    ENV_DATABASE_PORT="5432" \
-    ENV_DATABASE_USER="" \
-    ENV_DATABASE_PASSWORD="" \
-    ENV_DATABASE_SCHEMA="" \
-    ENV_REDIS_URL="" \
-    ENV_TOKEN_SECRET_KEY="" \
-    ENV_OPERA_LOG_ENCRYPT_SECRET_KEY="" \
-    ENV_VITE_APP_TITLE="回响" \
-    ENV_VITE_GLOB_API_URL="/" \
-    ENV_VITE_APP_NAMESPACE="userecho-admin" \
-    ENV_VITE_DEVTOOLS="false" \
-    ENV_VITE_DEMO_MODE="false" \
-    ENV_VITE_TURNSTILE_SITE_KEY=""
-
 # Copy Frontend Build Artifacts
 COPY --from=frontend-builder /app/front/apps/web-antd/dist /var/www/fba_ui
 
