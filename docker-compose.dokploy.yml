@@ -24,6 +24,8 @@ services:
     ports:
       - "80:80"
       # - "8001:8001" # API Direct Access (Optional)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - TZ=Asia/Shanghai
 
@@ -50,13 +52,13 @@ services:
 
       # ======= 数据库配置 =======
       - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
-      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_HOST=${DATABASE_HOST:-host.docker.internal}
       - DATABASE_PORT=${DATABASE_PORT:-5432}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
 
       # ======= Redis 配置 =======
-      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_HOST=${REDIS_HOST:-host.docker.internal}
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}

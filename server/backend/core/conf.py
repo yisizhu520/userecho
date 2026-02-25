@@ -292,14 +292,14 @@ class Settings(BaseSettings):
     # [ App ] task
     ##################################################
     # .env Redis
-    CELERY_BROKER_REDIS_DATABASE: int
+    CELERY_BROKER_REDIS_DATABASE: int = 1
 
     # .env RabbitMQ
     # docker run -d --hostname fba-mq --name fba-mq  -p 5672:5672 -p 15672:15672 rabbitmq:latest
-    CELERY_RABBITMQ_HOST: str
-    CELERY_RABBITMQ_PORT: int
-    CELERY_RABBITMQ_USERNAME: str
-    CELERY_RABBITMQ_PASSWORD: str
+    CELERY_RABBITMQ_HOST: str = ""
+    CELERY_RABBITMQ_PORT: int = 5672
+    CELERY_RABBITMQ_USERNAME: str = ""
+    CELERY_RABBITMQ_PASSWORD: str = ""
 
     # 基础配置
     CELERY_BROKER: Literal["rabbitmq", "redis"] = "redis"
