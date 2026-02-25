@@ -34,17 +34,17 @@ async def simulate_api():
         # 模拟 API 逻辑
         tenant_permissions: list[str] = []
         tenant_id = user.tenant_id
-        
+
         print(f"🔍 Getting tenant permissions for user {user.id}, tenant_id: {tenant_id}")
-        
+
         if tenant_id:
             tenant_permissions = await tenant_member_service.get_user_permission_codes(db, tenant_id, user.id)
             print(f"✅ Got tenant permissions: {tenant_permissions}")
         else:
-            print(f"⚠️  tenant_id is None, skipping permission query")
+            print("⚠️  tenant_id is None, skipping permission query")
 
         print()
-        print(f"📊 最终结果:")
+        print("📊 最终结果:")
         print(f"   tenantPermissions: {tenant_permissions}")
         print(f"   权限数量: {len(tenant_permissions)}")
 

@@ -61,7 +61,7 @@ async def check():
         tables = result.all()
 
         if tables:
-            print(f"✅ 找到 tenant_user_roles 表:")
+            print("✅ 找到 tenant_user_roles 表:")
             for schema, table in tables:
                 print(f"   - Schema: {schema}, 表名: {table}")
 
@@ -77,15 +77,15 @@ async def check():
         print("💡 提示")
         print("=" * 70)
         print()
-        print(f"请在数据库客户端中连接到:")
+        print("请在数据库客户端中连接到:")
         print(f"  数据库: {current_db}")
         print(f"  Schema: {current_schema}")
         print()
-        print(f"然后执行查询:")
+        print("然后执行查询:")
         print(f"  SELECT * FROM {current_schema}.tenant_user_roles;")
         print()
-        print(f"或者在查询时显式指定 Schema:")
-        print(f"  SELECT * FROM tenant_user_roles;  -- 使用 search_path")
+        print("或者在查询时显式指定 Schema:")
+        print("  SELECT * FROM tenant_user_roles;  -- 使用 search_path")
         print()
 
 

@@ -10,7 +10,7 @@ if "ENV_FILE" not in os.environ:
     # 尝试查找 .env.demo 文件
     script_path = Path(__file__).resolve()
     backend_path = script_path.parent.parent
-    
+
     # 优先使用 backend/.env.demo
     env_demo_path = backend_path / ".env.demo"
     if env_demo_path.exists():
@@ -23,4 +23,4 @@ if "ENV_FILE" not in os.environ:
             os.environ["ENV_FILE"] = str(env_demo_path)
             print(f"✅ 使用配置文件: {env_demo_path}")
         else:
-            print(f"⚠️  未找到 .env.demo，使用默认配置")
+            print("⚠️  未找到 .env.demo，使用默认配置")

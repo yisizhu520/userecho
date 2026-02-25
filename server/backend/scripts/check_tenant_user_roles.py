@@ -61,9 +61,7 @@ async def check():
         print("=" * 70)
         print()
 
-        demo_users = await db.execute(
-            select(User).where(User.username.in_(["demo_po", "demo_ops", "demo_admin"]))
-        )
+        demo_users = await db.execute(select(User).where(User.username.in_(["demo_po", "demo_ops", "demo_admin"])))
         demo_users_list = demo_users.scalars().all()
 
         if demo_users_list:
@@ -73,9 +71,7 @@ async def check():
 
                 # 检查对应的 TenantUser
                 tenant_user = await db.scalar(
-                    select(TenantUser).where(
-                        TenantUser.user_id == user.id, TenantUser.tenant_id == "default-tenant"
-                    )
+                    select(TenantUser).where(TenantUser.user_id == user.id, TenantUser.tenant_id == "default-tenant")
                 )
 
                 if tenant_user:
@@ -83,11 +79,13 @@ async def check():
 
                     # 检查角色
                     role_count = await db.scalar(
-                        select(text("COUNT(*)")).select_from(TenantUserRole).where(TenantUserRole.tenant_user_id == tenant_user.id)
+                        select(text("COUNT(*)"))
+                        .select_from(TenantUserRole)
+                        .where(TenantUserRole.tenant_user_id == tenant_user.id)
                     )
                     print(f"     └─ 分配的角色数量: {role_count}")
                 else:
-                    print(f"     └─ ❌ TenantUser 不存在")
+                    print("     └─ ❌ TenantUser 不存在")
         else:
             print("❌ 未找到任何 Demo 用户")
 

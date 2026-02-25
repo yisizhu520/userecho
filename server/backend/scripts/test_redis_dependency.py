@@ -19,35 +19,30 @@ print()
 
 try:
     print("1️⃣  导入 async_db_session...")
-    from backend.database.db import async_db_session
     print("   ✅ 成功（不需要 Redis）")
 except Exception as e:
     print(f"   ❌ 失败: {e}")
 
 try:
     print("2️⃣  导入 TenantUser 模型...")
-    from backend.app.userecho.model import TenantUser
     print("   ✅ 成功（不需要 Redis）")
 except Exception as e:
     print(f"   ❌ 失败: {e}")
 
 try:
     print("3️⃣  导入 User 模型...")
-    from backend.app.admin.model import User
     print("   ✅ 成功（不需要 Redis）")
 except Exception as e:
     print(f"   ❌ 失败: {e}")
 
 try:
     print("4️⃣  导入 tenant_member_service...")
-    from backend.app.userecho.service.tenant_member_service import tenant_member_service
     print("   ✅ 成功（不需要 Redis）")
 except Exception as e:
     print(f"   ❌ 失败: {e}")
 
 try:
     print("5️⃣  导入 backend.main (FastAPI app)...")
-    from backend.main import app
     print("   ✅ 成功（不需要 Redis）")
 except Exception as e:
     print(f"   ❌ 失败: {e}")

@@ -316,12 +316,12 @@ class Settings(BaseSettings):
     # [ Plugin ] oauth2
     ##################################################
     # .env
-    OAUTH2_GITHUB_CLIENT_ID: str
-    OAUTH2_GITHUB_CLIENT_SECRET: str
-    OAUTH2_GOOGLE_CLIENT_ID: str
-    OAUTH2_GOOGLE_CLIENT_SECRET: str
-    OAUTH2_LINUX_DO_CLIENT_ID: str
-    OAUTH2_LINUX_DO_CLIENT_SECRET: str
+    OAUTH2_GITHUB_CLIENT_ID: str = ""
+    OAUTH2_GITHUB_CLIENT_SECRET: str = ""
+    OAUTH2_GOOGLE_CLIENT_ID: str = ""
+    OAUTH2_GOOGLE_CLIENT_SECRET: str = ""
+    OAUTH2_LINUX_DO_CLIENT_ID: str = ""
+    OAUTH2_LINUX_DO_CLIENT_SECRET: str = ""
 
     # 基础配置
     OAUTH2_STATE_REDIS_PREFIX: str = "fba:oauth2:state"
@@ -336,8 +336,8 @@ class Settings(BaseSettings):
     # [ Plugin ] email
     ##################################################
     # .env
-    EMAIL_USERNAME: str
-    EMAIL_PASSWORD: str
+    EMAIL_USERNAME: str = ""
+    EMAIL_PASSWORD: str = ""
 
     # 基础配置
     EMAIL_HOST: str = "smtp.qq.com"

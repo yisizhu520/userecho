@@ -26,7 +26,9 @@ async def check():
 
         # 查询所有租户用户
         result = await db.execute(
-            select(TenantUser, User).join(User, TenantUser.user_id == User.id).where(TenantUser.tenant_id == "default-tenant")
+            select(TenantUser, User)
+            .join(User, TenantUser.user_id == User.id)
+            .where(TenantUser.tenant_id == "default-tenant")
         )
 
         for tenant_user, user in result:
