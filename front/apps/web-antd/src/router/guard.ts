@@ -7,6 +7,7 @@ import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore, useWebSocketStore } from '#/store';
+import { isDemoMode } from '#/utils/env';
 
 import { generateAccess } from './access';
 
@@ -60,6 +61,18 @@ function setupAccessGuard(router: Router) {
       // 为了兼容 vue-router hash 模式，这里直接重定向到域名
       // 再由守卫自动完成默认地址重定向
       window.location.replace(window.location.origin);
+    }
+
+    // Demo 模式重定向：将首页、登录、注册等页面重定向到 /demo
+    if (isDemoMode && (
+      to.path === '/' ||
+      to.path.startsWith('/auth/login') ||
+      to.path.startsWith('/auth/register')
+    )) {
+      return {
+        path: '/demo',
+        replace: true,
+      };
     }
 
     // 基本路由，这些路由不需要进入权限拦截
