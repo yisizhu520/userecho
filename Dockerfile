@@ -55,6 +55,14 @@ ENV PATH="/fba/.venv/bin:$PATH"
 WORKDIR /fba/backend
 COPY server/ .
 
+# Default frontend runtime env (override via container env)
+ENV VITE_APP_TITLE="回响" \
+    VITE_GLOB_API_URL="/" \
+    VITE_APP_NAMESPACE="userecho-admin" \
+    VITE_DEVTOOLS="false" \
+    VITE_DEMO_MODE="false" \
+    VITE_TURNSTILE_SITE_KEY=""
+
 # Copy Frontend Build Artifacts
 COPY --from=frontend-builder /app/front/apps/web-antd/dist /var/www/fba_ui
 
