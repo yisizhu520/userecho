@@ -29,7 +29,14 @@ def init_celery() -> celery.Celery:
     celery.app.trace.build_tracer = celery_aio_pool.build_async_tracer
     celery.app.trace.reset_worker_optimizations()
 
-    broker_url = f"amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}"
+    # DEBUG: 打印环境变量和配置
+    print(f"[Celery Init] CELERY_BROKER={settings.CELERY_BROKER}")
+    print(f"[Celery Init] REDIS_HOST={settings.REDIS_HOST}")
+    print(f"[Celery Init] REDIS_PORT={settings.REDIS_PORT}")
+    print(f"[Celery Init] REDIS_URL={settings.REDIS_URL}")
+    print(f"[Celery Init] CELERY_BROKER_REDIS_DATABASE={settings.CELERY_BROKER_REDIS_DATABASE}")
+
+    broker_url = None
     broker_use_ssl = None
     if settings.CELERY_BROKER == "redis":
         if settings.REDIS_URL:
@@ -49,6 +56,14 @@ def init_celery() -> celery.Celery:
             broker_url = (
                 f"redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}"
             )
+            print(f"[Celery Init] Constructed broker_url: {broker_url}")
+    else:
+        # RabbitMQ fallback
+        print(f"[Celery Init] Using RabbitMQ broker")
+        print(f"[Celery Init] RABBITMQ_HOST={settings.CELERY_RABBITMQ_HOST}")
+        print(f"[Celery Init] RABBITMQ_USERNAME={settings.CELERY_RABBITMQ_USERNAME}")
+        broker_url = f"amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}"
+        print(f"[Celery Init] Constructed broker_url: {broker_url}")
 
     result_backend = f"db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}"
     if DataBaseType.mysql == settings.DATABASE_TYPE:
@@ -70,6 +85,9 @@ def init_celery() -> celery.Celery:
         "worker_send_task_events": True,
         "task_send_sent_event": True,
     }
+
+    print(f"[Celery Init] Final broker_url: {broker_url}")
+    print(f"[Celery Init] Final result_backend: {result_backend}")
 
     # 如果需要 SSL 配置，添加到配置中
     if broker_use_ssl is not None:
