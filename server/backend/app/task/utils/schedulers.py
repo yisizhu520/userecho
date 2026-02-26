@@ -281,8 +281,13 @@ class DatabaseScheduler(Scheduler):
     lock: Lock | None = None
     lock_key = f"{settings.CELERY_REDIS_PREFIX}:beat_lock"
 
-    def __init__(self, *args, **kwargs) -> None:
-        self.app = kwargs["app"]
+    def __init__(self, app=None, *args, **kwargs) -> None:
+        # Handle both positional and keyword argument for app
+        self.app = app or kwargs.get("app")
+        if not self.app:
+            from celery import current_app
+            self.app = current_app._get_current_object()
+        
         self._dirty = set()
         super().__init__(*args, **kwargs)
         self._finalize = Finalize(self, self.sync, exitpriority=5)
