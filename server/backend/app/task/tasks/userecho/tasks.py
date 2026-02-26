@@ -7,9 +7,9 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
+from celery import shared_task
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.task.celery import celery_app
 from backend.app.userecho.service.clustering_service import clustering_service
 from backend.database.db import SQLALCHEMY_DATABASE_URL, create_async_engine_and_session
 
@@ -53,7 +53,7 @@ async def local_db_session() -> AsyncGenerator[AsyncSession, None]:
 # ============================================================
 
 
-@celery_app.task(
+@shared_task(
     name="userecho.generate_feedback_embedding",
     bind=True,
     max_retries=2,
@@ -133,7 +133,7 @@ def generate_feedback_embedding_task(
     return loop.run_until_complete(_async_run())
 
 
-@celery_app.task(
+@shared_task(
     name="userecho.generate_topic_centroid",
     bind=True,
     max_retries=2,
@@ -226,7 +226,7 @@ def generate_topic_centroid_task(
 # ============================================================
 
 
-@celery_app.task(
+@shared_task(
     name="userecho_clustering_batch",
     bind=True,
     time_limit=600,  # 10分钟硬超时
@@ -282,7 +282,7 @@ def userecho_clustering_batch(
     return loop.run_until_complete(_async_run())
 
 
-@celery_app.task(
+@shared_task(
     name="userecho_analyze_screenshot",
     bind=True,
     max_retries=2,
@@ -396,7 +396,7 @@ def analyze_screenshot_task(
         raise self.retry(exc=e)
 
 
-@celery_app.task(
+@shared_task(
     name="userecho.generate_insight_report",
     bind=True,
     time_limit=300,  # 5分钟硬超时
@@ -481,7 +481,7 @@ async def generate_insight_report(
         raise
 
 
-@celery_app.task(
+@shared_task(
     name="userecho.generate_feedback_summary",
     bind=True,
     max_retries=3,

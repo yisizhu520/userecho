@@ -1,1 +1,5 @@
-"""UserEcho 业务任务包"""
+"""UserEcho 业务任务包
+
+任务通过 Celery autodiscover 机制自动发现。
+不要在此处导入任务，否则会引发循环导入。
+"""

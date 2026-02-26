@@ -47,6 +47,7 @@ def create_async_engine_and_session(url: str | URL) -> tuple[AsyncEngine, async_
     :return:
     """
     try:
+        log.info(f"[DB Engine] Creating async engine with URL: {url}")
         # 数据库引擎
         engine = create_async_engine(
             url,
@@ -61,6 +62,7 @@ def create_async_engine_and_session(url: str | URL) -> tuple[AsyncEngine, async_
             pool_pre_ping=True,  # 低：False 高：True
             pool_use_lifo=False,  # 低：False 高：True
         )
+        log.info("[DB Engine] Async engine created successfully")
     except Exception as e:
         log.error("❌ 数据库链接失败 {}", e)
         sys.exit()

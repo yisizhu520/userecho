@@ -13,10 +13,15 @@ from backend.core.path_conf import BASE_PATH
 def find_task_packages() -> list[str]:
     packages = []
     task_dir = BASE_PATH / "app" / "task" / "tasks"
+    print(f"[Celery Init] Searching for tasks in: {task_dir}")
+    
     for root, _dirs, files in os.walk(task_dir):
         if "tasks.py" in files:
             package = root.replace(str(BASE_PATH.parent) + os.path.sep, "").replace(os.path.sep, ".")
+            print(f"[Celery Init] ✅ Found tasks package: {package}")
             packages.append(package)
+    
+    print(f"[Celery Init] Total task packages found: {len(packages)}")
     return packages
 
 
@@ -101,7 +106,26 @@ def init_celery() -> celery.Celery:
 
     # 自动发现任务
     packages = find_task_packages()
+    
+    # 方式1: 使用 autodiscover_tasks（推荐）
+    # autodiscover_tasks 会自动加载每个包下的 tasks 模块
     app.autodiscover_tasks(packages)
+    
+    # 方式2: 如果方式1不work，手动导入每个 tasks.py
+    # 这是一个 fallback 方案
+    if len(app.tasks) <= 10:  # 只有内置任务
+        print(f"[Celery Init] ⚠️  autodiscover_tasks failed, trying manual import")
+        for package in packages:
+            try:
+                import importlib
+                module_name = f"{package}.tasks"
+                importlib.import_module(module_name)
+            except Exception as e:
+                print(f"[Celery Init] ❌ Failed to import {module_name}: {e}")
+    
+    # 打印用户定义的任务（过滤掉 celery 内置任务）
+    user_tasks = [k for k in app.tasks.keys() if not k.startswith('celery.')]
+    print(f"[Celery Init] ✅ Registered {len(user_tasks)} user tasks: {user_tasks}")
 
     # 配置 loguru 文件日志（确保 Celery worker 的日志也能写入文件）
     # 只在 worker 进程中配置，beat 和 flower 不需要

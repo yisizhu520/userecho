@@ -409,15 +409,25 @@ class DatabaseScheduler(Scheduler):
 
     async def get_all_task_schedulers(self) -> dict:
         """获取所有任务调度"""
-        async with async_db_session() as db:
-            logger.debug("DatabaseScheduler: Fetching database schedule")
-            stmt = select(TaskScheduler).where(TaskScheduler.enabled == True)  # noqa: E712
-            query = await db.execute(stmt)
-            schedulers = query.scalars().all()
-            s = {}
-            for scheduler in schedulers:
-                s[scheduler.name] = self.Entry(scheduler, app=self.app)
-            return s
+        logger.info(f"[get_all_task_schedulers] Starting database query...")
+        logger.info(f"[get_all_task_schedulers] DATABASE_HOST={settings.DATABASE_HOST}")
+        
+        try:
+            async with async_db_session() as db:
+                logger.debug("DatabaseScheduler: Fetching database schedule")
+                stmt = select(TaskScheduler).where(TaskScheduler.enabled == True)  # noqa: E712
+                query = await db.execute(stmt)
+                schedulers = query.scalars().all()
+                s = {}
+                for scheduler in schedulers:
+                    s[scheduler.name] = self.Entry(scheduler, app=self.app)
+                logger.info(f"[get_all_task_schedulers] Found {len(s)} enabled schedulers")
+                return s
+        except Exception as e:
+            logger.error(f"[get_all_task_schedulers] Database query failed: {e}")
+            import traceback
+            logger.error(f"[get_all_task_schedulers] Traceback: {traceback.format_exc()}")
+            raise
 
     @property
     def schedule(self) -> dict[str, ModelEntry]:
