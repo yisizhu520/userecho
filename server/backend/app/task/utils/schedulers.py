@@ -288,6 +288,12 @@ class DatabaseScheduler(Scheduler):
             from celery import current_app
             self.app = current_app._get_current_object()
         
+        # Debug: Print database configuration
+        logger.info(f"[DatabaseScheduler Init] DATABASE_HOST={settings.DATABASE_HOST}")
+        logger.info(f"[DatabaseScheduler Init] DATABASE_PORT={settings.DATABASE_PORT}")
+        logger.info(f"[DatabaseScheduler Init] DATABASE_SCHEMA={settings.DATABASE_SCHEMA}")
+        logger.info(f"[DatabaseScheduler Init] DATABASE_TYPE={settings.DATABASE_TYPE}")
+        
         self._dirty = set()
         # Pass app to parent Scheduler.__init__(app, *args, **kwargs)
         super().__init__(self.app, *args, **kwargs)
