@@ -64,15 +64,8 @@ ENV VITE_APP_TITLE="回响" \
     VITE_TURNSTILE_SITE_KEY=""
 
 # Default backend runtime env (override via container env)
-ENV REDIS_URL="" \
-    DEMO_MODE="false" \
-    DATABASE_HOST="" \
-    DATABASE_PORT="5432" \
-    DATABASE_USER="" \
-    DATABASE_PASSWORD="" \
-    DATABASE_SCHEMA="" \
-    TOKEN_SECRET_KEY="" \
-    OPERA_LOG_ENCRYPT_SECRET_KEY=""
+# 注意：不设置 REDIS_URL 默认值，避免空字符串干扰
+ENV DEMO_MODE="false"
 
 # Copy Frontend Build Artifacts
 COPY --from=frontend-builder /app/front/apps/web-antd/dist /var/www/fba_ui
