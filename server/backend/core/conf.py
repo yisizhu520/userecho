@@ -356,14 +356,6 @@ class Settings(BaseSettings):
     @classmethod
     def check_env(cls, values: Any) -> Any:
         """检查环境变量"""
-        if values.get("ENVIRONMENT") == "prod":
-            # FastAPI
-            values["FASTAPI_OPENAPI_URL"] = None
-            values["FASTAPI_STATIC_FILES"] = False
-
-            # task
-            values["CELERY_BROKER"] = "rabbitmq"
-
         # Demo 模式下修改应用标题
         if values.get("DEMO_MODE"):
             values["FASTAPI_TITLE"] = "回响-演示版"
