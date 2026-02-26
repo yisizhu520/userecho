@@ -289,7 +289,8 @@ class DatabaseScheduler(Scheduler):
             self.app = current_app._get_current_object()
         
         self._dirty = set()
-        super().__init__(*args, **kwargs)
+        # Pass app to parent Scheduler.__init__(app, *args, **kwargs)
+        super().__init__(self.app, *args, **kwargs)
         self._finalize = Finalize(self, self.sync, exitpriority=5)
         self.max_interval = kwargs.get("max_interval") or self.app.conf.beat_max_loop_interval or DEFAULT_MAX_INTERVAL
 
