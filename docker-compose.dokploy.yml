@@ -63,10 +63,9 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
-      - REDIS_URL=${REDIS_URL:-}
 
       # ======= Celery Broker 配置 =======
-      # 生产环境强制使用 Redis 作为 broker（而非默认的 RabbitMQ）
+      # 使用独立的 Redis 数据库 1（避免和应用数据混在一起）
       - CELERY_BROKER=redis
       - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:-1}
 
