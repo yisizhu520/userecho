@@ -15,7 +15,6 @@ import { updateSysUserAvatarApi, updateSysUserNicknameApi } from '#/api';
 import {
   getTenantInfo,
   getTenantMembers,
-  getTenantRoles,
 } from '#/api/userecho/tenant-rbac';
 import { useAuthStore } from '#/store';
 

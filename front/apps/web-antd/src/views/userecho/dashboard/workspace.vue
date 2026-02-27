@@ -94,7 +94,7 @@ const quickActions: WorkbenchQuickNavItem[] = [
     color: '#8b5cf6',
     icon: 'lucide:scan',
     title: '截图识别',
-    url: '/app/feedback/screenshot-upload',
+    url: '/app/feedback/screenshot',
   },
   {
     color: '#e18525',

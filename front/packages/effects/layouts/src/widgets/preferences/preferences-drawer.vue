@@ -16,7 +16,7 @@ import type { SegmentedItem } from '@vben-core/shadcn-ui';
 
 import { computed, inject, ref, watchEffect } from 'vue';
 
-import { Copy, RotateCw } from '@vben/icons';
+import { RotateCw } from '@vben/icons';
 import { $t, loadLocaleMessages } from '@vben/locales';
 import {
   clearPreferencesCache,
@@ -31,9 +31,9 @@ import {
   VbenIconButton,
   VbenSegmented,
 } from '@vben-core/shadcn-ui';
-import { globalShareState } from '@vben-core/shared/global-state';
 
-import { useClipboard } from '@vueuse/core';
+
+
 
 import {
   Animation,
@@ -58,8 +58,6 @@ import {
 } from './blocks';
 
 const emit = defineEmits<{ clearPreferencesAndLogout: [] }>();
-
-const message = globalShareState.getMessage();
 
 const appLocale = defineModel<SupportedLanguagesType>('appLocale');
 const appDynamicTitle = defineModel<boolean>('appDynamicTitle');
@@ -176,7 +174,6 @@ const {
   isSideMode,
   isSideNav,
 } = usePreferences();
-const { copy } = useClipboard({ legacy: true });
 
 const [Drawer] = useVbenDrawer();
 
@@ -235,14 +232,7 @@ const showBreadcrumbConfig = computed(() => {
   );
 });
 
-async function handleCopy() {
-  await copy(JSON.stringify(diffPreference.value, null, 2));
 
-  message.copyPreferencesSuccess?.(
-    $t('preferences.copyPreferencesSuccessTitle'),
-    $t('preferences.copyPreferencesSuccess'),
-  );
-}
 
 async function handleClearCache() {
   resetPreferences();
