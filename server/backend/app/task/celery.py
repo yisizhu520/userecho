@@ -41,33 +41,27 @@ def init_celery() -> celery.Celery:
     print(f"[Celery Init] REDIS_URL={settings.REDIS_URL}")
     print(f"[Celery Init] CELERY_BROKER_REDIS_DATABASE={settings.CELERY_BROKER_REDIS_DATABASE}")
 
+    # 只支持 Redis broker
     broker_url = None
     broker_use_ssl = None
-    if settings.CELERY_BROKER == "redis":
-        if settings.REDIS_URL:
-            # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
-            # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
-            broker_url = settings.REDIS_URL.rsplit("/", 1)[0] + f"/{settings.CELERY_BROKER_REDIS_DATABASE}"
+    
+    if settings.REDIS_URL:
+        # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
+        # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
+        broker_url = settings.REDIS_URL.rsplit("/", 1)[0] + f"/{settings.CELERY_BROKER_REDIS_DATABASE}"
 
-            # TLS 连接跳过证书验证（与 redis.py 保持一致）
-            if settings.REDIS_URL.startswith("rediss://"):
-                broker_use_ssl = {"ssl_cert_reqs": None}
-        else:
-            # 构造 Redis URL
-            password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ""
-            auth = f":{password}" if password else ""
-            if settings.REDIS_USERNAME:
-                auth = f"{settings.REDIS_USERNAME}:{password}"
-            broker_url = (
-                f"redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}"
-            )
-            print(f"[Celery Init] Constructed broker_url: {broker_url}")
+        # TLS 连接跳过证书验证（与 redis.py 保持一致）
+        if settings.REDIS_URL.startswith("rediss://"):
+            broker_use_ssl = {"ssl_cert_reqs": None}
     else:
-        # RabbitMQ fallback
-        print(f"[Celery Init] Using RabbitMQ broker")
-        print(f"[Celery Init] RABBITMQ_HOST={settings.CELERY_RABBITMQ_HOST}")
-        print(f"[Celery Init] RABBITMQ_USERNAME={settings.CELERY_RABBITMQ_USERNAME}")
-        broker_url = f"amqp://{settings.CELERY_RABBITMQ_USERNAME}:{urllib.parse.quote(settings.CELERY_RABBITMQ_PASSWORD)}@{settings.CELERY_RABBITMQ_HOST}:{settings.CELERY_RABBITMQ_PORT}/{settings.CELERY_RABBITMQ_VHOST}"
+        # 构造 Redis URL
+        password = urllib.parse.quote(settings.REDIS_PASSWORD) if settings.REDIS_PASSWORD else ""
+        auth = f":{password}" if password else ""
+        if settings.REDIS_USERNAME:
+            auth = f"{settings.REDIS_USERNAME}:{password}"
+        broker_url = (
+            f"redis://{auth}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}"
+        )
         print(f"[Celery Init] Constructed broker_url: {broker_url}")
 
     result_backend = f"db+postgresql+psycopg://{settings.DATABASE_USER}:{urllib.parse.quote(settings.DATABASE_PASSWORD)}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}"
@@ -93,16 +87,32 @@ def init_celery() -> celery.Celery:
 
     print(f"[Celery Init] Final broker_url: {broker_url}")
     print(f"[Celery Init] Final result_backend: {result_backend}")
-    print(f"[Celery Init] ENV CELERY_BROKER_URL={os.getenv('CELERY_BROKER_URL')}")
-    print(f"[Celery Init] ENV CELERY_RESULT_BACKEND={os.getenv('CELERY_RESULT_BACKEND')}")
+    
+    # 检查环境变量是否会覆盖配置
+    env_broker = os.getenv('CELERY_BROKER_URL')
+    env_backend = os.getenv('CELERY_RESULT_BACKEND')
+    
+    if env_broker:
+        print(f"[Celery Init] ⚠️  WARNING: ENV CELERY_BROKER_URL={env_broker}")
+        print(f"[Celery Init] ⚠️  This will OVERRIDE the broker_url config!")
+        print(f"[Celery Init] ⚠️  Clearing environment variable to use settings...")
+        # 清除环境变量，使用我们的配置
+        os.environ.pop('CELERY_BROKER_URL', None)
+    
+    if env_backend:
+        print(f"[Celery Init] ⚠️  WARNING: ENV CELERY_RESULT_BACKEND={env_backend}")
+        print(f"[Celery Init] ⚠️  Clearing environment variable to use settings...")
+        os.environ.pop('CELERY_RESULT_BACKEND', None)
 
     # 如果需要 SSL 配置，添加到配置中
     if broker_use_ssl is not None:
         celery_config["broker_use_ssl"] = broker_use_ssl
 
     app = celery.Celery("fba_celery", **celery_config)
-    print(f"[Celery Init] App conf broker_url: {app.conf.broker_url}")
-    print(f"[Celery Init] App conf result_backend: {app.conf.result_backend}")
+    
+    # 验证最终使用的配置
+    print(f"[Celery Init] ✅ App conf broker_url: {app.conf.broker_url}")
+    print(f"[Celery Init] ✅ App conf result_backend: {app.conf.result_backend}")
 
     # 在 Celery 中设置此参数无效
     # 参数：https://github.com/celery/celery/issues/7270

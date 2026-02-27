@@ -38,7 +38,7 @@
 **检查点：**
 - ✅ 如果看到 "Worker READY!"，说明 worker 已经启动并连接到 broker
 - ❌ 如果没看到这些日志，说明 worker 没有正常启动，检查：
-  - Redis/RabbitMQ 是否运行？
+  - Redis 是否运行？
   - Broker URL 配置是否正确？
   - 网络连接是否正常？
 

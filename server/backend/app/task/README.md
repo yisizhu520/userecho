@@ -20,8 +20,9 @@
 
 ## 消息代理
 
-你可以通过 `CELERY_BROKER` 控制消息代理选择，它支持 redis 和 rabbitmq
+当前项目使用 **Redis** 作为 Celery 消息代理。
 
-对于本地调试，建议使用 redis
+- 本地开发: 使用 Redis (database 1)
+- 生产环境: 使用 Redis (database 1)
 
-对于线上环境，强制使用 rabbitmq
+> **注意**: 项目已移除 RabbitMQ 支持，简化部署架构。
