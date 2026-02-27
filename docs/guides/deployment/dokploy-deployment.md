@@ -19,7 +19,6 @@ GitHub Push → GitHub Actions → GHCR (镜像仓库) → Dokploy (Webhook) →
 1. **外部服务**：
    - PostgreSQL 数据库（如 Supabase、Neon、RDS）
    - Redis（如 Upstash、Render Redis）
-   - RabbitMQ（如 CloudAMQP）
 
 2. **Dokploy 服务器**：已安装并运行 Dokploy
 
@@ -89,11 +88,7 @@ REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
 REDIS_DATABASE=0
 
-# ======= RabbitMQ 配置 =======
-CELERY_RABBITMQ_HOST=your-rabbitmq.cloudamqp.com
-CELERY_RABBITMQ_PORT=5672
-CELERY_RABBITMQ_USERNAME=guest
-CELERY_RABBITMQ_PASSWORD=guest
+# ======= Celery 配置 =======
 CELERY_BROKER_REDIS_DATABASE=1
 
 # ======= 安全密钥 =======
@@ -163,7 +158,7 @@ CELERY_BROKER_REDIS_DATABASE=2
 
 ### Q: Celery Worker 未执行任务
 
-1. 检查 RabbitMQ 连接配置
+1. 检查 Redis 连接配置
 2. 查看 Worker 容器日志：`docker logs fba_celery_worker`
 
 ---

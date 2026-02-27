@@ -17,8 +17,6 @@ volumes:
     name: fba_static
   fba_static_upload:
     name: fba_static_upload
-  fba_rabbitmq:
-    name: fba_rabbitmq
   fba_prometheus_data:
     name: fba_prometheus_data
 
@@ -154,22 +152,6 @@ services:
 #    networks:
 #      - fba_network
 
-  fba_rabbitmq:
-    hostname: fba_rabbitmq
-    image: rabbitmq:3.13.7
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    container_name: fba_rabbitmq
-    restart: always
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - fba_rabbitmq:/var/lib/rabbitmq
-    networks:
-      - fba_network
-
   fba_celery_worker:
     build:
       context: .
@@ -182,8 +164,6 @@ services:
     restart: always
     environment:
       - TZ=Asia/Shanghai
-    depends_on:
-      - fba_rabbitmq
     volumes:
       - ./deploy/backend/docker-compose/.env.server:/fba/backend/.env
     networks:
@@ -192,7 +172,6 @@ services:
       - bash
       - -c
       - |
-        wait-for-it -s fba_rabbitmq:5672 -t 300
         supervisord -c /etc/supervisor/supervisord.conf
         supervisorctl restart
 
@@ -208,7 +187,6 @@ services:
     environment:
       - TZ=Asia/Shanghai
     depends_on:
-      - fba_rabbitmq
       - fba_celery_worker
     volumes:
       - ./deploy/backend/docker-compose/.env.server:/fba/backend/.env
@@ -218,7 +196,6 @@ services:
       - bash
       - -c
       - |
-        wait-for-it -s fba_rabbitmq:5672 -t 300
         supervisord -c /etc/supervisor/supervisord.conf
         supervisorctl restart
 
@@ -236,7 +213,6 @@ services:
     environment:
       - TZ=Asia/Shanghai
     depends_on:
-      - fba_rabbitmq
       - fba_celery_worker
     volumes:
       - ./deploy/backend/docker-compose/.env.server:/fba/backend/.env
@@ -246,22 +222,8 @@ services:
       - bash
       - -c
       - |
-        wait-for-it -s fba_rabbitmq:5672 -t 300
         supervisord -c /etc/supervisor/supervisord.conf
         supervisorctl restart
-
-  fba_celery_exporter:
-    image: danihodovic/celery-exporter
-    restart: always
-    ports:
-      - "9808:9808"
-    container_name: fba_celery_exporter
-    environment:
-      - CE_BROKER_URL=amqp://guest:guest@fba_rabbitmq:5672//
-    depends_on:
-      - fba_rabbitmq
-    networks:
-      - fba_network
 
   fba_loki:
     image: grafana/loki

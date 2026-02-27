@@ -65,13 +65,20 @@ services:
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
 
       # ======= Celery Broker 配置 =======
-      # 生产环境强制使用 Redis 作为 broker（而非默认的 RabbitMQ）
+      # 使用独立的 Redis 数据库 1（避免和应用数据混在一起）
       - CELERY_BROKER=redis
       - CELERY_BROKER_REDIS_DATABASE=${CELERY_BROKER_REDIS_DATABASE:-1}
 
       # ======= 安全密钥 =======
       - TOKEN_SECRET_KEY=${TOKEN_SECRET_KEY}
       - OPERA_LOG_ENCRYPT_SECRET_KEY=${OPERA_LOG_ENCRYPT_SECRET_KEY}
+
+      # ======= AI 服务配置（可选）=======
+      - AI_DEFAULT_PROVIDER=${AI_DEFAULT_PROVIDER:-volcengine}
+      - VOLCENGINE_API_KEY=${VOLCENGINE_API_KEY:-}
+      - VOLCENGINE_CHAT_ENDPOINT=${VOLCENGINE_CHAT_ENDPOINT:-}
+      - VOLCENGINE_EMBEDDING_ENDPOINT=${VOLCENGINE_EMBEDDING_ENDPOINT:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
 
     volumes:
       - fba_logs:/var/log/fba

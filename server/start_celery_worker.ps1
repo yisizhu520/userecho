@@ -7,5 +7,16 @@ Write-Host ""
 # 设置 celery-aio-pool 环境变量（Celery 5.3+ 要求）
 $env:CELERY_CUSTOM_WORKER_POOL = "celery_aio_pool.pool:AsyncIOPool"
 
+Write-Host "Environment Variables:" -ForegroundColor Cyan
+Write-Host "  CELERY_CUSTOM_WORKER_POOL = $env:CELERY_CUSTOM_WORKER_POOL" -ForegroundColor Gray
+Write-Host ""
+
+Write-Host "Starting worker with parameters:" -ForegroundColor Cyan
+Write-Host "  -A backend.app.task.celery:celery_app" -ForegroundColor Gray
+Write-Host "  -P custom (AsyncIOPool)" -ForegroundColor Gray
+Write-Host "  -c 4 (concurrency)" -ForegroundColor Gray
+Write-Host "  -l info (log level)" -ForegroundColor Gray
+Write-Host ""
+
 # 使用 -P custom 启动 worker，Celery 会使用环境变量指定的池
 & "$PSScriptRoot\.venv\Scripts\python.exe" -m celery -A backend.app.task.celery:celery_app worker -P custom -c 4 -l info --without-gossip --without-mingle

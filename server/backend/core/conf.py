@@ -294,16 +294,8 @@ class Settings(BaseSettings):
     # .env Redis
     CELERY_BROKER_REDIS_DATABASE: int = 1
 
-    # .env RabbitMQ
-    # docker run -d --hostname fba-mq --name fba-mq  -p 5672:5672 -p 15672:15672 rabbitmq:latest
-    CELERY_RABBITMQ_HOST: str = ""
-    CELERY_RABBITMQ_PORT: int = 5672
-    CELERY_RABBITMQ_USERNAME: str = ""
-    CELERY_RABBITMQ_PASSWORD: str = ""
-
-    # 基础配置
-    CELERY_BROKER: Literal["rabbitmq", "redis"] = "redis"
-    CELERY_RABBITMQ_VHOST: str = ""
+    # .env Celery Broker (仅支持 Redis)
+    CELERY_BROKER: Literal["redis"] = "redis"
     CELERY_REDIS_PREFIX: str = "fba:celery"
     CELERY_TASK_MAX_RETRIES: int = 5
 
@@ -356,14 +348,6 @@ class Settings(BaseSettings):
     @classmethod
     def check_env(cls, values: Any) -> Any:
         """检查环境变量"""
-        if values.get("ENVIRONMENT") == "prod":
-            # FastAPI
-            values["FASTAPI_OPENAPI_URL"] = None
-            values["FASTAPI_STATIC_FILES"] = False
-
-            # task
-            values["CELERY_BROKER"] = "rabbitmq"
-
         # Demo 模式下修改应用标题
         if values.get("DEMO_MODE"):
             values["FASTAPI_TITLE"] = "回响-演示版"

@@ -281,10 +281,22 @@ class DatabaseScheduler(Scheduler):
     lock: Lock | None = None
     lock_key = f"{settings.CELERY_REDIS_PREFIX}:beat_lock"
 
-    def __init__(self, *args, **kwargs) -> None:
-        self.app = kwargs["app"]
+    def __init__(self, app=None, *args, **kwargs) -> None:
+        # Handle both positional and keyword argument for app
+        self.app = app or kwargs.get("app")
+        if not self.app:
+            from celery import current_app
+            self.app = current_app._get_current_object()
+        
+        # Debug: Print database configuration
+        logger.info(f"[DatabaseScheduler Init] DATABASE_HOST={settings.DATABASE_HOST}")
+        logger.info(f"[DatabaseScheduler Init] DATABASE_PORT={settings.DATABASE_PORT}")
+        logger.info(f"[DatabaseScheduler Init] DATABASE_SCHEMA={settings.DATABASE_SCHEMA}")
+        logger.info(f"[DatabaseScheduler Init] DATABASE_TYPE={settings.DATABASE_TYPE}")
+        
         self._dirty = set()
-        super().__init__(*args, **kwargs)
+        # Pass app to parent Scheduler.__init__(app, *args, **kwargs)
+        super().__init__(self.app, *args, **kwargs)
         self._finalize = Finalize(self, self.sync, exitpriority=5)
         self.max_interval = kwargs.get("max_interval") or self.app.conf.beat_max_loop_interval or DEFAULT_MAX_INTERVAL
 
@@ -397,15 +409,25 @@ class DatabaseScheduler(Scheduler):
 
     async def get_all_task_schedulers(self) -> dict:
         """获取所有任务调度"""
-        async with async_db_session() as db:
-            logger.debug("DatabaseScheduler: Fetching database schedule")
-            stmt = select(TaskScheduler).where(TaskScheduler.enabled == True)  # noqa: E712
-            query = await db.execute(stmt)
-            schedulers = query.scalars().all()
-            s = {}
-            for scheduler in schedulers:
-                s[scheduler.name] = self.Entry(scheduler, app=self.app)
-            return s
+        logger.info(f"[get_all_task_schedulers] Starting database query...")
+        logger.info(f"[get_all_task_schedulers] DATABASE_HOST={settings.DATABASE_HOST}")
+        
+        try:
+            async with async_db_session() as db:
+                logger.debug("DatabaseScheduler: Fetching database schedule")
+                stmt = select(TaskScheduler).where(TaskScheduler.enabled == True)  # noqa: E712
+                query = await db.execute(stmt)
+                schedulers = query.scalars().all()
+                s = {}
+                for scheduler in schedulers:
+                    s[scheduler.name] = self.Entry(scheduler, app=self.app)
+                logger.info(f"[get_all_task_schedulers] Found {len(s)} enabled schedulers")
+                return s
+        except Exception as e:
+            logger.error(f"[get_all_task_schedulers] Database query failed: {e}")
+            import traceback
+            logger.error(f"[get_all_task_schedulers] Traceback: {traceback.format_exc()}")
+            raise
 
     @property
     def schedule(self) -> dict[str, ModelEntry]:

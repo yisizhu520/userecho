@@ -92,7 +92,6 @@ lint = [
     "boto3-stubs>=1.35.90",
 ]
 server = [
-    "aio-pika>=9.5.8",
     "wait-for-it>=2.3.0",
 ]
 
