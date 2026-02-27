@@ -22,7 +22,7 @@ print(f"✅ Broker URL: {celery_app.conf.broker_url}")
 print(f"✅ Result Backend: {celery_app.conf.result_backend}")
 
 # 检查任务注册
-user_tasks = [k for k in celery_app.tasks.keys() if not k.startswith('celery.')]
+user_tasks = [k for k in celery_app.tasks.keys() if not k.startswith("celery.")]
 print(f"✅ 已注册用户任务数: {len(user_tasks)}")
 
 print("\n" + "=" * 70)

@@ -103,6 +103,16 @@ BUSINESS_PERMISSIONS = [
         "menu_icon": "lucide:shield",
         "sort": 92,
     },
+    # 看板管理（设置子菜单）
+    {
+        "code": "board_manage",  # 对应前端 permissionCode: 'board_manage'
+        "name": "看板管理",
+        "type": "action",
+        "parent_code": "settings",
+        "menu_path": "/app/settings/boards",
+        "menu_icon": "lucide:layout-dashboard",
+        "sort": 93,
+    },
 ]
 
 

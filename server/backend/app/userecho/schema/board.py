@@ -14,6 +14,26 @@ class BoardBase(BaseModel):
     category: str | None = Field(None, description="看板分类")
 
 
+class BoardCreate(BaseModel):
+    """创建看板"""
+
+    name: str = Field(..., min_length=1, max_length=100, description="看板名称")
+    url_name: str = Field(..., min_length=1, max_length=100, description="URL slug")
+    description: str | None = Field(None, description="看板描述")
+    category: str | None = Field(None, max_length=50, description="看板分类")
+    sort_order: int = Field(0, description="排序顺序")
+
+
+class BoardUpdate(BaseModel):
+    """更新看板"""
+
+    name: str | None = Field(None, min_length=1, max_length=100, description="看板名称")
+    description: str | None = Field(None, description="看板描述")
+    category: str | None = Field(None, max_length=50, description="看板分类")
+    sort_order: int | None = Field(None, description="排序顺序")
+    is_archived: bool | None = Field(None, description="是否归档")
+
+
 class BoardOut(BoardBase):
     """Board 输出模型"""
 

@@ -286,14 +286,15 @@ class DatabaseScheduler(Scheduler):
         self.app = app or kwargs.get("app")
         if not self.app:
             from celery import current_app
+
             self.app = current_app._get_current_object()
-        
+
         # Debug: Print database configuration
         logger.info(f"[DatabaseScheduler Init] DATABASE_HOST={settings.DATABASE_HOST}")
         logger.info(f"[DatabaseScheduler Init] DATABASE_PORT={settings.DATABASE_PORT}")
         logger.info(f"[DatabaseScheduler Init] DATABASE_SCHEMA={settings.DATABASE_SCHEMA}")
         logger.info(f"[DatabaseScheduler Init] DATABASE_TYPE={settings.DATABASE_TYPE}")
-        
+
         self._dirty = set()
         # Pass app to parent Scheduler.__init__(app, *args, **kwargs)
         super().__init__(self.app, *args, **kwargs)
@@ -409,9 +410,9 @@ class DatabaseScheduler(Scheduler):
 
     async def get_all_task_schedulers(self) -> dict:
         """获取所有任务调度"""
-        logger.info(f"[get_all_task_schedulers] Starting database query...")
+        logger.info("[get_all_task_schedulers] Starting database query...")
         logger.info(f"[get_all_task_schedulers] DATABASE_HOST={settings.DATABASE_HOST}")
-        
+
         try:
             async with async_db_session() as db:
                 logger.debug("DatabaseScheduler: Fetching database schedule")
@@ -426,6 +427,7 @@ class DatabaseScheduler(Scheduler):
         except Exception as e:
             logger.error(f"[get_all_task_schedulers] Database query failed: {e}")
             import traceback
+
             logger.error(f"[get_all_task_schedulers] Traceback: {traceback.format_exc()}")
             raise
 

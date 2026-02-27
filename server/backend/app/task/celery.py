@@ -14,13 +14,13 @@ def find_task_packages() -> list[str]:
     packages = []
     task_dir = BASE_PATH / "app" / "task" / "tasks"
     print(f"[Celery Init] Searching for tasks in: {task_dir}")
-    
+
     for root, _dirs, files in os.walk(task_dir):
         if "tasks.py" in files:
             package = root.replace(str(BASE_PATH.parent) + os.path.sep, "").replace(os.path.sep, ".")
             print(f"[Celery Init] ✅ Found tasks package: {package}")
             packages.append(package)
-    
+
     print(f"[Celery Init] Total task packages found: {len(packages)}")
     return packages
 
@@ -44,7 +44,7 @@ def init_celery() -> celery.Celery:
     # 只支持 Redis broker
     broker_url = None
     broker_use_ssl = None
-    
+
     if settings.REDIS_URL:
         # 如果使用 REDIS_URL（如 Upstash），需要替换数据库编号
         # rediss://default:password@host:port/0 -> rediss://default:password@host:port/N
@@ -87,29 +87,29 @@ def init_celery() -> celery.Celery:
 
     print(f"[Celery Init] Final broker_url: {broker_url}")
     print(f"[Celery Init] Final result_backend: {result_backend}")
-    
+
     # 检查环境变量是否会覆盖配置
-    env_broker = os.getenv('CELERY_BROKER_URL')
-    env_backend = os.getenv('CELERY_RESULT_BACKEND')
-    
+    env_broker = os.getenv("CELERY_BROKER_URL")
+    env_backend = os.getenv("CELERY_RESULT_BACKEND")
+
     if env_broker:
         print(f"[Celery Init] ⚠️  WARNING: ENV CELERY_BROKER_URL={env_broker}")
-        print(f"[Celery Init] ⚠️  This will OVERRIDE the broker_url config!")
-        print(f"[Celery Init] ⚠️  Clearing environment variable to use settings...")
+        print("[Celery Init] ⚠️  This will OVERRIDE the broker_url config!")
+        print("[Celery Init] ⚠️  Clearing environment variable to use settings...")
         # 清除环境变量，使用我们的配置
-        os.environ.pop('CELERY_BROKER_URL', None)
-    
+        os.environ.pop("CELERY_BROKER_URL", None)
+
     if env_backend:
         print(f"[Celery Init] ⚠️  WARNING: ENV CELERY_RESULT_BACKEND={env_backend}")
-        print(f"[Celery Init] ⚠️  Clearing environment variable to use settings...")
-        os.environ.pop('CELERY_RESULT_BACKEND', None)
+        print("[Celery Init] ⚠️  Clearing environment variable to use settings...")
+        os.environ.pop("CELERY_RESULT_BACKEND", None)
 
     # 如果需要 SSL 配置，添加到配置中
     if broker_use_ssl is not None:
         celery_config["broker_use_ssl"] = broker_use_ssl
 
     app = celery.Celery("fba_celery", **celery_config)
-    
+
     # 验证最终使用的配置
     print(f"[Celery Init] ✅ App conf broker_url: {app.conf.broker_url}")
     print(f"[Celery Init] ✅ App conf result_backend: {app.conf.result_backend}")
@@ -120,32 +120,33 @@ def init_celery() -> celery.Celery:
 
     # 自动发现任务
     packages = find_task_packages()
-    
+
     # 方式1: 使用 autodiscover_tasks（推荐）
     # autodiscover_tasks 会自动加载每个包下的 tasks 模块
     app.autodiscover_tasks(packages)
-    
+
     # 方式2: 如果方式1不work，手动导入每个 tasks.py
     # 这是一个 fallback 方案
     if len(app.tasks) <= 10:  # 只有内置任务
-        print(f"[Celery Init] ⚠️  autodiscover_tasks failed, trying manual import")
+        print("[Celery Init] ⚠️  autodiscover_tasks failed, trying manual import")
         for package in packages:
             try:
                 import importlib
+
                 module_name = f"{package}.tasks"
                 importlib.import_module(module_name)
             except Exception as e:
                 print(f"[Celery Init] ❌ Failed to import {module_name}: {e}")
-    
+
     # 打印用户定义的任务（过滤掉 celery 内置任务）
-    user_tasks = [k for k in app.tasks.keys() if not k.startswith('celery.')]
+    user_tasks = [k for k in app.tasks.keys() if not k.startswith("celery.")]
     print(f"[Celery Init] ✅ Registered {len(user_tasks)} user tasks: {user_tasks}")
 
     # 无条件注册信号处理器（用于调试）
     # 信号处理器会根据实际运行的进程类型自动触发对应的信号
-    print(f"[Celery Init] Registering signal handlers...")
+    print("[Celery Init] Registering signal handlers...")
     _register_celery_signals(app)
-    print(f"[Celery Init] Signal handlers registered")
+    print("[Celery Init] Signal handlers registered")
 
     # 配置 loguru 文件日志（确保 Celery worker 的日志也能写入文件）
     # 只在 worker 进程中配置，beat 和 flower 不需要
@@ -157,7 +158,7 @@ def init_celery() -> celery.Celery:
 
         setup_logging()
         set_custom_logfile()
-        print(f"[Celery Init] Worker process detected, loguru configured")
+        print("[Celery Init] Worker process detected, loguru configured")
 
     return app
 
@@ -178,8 +179,8 @@ def _register_celery_signals(app: celery.Celery) -> None:
         worker_ready,
         worker_shutdown,
     )
-    
-    print(f"[Celery Signals] Installing signal handlers...")
+
+    print("[Celery Signals] Installing signal handlers...")
 
     @worker_init.connect
     def on_worker_init(**kwargs):
@@ -201,14 +202,14 @@ def _register_celery_signals(app: celery.Celery) -> None:
 
     @before_task_publish.connect
     def on_before_task_publish(sender=None, headers=None, body=None, **kwargs):
-        task_name = headers.get('task', 'unknown') if headers else 'unknown'
-        task_id = headers.get('id', 'unknown') if headers else 'unknown'
+        task_name = headers.get("task", "unknown") if headers else "unknown"
+        task_id = headers.get("id", "unknown") if headers else "unknown"
         print(f"[Celery Publish] 📤 Publishing task: {task_name} (id={task_id[:8]}...)")
 
     @after_task_publish.connect
     def on_after_task_publish(sender=None, headers=None, body=None, **kwargs):
-        task_name = headers.get('task', 'unknown') if headers else 'unknown'
-        task_id = headers.get('id', 'unknown') if headers else 'unknown'
+        task_name = headers.get("task", "unknown") if headers else "unknown"
+        task_id = headers.get("id", "unknown") if headers else "unknown"
         print(f"[Celery Publish] ✅ Published task: {task_name} (id={task_id[:8]}...)")
 
     @task_received.connect
@@ -239,8 +240,8 @@ def _register_celery_signals(app: celery.Celery) -> None:
     @task_rejected.connect
     def on_task_rejected(message=None, **kwargs):
         print(f"[Celery Worker] 🚫 Task rejected: {message}")
-    
-    print(f"[Celery Signals] ✅ Signal handlers installed successfully")
+
+    print("[Celery Signals] ✅ Signal handlers installed successfully")
 
 
 # 创建 Celery 实例

@@ -14,6 +14,7 @@ export interface Board {
     category?: string;
     feedback_count: number;
     topic_count: number;
+    sort_order: number;
     is_archived: boolean;
     created_time: string;
 }
@@ -22,6 +23,24 @@ export interface Board {
 export interface BoardListResponse {
     boards: Board[];
     total: number;
+}
+
+/** 创建看板 */
+export interface BoardCreate {
+    name: string;
+    url_name: string;
+    description?: string;
+    category?: string;
+    sort_order?: number;
+}
+
+/** 更新看板 */
+export interface BoardUpdate {
+    name?: string;
+    description?: string;
+    category?: string;
+    sort_order?: number;
+    is_archived?: boolean;
 }
 
 /**
@@ -33,8 +52,32 @@ export async function getBoardList(): Promise<Board[]> {
 }
 
 /**
+ * 创建看板
+ */
+export async function createBoard(data: BoardCreate): Promise<Board> {
+    return await requestClient.post<Board>('/api/v1/app/boards', data);
+}
+
+/**
+ * 更新看板
+ */
+export async function updateBoard(id: string, data: BoardUpdate): Promise<Board> {
+    return await requestClient.put<Board>(`/api/v1/app/boards/${id}`, data);
+}
+
+/**
+ * 删除看板（软删除）
+ */
+export async function deleteBoard(id: string): Promise<void> {
+    await requestClient.delete(`/api/v1/app/boards/${id}`);
+}
+
+/**
  * Board API 命名空间（用于兼容旧代码）
  */
 export const BoardApi = {
     getBoardList,
+    createBoard,
+    updateBoard,
+    deleteBoard,
 };

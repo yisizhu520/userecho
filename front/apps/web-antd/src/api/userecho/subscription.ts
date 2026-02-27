@@ -37,5 +37,5 @@ export interface TenantSubscription {
  * 获取当前订阅
  */
 export async function getCurrentSubscription() {
-    return requestClient.get<TenantSubscription>('/app/subscription/me');
+    return requestClient.get<TenantSubscription>('/api/v1/app/subscription/me');
 }

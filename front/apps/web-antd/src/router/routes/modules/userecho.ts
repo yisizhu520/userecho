@@ -160,6 +160,16 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'BoardsManage',
+        path: 'boards',
+        component: () => import('#/views/userecho/settings/boards.vue'),
+        meta: {
+          icon: 'lucide:layout-dashboard',
+          title: '看板管理',
+          permissionCode: 'board_manage',
+        },
+      },
+      {
         name: 'SubscriptionManage',
         path: 'subscription',
         component: () => import('#/views/userecho/settings/subscription.vue'),
