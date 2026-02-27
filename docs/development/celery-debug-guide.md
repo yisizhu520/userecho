@@ -103,6 +103,35 @@
 
 ## 常见问题排查
 
+### 问题 0: 本地能运行，部署后不工作（最常见！）
+
+**现象：** 本地执行 `start_celery_worker.ps1` 一切正常，但 Dokploy/Docker 环境中任务不被消费
+
+**原因：** Worker Pool 类型不匹配
+
+**本地 vs 生产环境差异：**
+- 本地：`-P custom` + `CELERY_CUSTOM_WORKER_POOL=AsyncIOPool` ✅
+- 生产：`-P gevent` ❌ (不支持 async def)
+
+**检查方法：**
+```bash
+# 在服务器上执行
+bash verify_worker_config.sh
+```
+
+**解决方法：**
+1. 修改 `deploy/monolith/supervisord.conf`:
+   ```ini
+   [program:fba_celery_worker]
+   environment=CELERY_CUSTOM_WORKER_POOL="celery_aio_pool.pool:AsyncIOPool"
+   command=python -m celery ... worker -P custom -c 4
+   ```
+2. 重启 worker: `supervisorctl restart fba_celery_worker`
+
+**详细说明：** 参考 `docs/development/celery-local-vs-dokploy.md`
+
+---
+
 ### 问题 1: 任务注册了，但 worker 没有 "READY" 日志
 
 **原因：** Worker 进程没有正常启动

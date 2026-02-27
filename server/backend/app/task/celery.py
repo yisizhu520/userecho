@@ -131,6 +131,12 @@ def init_celery() -> celery.Celery:
     user_tasks = [k for k in app.tasks.keys() if not k.startswith('celery.')]
     print(f"[Celery Init] ✅ Registered {len(user_tasks)} user tasks: {user_tasks}")
 
+    # 无条件注册信号处理器（用于调试）
+    # 信号处理器会根据实际运行的进程类型自动触发对应的信号
+    print(f"[Celery Init] Registering signal handlers...")
+    _register_celery_signals(app)
+    print(f"[Celery Init] Signal handlers registered")
+
     # 配置 loguru 文件日志（确保 Celery worker 的日志也能写入文件）
     # 只在 worker 进程中配置，beat 和 flower 不需要
     # 通过检查 argv 判断是否是 worker 进程
@@ -141,9 +147,7 @@ def init_celery() -> celery.Celery:
 
         setup_logging()
         set_custom_logfile()
-        
-        # 注册 Celery 信号处理器（仅在 worker 进程）
-        _register_celery_signals(app)
+        print(f"[Celery Init] Worker process detected, loguru configured")
 
     return app
 
@@ -164,16 +168,22 @@ def _register_celery_signals(app: celery.Celery) -> None:
         worker_ready,
         worker_shutdown,
     )
+    
+    print(f"[Celery Signals] Installing signal handlers...")
 
     @worker_init.connect
     def on_worker_init(**kwargs):
+        print("=" * 60)
         print("[Celery Worker] 🔧 Worker initializing...")
+        print("=" * 60)
 
     @worker_ready.connect
     def on_worker_ready(**kwargs):
+        print("=" * 60)
         print("[Celery Worker] 🚀 Worker READY! Waiting for tasks...")
         print(f"[Celery Worker] Broker: {app.conf.broker_url}")
         print(f"[Celery Worker] Concurrency: {app.conf.worker_concurrency or 'default'}")
+        print("=" * 60)
 
     @worker_shutdown.connect
     def on_worker_shutdown(**kwargs):
@@ -219,6 +229,8 @@ def _register_celery_signals(app: celery.Celery) -> None:
     @task_rejected.connect
     def on_task_rejected(message=None, **kwargs):
         print(f"[Celery Worker] 🚫 Task rejected: {message}")
+    
+    print(f"[Celery Signals] ✅ Signal handlers installed successfully")
 
 
 # 创建 Celery 实例
