@@ -93,12 +93,16 @@ def init_celery() -> celery.Celery:
 
     print(f"[Celery Init] Final broker_url: {broker_url}")
     print(f"[Celery Init] Final result_backend: {result_backend}")
+    print(f"[Celery Init] ENV CELERY_BROKER_URL={os.getenv('CELERY_BROKER_URL')}")
+    print(f"[Celery Init] ENV CELERY_RESULT_BACKEND={os.getenv('CELERY_RESULT_BACKEND')}")
 
     # 如果需要 SSL 配置，添加到配置中
     if broker_use_ssl is not None:
         celery_config["broker_use_ssl"] = broker_use_ssl
 
     app = celery.Celery("fba_celery", **celery_config)
+    print(f"[Celery Init] App conf broker_url: {app.conf.broker_url}")
+    print(f"[Celery Init] App conf result_backend: {app.conf.result_backend}")
 
     # 在 Celery 中设置此参数无效
     # 参数：https://github.com/celery/celery/issues/7270
@@ -137,8 +141,84 @@ def init_celery() -> celery.Celery:
 
         setup_logging()
         set_custom_logfile()
+        
+        # 注册 Celery 信号处理器（仅在 worker 进程）
+        _register_celery_signals(app)
 
     return app
+
+
+def _register_celery_signals(app: celery.Celery) -> None:
+    """注册 Celery 信号处理器，用于调试任务执行流程"""
+    from celery.signals import (
+        after_task_publish,
+        before_task_publish,
+        task_failure,
+        task_postrun,
+        task_prerun,
+        task_received,
+        task_rejected,
+        task_retry,
+        task_success,
+        worker_init,
+        worker_ready,
+        worker_shutdown,
+    )
+
+    @worker_init.connect
+    def on_worker_init(**kwargs):
+        print("[Celery Worker] 🔧 Worker initializing...")
+
+    @worker_ready.connect
+    def on_worker_ready(**kwargs):
+        print("[Celery Worker] 🚀 Worker READY! Waiting for tasks...")
+        print(f"[Celery Worker] Broker: {app.conf.broker_url}")
+        print(f"[Celery Worker] Concurrency: {app.conf.worker_concurrency or 'default'}")
+
+    @worker_shutdown.connect
+    def on_worker_shutdown(**kwargs):
+        print("[Celery Worker] 🛑 Worker shutting down...")
+
+    @before_task_publish.connect
+    def on_before_task_publish(sender=None, headers=None, body=None, **kwargs):
+        task_name = headers.get('task', 'unknown') if headers else 'unknown'
+        task_id = headers.get('id', 'unknown') if headers else 'unknown'
+        print(f"[Celery Publish] 📤 Publishing task: {task_name} (id={task_id[:8]}...)")
+
+    @after_task_publish.connect
+    def on_after_task_publish(sender=None, headers=None, body=None, **kwargs):
+        task_name = headers.get('task', 'unknown') if headers else 'unknown'
+        task_id = headers.get('id', 'unknown') if headers else 'unknown'
+        print(f"[Celery Publish] ✅ Published task: {task_name} (id={task_id[:8]}...)")
+
+    @task_received.connect
+    def on_task_received(request=None, **kwargs):
+        if request:
+            print(f"[Celery Worker] 📥 Received task: {request.name} (id={request.id[:8]}...)")
+
+    @task_prerun.connect
+    def on_task_prerun(task_id=None, task=None, **kwargs):
+        print(f"[Celery Worker] ▶️  Starting task: {task.name} (id={task_id[:8]}...)")
+
+    @task_postrun.connect
+    def on_task_postrun(task_id=None, task=None, state=None, **kwargs):
+        print(f"[Celery Worker] ⏹️  Finished task: {task.name} (id={task_id[:8]}..., state={state})")
+
+    @task_success.connect
+    def on_task_success(sender=None, result=None, **kwargs):
+        print(f"[Celery Worker] ✅ Task succeeded: {sender.name}")
+
+    @task_failure.connect
+    def on_task_failure(task_id=None, exception=None, traceback=None, **kwargs):
+        print(f"[Celery Worker] ❌ Task failed: {task_id[:8]}... - {exception}")
+
+    @task_retry.connect
+    def on_task_retry(task_id=None, reason=None, **kwargs):
+        print(f"[Celery Worker] 🔄 Task retrying: {task_id[:8]}... - {reason}")
+
+    @task_rejected.connect
+    def on_task_rejected(message=None, **kwargs):
+        print(f"[Celery Worker] 🚫 Task rejected: {message}")
 
 
 # 创建 Celery 实例
