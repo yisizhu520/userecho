@@ -62,6 +62,7 @@ onUnmounted(() => {
         <a href="#workflow" class="nav-link">工作流程</a>
         <a href="#pricing" class="nav-link">定价</a>
         <a href="#" class="nav-link">文档</a>
+        <a href="#contact" class="nav-link">联系我们</a>
       </div>
 
       <div class="navbar-actions">
@@ -131,28 +132,37 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .navbar-brand:hover {
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .navbar-logo {
   width: 36px;
   height: 36px;
   object-fit: contain;
+  filter: drop-shadow(0 0 8px var(--lp-glow-brand));
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover .navbar-logo {
+  transform: scale(1.05) rotate(-5deg);
 }
 
 .navbar-name {
   font-family: var(--lp-font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  background: transparent;
-  -webkit-background-clip: unset;
-  -webkit-text-fill-color: var(--lp-text-primary);
-  background-clip: unset;
-  color: var(--lp-text-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--lp-color-brand);
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover .navbar-name {
+  filter: brightness(1.1);
+  transform: translateX(2px);
 }
 
 .navbar-links {

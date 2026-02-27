@@ -12,6 +12,7 @@ import LandingNavbar from './components/LandingNavbar.vue';
 import { useLandingTheme } from '#/composables/useLandingTheme';
 
 const router = useRouter();
+const currentYear = new Date().getFullYear();
 const { theme, initTheme } = useLandingTheme();
 
 const handleGetStarted = () => {
@@ -68,7 +69,7 @@ onMounted(() => {
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2025 回响. All rights reserved.</p>
+        <p>&copy; {{ currentYear }} 回响. All rights reserved.</p>
       </div>
     </footer>
   </div>
@@ -86,17 +87,17 @@ onMounted(() => {
   --lp-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --lp-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Primary colors - Professional Blue */
-  --lp-primary-50: #f0f5ff;
-  --lp-primary-100: #e0ebff;
-  --lp-primary-200: #c2dbff;
-  --lp-primary-300: #94c2ff;
-  --lp-primary-400: #5c9eff;
-  --lp-primary-500: #3b82f6;
-  --lp-primary-600: #2563eb;
-  --lp-primary-700: #1d4ed8;
-  --lp-primary-800: #1e40af;
-  --lp-primary-900: #1e3a8a;
+  /* Primary colors - Professional Emerald/Green */
+  --lp-primary-50: #f0fdf4;
+  --lp-primary-100: #dcfce7;
+  --lp-primary-200: #bbf7d0;
+  --lp-primary-300: #86efac;
+  --lp-primary-400: #4ade80;
+  --lp-primary-500: #10b981;
+  --lp-primary-600: #059669;
+  --lp-primary-700: #047857;
+  --lp-primary-800: #065f46;
+  --lp-primary-900: #064e3b;
 
   /* Accent colors - Reserved for status/highlights only */
   --lp-accent-cyan: #0ea5e9;
@@ -107,13 +108,13 @@ onMounted(() => {
   --lp-accent-pink: #ec4899;
   --lp-accent-red: #ef4444;
 
-  /* Background colors - Deep Blue Professional */
-  --lp-bg-primary: #020617; /* Very dark slate blue */
-  --lp-bg-secondary: #0f172a;
-  --lp-bg-tertiary: #1e293b;
-  --lp-bg-card: rgba(15, 23, 42, 0.8);
-  --lp-bg-card-hover: rgba(30, 41, 59, 0.9);
-  --lp-bg-elevated: rgba(30, 41, 59, 0.95);
+  /* Background colors - Deep Emerald Professional */
+  --lp-bg-primary: #040d0a; /* Very dark emerald green black */
+  --lp-bg-secondary: #06120e;
+  --lp-bg-tertiary: #064e3b;
+  --lp-bg-card: rgba(6, 18, 14, 0.8);
+  --lp-bg-card-hover: rgba(6, 78, 59, 0.9);
+  --lp-bg-elevated: rgba(6, 78, 59, 0.95);
 
   /* Text colors - High contrast */
   --lp-text-primary: #f8fafc;
@@ -127,18 +128,18 @@ onMounted(() => {
   --lp-border-strong: rgba(148, 163, 184, 0.25);
 
   /* Gradients - Subtle and Professional */
-  --lp-gradient-primary: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
-  --lp-gradient-hero: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%); /* White/Blue for text */
+  --lp-gradient-primary: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  --lp-gradient-hero: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%); /* White/Green for text */
   --lp-gradient-warm: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  --lp-gradient-cool: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
-  --lp-gradient-bg: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  --lp-gradient-cool: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.1) 0%, transparent 60%);
+  --lp-gradient-bg: linear-gradient(180deg, #040d0a 0%, #06120e 100%);
 
   /* Canvas background */
   --lp-canvas-bg: rgba(15, 23, 42, 0.6);
 
   /* Special effects - Reduced intensity */
-  --lp-glow-primary: rgba(59, 130, 246, 0.3);
+  --lp-glow-primary: rgba(16, 185, 129, 0.3);
   --lp-glow-cyan: rgba(14, 165, 233, 0.2);
   --lp-glow-emerald: rgba(16, 185, 129, 0.2);
   --lp-glow-amber: rgba(245, 158, 11, 0.2);
@@ -156,17 +157,17 @@ onMounted(() => {
   --lp-font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --lp-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Primary colors - Corporate Blue */
-  --lp-primary-50: #eff6ff;
-  --lp-primary-100: #dbeafe;
-  --lp-primary-200: #bfdbfe;
-  --lp-primary-300: #93c5fd;
-  --lp-primary-400: #60a5fa;
-  --lp-primary-500: #3b82f6;
-  --lp-primary-600: #2563eb;
-  --lp-primary-700: #1d4ed8;
-  --lp-primary-800: #1e40af;
-  --lp-primary-900: #1e3a8a;
+  /* Primary colors - Corporate Emerald/Green */
+  --lp-primary-50: #f0fdf4;
+  --lp-primary-100: #dcfce7;
+  --lp-primary-200: #bbf7d0;
+  --lp-primary-300: #86efac;
+  --lp-primary-400: #4ade80;
+  --lp-primary-500: #10b981;
+  --lp-primary-600: #059669;
+  --lp-primary-700: #047857;
+  --lp-primary-800: #065f46;
+  --lp-primary-900: #064e3b;
 
   /* Accent colors */
   --lp-accent-cyan: #0ea5e9;
@@ -177,10 +178,10 @@ onMounted(() => {
   --lp-accent-pink: #db2777;
   --lp-accent-red: #dc2626;
 
-  /* Background colors - Crisp Light */
+  /* Background colors - Crisp Light Green */
   --lp-bg-primary: #ffffff;
-  --lp-bg-secondary: #f8fafc;
-  --lp-bg-tertiary: #f1f5f9;
+  --lp-bg-secondary: #f0fdf4;
+  --lp-bg-tertiary: #dcfce7;
   --lp-bg-card: #ffffff;
   --lp-bg-card-hover: #f8fafc;
   --lp-bg-elevated: #ffffff;
@@ -196,19 +197,19 @@ onMounted(() => {
   --lp-border-default: #cbd5e1;
   --lp-border-strong: #94a3b8;
 
-  /* Gradients - Minimalist */
-  --lp-gradient-primary: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  --lp-gradient-hero: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); /* Dark Blue for text */
+  /* Gradients - Minimalist Emerald */
+  --lp-gradient-primary: linear-gradient(135deg, #059669 0%, #047857 100%);
+  --lp-gradient-hero: linear-gradient(135deg, #064e3b 0%, #10b981 100%); /* Emerald Gradient for text */
   --lp-gradient-warm: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  --lp-gradient-cool: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
-  --lp-gradient-bg: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  --lp-gradient-cool: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  --lp-gradient-radial: radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  --lp-gradient-bg: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
 
   /* Canvas background */
   --lp-canvas-bg: #ffffff;
 
-  /* Special effects - Subtle */
-  --lp-glow-primary: rgba(37, 99, 235, 0.15);
+  /* Special effects - Subtle Emerald */
+  --lp-glow-primary: rgba(16, 185, 129, 0.15);
   --lp-glow-cyan: rgba(14, 165, 233, 0.1);
   --lp-glow-emerald: rgba(5, 150, 105, 0.1);
   --lp-glow-amber: rgba(217, 119, 6, 0.1);
@@ -239,9 +240,9 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(59, 130, 246, 0.12), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(6, 182, 212, 0.08), transparent 50%),
-    radial-gradient(ellipse 50% 30% at 40% 80%, rgba(16, 185, 129, 0.06), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(16, 185, 129, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(16, 185, 129, 0.08), transparent 50%),
+    radial-gradient(ellipse 50% 30% at 40% 80%, rgba(10, 185, 129, 0.06), transparent 50%),
     radial-gradient(ellipse 40% 40% at 90% 70%, rgba(245, 158, 11, 0.05), transparent 50%);
   pointer-events: none;
   z-index: 0;
@@ -257,8 +258,8 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(59, 130, 246, 0.04), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(6, 182, 212, 0.03), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(16, 185, 129, 0.04), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(5, 150, 105, 0.03), transparent 50%),
     radial-gradient(ellipse 50% 30% at 40% 80%, rgba(16, 185, 129, 0.02), transparent 50%);
   pointer-events: none;
   z-index: 0;

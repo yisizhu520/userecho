@@ -3,6 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --lp-gradient-brand: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+    --lp-color-brand: #059669;
+    --lp-glow-brand: rgba(16, 185, 129, 0.3);
+  }
+
+  .dark {
+    --lp-gradient-brand: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+    --lp-color-brand: #10b981;
+    --lp-glow-brand: rgba(16, 185, 129, 0.3);
+  }
+
   *,
   ::after,
   ::before {

@@ -100,8 +100,8 @@ const handleSelectRole = async (roleKey: string) => {
         <div class="notice-icon">🔬</div>
         <div class="notice-content">
           <span>这是演示环境，数据每日凌晨 2 点自动重置</span>
-          <a href="https://userecho.app" target="_blank" class="register-link">
-            注册正式版 →
+          <a href="https://userecho.app/#contact" target="_blank" class="register-link">
+            体验正式版 →
           </a>
         </div>
       </div>

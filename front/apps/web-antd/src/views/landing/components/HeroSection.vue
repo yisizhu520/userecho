@@ -36,8 +36,8 @@ const scrollToContact = () => {
 
 // Make STAGE_CONFIG available to template
 const stageConfig = {
-  INGEST: { label: '收集反馈', icon: '📥', color: '#60a5fa' },
-  PROCESS: { label: '智能合并', icon: '🧠', color: '#a78bfa' },
+  INGEST: { label: '收集反馈', icon: '📥', color: '#10b981' },
+  PROCESS: { label: '智能合并', icon: '🧠', color: '#059669' },
   INSIGHT: { label: '发现洞察', icon: '⚡', color: '#fbbf24' },
   SYNC: { label: '同步用户', icon: '✓', color: '#34d399' },
 };
@@ -138,7 +138,7 @@ const COLOR_PALETTE = {
   neutral: (dark: boolean) => dark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(148, 163, 184, 0.5)',
   highlight: '#F59E0B', // Amber 500 for "Insight"
   sync: '#10B981',      // Emerald 500 for "Sync"
-  scanLine: 'rgba(56, 189, 248, 0.5)',
+  scanLine: 'rgba(16, 185, 129, 0.5)',
 };
 
 // Particle Class
@@ -455,9 +455,9 @@ const stageProgressBars = ref([0, 0, 0, 0]);
 
 const getClusterColors = (dark: boolean) => {
   if (dark) {
-    return ['#3b82f6', '#2563eb', '#60a5fa', '#93c5fd', '#ffffff'];
+    return ['#10b981', '#059669', '#34d399', '#6ee7b7', '#ffffff'];
   } else {
-    return ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#0f172a'];
+    return ['#047857', '#059669', '#10b981', '#34d399', '#064e3b'];
   }
 };
 
@@ -516,7 +516,7 @@ const animate = () => {
   const dark = isDark.value;
 
   // Clear with subtle fade trail for motion blur effect
-  ctx.fillStyle = dark ? 'rgba(15, 23, 42, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+  ctx.fillStyle = dark ? 'rgba(4, 13, 10, 0.15)' : 'rgba(255, 255, 255, 0.15)';
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   frameCount++;
@@ -599,9 +599,9 @@ const animate = () => {
       scanX = scanEase(localProgress) * CANVAS_WIDTH;
 
       const gradient = ctx.createLinearGradient(scanX - 100, 0, scanX + 20, 0);
-      gradient.addColorStop(0, 'rgba(96, 165, 250, 0)');
-      gradient.addColorStop(0.75, 'rgba(96, 165, 250, 0.25)');
-      gradient.addColorStop(1, 'rgba(96, 165, 250, 0.5)');
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0)');
+      gradient.addColorStop(0.75, 'rgba(16, 185, 129, 0.25)');
+      gradient.addColorStop(1, 'rgba(16, 185, 129, 0.5)');
 
       ctx.beginPath();
       ctx.moveTo(scanX, 0);
@@ -1150,7 +1150,7 @@ onUnmounted(() => {
 .badge-dot {
   width: 6px;
   height: 6px;
-  background: #60a5fa;
+  background: #10b981;
   border-radius: 50%;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -1439,7 +1439,7 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  background: linear-gradient(90deg, #10b981, #34d399);
   border-radius: 1px;
   transition: width 0.1s linear;
 }
@@ -1464,7 +1464,7 @@ onUnmounted(() => {
 .scroll-line {
   width: 1px;
   height: 32px;
-  background: linear-gradient(to bottom, #3b82f6, transparent);
+  background: linear-gradient(to bottom, #10b981, transparent);
 }
 
 .scroll-text {

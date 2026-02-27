@@ -59,11 +59,11 @@ withDefaults(defineProps<Props>(), {
         :src="src"
         :size="logoSize"
         :fit="fit"
-        class="relative rounded-none bg-transparent"
+        class="logo-img relative rounded-none bg-transparent"
       />
       <template v-if="!collapsed">
         <slot name="text">
-          <span class="text-foreground truncate text-nowrap font-semibold">
+          <span class="logo-text truncate text-nowrap font-bold">
             {{ text }}
           </span>
         </slot>
@@ -71,3 +71,24 @@ withDefaults(defineProps<Props>(), {
     </a>
   </div>
 </template>
+
+<style scoped>
+.logo-img {
+  filter: drop-shadow(0 0 8px var(--lp-glow-brand));
+  transition: transform 0.3s ease;
+}
+
+.logo-text {
+  color: var(--lp-color-brand);
+  transition: all 0.3s ease;
+}
+
+a:hover .logo-img {
+  transform: scale(1.05) rotate(-5deg);
+}
+
+a:hover .logo-text {
+  filter: brightness(1.1);
+  transform: translateX(2px);
+}
+</style>
