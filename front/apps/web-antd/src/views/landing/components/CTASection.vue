@@ -63,7 +63,7 @@ const handleSubmit = async () => {
             <span class="cta-badge-text">🔥 限时福利</span>
           </div>
 
-          <h2 class="cta-title">前 20 名用户免费体验1个月</h2>
+          <h2 class="cta-title">前 20 名用户免费体验1个月专业版</h2>
           <p class="cta-subtitle">
             <br />已有 11 家团队加入，仅剩 <strong>9</strong> 个名额
           </p>
@@ -147,7 +147,7 @@ const handleSubmit = async () => {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>免费体验3个月专业版</span>
+            <span>免费体验1个月专业版</span>
           </div>
           <div class="cta-feature">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

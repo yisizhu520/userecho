@@ -16,7 +16,7 @@ class InvitationCreateReq(BaseModel):
     usage_limit: int = Field(10, description="使用次数限制", ge=1, le=1000)
     expires_days: int = Field(90, description="过期天数", ge=1, le=365)
     plan_code: str = Field("pro", description="赋予的套餐代号")
-    trial_days: int = Field(90, description="试用天数", ge=1, le=365)
+    trial_days: int = Field(30, description="试用天数", ge=1, le=365)
     source: str | None = Field(None, description="来源标签", max_length=50)
     campaign: str | None = Field(None, description="活动标识", max_length=100)
     notes: str | None = Field(None, description="管理备注")

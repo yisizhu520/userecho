@@ -24,7 +24,7 @@ class Invitation(Base):
     usage_limit: Mapped[int] = mapped_column(default=10, comment="使用次数限制")
     used_count: Mapped[int] = mapped_column(default=0, comment="已使用次数")
     plan_code: Mapped[str] = mapped_column(sa.String(20), default="pro", comment="赋予的套餐代号")
-    trial_days: Mapped[int] = mapped_column(default=90, comment="试用天数")
+    trial_days: Mapped[int] = mapped_column(default=30, comment="试用天数")
 
     # 来源标识（数据分析用）
     source: Mapped[str | None] = mapped_column(sa.String(50), default=None, comment="来源标签")
