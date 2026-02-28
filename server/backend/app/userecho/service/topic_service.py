@@ -209,7 +209,7 @@ class TopicService:
         search_mode: str = "keyword",
         date_from: str | None = None,
         date_to: str | None = None,
-    ):
+    ) -> tuple[list[Any], int]:
         """
         获取主题列表（支持排序、过滤和搜索）
 
@@ -229,18 +229,12 @@ class TopicService:
             date_to: 结束日期
 
         Returns:
-            主题列表
+            (主题列表, 总条数)
         """
         from backend.utils.ai_client import ai_client
 
-        # ✅ 使用 INFO 级别确保日志输出
-        log.info(
-            f"[SEARCH_DEBUG] Service Layer - Received params: search_query={search_query!r}, search_mode={search_mode!r}"
-        )
-
         # 语义搜索模式
         if search_query and search_mode == "semantic":
-            log.info("[SEARCH_DEBUG] Service Layer - Using semantic search")
             # 1. 生成搜索词的 embedding
             query_embedding = await ai_client.get_embedding(search_query)
             if not query_embedding:
@@ -251,7 +245,7 @@ class TopicService:
                 search_mode = "keyword"
             else:
                 # 2. 使用 pgvector 语义搜索
-                return await crud_topic.search_by_semantic(
+                items = await crud_topic.search_by_semantic(
                     db=db,
                     tenant_id=tenant_id,
                     query_embedding=query_embedding,
@@ -261,14 +255,13 @@ class TopicService:
                     category=category,
                     board_ids=board_ids,
                 )
+                # 语义搜索暂不支持精确计数，返回列表长度
+                return items, len(items)
 
         # 关键词搜索模式（默认）
         effective_search_query = search_query if (search_query and search_mode == "keyword") else None
-        log.info(
-            f"[SEARCH_DEBUG] Service Layer - Using keyword search: effective_search_query={effective_search_query!r}"
-        )
 
-        return await crud_topic.get_list_sorted(
+        items = await crud_topic.get_list_sorted(
             db=db,
             tenant_id=tenant_id,
             skip=skip,
@@ -282,6 +275,17 @@ class TopicService:
             date_from=date_from,
             date_to=date_to,
         )
+        total = await crud_topic.count_with_filters(
+            db=db,
+            tenant_id=tenant_id,
+            status=status,
+            category=category,
+            board_ids=board_ids,
+            search_query=effective_search_query,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        return items, total
 
     async def get_pending_count(
         self,

@@ -141,6 +141,7 @@ const gridOptions: VxeTableGridOptions<Topic> = {
     custom: true,
     zoom: true,
   },
+  pagination: true,
   columns: useColumns(onActionClick),
   proxyConfig: {
     ajax: {
@@ -151,7 +152,7 @@ const gridOptions: VxeTableGridOptions<Topic> = {
             skip: (page.currentPage - 1) * page.pageSize,
             limit: page.pageSize,
           };
-          
+
           if (filterValues.value.search_query) {
             queryParams.search_query = filterValues.value.search_query;
             queryParams.search_mode = 'keyword'; // MVP阶段只用关键词搜索
@@ -170,14 +171,12 @@ const gridOptions: VxeTableGridOptions<Topic> = {
             queryParams.date_to = filterValues.value.date_range[1];
           }
 
-
-          
-          const data = await getTopicList(queryParams);
+          const data: any = await getTopicList(queryParams);
 
           // vxe-table 期望的返回格式（根据全局 response 配置）
           return {
-            items: data,           // 数据数组
-            total: data.length,    // 当前查询到的记录数
+            items: data.items,
+            total: data.total,
           };
         } catch (error: any) {
           message.error(error.message || '查询失败，请稍后重试');
@@ -186,7 +185,7 @@ const gridOptions: VxeTableGridOptions<Topic> = {
       },
     },
   },
-};
+  };
 
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 

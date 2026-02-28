@@ -73,7 +73,7 @@ async def get_topics(
 
     log.info(f"[SEARCH_DEBUG] API Layer - After cleanup: search_query={search_query!r}")
 
-    topics = await topic_service.get_list_sorted(
+    topics, total = await topic_service.get_list_sorted(
         db=db,
         tenant_id=tenant_id,
         skip=skip,
@@ -89,8 +89,8 @@ async def get_topics(
         date_to=date_to,
     )
     # ✅ Pydantic 自动将 ORM 对象列表转换为 TopicOut 列表（排除 centroid）
-    topics_out = [TopicOut.model_validate(topic) for topic in topics]
-    return response_base.success(data=topics_out)
+    items_out = [TopicOut.model_validate(topic) for topic in topics]
+    return response_base.success(data={"items": items_out, "total": total})
 
 
 @router.get("/stats/pending-count", summary="获取待确认主题数量")

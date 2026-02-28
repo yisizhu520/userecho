@@ -113,6 +113,7 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
     custom: true,
     zoom: true,
   },
+  pagination: true,
   columns: useColumns(onActionClick),
   proxyConfig: {
     ajax: {
@@ -145,11 +146,11 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
             queryParams.creator_me = true;
           }
           
-          const data = await getFeedbackList(queryParams);
+          const data: any = await getFeedbackList(queryParams);
 
           return {
-            items: data,
-            total: data.length,
+            items: data.items,
+            total: data.total,
           };
         } catch (error: any) {
           message.error(error.message || '查询失败，请稍后重试');

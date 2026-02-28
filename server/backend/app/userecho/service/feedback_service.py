@@ -161,7 +161,7 @@ class FeedbackService:
         search_query: str | None = None,
         search_mode: str = "keyword",
         **filters: Any,
-    ) -> list[dict]:
+    ) -> tuple[list[dict], int]:
         """
         获取反馈列表（支持关键词搜索和语义搜索）
 
@@ -175,7 +175,7 @@ class FeedbackService:
             **filters: 其他过滤条件
 
         Returns:
-            反馈列表
+            (反馈列表, 总条数)
         """
         # 语义搜索模式
         if search_query and search_mode == "semantic":
@@ -189,12 +189,15 @@ class FeedbackService:
                 search_mode = "keyword"
             else:
                 # 2. 使用 pgvector 语义搜索
-                return await crud_feedback.search_by_semantic(
+                items = await crud_feedback.search_by_semantic(
                     db=db, tenant_id=tenant_id, query_embedding=query_embedding, skip=skip, limit=limit, **filters
                 )
+                # 注意：语义搜索暂不支持精确总数统计（涉及阈值过滤），此处返回列表长度作为临时方案
+                # 实际场景下可能需要单独的计数逻辑或只显示前 N 条
+                return items, len(items)
 
         # 关键词搜索模式（默认）
-        return await crud_feedback.get_list_with_relations(
+        items = await crud_feedback.get_list_with_relations(
             db=db,
             tenant_id=tenant_id,
             skip=skip,
@@ -202,6 +205,13 @@ class FeedbackService:
             search_query=search_query if search_mode == "keyword" else None,
             **filters,
         )
+        total = await crud_feedback.count_with_relations(
+            db=db,
+            tenant_id=tenant_id,
+            search_query=search_query if search_mode == "keyword" else None,
+            **filters,
+        )
+        return items, total
 
     async def update_feedback(
         self,

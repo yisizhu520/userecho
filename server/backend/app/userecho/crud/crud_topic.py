@@ -155,6 +155,94 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         await db.commit()
         return True
 
+    def _apply_filters(
+        self,
+        query,
+        status: list[str] | None = None,
+        category: list[str] | None = None,
+        board_ids: list[str] | None = None,
+        search_query: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ):
+        """
+        统一应用需求主题列表的过滤逻辑
+        """
+        from sqlalchemy import or_
+
+        # 添加过滤条件（多选）
+        if status and len(status) > 0:
+            query = query.where(self.model.status.in_(status))
+        if category and len(category) > 0:
+            query = query.where(self.model.category.in_(category))
+        if board_ids and len(board_ids) > 0:
+            query = query.where(self.model.board_id.in_(board_ids))
+
+        # 关键词搜索（搜索 title + description）
+        if search_query:
+            import jieba
+
+            # 使用 jieba 分词
+            keywords = [kw for kw in jieba.cut(search_query.strip()) if kw.strip() and len(kw.strip()) > 0]
+            # 过滤短字符
+            keywords = [kw for kw in keywords if len(kw) > 1 or not kw.isalpha()]
+
+            if keywords:
+                keyword_conditions = []
+                for kw in keywords:
+                    search_pattern = f"%{kw}%"
+                    keyword_conditions.append(
+                        or_(self.model.title.ilike(search_pattern), self.model.description.ilike(search_pattern))
+                    )
+                query = query.where(or_(*keyword_conditions))
+
+        # 日期范围筛选（基于 created_time）
+        if date_from:
+            from datetime import datetime
+
+            date_from_dt = datetime.fromisoformat(date_from)
+            query = query.where(self.model.created_time >= date_from_dt)
+        if date_to:
+            from datetime import datetime, timedelta
+
+            date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
+            query = query.where(self.model.created_time < date_to_dt)
+
+        return query
+
+    async def count_with_filters(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        status: list[str] | None = None,
+        category: list[str] | None = None,
+        board_ids: list[str] | None = None,
+        search_query: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ) -> int:
+        """
+        获取符合条件的需求总数
+        """
+        from sqlalchemy import func
+
+        query = select(func.count(self.model.id)).where(
+            self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None)
+        )
+
+        query = self._apply_filters(
+            query=query,
+            status=status,
+            category=category,
+            board_ids=board_ids,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        result = await db.execute(query)
+        return result.scalar() or 0
+
     async def get_list_sorted(
         self,
         db: AsyncSession,
@@ -170,25 +258,6 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         date_from: str | None = None,
         date_to: str | None = None,
     ) -> list[Topic]:
-        """
-        获取主题列表（支持排序、过滤和关键词搜索）
-
-        Args:
-            db: 数据库会话
-            tenant_id: 租户ID
-            skip: 跳过数量
-            limit: 返回数量
-            status: 过滤状态（多选）
-            category: 过滤分类（多选）
-            board_ids: 过滤看板ID（多选）
-            sort_by: 排序字段
-            sort_order: 排序方向（asc/desc）
-            search_query: 搜索关键词（搜索 title 和 description）
-
-        Returns:
-            主题列表（包含 priority_score 关联）
-        """
-        from sqlalchemy import or_
         from sqlalchemy.orm import joinedload
 
         query = (
@@ -197,54 +266,15 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
         )
 
-        # 添加过滤条件（多选）
-        if status and len(status) > 0:
-            query = query.where(self.model.status.in_(status))
-        if category and len(category) > 0:
-            query = query.where(self.model.category.in_(category))
-        if board_ids and len(board_ids) > 0:
-            query = query.where(self.model.board_id.in_(board_ids))
-
-        # 关键词搜索（搜索 title + description）- 中文分词后 OR 匹配
-        if search_query:
-            import jieba
-
-            from backend.common.log import log
-
-            # 使用 jieba 分词，支持中文自动分词
-            # "睡眠模式" -> ["睡眠", "模式"]
-            keywords = [kw for kw in jieba.cut(search_query.strip()) if kw.strip() and len(kw.strip()) > 0]
-            # 过滤掉单字符（通常是停用词或无意义词）
-            keywords = [kw for kw in keywords if len(kw) > 1 or not kw.isalpha()]
-            log.info(f"[SEARCH_DEBUG] CRUD Layer - Applying keyword search filter (jieba): keywords={keywords!r}")
-
-            if keywords:
-                # 每个关键词构建一个 OR 条件：title LIKE '%kw%' OR description LIKE '%kw%'
-                keyword_conditions = []
-                for kw in keywords:
-                    search_pattern = f"%{kw}%"
-                    keyword_conditions.append(
-                        or_(self.model.title.ilike(search_pattern), self.model.description.ilike(search_pattern))
-                    )
-                # 所有关键词之间是 OR 关系
-                query = query.where(or_(*keyword_conditions))
-        else:
-            from backend.common.log import log
-
-            log.info("[SEARCH_DEBUG] CRUD Layer - No search_query, skipping filter")
-
-        # 日期范围筛选（基于 created_time）
-        if date_from:
-            from datetime import datetime
-
-            date_from_dt = datetime.fromisoformat(date_from)
-            query = query.where(self.model.created_time >= date_from_dt)
-        if date_to:
-            from datetime import datetime, timedelta
-
-            # date_to 包含当天结束时间
-            date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
-            query = query.where(self.model.created_time < date_to_dt)
+        query = self._apply_filters(
+            query=query,
+            status=status,
+            category=category,
+            board_ids=board_ids,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+        )
 
         # 添加排序
         sort_column = getattr(self.model, sort_by, self.model.created_time)

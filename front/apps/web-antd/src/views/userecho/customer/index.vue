@@ -76,6 +76,7 @@ const gridOptions: VxeTableGridOptions<Customer> = {
     custom: true,
     zoom: true,
   },
+  pagination: true,
   columns: [
     {
       field: 'seq',

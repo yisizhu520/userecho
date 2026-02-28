@@ -294,12 +294,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
         return similar_feedbacks
 
-    async def get_list_with_relations(
+    def _apply_filters(
         self,
-        db: AsyncSession,
-        tenant_id: str,
-        skip: int = 0,
-        limit: int = 100,
+        query,
+        TopicAlias,
         topic_id: str | None = None,
         customer_id: str | None = None,
         is_urgent: list[str] | None = None,
@@ -309,51 +307,11 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         date_from: str | None = None,
         date_to: str | None = None,
         submitter_id: int | None = None,
-    ) -> list[dict]:
+    ):
         """
-        获取反馈列表（包含关联的客户名和主题标题，支持关键词搜索）
-
-        Args:
-            db: 数据库会话
-            tenant_id: 租户ID
-            skip: 跳过数量
-            limit: 返回数量
-            topic_id: 过滤主题ID
-            customer_id: 过滤客户ID
-            is_urgent: 过滤紧急程度（多选，值: ['true', 'false']）
-            has_topic: 过滤是否已聚类（多选，值: ['true', 'false']）
-            clustering_status: 过滤聚类状态（多选）
-            board_ids: 过滤看板ID（多选）
-            search_query: 搜索关键词（搜索 content 和 ai_summary）
-            submitter_id: 过滤提交者ID（用于"我的反馈"）
-
-        Returns:
-            反馈列表（包含 customer_name 和 topic_title）
+        统一应用反馈列表的过滤逻辑
         """
         from sqlalchemy import or_
-        from sqlalchemy.orm import aliased
-
-        from backend.app.admin.model.user import User
-        from backend.app.userecho.model.customer import Customer
-        from backend.app.userecho.model.topic import Topic
-
-        # 使用左连接查询
-        CustomerAlias = aliased(Customer)
-        TopicAlias = aliased(Topic)
-
-        query = (
-            select(
-                self.model,
-                CustomerAlias.name.label("customer_name"),
-                TopicAlias.title.label("topic_title"),
-                TopicAlias.status.label("topic_status"),
-                User.username.label("submitter_name"),
-            )
-            .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
-            .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
-            .outerjoin(User, self.model.submitter_id == User.id)
-            .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
-        )
 
         # 添加过滤条件
         if topic_id is not None:
@@ -368,18 +326,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             query = query.where(self.model.is_urgent.in_(bool_values))
 
         # 多选过滤：derived_status（派生状态筛选）
-        # 派生状态映射（简化版）：
-        # - pending: topic_id IS NULL（包含所有未归类的状态）
-        # - review: clustered + topic.status = 'pending'
-        # - planned: clustered + topic.status = 'planned'
-        # - in_progress: clustered + topic.status = 'in_progress'
-        # - completed: clustered + topic.status = 'completed'
-        # - ignored: clustered + topic.status = 'ignored'
         if derived_status is not None and len(derived_status) > 0:
             conditions = []
             for status in derived_status:
                 if status == "pending":
-                    # 待处理: 所有未归类到主题的反馈
                     conditions.append(self.model.topic_id.is_(None))
                 elif status == "review":
                     conditions.append((self.model.topic_id.is_not(None)) & (TopicAlias.status == "pending"))
@@ -414,13 +364,113 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         if date_to:
             from datetime import datetime, timedelta
 
-            # date_to 包含当天结束时间
             date_to_dt = datetime.fromisoformat(date_to) + timedelta(days=1)
             query = query.where(self.model.submitted_at < date_to_dt)
 
-        # 过滤提交者（用于"我的反馈"模式）
+        # 过滤提交者
         if submitter_id is not None:
             query = query.where(self.model.submitter_id == submitter_id)
+
+        return query
+
+    async def count_with_relations(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        topic_id: str | None = None,
+        customer_id: str | None = None,
+        is_urgent: list[str] | None = None,
+        derived_status: list[str] | None = None,
+        board_ids: list[str] | None = None,
+        search_query: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        submitter_id: int | None = None,
+    ) -> int:
+        """
+        获取符合条件的反馈总数
+        """
+        from sqlalchemy import func
+        from sqlalchemy.orm import aliased
+        from backend.app.userecho.model.topic import Topic
+
+        TopicAlias = aliased(Topic)
+
+        query = (
+            select(func.count(self.model.id))
+            .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
+            .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
+        )
+
+        query = self._apply_filters(
+            query=query,
+            TopicAlias=TopicAlias,
+            topic_id=topic_id,
+            customer_id=customer_id,
+            is_urgent=is_urgent,
+            derived_status=derived_status,
+            board_ids=board_ids,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            submitter_id=submitter_id,
+        )
+
+        result = await db.execute(query)
+        return result.scalar() or 0
+
+    async def get_list_with_relations(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        skip: int = 0,
+        limit: int = 100,
+        topic_id: str | None = None,
+        customer_id: str | None = None,
+        is_urgent: list[str] | None = None,
+        derived_status: list[str] | None = None,
+        board_ids: list[str] | None = None,
+        search_query: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        submitter_id: int | None = None,
+    ) -> list[dict]:
+        from sqlalchemy.orm import aliased
+        from backend.app.admin.model.user import User
+        from backend.app.userecho.model.customer import Customer
+        from backend.app.userecho.model.topic import Topic
+
+        # 使用左连接查询
+        CustomerAlias = aliased(Customer)
+        TopicAlias = aliased(Topic)
+
+        query = (
+            select(
+                self.model,
+                CustomerAlias.name.label("customer_name"),
+                TopicAlias.title.label("topic_title"),
+                TopicAlias.status.label("topic_status"),
+                User.username.label("submitter_name"),
+            )
+            .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
+            .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
+            .outerjoin(User, self.model.submitter_id == User.id)
+            .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
+        )
+
+        query = self._apply_filters(
+            query=query,
+            TopicAlias=TopicAlias,
+            topic_id=topic_id,
+            customer_id=customer_id,
+            is_urgent=is_urgent,
+            derived_status=derived_status,
+            board_ids=board_ids,
+            search_query=search_query,
+            date_from=date_from,
+            date_to=date_to,
+            submitter_id=submitter_id,
+        )
 
         # 默认按提交时间倒序排序（最新在前）
         query = query.order_by(self.model.submitted_at.desc())

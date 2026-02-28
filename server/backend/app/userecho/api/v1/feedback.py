@@ -70,7 +70,7 @@ async def get_feedbacks(
 
         submitter_id = get_current_user_id()
 
-    feedbacks = await feedback_service.get_list(
+    feedbacks, total = await feedback_service.get_list(
         db=db,
         tenant_id=tenant_id,
         skip=skip,
@@ -88,8 +88,8 @@ async def get_feedbacks(
     )
     # ✅ 关联查询返回字典（包含 customer_name, topic_title），已在 CRUD 层处理
     # 字典可以直接被 Pydantic 验证（FeedbackOut 支持 from_attributes）
-    feedbacks_out = [FeedbackOut.model_validate(fb) for fb in feedbacks]
-    return response_base.success(data=feedbacks_out)
+    items_out = [FeedbackOut.model_validate(fb) for fb in feedbacks]
+    return response_base.success(data={"items": items_out, "total": total})
 
 
 @router.post("", summary="创建反馈")
