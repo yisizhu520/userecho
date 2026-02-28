@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Target, Headphones, Settings } from 'lucide-vue-next';
+import { Target, Headphones, Settings, ChevronRight, Activity, Zap } from 'lucide-vue-next';
 import { requestClient } from '#/api/request';
 import { useAccessStore } from '@vben/stores';
 import { useLandingTheme } from '#/composables/useLandingTheme';
@@ -23,6 +23,7 @@ const roles = [
     description: '查看优先级看板、AI 洞察、审批议题',
     icon: Target,
     color: '#3b82f6',
+    features: ['需求优先级排序', '用户反馈聚类', '产品路线图规划'],
   },
   {
     key: 'user_ops',
@@ -30,6 +31,7 @@ const roles = [
     description: '录入反馈、管理客户、触发聚类',
     icon: Headphones,
     color: '#10b981',
+    features: ['全渠道反馈录入', '客户画像分析', '自动化标签管理'],
   },
   {
     key: 'admin',
@@ -37,6 +39,7 @@ const roles = [
     description: '用户管理、权限配置、看板设置',
     icon: Settings,
     color: '#f59e0b',
+    features: ['团队权限控制', '自定义工作流', '系统配置管理'],
   },
 ];
 
@@ -65,16 +68,32 @@ const handleSelectRole = async (roleKey: string) => {
 </script>
 
 <template>
-  <div class="demo-welcome" :class="`theme-${theme}`">
-    <div class="welcome-container">
+  <div class="demo-welcome" :class="'theme-' + theme">
+    <!-- Background Decorators -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    
+    <div class="glass-container">
       <div class="welcome-header">
-        <div class="logo">
-          <img src="/logo.png" alt="回响" class="logo-icon" />
-          <span class="logo-text">回响</span>
-          <span class="demo-badge">演示版</span>
+        <div class="logo-wrapper">
+          <div class="logo">
+            <img src="/logo.png" alt="回响" class="logo-icon" />
+            <span class="logo-text">回响</span>
+          </div>
+          <span class="demo-badge">
+            <Zap :size="12" fill="currentColor" />
+            Live Demo
+          </span>
         </div>
-        <h1>欢迎体验「回响」</h1>
-        <p>选择一个角色，开始探索 AI 驱动的用户反馈分析平台</p>
+        <h1>
+          体验 
+          <span class="text-gradient">AI 驱动</span> 
+          的所有潜能
+        </h1>
+        <p class="subtitle">
+          选择一个角色，立即开启智能反馈分析之旅。
+          <br />沉浸式体验如何将海量反馈转化为产品洞察。
+        </p>
       </div>
 
       <div class="role-cards">
@@ -85,23 +104,40 @@ const handleSelectRole = async (roleKey: string) => {
           :class="{ active: selectedRole === role.key, loading: loading && selectedRole === role.key }"
           @click="handleSelectRole(role.key)"
         >
-          <div class="role-icon" :style="{ backgroundColor: role.color + '15', color: role.color }">
-            <component :is="role.icon" :size="28" />
+          <div class="card-glow" :style="{ '--glow-color': role.color }"></div>
+          <div class="role-content">
+            <div class="role-icon-wrapper">
+              <component :is="role.icon" :size="24" stroke-width="2.5" />
+            </div>
+            <div class="role-info">
+              <h3>{{ role.name }}</h3>
+              <p>{{ role.description }}</p>
+              <div class="features-list">
+                <span v-for="(feature, idx) in role.features" :key="idx" class="feature-tag">
+                  {{ feature }}
+                </span>
+              </div>
+            </div>
+            <div class="role-action">
+              <span class="select-text">选择此角色</span>
+              <div v-if="loading && selectedRole === role.key" class="loading-spinner"></div>
+              <ChevronRight v-else :size="20" class="action-icon" />
+            </div>
           </div>
-          <div class="role-info">
-            <h3>{{ role.name }}</h3>
-            <p>{{ role.description }}</p>
-          </div>
-          <div v-if="loading && selectedRole === role.key" class="loading-spinner" />
         </div>
       </div>
 
-      <div class="demo-notice">
-        <div class="notice-icon">🔬</div>
-        <div class="notice-content">
-          <span>这是演示环境，数据每日凌晨 2 点自动重置</span>
-          <a href="https://userecho.app/#contact" target="_blank" class="register-link">
-            体验正式版 →
+      <div class="demo-footer">
+        <div class="notice-card">
+          <div class="notice-icon">
+            <Activity :size="18" />
+          </div>
+          <div class="notice-text">
+            <strong>演示环境说明：</strong> 数据将在每日凌晨 2:00 (UTC+8) 自动重置。
+          </div>
+          <a href="https://userecho.app" target="_blank" class="primary-link">
+            访问官网
+            <ChevronRight :size="14" />
           </a>
         </div>
       </div>
@@ -109,178 +145,350 @@ const handleSelectRole = async (roleKey: string) => {
   </div>
 </template>
 
-<style>
-/* Dark theme variables */
-.demo-welcome.theme-dark {
-  --demo-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  --demo-text-primary: #f8fafc;
-  --demo-text-secondary: #cbd5e1;
-  --demo-text-muted: #94a3b8;
-  --demo-card-bg: rgba(30, 41, 59, 0.8);
-  --demo-card-hover-bg: rgba(30, 41, 59, 0.95);
-  --demo-border: rgba(148, 163, 184, 0.15);
-  --demo-border-hover: rgba(59, 130, 246, 0.4);
-  --demo-badge-bg: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  --demo-notice-bg: rgba(59, 130, 246, 0.1);
-  --demo-notice-border: rgba(59, 130, 246, 0.2);
-}
-
-/* Light theme variables */
-.demo-welcome.theme-light {
-  --demo-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  --demo-text-primary: #0f172a;
-  --demo-text-secondary: #334155;
-  --demo-text-muted: #64748b;
-  --demo-card-bg: #ffffff;
-  --demo-card-hover-bg: #f8fafc;
-  --demo-border: #cbd5e1;
-  --demo-border-hover: #3b82f6;
-  --demo-badge-bg: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  --demo-notice-bg: rgba(59, 130, 246, 0.08);
-  --demo-notice-border: rgba(59, 130, 246, 0.2);
-}
-</style>
-
 <style scoped>
+/* Base Layout & Backgrounds */
 .demo-welcome {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--demo-bg-gradient);
-  padding: 24px;
-  transition: background 0.3s ease;
+  padding: 40px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.5s ease;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.welcome-container {
-  max-width: 800px;
+/* Theme Variables */
+/* Polished Theme: Neutral Base + Emerald Accents */
+
+/* Dark Theme (Professional Slate/Zinc) */
+.demo-welcome.theme-dark {
+  /* Background: Deep, rich neutral dark (Slate 950/900) */
+  --bg-color: #020617; 
+  /* Glass: Crystalline, very subtle tint */
+  --glass-bg: rgba(15, 23, 42, 0.4); 
+  --glass-border: rgba(255, 255, 255, 0.08); /* Crisp white border */
+  --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  
+  /* Text: High Contrast */
+  --text-primary: #f8fafc; /* Slate 50 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  
+  /* Cards: Subtle surface */
+  --card-bg: rgba(30, 41, 59, 0.3); /* Slate 800 alpha */
+  --card-hover-bg: rgba(30, 41, 59, 0.6);
+  --card-border: rgba(255, 255, 255, 0.05);
+  
+  /* Accents: Emerald (Strategic) */
+  --orb-1: #059669; /* Emerald 600 (Darker for background) */
+  --orb-2: #047857; /* Emerald 700 */
+  --primary-accent: #10b981; /* Emerald 500 (Highlights) */
+}
+
+/* Light Theme (Clean Cool Gray) */
+.demo-welcome.theme-light {
+  /* Background: clean, cool gray/white structure */
+  --bg-color: #f8fafc; /* Slate 50 */
+  /* Glass: Frosted white */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --glass-shadow: 0 20px 40px -12px rgba(148, 163, 184, 0.15);
+  
+  /* Text */
+  --text-primary: #0f172a; /* Slate 900 */
+  --text-secondary: #64748b; /* Slate 500 */
+  
+  /* Cards */
+  --card-bg: rgba(255, 255, 255, 0.6);
+  --card-hover-bg: #ffffff;
+  --card-border: rgba(148, 163, 184, 0.15); /* Slate 300 alpha */
+  
+  /* Accents */
+  --orb-1: #6ee7b7; /* Emerald 300 (Softer) */
+  --orb-2: #34d399; /* Emerald 400 */
+  --primary-accent: #059669; /* Emerald 600 (Darker for readability) */
+}
+
+.demo-welcome {
+  background-color: var(--bg-color);
+}
+
+/* Background Orbs - Reduced Intensity */
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px); /* Increased blur for smoother gradient */
+  opacity: 0.25; /* Reduced opacity for subtlety */
+  z-index: 0;
+  animation: float 12s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 600px;
+  height: 600px;
+  background: var(--orb-1);
+  top: -200px;
+  left: -100px;
+}
+
+.orb-2 {
+  width: 500px;
+  height: 500px;
+  background: var(--orb-2);
+  bottom: -150px;
+  right: -150px;
+  animation-delay: -6s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, 60px); }
+}
+
+/* Glass Container - Cleaner */
+.glass-container {
   width: 100%;
+  max-width: 960px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(1.8); /* Increased blur & satire for 'crystal' look */
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 32px;
+  padding: 64px;
+  position: relative;
+  z-index: 1;
 }
 
+/* Header */
 .welcome-header {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 64px;
+}
+
+.logo-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .logo {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 12px;
 }
 
 .logo-icon {
-  width: 36px;
-  height: 36px;
+  height: 48px; /* Slightly larger */
+  width: auto;
   object-fit: contain;
 }
 
 .logo-text {
-  font-size: 28px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
   font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  letter-spacing: -0.8px;
+  color: var(--text-primary);
+}
+
+.demo-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.1); /* Subtle green tint */
+  color: #10b981; /* Emerald 500 */
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+}
+
+.welcome-header h1 {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+  letter-spacing: -1.2px;
+  line-height: 1.1;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.demo-badge {
-  background: var(--demo-badge-bg);
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 12px;
-  margin-left: 8px;
+.subtitle {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin: 0 auto;
+  font-weight: 400;
 }
 
-.welcome-header h1 {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--demo-text-primary);
-  margin: 0 0 12px 0;
-  transition: color 0.3s ease;
-}
-
-.welcome-header p {
-  font-size: 16px;
-  color: var(--demo-text-muted);
-  margin: 0;
-  transition: color 0.3s ease;
-}
-
+/* Role Cards */
 .role-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 48px;
+  gap: 24px;
+  margin-bottom: 64px;
 }
 
 .role-card {
-  background: var(--demo-card-bg);
-  border: 1px solid var(--demo-border);
-  border-radius: 16px;
-  padding: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 32px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--primary-accent), transparent 40%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .role-card:hover {
-  background: var(--demo-card-hover-bg);
-  border-color: var(--demo-border-hover);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px);
+  background: var(--card-hover-bg);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.15); /* More dramatic shadow */
+  border-color: rgba(16, 185, 129, 0.3); /* Subtle green border on hover */
 }
 
+/* Light theme hover fix */
 .theme-light .role-card:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 24px 48px -12px rgba(148, 163, 184, 0.25);
 }
 
-.role-card.active {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
+.role-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.role-card.loading {
-  pointer-events: none;
-  opacity: 0.8;
-}
-
-.role-icon {
+.role-icon-wrapper {
   width: 56px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: rgba(148, 163, 184, 0.08); /* Neutral bg by default */
+  color: var(--text-secondary);
+}
+
+/* Specific icon colors on hover or active */
+.role-card:hover .role-icon-wrapper,
+.role-card.active .role-icon-wrapper {
+  transform: scale(1.1);
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.role-info {
+  flex: 1;
 }
 
 .role-info h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--demo-text-primary);
-  margin: 0 0 8px 0;
-  transition: color 0.3s ease;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px 0;
 }
 
 .role-info p {
-  font-size: 13px;
-  color: var(--demo-text-muted);
-  margin: 0;
-  line-height: 1.5;
-  transition: color 0.3s ease;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+  line-height: 1.6;
 }
 
+.features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feature-tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.role-card:hover .feature-tag {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--text-primary);
+}
+
+.role-action {
+  margin-top: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--card-border);
+  padding-top: 20px;
+}
+
+.select-text {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+}
+
+.action-icon {
+  transition: all 0.3s ease;
+  transform: translateX(0);
+}
+
+.role-card:hover .select-text {
+  opacity: 1;
+  transform: translateX(0);
+  color: #10b981;
+}
+
+.role-card:hover .action-icon {
+  color: #10b981;
+  transform: translateX(4px);
+}
+
+/* Loading */
 .loading-spinner {
-  position: absolute;
-  top: 16px;
-  right: 16px;
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(59, 130, 246, 0.3);
-  border-top-color: #3b82f6;
+  border: 2px solid rgba(16, 185, 129, 0.2);
+  border-top-color: #10b981;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -289,55 +497,99 @@ const handleSelectRole = async (roleKey: string) => {
   to { transform: rotate(360deg); }
 }
 
-.demo-notice {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--demo-notice-bg);
-  border: 1px solid var(--demo-notice-border);
-  border-radius: 12px;
-  padding: 16px 20px;
-  transition: background 0.3s ease, border-color 0.3s ease;
+.role-card.loading {
+  pointer-events: none;
+  opacity: 0.7;
 }
 
-.notice-icon {
-  font-size: 24px;
+/* Footer & Notice */
+.demo-footer {
+  border-top: 1px solid var(--glass-border);
+  padding-top: 32px;
 }
 
-.notice-content {
+.notice-card {
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 16px 24px;
+  background: var(--card-bg); /* Use card bg instead of green tint */
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  transition: border-color 0.3s;
+}
+
+.notice-card:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.notice-icon {
+  color: #10b981;
+  display: flex;
+}
+
+.notice-text {
   flex: 1;
-  color: var(--demo-text-muted);
-  font-size: 14px;
-  transition: color 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
-.register-link {
-  color: #3b82f6;
-  font-weight: 500;
+.notice-text strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.primary-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary); /* Neutral link by default */
   text-decoration: none;
-  white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.register-link:hover {
-  text-decoration: underline;
+.primary-link:hover {
+  text-decoration: none;
+  color: #10b981;
+  gap: 6px;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
+  .glass-container {
+    padding: 32px 24px;
+    border-radius: 24px;
+  }
+  
   .role-cards {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
-
+  
   .welcome-header h1 {
-    font-size: 28px;
+    font-size: 36px;
   }
 
-  .notice-content {
+  .logo-icon {
+    height: 36px;
+  }
+  
+  .logo-text {
+    font-size: 24px;
+  }
+  
+  .notice-card {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 12px;
+  }
+  
+  .orb-1, .orb-2 {
+    width: 300px;
+    height: 300px;
+    opacity: 0.3;
   }
 }
 </style>
