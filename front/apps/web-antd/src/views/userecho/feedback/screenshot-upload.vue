@@ -197,7 +197,7 @@ import {
   ReloadOutlined,
   SyncOutlined,
 } from '@ant-design/icons-vue'
-import { analyzeScreenshot, createFeedbackFromScreenshot, getScreenshotTaskStatus, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
+import { analyzeScreenshot, analyzeScreenshotByUrl, createFeedbackFromScreenshot, getFeedbackImageUploadSign, getScreenshotTaskStatus, uploadImageToSignedUrl, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
 import { getBoardList, type Board } from '#/api/userecho/board'
 import CustomerAutoComplete from './components/CustomerAutoComplete.vue'
 import type { Customer } from '#/api'
@@ -389,11 +389,34 @@ const processFile = async (file: File) => {
     isUploading.value = true
     uploadProgress.value = 10
 
-    // 1. 提交异步任务
-    const formDataPayload = new FormData()
-    formDataPayload.append('file', file)
+    // 1. 尝试直传到对象存储
+    let screenshotUploadedUrl = ''
+    let useDirectUpload = false
 
-    const response = await analyzeScreenshot(formDataPayload)
+    try {
+      const sign = await getFeedbackImageUploadSign({
+        filename: file.name,
+        content_type: file.type,
+      })
+
+      uploadProgress.value = 20
+      await uploadImageToSignedUrl(sign, file)
+      screenshotUploadedUrl = sign.cdn_url
+      useDirectUpload = true
+    } catch (error) {
+      console.warn('直传失败，回退到后端上传', error)
+      useDirectUpload = false
+    }
+
+    // 2. 提交异步任务
+    let response
+    if (useDirectUpload) {
+      response = await analyzeScreenshotByUrl(screenshotUploadedUrl)
+    } else {
+      const formDataPayload = new FormData()
+      formDataPayload.append('file', file)
+      response = await analyzeScreenshot(formDataPayload)
+    }
     const taskId = response.task_id
 
     message.info('已提交识别任务，正在处理中...')

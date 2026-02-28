@@ -9,7 +9,7 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 from fastapi import UploadFile
 
@@ -483,6 +483,70 @@ def build_storage_path(
     # 组合路径
     parts = [prefix, date_path, new_filename] if prefix else [date_path, new_filename]
     return "/".join(parts)
+
+
+def build_storage_path_from_filename(filename: str, prefix: str = "") -> str:
+    """
+    从文件名构建存储路径
+
+    :param filename: 原始文件名
+    :param prefix: 路径前缀（如 'screenshots', 'avatars'）
+    :return: 存储路径
+    """
+    now = datetime.now()
+    date_path = now.strftime("%Y/%m/%d")
+
+    file_ext = filename.split(".")[-1].lower() if "." in filename else "bin"
+    timestamp = int(now.timestamp() * 1000)
+    new_filename = f"{timestamp}_{os.urandom(4).hex()}.{file_ext}"
+
+    parts = [prefix, date_path, new_filename] if prefix else [date_path, new_filename]
+    return "/".join(parts)
+
+
+def get_upload_signature(path: str, content_type: str | None = None, expire_seconds: int = 300) -> dict[str, Any]:
+    """
+    获取对象存储直传签名（仅支持已配置的云存储）
+
+    :param path: 相对路径
+    :param content_type: 文件 MIME 类型
+    :param expire_seconds: 签名过期时间（秒）
+    :return: 直传签名信息
+    """
+    backend = storage.backend
+
+    if isinstance(backend, TencentCOSStorage):
+        cos_path = f"{backend.base_path}/{path}".lstrip("/")
+        try:
+            upload_url = backend.client.get_presigned_url(
+                Method="PUT",
+                Bucket=backend.bucket_name,
+                Key=cos_path,
+                Expired=expire_seconds,
+            )
+        except Exception as e:
+            log.error(f"生成 COS 上传签名失败 {cos_path}: {e}")
+            raise errors.ServerError(msg="生成上传签名失败")
+
+        headers: dict[str, str] = {}
+        if content_type:
+            headers["Content-Type"] = content_type
+
+        if hasattr(settings, "TENCENT_COS_CDN_DOMAIN") and settings.TENCENT_COS_CDN_DOMAIN:
+            public_url = f"{settings.TENCENT_COS_CDN_DOMAIN}/{cos_path}"
+        else:
+            public_url = f"https://{backend.bucket_name}.cos.{backend.region}.myqcloud.com/{cos_path}"
+
+        return {
+            "upload_url": upload_url,
+            "method": "PUT",
+            "headers": headers,
+            "cdn_url": public_url,
+            "object_key": cos_path,
+            "expires_in": expire_seconds,
+        }
+
+    raise errors.RequestError(msg="当前存储类型不支持直传上传")
 
 
 async def upload_screenshot(file: UploadFile, tenant_id: int) -> str:

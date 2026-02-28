@@ -14,7 +14,9 @@ from backend.app.userecho.schema.feedback import (
     FeedbackCreate,
     FeedbackOut,
     FeedbackUpdate,
+    ScreenshotAnalyzeUrlRequest,
     ScreenshotFeedbackCreate,
+    UploadImageSignRequest,
 )
 from backend.app.userecho.service import feedback_service, import_service
 from backend.common.response.response_code import CustomResponse
@@ -391,6 +393,37 @@ async def upload_feedback_image(
         return response_base.fail(res=CustomResponse(code=500, msg=f"图片上传失败: {e!s}"))
 
 
+@router.post("/upload-image/sign", summary="获取截图直传签名")
+async def get_feedback_image_upload_sign(
+    data: UploadImageSignRequest,
+    tenant_id: str = CurrentTenantId,
+) -> Any:
+    """
+    获取图片直传对象存储的签名信息
+    """
+    from backend.common.log import log
+    from backend.utils.storage import build_storage_path_from_filename, get_upload_signature
+
+    filename = data.filename.strip()
+    if not filename:
+        return response_base.fail(res=CustomResponse(code=400, msg="文件名不能为空"))
+
+    allowed_extensions = {"png", "jpg", "jpeg", "webp"}
+    file_ext = filename.split(".")[-1].lower() if "." in filename else ""
+    if file_ext not in allowed_extensions:
+        return response_base.fail(
+            res=CustomResponse(code=400, msg=f"不支持的文件格式，仅支持: {', '.join(allowed_extensions)}")
+        )
+
+    try:
+        path = build_storage_path_from_filename(filename, prefix=f"screenshots/{tenant_id}")
+        sign = get_upload_signature(path, content_type=data.content_type, expire_seconds=300)
+        return response_base.success(data=sign)
+    except Exception as e:
+        log.error(f"Failed to generate upload sign for tenant {tenant_id}: {e}")
+        return response_base.fail(res=CustomResponse(code=500, msg=f"生成上传签名失败: {e!s}"))
+
+
 # ==================== 截图智能识别相关接口 ====================
 
 
@@ -501,6 +534,57 @@ async def analyze_screenshot(
             except Exception:
                 pass
 
+        return response_base.fail(res=CustomResponse(code=500, msg=f"提交识别任务失败: {e!s}"))
+
+
+@router.post(
+    "/screenshot/analyze-url",
+    summary="截图智能识别（URL）",
+    dependencies=[
+        DependsDemoQuota("screenshot_ocr"),
+        Depends(RateLimiter(times=5, minutes=1)),
+    ],
+)
+async def analyze_screenshot_url(
+    data: ScreenshotAnalyzeUrlRequest,
+    tenant_id: str = CurrentTenantId,
+) -> Any:
+    """
+    使用已上传的截图 URL 进行 AI 智能识别（异步处理）
+    """
+    from backend.app.task.tasks.userecho.tasks import analyze_screenshot_url_task
+    from backend.common.log import log
+    from backend.core.conf import settings
+
+    screenshot_url = data.screenshot_url.strip()
+    if not screenshot_url:
+        return response_base.fail(res=CustomResponse(code=400, msg="截图 URL 不能为空"))
+
+    if settings.STORAGE_TYPE.lower() != "tencent_cos":
+        return response_base.fail(res=CustomResponse(code=400, msg="当前存储类型不支持直传识别"))
+
+    allowed_prefixes = []
+    if settings.TENCENT_COS_CDN_DOMAIN:
+        allowed_prefixes.append(settings.TENCENT_COS_CDN_DOMAIN.rstrip("/"))
+    if settings.TENCENT_COS_BUCKET_NAME and settings.TENCENT_COS_REGION:
+        allowed_prefixes.append(
+            f"https://{settings.TENCENT_COS_BUCKET_NAME}.cos.{settings.TENCENT_COS_REGION}.myqcloud.com"
+        )
+
+    if allowed_prefixes and not any(screenshot_url.startswith(prefix) for prefix in allowed_prefixes):
+        return response_base.fail(res=CustomResponse(code=400, msg="截图 URL 不在允许的存储域名内"))
+
+    try:
+        task = analyze_screenshot_url_task.delay(screenshot_url=screenshot_url, tenant_id=tenant_id)
+        return response_base.success(
+            data={
+                "task_id": task.id,
+                "status": "processing",
+                "status_url": f"/api/v1/task/{task.id}",
+            }
+        )
+    except Exception as e:
+        log.error(f"Failed to submit screenshot url task for tenant {tenant_id}: {e}")
         return response_base.fail(res=CustomResponse(code=500, msg=f"提交识别任务失败: {e!s}"))
 
 

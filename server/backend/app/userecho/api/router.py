@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from backend.app.batch.api.v1 import batch
 from backend.app.userecho.api.v1 import (
     board,
     clustering,
@@ -48,3 +49,6 @@ v1.include_router(reply_template.router)
 # 租户权限管理
 v1.include_router(tenant_role.router, prefix="/tenant/roles", tags=["TenantRole"])
 v1.include_router(tenant_member.router, prefix="/tenant/members", tags=["TenantMember"])
+
+# 批量任务
+v1.include_router(batch.router)

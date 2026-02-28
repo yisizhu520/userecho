@@ -131,6 +131,22 @@ export interface ScreenshotAnalyzeResponse {
   status_url: string;
 }
 
+/** 直传签名请求 */
+export interface UploadImageSignRequest {
+  filename: string;
+  content_type?: string;
+}
+
+/** 直传签名响应 */
+export interface UploadImageSignResponse {
+  upload_url: string;
+  method: 'PUT';
+  headers: Record<string, string>;
+  cdn_url: string;
+  object_key: string;
+  expires_in: number;
+}
+
 /** 任务状态响应 */
 export interface TaskStatusResponse {
   state: 'PENDING' | 'STARTED' | 'RETRY' | 'SUCCESS' | 'FAILURE';
@@ -268,6 +284,42 @@ export async function analyzeScreenshot(formData: FormData) {
 }
 
 /**
+ * 截图智能识别（URL）
+ */
+export async function analyzeScreenshotByUrl(screenshotUrl: string) {
+  return requestClient.post<ScreenshotAnalyzeResponse>('/api/v1/app/feedbacks/screenshot/analyze-url', {
+    screenshot_url: screenshotUrl,
+  });
+}
+
+/**
+ * 获取截图直传签名
+ */
+export async function getFeedbackImageUploadSign(data: UploadImageSignRequest) {
+  return requestClient.post<UploadImageSignResponse>('/api/v1/app/feedbacks/upload-image/sign', data);
+}
+
+/**
+ * 直传到对象存储
+ */
+export async function uploadImageToSignedUrl(sign: UploadImageSignResponse, file: File) {
+  const headers = new Headers(sign.headers || {});
+  if (!headers.has('Content-Type') && file.type) {
+    headers.set('Content-Type', file.type);
+  }
+
+  const response = await fetch(sign.upload_url, {
+    method: sign.method || 'PUT',
+    headers,
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error(`直传失败: ${response.status}`);
+  }
+}
+
+/**
  * 查询截图分析任务状态
  */
 export async function getScreenshotTaskStatus(taskId: string) {
@@ -285,9 +337,20 @@ export async function createFeedbackFromScreenshot(data: ScreenshotFeedbackCreat
  * 上传反馈截图（同步，用于手动创建反馈）
  */
 export async function uploadFeedbackImage(file: File): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  return requestClient.post('/api/v1/app/feedbacks/upload-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  try {
+    const sign = await getFeedbackImageUploadSign({
+      filename: file.name,
+      content_type: file.type,
+    });
+
+    await uploadImageToSignedUrl(sign, file);
+
+    return { url: sign.cdn_url };
+  } catch (error) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return requestClient.post('/api/v1/app/feedbacks/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  }
 }

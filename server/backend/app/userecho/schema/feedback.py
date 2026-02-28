@@ -50,6 +50,24 @@ class FeedbackUpdate(SchemaBase):
     is_urgent: bool | None = Field(None, description="是否紧急")
 
 
+class UploadImageSignRequest(SchemaBase):
+    """获取图片直传签名请求"""
+
+    filename: str = Field(description="原始文件名")
+    content_type: str | None = Field(None, description="文件 MIME 类型")
+
+
+class UploadImageSignResponse(SchemaBase):
+    """图片直传签名响应"""
+
+    upload_url: str = Field(description="直传上传地址")
+    method: Literal["PUT"] = Field(default="PUT", description="上传方法")
+    headers: dict[str, str] = Field(default_factory=dict, description="上传请求头")
+    cdn_url: str = Field(description="上传完成后访问 URL")
+    object_key: str = Field(description="对象 Key")
+    expires_in: int = Field(description="签名有效期（秒）")
+
+
 class FeedbackOut(FeedbackBase):
     """反馈输出模型"""
 
@@ -123,6 +141,12 @@ class ScreenshotAnalyzeResponse(SchemaBase):
 
     screenshot_url: str = Field(description="截图 URL")
     extracted: ExtractedScreenshotData = Field(description="AI 提取的信息")
+
+
+class ScreenshotAnalyzeUrlRequest(SchemaBase):
+    """截图识别直传 URL 请求"""
+
+    screenshot_url: str = Field(description="截图 URL（已上传到对象存储）")
 
 
 class ScreenshotFeedbackCreate(SchemaBase):
