@@ -34,11 +34,11 @@ class BatchJob(MappedBase):
     __tablename__ = "batch_job"
 
     id: Mapped[id_key]
-    
+
     # 必填字段（没有默认值）
     tenant_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True, comment="租户ID")
     task_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True, comment="任务类型")
-    
+
     # 有默认值的字段
     status: Mapped[str] = mapped_column(
         String(20), default=BatchJobStatus.PENDING.value, nullable=False, index=True, comment="任务状态"
@@ -50,7 +50,7 @@ class BatchJob(MappedBase):
     failed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="失败数")
     config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False, comment="执行配置")
     summary: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False, comment="结果汇总")
-    
+
     # 可选字段（显式设置 default=None）
     name: Mapped[str | None] = mapped_column(String(200), default=None, comment="任务名称")
     description: Mapped[str | None] = mapped_column(Text, default=None, comment="任务描述")
@@ -72,7 +72,7 @@ class BatchTaskItem(MappedBase):
     __tablename__ = "batch_task_item"
 
     id: Mapped[id_key]
-    
+
     # 必填字段（没有默认值）
     batch_job_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("batch_job.id", ondelete="CASCADE"), nullable=False, index=True, comment="批量任务ID"

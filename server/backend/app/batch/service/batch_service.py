@@ -5,10 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.batch.handler.base import get_task_handler
 from backend.app.batch.model.batch_job import BatchJob, BatchJobStatus, BatchTaskItem, TaskItemStatus
-from backend.common import timezone
 from backend.common.log import log
-from backend.common.uuid import uuid4_str
-from backend.database.db import async_db_session
+from backend.database.db import async_db_session, uuid4_str
+from backend.utils.timezone import timezone
 
 
 async def create_batch_job(
@@ -198,9 +197,7 @@ async def list_batch_jobs(
             "completed_count": job.completed_count,
             "failed_count": job.failed_count,
             "progress": (
-                round((job.completed_count + job.failed_count) / job.total_count * 100, 2)
-                if job.total_count > 0
-                else 0
+                round((job.completed_count + job.failed_count) / job.total_count * 100, 2) if job.total_count > 0 else 0
             ),
             "created_time": job.created_time,
             "celery_task_id": job.celery_task_id,

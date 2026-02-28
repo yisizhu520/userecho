@@ -1,41 +1,19 @@
-from typing import Annotated, Any
+"""通用上传 API"""
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from typing import Any
+
+from fastapi import APIRouter
 
 from backend.app.admin.schema.upload import UploadSignRequest, UploadTypeConfig
-from backend.common.dataclasses import UploadUrl
 from backend.common.log import log
 from backend.common.response.response_code import CustomResponse
-from backend.common.response.response_schema import ResponseSchemaModel, response_base
+from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentTenantId
-from backend.common.security.permission import RequestPermission
-from backend.common.security.rbac import DependsRBAC
-from backend.utils.file_ops import upload_file, upload_file_verify
 
-router = APIRouter()
+router = APIRouter(prefix="/upload", tags=["通用上传"])
 
 
-@router.post(
-    "/upload",
-    summary="本地文件上传",
-    dependencies=[
-        Depends(RequestPermission("sys:file:upload")),
-        DependsRBAC,
-    ],
-)
-async def upload_files(file: Annotated[UploadFile, File()]) -> ResponseSchemaModel[UploadUrl]:
-    upload_file_verify(file)
-    filename = await upload_file(file)
-    return response_base.success(data={"url": f"/static/upload/{filename}"})
-
-
-@router.post(
-    "/upload/sign",
-    summary="获取对象存储直传签名",
-    deprecated=True,
-    dependencies=[DependsRBAC],
-    name="admin_get_upload_sign",  # 显式指定路由名称，避免冲突
-)
+@router.post("/sign", summary="获取对象存储直传签名", name="userecho_get_upload_sign")
 async def get_upload_sign(
     data: UploadSignRequest,
     tenant_id: str = CurrentTenantId,
@@ -43,14 +21,13 @@ async def get_upload_sign(
     """
     获取对象存储直传签名
 
-    ⚠️ 已废弃：请使用 POST /api/v1/app/upload/sign
-    此接口仅为兼容性保留，且需要 RBAC 权限（不推荐用于业务功能）
-
     支持的上传类型：
     - screenshot: 截图（PNG/JPG/JPEG/WEBP，最大 10MB）
     - avatar: 头像（PNG/JPG/JPEG/WEBP，最大 2MB）
     - document: 文档（PDF/DOC/DOCX/XLS/XLSX/PPT/PPTX/TXT/MD，最大 50MB）
     - attachment: 附件（ZIP/RAR/7Z/TAR/GZ/PDF/图片，最大 100MB）
+
+    权限要求：仅需登录（CurrentTenantId 已鉴权）
     """
     from backend.utils.storage import build_storage_path_from_filename, get_upload_signature
 
@@ -77,7 +54,7 @@ async def get_upload_sign(
         # 获取签名
         sign = get_upload_signature(path, content_type=data.content_type, expire_seconds=300)
 
-        log.info(f"[DEPRECATED] Generated upload sign for tenant {tenant_id}: type={data.upload_type}, path={path}")
+        log.info(f"Generated upload sign for tenant {tenant_id}: type={data.upload_type}, path={path}")
         return response_base.success(data=sign)
     except Exception as e:
         log.error(f"Failed to generate upload sign for tenant {tenant_id}: {e}")

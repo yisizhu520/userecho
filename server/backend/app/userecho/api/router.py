@@ -22,6 +22,7 @@ from backend.app.userecho.api.v1 import (
     tenant_role,
     topic,
     topic_notification,
+    upload,
 )
 from backend.core.conf import settings
 
@@ -45,6 +46,7 @@ v1.include_router(credits.router)
 v1.include_router(subscription.router)
 v1.include_router(system_notification.router)
 v1.include_router(reply_template.router)
+v1.include_router(upload.router)
 
 # 租户权限管理
 v1.include_router(tenant_role.router, prefix="/tenant/roles", tags=["TenantRole"])

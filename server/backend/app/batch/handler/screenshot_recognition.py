@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.batch.handler.base import BatchTaskHandler, batch_task_handler
 from backend.app.batch.model.batch_job import BatchJob, BatchTaskItem
 from backend.app.userecho.model.feedback import Feedback
-from backend.common import timezone
 from backend.common.log import log
-from backend.common.uuid import uuid4_str
+from backend.database.db import uuid4_str
 from backend.utils.ai_client import ai_client
+from backend.utils.timezone import timezone
 
 
 @batch_task_handler("screenshot_recognition")

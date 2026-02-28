@@ -393,13 +393,16 @@ async def upload_feedback_image(
         return response_base.fail(res=CustomResponse(code=500, msg=f"图片上传失败: {e!s}"))
 
 
-@router.post("/upload-image/sign", summary="获取截图直传签名")
+@router.post("/upload-image/sign", summary="获取截图直传签名", deprecated=True)
 async def get_feedback_image_upload_sign(
     data: UploadImageSignRequest,
     tenant_id: str = CurrentTenantId,
 ) -> Any:
     """
     获取图片直传对象存储的签名信息
+
+    ⚠️ 已废弃：请使用 POST /api/v1/app/upload/sign (upload_type="screenshot")
+    此接口仅为兼容性保留
     """
     from backend.common.log import log
     from backend.utils.storage import build_storage_path_from_filename, get_upload_signature

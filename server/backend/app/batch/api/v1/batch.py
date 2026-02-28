@@ -3,7 +3,7 @@
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from backend.app.auth.deps import CurrentTenantId, CurrentUserId
+from backend.common.security.jwt import CurrentTenantId, CurrentUserId
 from backend.app.batch.service.batch_service import (
     cancel_batch_job,
     create_batch_job,
@@ -11,7 +11,7 @@ from backend.app.batch.service.batch_service import (
     get_batch_progress,
     list_batch_jobs,
 )
-from backend.common import response_base
+from backend.common.response.response_schema import response_base
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix="/batch", tags=["批量任务"])
@@ -134,8 +134,8 @@ async def screenshot_batch_upload(
     user_id: str = CurrentUserId,
 ):
     """批量上传截图（便捷接口）"""
-    from backend.common import timezone
     from backend.utils.storage import storage
+    from backend.utils.timezone import timezone
 
     # 1. 上传文件到 OSS
     items = []

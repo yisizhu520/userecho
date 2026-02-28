@@ -197,7 +197,8 @@ import {
   ReloadOutlined,
   SyncOutlined,
 } from '@ant-design/icons-vue'
-import { analyzeScreenshot, analyzeScreenshotByUrl, createFeedbackFromScreenshot, getFeedbackImageUploadSign, getScreenshotTaskStatus, uploadImageToSignedUrl, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
+import { analyzeScreenshot, analyzeScreenshotByUrl, createFeedbackFromScreenshot, getScreenshotTaskStatus, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
+import { getUploadSign, uploadToSignedUrl } from '#/api/core/upload'
 import { getBoardList, type Board } from '#/api/userecho/board'
 import CustomerAutoComplete from './components/CustomerAutoComplete.vue'
 import type { Customer } from '#/api'
@@ -394,25 +395,29 @@ const processFile = async (file: File) => {
     let useDirectUpload = false
 
     try {
-      const sign = await getFeedbackImageUploadSign({
+      const sign = await getUploadSign({
         filename: file.name,
+        upload_type: 'screenshot',
         content_type: file.type,
       })
 
       uploadProgress.value = 20
-      await uploadImageToSignedUrl(sign, file)
+      await uploadToSignedUrl(sign, file)
       screenshotUploadedUrl = sign.cdn_url
       useDirectUpload = true
+      console.log('✅ 直传成功:', screenshotUploadedUrl)
     } catch (error) {
-      console.warn('直传失败，回退到后端上传', error)
+      console.warn('❌ 直传失败，回退到后端上传', error)
       useDirectUpload = false
     }
 
     // 2. 提交异步任务
     let response
     if (useDirectUpload) {
+      console.log('→ 使用直传 URL 识别（不重复上传）')
       response = await analyzeScreenshotByUrl(screenshotUploadedUrl)
     } else {
+      console.log('→ 使用后端上传识别（回退模式）')
       const formDataPayload = new FormData()
       formDataPayload.append('file', file)
       response = await analyzeScreenshot(formDataPayload)

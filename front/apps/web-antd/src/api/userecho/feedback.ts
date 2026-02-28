@@ -294,6 +294,7 @@ export async function analyzeScreenshotByUrl(screenshotUrl: string) {
 
 /**
  * 获取截图直传签名
+ * @deprecated 请使用 getUploadSign from '#/api/core/upload'
  */
 export async function getFeedbackImageUploadSign(data: UploadImageSignRequest) {
   return requestClient.post<UploadImageSignResponse>('/api/v1/app/feedbacks/upload-image/sign', data);
@@ -301,6 +302,7 @@ export async function getFeedbackImageUploadSign(data: UploadImageSignRequest) {
 
 /**
  * 直传到对象存储
+ * @deprecated 请使用 uploadToSignedUrl from '#/api/core/upload'
  */
 export async function uploadImageToSignedUrl(sign: UploadImageSignResponse, file: File) {
   const headers = new Headers(sign.headers || {});
@@ -338,15 +340,12 @@ export async function createFeedbackFromScreenshot(data: ScreenshotFeedbackCreat
  */
 export async function uploadFeedbackImage(file: File): Promise<{ url: string }> {
   try {
-    const sign = await getFeedbackImageUploadSign({
-      filename: file.name,
-      content_type: file.type,
-    });
-
-    await uploadImageToSignedUrl(sign, file);
-
-    return { url: sign.cdn_url };
+    // 使用通用上传 API
+    const { uploadScreenshot } = await import('#/api/core/upload');
+    const url = await uploadScreenshot(file);
+    return { url };
   } catch (error) {
+    // 回退到后端中转上传
     const formData = new FormData();
     formData.append('file', file);
     return requestClient.post('/api/v1/app/feedbacks/upload-image', formData, {
