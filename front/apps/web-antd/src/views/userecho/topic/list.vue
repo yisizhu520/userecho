@@ -15,7 +15,7 @@ import { useRouter } from 'vue-router';
 
 import { useVbenModal, VbenButton } from '@vben/common-ui';
 import { MaterialSymbolsAdd } from '@vben/icons';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -286,7 +286,11 @@ watch(
 );
 
 function onRefresh() {
-  gridApi.query();
+  if (viewMode.value === 'kanban') {
+    onKanbanRefresh();
+  } else {
+    gridApi.query();
+  }
 }
 
 /**
@@ -314,6 +318,26 @@ async function onActionClick({ code, row }: OnActionClickParams<Topic>) {
       break;
     }
   }
+}
+
+/**
+ * 处理删除（带确认）- 供看板视图使用
+ */
+async function handleDelete(row: Topic) {
+  Modal.confirm({
+    title: '确认删除',
+    content: `确定要删除议题 "${row.title}" 吗？此操作无法撤销。`,
+    okType: 'danger',
+    onOk: async () => {
+      try {
+        await deleteTopic(row.id);
+        message.success('删除成功');
+        onRefresh();
+      } catch {
+        message.error('删除失败');
+      }
+    },
+  });
 }
 
 /**
@@ -534,6 +558,8 @@ onBeforeUnmount(() => {
             :topics="allTopics" 
             :loading="kanbanLoading"
             @refresh="onKanbanRefresh"
+            @edit="(t) => onActionClick({ code: 'edit', row: t })"
+            @delete="(t) => handleDelete(t)"
           />
         </div>
         

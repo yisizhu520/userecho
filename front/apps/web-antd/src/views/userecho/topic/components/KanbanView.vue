@@ -15,13 +15,15 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   refresh: [];
+  edit: [topic: Topic];
+  delete: [topic: Topic];
 }>();
 
 // 5个状态列配置 (增加视觉配色配置)
 const statuses = [
   { 
     key: 'pending', 
-    label: '待审核', 
+    label: '待处理', 
     color: 'gray',
     bgColor: 'bg-gray-50/50 dark:bg-gray-900/20',
     borderColor: 'border-t-gray-400 dark:border-t-gray-600'
@@ -177,6 +179,8 @@ watch(
         :key="status.key"
         :status="status"
         :topics="topicsByStatus[status.key] || []"
+        @edit="(t) => emit('edit', t)"
+        @delete="(t) => emit('delete', t)"
       />
     </div>
   </div>

@@ -174,7 +174,7 @@ export const TOPIC_CATEGORIES = [
 /** 主题状态选项 */
 export const TOPIC_STATUSES = [
   { value: 'pending', label: '待处理', color: 'default' },
-  { value: 'planned', label: '计划中', color: 'blue' },
+  { value: 'planned', label: '已规划', color: 'blue' },
   { value: 'in_progress', label: '进行中', color: 'orange' },
   { value: 'completed', label: '已完成', color: 'green' },
   { value: 'ignored', label: '已忽略', color: 'red' },

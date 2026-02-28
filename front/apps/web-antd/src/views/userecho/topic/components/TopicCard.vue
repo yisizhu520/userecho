@@ -5,12 +5,24 @@ import { getCategoryConfig } from '../data';
 import { useBoardStore } from '#/store';
 import { formatToSmartTime } from '#/utils/dateUtil';
 
+import { useRouter } from 'vue-router';
+import { MoreOutlined } from '@ant-design/icons-vue';
+
 interface Props {
   topic: Topic;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{
+  edit: [topic: Topic];
+  delete: [topic: Topic];
+}>();
+const router = useRouter();
 const boardStore = useBoardStore();
+
+function handleCardClick() {
+  router.push(`/app/topic/detail/${props.topic.id}`);
+}
 
 // 获取看板名称
 const boardName = computed(() => {
@@ -43,7 +55,7 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
 </script>
 
 <template>
-  <div class="topic-card" :data-topic-id="topic.id">
+  <div class="topic-card" :data-topic-id="topic.id" @click="handleCardClick">
     <!-- Header: 优先级点 + 看板 -->
     <div class="card-header">
       <div class="flex items-center gap-2">
@@ -54,6 +66,7 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
           :title="`优先级: ${priorityConfig.label} (${topic.priority_score?.total_score ?? 0})`"
         >
           <div class="priority-dot" :class="priorityConfig.color.replace('text-', 'bg-')" />
+          <span class="iconify lucide--signal text-[10px] opacity-70" />
           <span class="text-[10px] font-medium" :class="priorityConfig.color">{{ priorityConfig.label }}</span>
         </div>
         
@@ -63,9 +76,33 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
         </div>
       </div>
 
-      <!-- 看板 Badge -->
-      <div v-if="boardName" class="board-badge">
-        {{ boardName }}
+      <!-- 右侧：看板 Badge + 操作菜单 -->
+      <div class="flex items-center gap-1" @click.stop>
+        <div v-if="boardName" class="board-badge">
+          {{ boardName }}
+        </div>
+        
+        <a-dropdown :trigger="['click']" placement="bottomRight">
+          <div class="action-btn p-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center">
+            <MoreOutlined class="text-lg text-gray-500" />
+          </div>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item key="edit" @click="emit('edit', topic)">
+                <span class="flex items-center gap-2">
+                  <span class="iconify lucide--edit size-3.5" />
+                  编辑
+                </span>
+              </a-menu-item>
+              <a-menu-item key="delete" danger @click="emit('delete', topic)">
+                <span class="flex items-center gap-2">
+                  <span class="iconify lucide--trash-2 size-3.5" />
+                  删除
+                </span>
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
       </div>
     </div>
 
@@ -113,7 +150,7 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
   border-radius: 8px; /* 更圆润的圆角 */
   padding: 12px;
   margin-bottom: 10px;
-  cursor: move;
+  cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);

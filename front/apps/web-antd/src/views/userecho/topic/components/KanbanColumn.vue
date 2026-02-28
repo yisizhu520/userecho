@@ -17,6 +17,11 @@ interface Props {
 
 defineProps<Props>();
 
+const emit = defineEmits<{
+  edit: [topic: Topic];
+  delete: [topic: Topic];
+}>();
+
 // 状态卡片阴影映射
 const shadowMap: Record<string, string> = {
   pending: 'shadow-sm',
@@ -41,7 +46,13 @@ const shadowMap: Record<string, string> = {
 
     <!-- Topic 卡片列表 -->
     <div class="column-body sortable-container" :data-status="status.key">
-      <TopicCard v-for="topic in topics" :key="topic.id" :topic="topic" />
+      <TopicCard 
+        v-for="topic in topics" 
+        :key="topic.id" 
+        :topic="topic"
+        @edit="(t) => emit('edit', t)"
+        @delete="(t) => emit('delete', t)" 
+      />
       
       <!-- 空状态 -->
       <div v-if="topics.length === 0" class="empty-state">
