@@ -63,7 +63,7 @@ const handleSubmit = async () => {
             <span class="cta-badge-text">🔥 限时福利</span>
           </div>
 
-          <h2 class="cta-title">前 20 名用户免费体验3个月</h2>
+          <h2 class="cta-title">前 20 名用户免费体验1个月</h2>
           <p class="cta-subtitle">
             <br />已有 11 家团队加入，仅剩 <strong>9</strong> 个名额
           </p>
