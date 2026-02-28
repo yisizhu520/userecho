@@ -2,7 +2,8 @@
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from fastapi_limiter.depends import RateLimiter
 from sqlalchemy import select
 
 from backend.app.task.celery import celery_app
@@ -10,7 +11,7 @@ from backend.app.userecho.crud.crud_insight import crud_insight
 from backend.app.userecho.service.insight_service import insight_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
-from backend.common.security.depends import DependsTurnstile
+from backend.common.security.demo_quota import DependsDemoQuota
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession
 
@@ -129,7 +130,14 @@ async def get_report_periods(
     return response_base.success(data=periods)
 
 
-@router.get("/insights/{insight_type}", summary="获取指定类型的洞察", dependencies=[DependsTurnstile])
+@router.get(
+    "/insights/{insight_type}",
+    summary="获取指定类型的洞察",
+    dependencies=[
+        DependsDemoQuota("insights"),
+        Depends(RateLimiter(times=10, minutes=1)),
+    ],
+)
 async def get_insight(
     insight_type: str,
     db: CurrentSession,
@@ -185,7 +193,14 @@ async def get_dashboard_insights(
     )
 
 
-@router.post("/insights/report/export", summary="导出周报/月报（异步）", dependencies=[DependsTurnstile])
+@router.post(
+    "/insights/report/export",
+    summary="导出周报/月报（异步）",
+    dependencies=[
+        DependsDemoQuota("insights"),
+        Depends(RateLimiter(times=5, minutes=1)),
+    ],
+)
 async def export_report(
     tenant_id: str = CurrentTenantId,
     time_range: Annotated[str, Query(description="时间范围：this_week | this_month")] = "this_week",

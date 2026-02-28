@@ -86,19 +86,39 @@ def register_exception(app: FastAPI) -> None:
         :param exc: HTTP 异常
         :return:
         """
-        if settings.ENVIRONMENT == "dev":
+        # 友好的错误提示
+        status_code = exc.status_code
+        detail = exc.detail
+
+        # Rate Limiting 429 错误
+        if status_code == 429:
             content = {
-                "code": exc.status_code,
-                "msg": exc.detail,
+                "code": 429,
+                "msg": "操作过于频繁，请稍后再试",
+                "data": {"detail": "您的操作过于频繁，请稍后再试。如需继续使用，请注册正式账号。"},
+            }
+        # 配额耗尽 403 错误
+        elif status_code == 403 and ("配额" in str(detail) or "quota" in str(detail).lower()):
+            content = {
+                "code": 403,
+                "msg": str(detail),  # 使用配额模块返回的友好错误信息
+                "data": None,
+            }
+        # 其他错误
+        elif settings.ENVIRONMENT == "dev":
+            content = {
+                "code": status_code,
+                "msg": detail,
                 "data": None,
             }
         else:
             res = response_base.fail(res=CustomResponseCode.HTTP_400)
             content = res.model_dump()
+
         ctx.__request_http_exception__ = content
         content.update(trace_id=get_request_trace_id())
         return MsgSpecJSONResponse(
-            status_code=_get_exception_code(exc.status_code),
+            status_code=_get_exception_code(status_code),
             content=content,
             headers=exc.headers,
         )

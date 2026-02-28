@@ -6,7 +6,8 @@ from typing import Any
 
 import numpy as np
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from fastapi_limiter.depends import RateLimiter
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import silhouette_score
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,7 +17,7 @@ from backend.app.userecho.crud import crud_feedback
 from backend.app.userecho.service import clustering_service
 from backend.common.response.response_code import CustomResponse
 from backend.common.response.response_schema import response_base
-from backend.common.security.depends import DependsTurnstile
+from backend.common.security.demo_quota import DependsDemoQuota
 from backend.common.security.jwt import CurrentTenantId
 from backend.core.conf import settings
 from backend.database.db import CurrentSession
@@ -25,7 +26,14 @@ from backend.utils.ai_client import ai_client
 router = APIRouter(prefix="/clustering", tags=["UserEcho - AI聚类"])
 
 
-@router.post("/trigger", summary="触发聚类任务", dependencies=[DependsTurnstile])
+@router.post(
+    "/trigger",
+    summary="触发聚类任务",
+    dependencies=[
+        DependsDemoQuota("clustering"),
+        Depends(RateLimiter(times=10, minutes=1)),
+    ],
+)
 async def trigger_clustering(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
@@ -217,7 +225,11 @@ async def get_clustering_status(
     )
 
 
-@router.get("/suggestions/{feedback_id}", summary="获取聚类建议", dependencies=[DependsTurnstile])
+@router.get(
+    "/suggestions/{feedback_id}",
+    summary="获取聚类建议",
+    dependencies=[Depends(RateLimiter(times=20, minutes=1))],
+)
 async def get_clustering_suggestions(
     feedback_id: str,
     db: CurrentSession,
@@ -241,7 +253,11 @@ async def get_clustering_suggestions(
     return response_base.success(data=suggestions)
 
 
-@router.get("/pending-suggestions", summary="获取待处理的合并建议", dependencies=[DependsTurnstile])
+@router.get(
+    "/pending-suggestions",
+    summary="获取待处理的合并建议",
+    dependencies=[Depends(RateLimiter(times=20, minutes=1))],
+)
 async def get_pending_suggestions(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,

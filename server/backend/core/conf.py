@@ -185,13 +185,20 @@ class Settings(BaseSettings):
     AWS_S3_BASE_PATH: str = ""
     AWS_S3_CDN_DOMAIN: str = ""  # CloudFront 域名（可选）
 
-    # 演示模式配置
+    # ==================== Demo 模式配置 ====================
     DEMO_MODE: bool = False
     # 注意：Demo 模式现在默认允许所有操作，只拦截危险操作（删除预置用户、删除租户等）
     # 这样用户可以完整体验所有功能，数据会每日自动重置
     ALLOW_REGISTRATION: bool = True  # Demo 模式下设为 False
 
-    # Cloudflare Turnstile 人机验证
+    # ==================== Demo 配额限制 ====================
+    # 防止恶意用户通过轮换账号刷爆 AI 额度
+    DEMO_DAILY_QUOTA_CLUSTERING: int = 100  # AI 聚类 50次/天
+    DEMO_DAILY_QUOTA_AI_SUMMARY: int = 200  # AI 摘要 100次/天
+    DEMO_DAILY_QUOTA_SCREENSHOT: int = 100  # 截图识别 20次/天
+    DEMO_DAILY_QUOTA_INSIGHTS: int = 100  # AI 洞察 30次/天
+
+    # ==================== Cloudflare Turnstile 人机验证 ====================
     TURNSTILE_ENABLED: bool = False
     TURNSTILE_SECRET_KEY: str = ""
 
