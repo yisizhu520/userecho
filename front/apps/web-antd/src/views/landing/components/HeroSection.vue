@@ -1001,7 +1001,7 @@ onUnmounted(() => {
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>AI 聚类</span>
+            <span>智能合并</span>
           </div>
           <div class="feature-tag">
             <svg
@@ -1014,7 +1014,7 @@ onUnmounted(() => {
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>智能评分</span>
+            <span>优先级评分</span>
           </div>
           <div class="feature-tag">
             <svg
@@ -1040,7 +1040,7 @@ onUnmounted(() => {
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>语义搜索</span>
+            <span>智能洞察</span>
           </div>
         </div>
       </div>

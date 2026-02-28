@@ -132,7 +132,7 @@ onMounted(() => {
             <div class="panel-stats">
               <div class="stat-item">
                 <span class="stat-value stat-right">&lt;30 分钟</span>
-                <span class="stat-label">AI 自动聚类</span>
+                <span class="stat-label">智能合并</span>
               </div>
               <div class="stat-item">
                 <span class="stat-value stat-right">0%</span>
@@ -143,7 +143,7 @@ onMounted(() => {
           <div class="panel-footer">
             <div class="footer-item">
               <span class="footer-icon footer-icon-right">✓</span>
-              <span>AI 语义自动聚类</span>
+              <span>智能合并反馈</span>
             </div>
             <div class="footer-item">
               <span class="footer-icon footer-icon-right">✓</span>
@@ -244,6 +244,8 @@ onMounted(() => {
   overflow: hidden;
   backdrop-filter: blur(12px);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .comparison-panel:hover {
@@ -297,12 +299,16 @@ onMounted(() => {
 .panel-content {
   padding: 1.5rem;
   min-height: 280px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Before - Scatter */
 .feedback-scatter {
   position: relative;
-  height: 200px;
+  flex: 1;
+  min-height: 200px;
   background: var(--lp-bg-tertiary);
   border-radius: 12px;
   margin-bottom: 1.5rem;
@@ -335,6 +341,8 @@ onMounted(() => {
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
+  flex: 1;
+  align-content: start;
 }
 
 .cluster-group {
@@ -396,6 +404,7 @@ onMounted(() => {
   justify-content: space-around;
   padding-top: 1rem;
   border-top: 1px solid var(--lp-border-subtle);
+  flex-shrink: 0;
 }
 
 .stat-item {

@@ -8,34 +8,38 @@ const features = ref([
     // Simplified features data without rainbow gradients
     icon: 'lucide:sparkles',
     iconEmoji: '✨',
-    title: 'AI 智能聚类',
-    description: '使用语义相似度自动将反馈分组，无需手动分类，准确率高达95%',
+    title: '智能合并反馈',
+    description: '自动发现重复需求，10 秒整理 100 条反馈，准确率 95%',
     color: 'var(--lp-primary-500)',
     delay: 0,
+    tags: ['语义分析', '自动分组', '去重合并'],
   },
   {
     icon: 'lucide:sliders',
     iconEmoji: '📊',
     title: '优先级评分',
-    description: '基于影响范围、商业价值和开发成本，自动计算需求优先级分数',
+    description: 'AI 算出哪些需求最该做，不再纠结先做什么后做什么',
     color: 'var(--lp-primary-600)',
     delay: 100,
+    tags: ['影响范围', '商业价值', '开发成本'],
   },
   {
     icon: 'lucide:scan',
     iconEmoji: '📸',
     title: '截图智能识别',
-    description: '支持微信、小红书、App Store等平台的截图OCR识别',
+    description: '微信截图直接粘贴，AI 自动提取用户昵称和反馈内容',
     color: 'var(--lp-primary-500)',
     delay: 200,
+    tags: ['OCR识别', '多平台支持', '一键粘贴'],
   },
   {
-    icon: 'lucide:search',
-    iconEmoji: '🔍',
-    title: '语义搜索',
-    description: '自然语言搜索反馈，"用户说登录有问题"即可找到所有相关反馈',
+    icon: 'lucide:lightbulb',
+    iconEmoji: '⚡',
+    title: '智能洞察',
+    description: 'AI 识别高风险需求，提前预警可能流失的大客户',
     color: 'var(--lp-primary-400)',
     delay: 300,
+    tags: ['风险预警', '客户分析', '趋势发现'],
   },
 ]);
 
@@ -69,7 +73,7 @@ onMounted(() => {
           全能的<span class="title-gradient">反馈分析</span>工具
         </h2>
         <p class="section-subtitle">
-          四大核心能力，让业务决策更加智能高效
+          四大核心能力，让产品决策更加智能高效
         </p>
       </div>
 
@@ -92,23 +96,11 @@ onMounted(() => {
             <div class="feature-divider"></div>
 
             <div class="feature-list">
-              <div class="feature-list-item">
+              <div v-for="(tag, tagIndex) in feature.tags" :key="tagIndex" class="feature-list-item">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span>智能分析</span>
-              </div>
-              <div class="feature-list-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>实时更新</span>
-              </div>
-              <div class="feature-list-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>一键导出</span>
+                <span>{{ tag }}</span>
               </div>
             </div>
           </div>

@@ -17,7 +17,7 @@ const steps = ref([
   {
     number: '02',
     title: 'AI 处理',
-    description: '自动语义聚类、智能标签分类、优先级评分，全方位分析反馈',
+    description: '智能合并反馈、自动打标签、优先级评分，全方位分析反馈',
     icon: '🤖',
     color: 'var(--lp-primary-600)',
   },
