@@ -71,20 +71,50 @@ def create_async_engine_and_session(url: str | URL) -> tuple[AsyncEngine, async_
             bind=engine,
             class_=AsyncSession,
             autoflush=False,  # 禁用自动刷新
-            expire_on_commit=False,  # 禁用提交时过期
+            expire_on_commit=True,  # ✅ 提交后自动过期对象，避免 StaleDataError
         )
         return engine, db_session
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """获取数据库会话"""
+    """
+    获取数据库会话（自动提交事务）
+
+    - 请求成功：自动 commit()
+    - 抛出异常：自动 rollback()
+
+    这是默认的依赖注入方式，适用于99.9%的场景
+    """
+    from backend.common.log import log
+
+    log.debug("[DB] get_db() called, starting transaction...")
+    try:
+        async with async_db_session.begin() as session:
+            log.debug(f"[DB] Transaction started, in_transaction={session.in_transaction()}")
+            try:
+                yield session
+                log.debug("[DB] Yielded session, will auto-commit on exit")
+            except Exception as e:
+                log.error(f"[DB] Exception during request: {e}")
+                raise
+        log.debug("[DB] Transaction committed (context manager exited)")
+    except Exception as e:
+        import traceback
+
+        log.error(f"[DB] ❌ CRITICAL: Transaction commit FAILED: {e}")
+        log.error(f"[DB] Traceback: {traceback.format_exc()}")
+        raise
+    finally:
+        log.debug("[DB] get_db() exiting")
+
+
+async def get_db_no_transaction() -> AsyncGenerator[AsyncSession, None]:
+    """
+    获取数据库会话（不自动提交，用于只读操作或手动控制事务）
+
+    注意：大部分情况下不需要使用这个，除非有特殊需求
+    """
     async with async_db_session() as session:
-        yield session
-
-
-async def get_db_transaction() -> AsyncGenerator[AsyncSession, None]:
-    """获取带有事务的数据库会话"""
-    async with async_db_session.begin() as session:
         yield session
 
 
@@ -112,5 +142,8 @@ SQLALCHEMY_DATABASE_URL = create_database_url()
 async_engine, async_db_session = create_async_engine_and_session(SQLALCHEMY_DATABASE_URL)
 
 # Session Annotated
-CurrentSession = Annotated[AsyncSession, Depends(get_db)]
-CurrentSessionTransaction = Annotated[AsyncSession, Depends(get_db_transaction)]
+CurrentSession = Annotated[AsyncSession, Depends(get_db)]  # ✅ 自动提交/回滚
+CurrentSessionNoTransaction = Annotated[AsyncSession, Depends(get_db_no_transaction)]  # 只读或手动控制
+
+# 向后兼容：保留旧名称作为别名
+CurrentSessionTransaction = CurrentSession  # ✅ 现在和 CurrentSession 一样，都自动提交

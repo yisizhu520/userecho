@@ -1,0 +1,7 @@
+正在连接数据库: maoku@193.134.210.140:5433/userecho
+
+================================================================================
+【第一步】查看重复的 default-board 记录
+================================================================================
+✅ 只有一条 default-board 记录，数据正常
+   记录: ((8, 29), 'default-board', '默认看板222', datetime.datetime(2026, 1, 23, 15, 20, 36, 494477, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 1, 25, 5, 19, 42, 137075, tzinfo=datetime.timezone.utc), 6, 'default-tenant')

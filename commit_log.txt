@@ -1,0 +1,39 @@
+fix end of files.........................................................Passed
+check json...............................................................Passed
+check yaml...............................................................Passed
+check toml...........................................(no files to check)Skipped
+ruff.....................................................................Passed
+ruff-format..............................................................Passed
+mypy.....................................................................Failed
+- hook id: mypy
+- exit code: 1
+
+server\delete_duplicate_board.py:54: error: Need type annotation for
+"default_board_records" (hint: "default_board_records: list[<type>] = ...") 
+[var-annotated]
+            default_board_records = []
+            ^~~~~~~~~~~~~~~~~~~~~
+server\show_all_boards.py:42: error: No overload variant of "sessionmaker"
+matches argument types "AsyncEngine", "type[AsyncSession]", "bool" 
+[call-overload]
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_o...
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\show_all_boards.py:42: note: Possible overload variants:
+server\show_all_boards.py:42: note:     def [_S: Session] sessionmaker(self, bind: Engine | Connection | None = ..., *, class_: type[_S], autoflush: bool = ..., expire_on_commit: bool = ..., info: dict[Any, Any] | None = ..., **kw: Any) -> sessionmaker[_S]
+server\show_all_boards.py:42: note:     def [_S: Session] sessionmaker(self, bind: Engine | Connection | None = ..., *, autoflush: bool = ..., expire_on_commit: bool = ..., info: dict[Any, Any] | None = ..., **kw: Any) -> sessionmaker[Session]
+server\clean_duplicate_board.py:45: error: No overload variant of
+"sessionmaker" matches argument types "AsyncEngine", "type[AsyncSession]",
+"bool"  [call-overload]
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_o...
+                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~...
+server\clean_duplicate_board.py:45: note: Possible overload variants:
+server\clean_duplicate_board.py:45: note:     def [_S: Session] sessionmaker(self, bind: Engine | Connection | None = ..., *, class_: type[_S], autoflush: bool = ..., expire_on_commit: bool = ..., info: dict[Any, Any] | None = ..., **kw: Any) -> sessionmaker[_S]
+server\clean_duplicate_board.py:45: note:     def [_S: Session] sessionmaker(self, bind: Engine | Connection | None = ..., *, autoflush: bool = ..., expire_on_commit: bool = ..., info: dict[Any, Any] | None = ..., **kw: Any) -> sessionmaker[Session]
+server\fix_duplicate_boards.py:26: error: Need type annotation for "id_counts"
+(hint: "id_counts: dict[<type>, <type>] = ...")  [var-annotated]
+            id_counts = {}
+            ^~~~~~~~~
+Found 4 errors in 4 files (checked 21 source files)
+
+uv-lock..............................................(no files to check)Skipped
+uv-export............................................(no files to check)Skipped

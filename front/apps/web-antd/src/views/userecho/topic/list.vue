@@ -39,9 +39,18 @@ import { useFilterStorage } from '#/composables/useFilterStorage';
 import { useBoardStore } from '#/store';
 import TopicFilterSidebar from '#/layouts/components/sidebar/TopicFilterSidebar.vue';
 import MergeSuggestionsBanner from './components/MergeSuggestionsBanner.vue';
+import KanbanView from './components/KanbanView.vue';
 
 
 const router = useRouter();
+
+/**
+ * 视图模式切换
+ */
+const { state: viewMode } = useFilterStorage({
+  key: 'topic_view_mode',
+  defaultValue: 'kanban' as 'list' | 'kanban',
+});
 
 /**
  * 响应式布局检测
@@ -193,7 +202,56 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
  * 触发搜索
  */
 function handleSearch() {
-  gridApi.query();
+  if (viewMode.value === 'kanban') {
+    loadAllTopics();
+  } else {
+    gridApi.query();
+  }
+}
+
+/**
+ * 看板视图专用：加载所有 Topics（不分页）
+ */
+const allTopics = ref<Topic[]>([]);
+const kanbanLoading = ref(false);
+
+async function loadAllTopics() {
+  try {
+    kanbanLoading.value = true;
+    const queryParams: any = {
+      skip: 0,
+      limit: 1000, // 看板视图加载更多数据
+    };
+
+    if (filterValues.value.search_query) {
+      queryParams.search_query = filterValues.value.search_query;
+      queryParams.search_mode = 'keyword';
+    }
+    if (filterValues.value.status && filterValues.value.status.length > 0) {
+      queryParams.status = filterValues.value.status;
+    }
+    if (filterValues.value.category && filterValues.value.category.length > 0) {
+      queryParams.category = filterValues.value.category;
+    }
+    if (filterValues.value.board_ids && filterValues.value.board_ids.length > 0) {
+      queryParams.board_ids = filterValues.value.board_ids;
+    }
+    if (filterValues.value.date_range && filterValues.value.date_range.length === 2) {
+      queryParams.date_from = filterValues.value.date_range[0];
+      queryParams.date_to = filterValues.value.date_range[1];
+    }
+
+    const data: any = await getTopicList(queryParams);
+    allTopics.value = data.items || [];
+  } catch (error: any) {
+    message.error(error.message || '加载失败');
+  } finally {
+    kanbanLoading.value = false;
+  }
+}
+
+function onKanbanRefresh() {
+  loadAllTopics();
 }
 
 /**
@@ -201,15 +259,30 @@ function handleSearch() {
  */
 watch(
   () => [
+    filterValues.value.search_query, // Added search_query to watcher
     filterValues.value.status,
     filterValues.value.category,
     filterValues.value.board_ids,
     filterValues.value.date_range,
   ],
   () => {
-    handleSearch();
+    handleSearch(); // consolidate logic to handleSearch
   },
   { deep: true }
+);
+
+/**
+ * 监听视图模式变化，加载相应数据
+ */
+watch(
+  () => viewMode.value,
+  (newMode) => {
+    if (newMode === 'kanban') {
+      loadAllTopics();
+    } else {
+      handleSearch();
+    }
+  }
 );
 
 function onRefresh() {
@@ -379,6 +452,11 @@ onMounted(async () => {
   // 初始化看板选中
   initBoardSelection();
 
+  // 根据视图模式加载数据
+  if (viewMode.value === 'kanban') {
+    loadAllTopics();
+  }
+
   // 初始化响应式检测
   const mediaQuery = window.matchMedia('(max-width: 767px)');
   handleMediaChange(mediaQuery);
@@ -430,6 +508,7 @@ onBeforeUnmount(() => {
           v-model:category="filterValues.category"
           v-model:board-ids="filterValues.board_ids"
           v-model:date-range="filterValues.date_range"
+          v-model:view-mode="viewMode"
         />
       </div>
       
@@ -449,7 +528,17 @@ onBeforeUnmount(() => {
           筛选条件
         </VbenButton>
         
-        <div class="topic-grid-wrapper">
+        <!-- 看板视图 -->
+        <div v-if="viewMode === 'kanban'" class="topic-kanban-wrapper">
+          <KanbanView 
+            :topics="allTopics" 
+            :loading="kanbanLoading"
+            @refresh="onKanbanRefresh"
+          />
+        </div>
+        
+        <!-- 列表视图 -->
+        <div v-else class="topic-grid-wrapper">
           <Grid>
           <template #toolbar-actions>
             <!-- 搜索框 -->
@@ -588,6 +677,7 @@ onBeforeUnmount(() => {
           v-model:category="filterValues.category"
           v-model:board-ids="filterValues.board_ids"
           v-model:date-range="filterValues.date_range"
+          v-model:view-mode="viewMode"
         />
       </a-drawer>
     </div>
@@ -641,6 +731,12 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow: hidden;
   min-height: 0; /* 重要：允许 flex 子元素收缩 */
+}
+
+.topic-kanban-wrapper {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .topic-title {

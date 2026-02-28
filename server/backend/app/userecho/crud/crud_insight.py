@@ -122,8 +122,7 @@ class CRUDInsight(TenantAwareCRUD[Insight]):
         insight.status = "dismissed"
         insight.dismissed_reason = reason
 
-        await db.commit()
-        await db.refresh(insight)
+        # ❌ 禁止手动 commit 和 refresh
 
         return insight
 

@@ -113,7 +113,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         )
 
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount
 
     async def batch_update_topic(
@@ -144,7 +144,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         )
 
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount
 
     async def update_embedding(
@@ -176,7 +176,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         )
 
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount > 0
 
     async def batch_update_embeddings(
@@ -219,7 +219,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
 
                 updated_count += 1
 
-        await db.commit()
+        # ❌ 禁止手动 commit
         return updated_count
 
     def get_cached_embedding(self, feedback: Feedback) -> np.ndarray | None:

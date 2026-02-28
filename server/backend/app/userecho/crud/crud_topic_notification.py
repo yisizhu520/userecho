@@ -101,8 +101,7 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         if reply_language:
             notification.reply_language = reply_language
 
-        await db.commit()
-        await db.refresh(notification)
+        # ❌ 禁止手动 commit 和 refresh
         return notification
 
     async def mark_as_notified(
@@ -130,8 +129,7 @@ class CRUDTopicNotification(TenantAwareCRUD[TopicNotification]):
         if notes:
             notification.notes = notes
 
-        await db.commit()
-        await db.refresh(notification)
+        # ❌ 禁止手动 commit 和 refresh
         return notification
 
     async def get_with_details(

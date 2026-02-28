@@ -48,8 +48,7 @@ class CRUDStatusHistory(TenantAwareCRUD[StatusHistory]):
             changed_at=timezone.now(),
         )
         db.add(history)
-        await db.commit()
-        await db.refresh(history)
+        # ❌ 禁止手动 commit 和 refresh
         return history
 
     async def get_by_topic(

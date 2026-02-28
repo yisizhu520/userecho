@@ -110,12 +110,21 @@ class TenantAwareCRUD(Generic[ModelType]):
         Returns:
             创建的模型实例
         """
+        from backend.utils.timezone import timezone
+
         # 自动注入租户ID和UUID主键
         obj_data = {"id": uuid4_str(), "tenant_id": tenant_id, **data}
         obj = self.model(**obj_data)
+
+        # 手动注入时间字段（如果模型支持且未提供）
+        now = timezone.now()
+        if hasattr(obj, "created_time") and getattr(obj, "created_time") is None:
+            obj.created_time = now
+        if hasattr(obj, "updated_time") and getattr(obj, "updated_time") is None:
+            obj.updated_time = now
+
         db.add(obj)
-        await db.commit()
-        await db.refresh(obj)
+        # ❌ 禁止手动 commit 和 refresh (由 get_db 自动管理事务)
         return obj
 
     async def update(
@@ -146,8 +155,13 @@ class TenantAwareCRUD(Generic[ModelType]):
             if value is not None and hasattr(obj, key):
                 setattr(obj, key, value)
 
-        await db.commit()
-        await db.refresh(obj)
+        # 手动更新时间字段
+        if hasattr(obj, "updated_time"):
+            from backend.utils.timezone import timezone
+
+            obj.updated_time = timezone.now()
+
+        # ❌ 禁止手动 commit 和 refresh (由 get_db 自动管理事务)
         return obj
 
     async def delete(
@@ -178,12 +192,11 @@ class TenantAwareCRUD(Generic[ModelType]):
             from backend.utils.timezone import timezone
 
             obj.deleted_at = timezone.now()
-            await db.commit()
         else:
             # 物理删除
             await db.delete(obj)
-            await db.commit()
 
+        # ❌ 禁止手动 commit (由 get_db 自动管理事务)
         return True
 
     async def count(

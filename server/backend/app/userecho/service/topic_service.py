@@ -155,6 +155,7 @@ class TopicService:
             description=data.description,
             board_id=data.board_id,  # 传递看板ID
             ai_generated=False,  # 手动创建的主题
+            feedback_count=0,  # ✅ 显式初始化，满足 Pydantic 校验 (无 db.refresh)
         )
 
         # 异步生成 centroid（不阻塞响应）

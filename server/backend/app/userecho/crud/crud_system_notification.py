@@ -92,8 +92,7 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         notification.is_read = True
         notification.read_at = timezone.now()
 
-        await db.commit()
-        await db.refresh(notification)
+        # ❌ 禁止手动 commit 和 refresh
         return notification
 
     async def mark_all_as_read(
@@ -118,7 +117,7 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         )
 
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount
 
     async def clear_all(
@@ -136,7 +135,7 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         )
 
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount
 
     async def create_topic_completed_notification(
@@ -149,7 +148,11 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         user_id: int | None = None,
     ) -> SystemNotification:
         """创建议题完成通知"""
+        from backend.database.db import uuid4_str
+        from backend.utils.timezone import timezone
+
         notification = SystemNotification(
+            id=uuid4_str(),
             tenant_id=tenant_id,
             user_id=user_id,
             type="topic_completed",
@@ -158,11 +161,12 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
             avatar=None,
             action_url=f"/app/userecho/topic/{topic_id}?tab=notify",
             extra_data={"topic_id": topic_id, "pending_notifications": pending_count},
+            is_read=False,
+            created_time=timezone.now(),
         )
 
         db.add(notification)
-        await db.commit()
-        await db.refresh(notification)
+        # ❌ 禁止手动 commit 和 refresh
         return notification
 
 

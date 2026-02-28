@@ -550,3 +550,203 @@ python db_migrate.py check
 - [ ] 升级前是否备份数据库？
 - [ ] 是否在执行前检查迁移链完整性？
 - [ ] 是否验证了升级结果？
+
+## 数据库事务管理规范
+
+> "事务提交不应该是程序员的责任，而是框架的责任。如果每个 API 都要手动 commit，那是设计垃圾。" - Linus
+
+### 核心原则
+
+**自动提交/回滚** - 框架自动管理事务，消除手动 commit() 的特殊情况
+
+### 架构设计
+
+我们的 `get_db()` 依赖注入已经配置为**自动提交事务**：
+
+```python
+# backend/database/db.py
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    获取数据库会话（自动提交事务）
+    
+    - 请求成功：自动 commit()
+    - 抛出异常：自动 rollback()
+    
+    这是默认的依赖注入方式，适用于99.9%的场景
+    """
+    async with async_db_session.begin() as session:
+        yield session
+```
+
+**机制说明：**
+- ✅ 使用 `async_db_session.begin()` 创建事务 context manager
+- ✅ 请求处理完成：**自动 commit()**
+- ✅ 抛出异常：**自动 rollback()**
+- ✅ 不需要手动调用 `flush()` 或 `commit()`
+
+### ✅ 正确的 API 写法
+
+**简洁、没有特殊情况：**
+
+```python
+from backend.database.db import CurrentSession
+
+@router.post("/boards")
+async def create_board(
+    data: BoardCreate,
+    db: CurrentSession,  # ✅ 自动提交
+    tenant_id: str = CurrentTenantId,
+):
+    board = Board(
+        id=uuid4_str(),
+        tenant_id=tenant_id,
+        name=data.name,
+    )
+    db.add(board)
+    
+    # ✅ 没有 flush()，没有 commit()
+    # ✅ 函数结束自动提交
+    return response_base.success(data=BoardOut.model_validate(board))
+
+
+@router.put("/boards/{board_id}")
+async def update_board(
+    board_id: str,
+    data: BoardUpdate,
+    db: CurrentSession,  # ✅ 自动提交
+):
+    board = await get_board(db, board_id)
+    board.name = data.name
+    board.updated_time = timezone.now()
+    
+    # ✅ 修改完直接返回，自动提交
+    return response_base.success(data=BoardOut.model_validate(board))
+```
+
+### ❌ 错误的写法（垃圾代码）
+
+**不要这样写：**
+
+```python
+@router.post("/boards")
+async def create_board(db: CurrentSession):
+    board = Board(...)
+    db.add(board)
+    
+    await db.flush()    # ❌ 不需要！垃圾代码！
+    await db.commit()   # ❌ 不需要！垃圾代码！会导致重复提交！
+    return response_base.success()
+```
+
+**为什么这是垃圾？**
+1. `flush()` 和 `commit()` 都不需要，因为框架会自动提交
+2. 手动 `commit()` 可能导致重复提交（一次手动，一次自动）
+3. 增加了不必要的代码复杂度
+4. 容易忘记，已经出现过多次 bug
+
+### Linus 式代码审查
+
+**Bad Taste（垃圾）:**
+```python
+# 10行代码，3个特殊情况
+@router.patch("/reorder")
+async def reorder_boards(db: CurrentSession):
+    for item in data:
+        board.sort_order = item.sort_order
+    
+    await db.flush()     # ❌ 特殊情况1：为什么要 flush？
+    await db.commit()    # ❌ 特殊情况2：为什么要手动 commit？
+    await db.refresh()   # ❌ 特殊情况3：垃圾！
+    return success()
+```
+
+**Good Taste（好品味）:**
+```python
+# 6行代码，没有特殊情况
+@router.patch("/reorder")
+async def reorder_boards(db: CurrentSession):
+    for item in data:
+        board.sort_order = item.sort_order
+    
+    # ✅ 没有特殊情况！函数结束自动提交
+    return success()
+```
+
+### 特殊场景：手动控制事务
+
+**99.9% 的情况不需要这个**，但如果真的需要：
+
+```python
+from backend.database.db import CurrentSessionNoTransaction
+
+@router.post("/complex-operation")
+async def complex_operation(
+    db: CurrentSessionNoTransaction,  # 不自动提交
+):
+    try:
+        # 手动开启事务
+        async with db.begin():
+            # 操作1
+            create_something(db)
+            
+            # 操作2
+            update_something_else(db)
+            
+            # context manager 结束时自动 commit
+        
+        return success()
+    except Exception:
+        # 异常自动 rollback
+        raise
+```
+
+但实际上，这种场景极少。大部分情况下，直接用 `CurrentSession` 就够了。
+
+### 快速检查清单
+
+编写 API 时，确保：
+- [ ] 使用 `CurrentSession` 依赖注入（自动提交）
+- [ ] **绝对不要** 调用 `await db.commit()`
+- [ ] **绝对不要** 调用 `await db.flush()`（除非有特殊原因，但99%没有）
+- [ ] **绝对不要** 调用 `await db.refresh()`（SQLAlchemy 会自动刷新）
+- [ ] 如果看到手动 commit/flush，立即删除它们
+- [ ] 代码审查时，拒绝任何包含手动 commit 的 PR
+
+### Linus 的评价
+
+> "之前的设计是垃圾。为什么每个 API 都要手动 commit？这是框架该干的事！
+> 
+> 现在的方案：一个地方改，全局生效。没有特殊情况，没有手动 commit。
+> 
+> 这才是好品味。"
+
+### 常见错误和解决方案
+
+| 错误代码 | 问题 | 正确做法 |
+|---------|------|---------|
+| `await db.flush()` | 不需要，框架自动处理 | 删除这一行 |
+| `await db.commit()` | 重复提交，可能导致问题 | 删除这一行 |
+| `await db.refresh(obj)` | 多余，SQLAlchemy 自动刷新 | 删除这一行 |
+| 忘记提交导致数据丢失 | 旧设计的问题 | 现在不可能发生，自动提交 |
+
+### 迁移指南：清理旧代码
+
+如果发现旧代码中有手动 commit/flush，按以下步骤清理：
+
+```bash
+# 1. 全局搜索所有手动 commit
+cd server
+grep -r "await db.commit()" backend/app/
+
+# 2. 全局搜索所有手动 flush
+grep -r "await db.flush()" backend/app/
+
+# 3. 逐个文件检查并删除
+# 确保没有特殊逻辑依赖这些调用
+
+# 4. 运行测试验证
+bash pre-commit.sh
+```
+
+**重要提示：** 删除手动 commit/flush 后，代码会变得更简洁，且**不会**破坏功能，因为框架会自动提交。

@@ -8,6 +8,7 @@ interface Props {
   category?: string[];
   boardIds?: string[];
   dateRange?: [string, string] | null;
+  viewMode?: 'list' | 'kanban';
 }
 
 defineProps<Props>();
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   'update:category': [value: string[]];
   'update:boardIds': [value: string[]];
   'update:dateRange': [value: [string, string] | null];
+  'update:viewMode': [value: 'list' | 'kanban'];
   'search': [];
 }>();
 </script>
@@ -37,12 +39,14 @@ const emit = defineEmits<{
         :category="category"
         :board-ids="boardIds"
         :date-range="dateRange"
+        :view-mode="viewMode"
         @update:search-query="emit('update:searchQuery', $event)"
         @update:search-mode="emit('update:searchMode', $event)"
         @update:status="emit('update:status', $event)"
         @update:category="emit('update:category', $event)"
         @update:board-ids="emit('update:boardIds', $event)"
         @update:date-range="emit('update:dateRange', $event)"
+        @update:view-mode="emit('update:viewMode', $event)"
         @search="emit('search')"
       />
     </div>

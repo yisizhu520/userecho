@@ -557,3 +557,101 @@ python db_migrate.py check
 - [ ] 升级前是否备份数据库？
 - [ ] 是否在执行前检查迁移链完整性？
 - [ ] 是否验证了升级结果？
+
+## 数据库事务管理规范
+
+> "事务提交不应该是程序员的责任，而是框架的责任。如果每个 API 都要手动 commit，那是设计垃圾。" - Linus
+
+### 核心原则
+
+**自动提交/回滚** - 框架自动管理事务，消除手动 commit() 的特殊情况
+
+### 架构设计
+
+我们的 `get_db()` 依赖注入已经配置为**自动提交事务**：
+
+```python
+# backend/database/db.py
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    获取数据库会话（自动提交事务）
+    
+    - 请求成功：自动 commit()
+    - 抛出异常：自动 rollback()
+    
+    这是默认的依赖注入方式，适用于99.9%的场景
+    """
+    async with async_db_session.begin() as session:
+        yield session
+```
+
+**机制说明：**
+- ✅ 使用 `async_db_session.begin()` 创建事务 context manager
+- ✅ 请求处理完成：**自动 commit()**
+- ✅ 抛出异常：**自动 rollback()**
+- ✅ 不需要手动调用 `flush()` 或 `commit()`
+
+### ✅ 正确的 API 写法
+
+**简洁、没有特殊情况：**
+
+```python
+from backend.database.db import CurrentSession
+
+@router.post("/boards")
+async def create_board(
+    data: BoardCreate,
+    db: CurrentSession,  # ✅ 自动提交
+    tenant_id: str = CurrentTenantId,
+):
+    board = Board(
+        id=uuid4_str(),
+        tenant_id=tenant_id,
+        name=data.name,
+    )
+    db.add(board)
+    
+    # ✅ 没有 flush()，没有 commit()
+    # ✅ 函数结束自动提交
+    return response_base.success(data=BoardOut.model_validate(board))
+```
+
+### ❌ 错误的写法（垃圾代码）
+
+**不要这样写：**
+
+```python
+@router.post("/boards")
+async def create_board(db: CurrentSession):
+    board = Board(...)
+    db.add(board)
+    
+    await db.flush()    # ❌ 不需要！垃圾代码！
+    await db.commit()   # ❌ 不需要！垃圾代码！会导致重复提交！
+    return response_base.success()
+```
+
+**为什么这是垃圾？**
+1. `flush()` 和 `commit()` 都不需要，因为框架会自动提交
+2. 手动 `commit()` 可能导致重复提交（一次手动，一次自动）
+3. 增加了不必要的代码复杂度
+4. 容易忘记，已经出现过多次 bug
+
+### 快速检查清单
+
+编写 API 时，确保：
+- [ ] 使用 `CurrentSession` 依赖注入（自动提交）
+- [ ] **绝对不要** 调用 `await db.commit()`
+- [ ] **绝对不要** 调用 `await db.flush()`（除非有特殊原因，但99%没有）
+- [ ] **绝对不要** 调用 `await db.refresh()`（SQLAlchemy 会自动刷新）
+- [ ] 如果看到手动 commit/flush，立即删除它们
+- [ ] 代码审查时，拒绝任何包含手动 commit 的 PR
+
+### Linus 的评价
+
+> "之前的设计是垃圾。为什么每个 API 都要手动 commit？这是框架该干的事！
+> 
+> 现在的方案：一个地方改，全局生效。没有特殊情况，没有手动 commit。
+> 
+> 这才是好品味。"

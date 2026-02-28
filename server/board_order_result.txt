@@ -1,0 +1,42 @@
+[32m2026-01-25 19:13:02.896[0m | [1mINFO    [0m | [36mbackend.database.db[0m:[36mcreate_async_engine_and_session[0m:[36m50[0m - [1m[DB Engine] Creating async engine with URL: postgresql+asyncpg://maoku:***@193.134.210.140:5433/userecho[0m
+[32m2026-01-25 19:13:02.974[0m | [1mINFO    [0m | [36mbackend.database.db[0m:[36mcreate_async_engine_and_session[0m:[36m65[0m - [1m[DB Engine] Async engine created successfully[0m
+[Celery Init] CELERY_BROKER=redis
+[Celery Init] REDIS_HOST=193.134.210.140
+[Celery Init] REDIS_PORT=6380
+[Celery Init] REDIS_URL=None
+[Celery Init] CELERY_BROKER_REDIS_DATABASE=0
+[Celery Init] Constructed broker_url: redis://:maokutest@193.134.210.140:6380/0
+[Celery Init] Final broker_url: redis://:maokutest@193.134.210.140:6380/0
+[Celery Init] Final result_backend: db+postgresql+psycopg://maoku:maokutest@193.134.210.140:5433/userecho
+[Celery Init] ✅ App conf broker_url: redis://:maokutest@193.134.210.140:6380/0
+[Celery Init] ✅ App conf result_backend: db+postgresql+psycopg://maoku:maokutest@193.134.210.140:5433/userecho
+[Celery Init] Searching for tasks in: D:\workspace\indie\userecho\server\backend\app\task\tasks
+[Celery Init] ✅ Found tasks package: backend.app.task.tasks
+[Celery Init] ✅ Found tasks package: backend.app.task.tasks.db_log
+[Celery Init] ✅ Found tasks package: backend.app.task.tasks.userecho
+[Celery Init] Total task packages found: 3
+[Celery Init] ⚠️  autodiscover_tasks failed, trying manual import
+[Celery Init] ✅ Registered 11 user tasks: ['task_demo', 'task_demo_async', 'task_demo_params', 'backend.app.task.tasks.db_log.tasks.delete_db_opera_log', 'backend.app.task.tasks.db_log.tasks.delete_db_login_log', 'userecho.generate_feedback_embedding', 'userecho.generate_topic_centroid', 'userecho_clustering_batch', 'userecho_analyze_screenshot', 'userecho.generate_insight_report', 'userecho.generate_feedback_summary']
+[Celery Init] Registering signal handlers...
+[Celery Signals] Installing signal handlers...
+[Celery Signals] ✅ Signal handlers installed successfully
+[Celery Init] Signal handlers registered
+
+========== 当前看板排序情况 ==========
+序号   ID                                     名称                   sort_order   创建时间                
+----------------------------------------------------------------------------------------------------
+1    d346bc54-70fc-4909-86f8-a02db99841c8   集成需求                 0            2026-01-24 08:24:33 
+2    ee926442-da28-468b-b12a-9142796f67aa   集成需求                 0            2026-01-24 05:39:02 
+3    36d4bde7-ce4c-41f5-a601-3c6b4bffb5a6   Bug 反馈               0            2026-01-24 05:39:02 
+4    aa1c51c5-0dda-4c3e-9d2c-d527d5fb9644   体验优化                 0            2026-01-24 05:39:02 
+5    131b9751-1460-4983-a4e6-da950a0d4de8   功能建议                 0            2026-01-24 05:39:02 
+6    46b578aa-3146-47cc-814e-578f588d58dd   功能建议                 1            2026-01-24 08:24:33 
+7    12fe474f-5bc9-4fbb-ab52-3d702f88af9d   Bug 反馈               2            2026-01-24 08:24:33 
+8    de2bed47-73f8-4ea6-a070-3afda85d6d1c   体验优化                 3            2026-01-24 08:24:33 
+9    default-board                          默认看板222              8            2026-01-23 15:20:36 
+
+========== 排序规则 ==========
+1. 优先按 sort_order 升序（数值小的在前）
+2. sort_order 相同时，按创建时间降序（新的在前）
+
+✅ 看板的 sort_order 有差异，排序生效

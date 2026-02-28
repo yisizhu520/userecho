@@ -72,8 +72,7 @@ class CRUDPriorityScore(TenantAwareCRUD[PriorityScore]):
             existing.total_score = total_score
             if details is not None:
                 existing.details = details
-            await db.commit()
-            await db.refresh(existing)
+            # ❌ 禁止手动 commit 和 refresh
             return existing
         # 创建
         return await self.create(

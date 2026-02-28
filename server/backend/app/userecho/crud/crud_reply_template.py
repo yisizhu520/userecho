@@ -45,8 +45,7 @@ class CRUDReplyTemplate(TenantAwareCRUD[ReplyTemplate]):
             return None
 
         template.usage_count += 1
-        await db.commit()
-        await db.refresh(template)
+        # ❌ 禁止手动 commit 和 refresh
         return template
 
     async def get_system_templates(

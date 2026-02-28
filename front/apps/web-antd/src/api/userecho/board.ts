@@ -72,6 +72,19 @@ export async function deleteBoard(id: string): Promise<void> {
     await requestClient.delete(`/api/v1/app/boards/${id}`);
 }
 
+/** 批量更新看板排序项 */
+export interface BoardReorderItem {
+    id: string;
+    sort_order: number;
+}
+
+/**
+ * 批量更新看板排序（拖拽排序）
+ */
+export async function reorderBoards(boards: BoardReorderItem[]): Promise<void> {
+    await requestClient.patch('/api/v1/app/boards/reorder', { boards });
+}
+
 /**
  * Board API 命名空间（用于兼容旧代码）
  */

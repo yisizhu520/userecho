@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from backend.app.userecho.crud.crud_board import crud_board
 from backend.app.userecho.model.board import Board
-from backend.app.userecho.schema.board import BoardCreate, BoardListOut, BoardOut, BoardUpdate
+from backend.app.userecho.schema.board import BoardCreate, BoardListOut, BoardOut, BoardReorder, BoardUpdate
 from backend.common.response.response_schema import ResponseSchemaModel, response_base
 from backend.common.security.jwt import CurrentTenantId
 from backend.database.db import CurrentSession, uuid4_str
@@ -24,11 +24,12 @@ async def get_boards(
 
     返回未归档的看板，按创建时间排序
     """
-    # 查询当前租户的所有未归档看板
+    # 查询当前租户的所有未归档且未删除的看板
     stmt = (
         select(Board)
         .where(Board.tenant_id == tenant_id)
         .where(Board.is_archived == False)  # noqa: E712
+        .where(Board.deleted_at.is_(None))
         .order_by(Board.sort_order, Board.created_time.desc())
     )
     result = await db.execute(stmt)
@@ -68,7 +69,6 @@ async def create_board_management(
         created_time=timezone.now(),
     )
     db.add(board)
-    await db.flush()
 
     return response_base.success(data=BoardOut.model_validate(board))
 
@@ -112,9 +112,7 @@ async def update_board_management(
     if update_data.is_archived is not None:
         board.is_archived = update_data.is_archived
 
-    board.updated_time = timezone.now()
-    await db.flush()
-
+    # ✅ 不要手动设置 updated_time，让 onupdate=timezone.now 自动处理
     return response_base.success(data=BoardOut.model_validate(board))
 
 
@@ -137,5 +135,47 @@ async def delete_board_management(
             detail="看板不存在",
         )
 
-    await db.flush()
+    return response_base.success()
+
+
+@router.patch("/reorder", summary="批量更新看板排序")
+async def reorder_boards(
+    reorder_data: BoardReorder,
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+) -> ResponseSchemaModel[None]:
+    """
+    批量更新看板排序
+
+    用于拖拽排序功能，一次性更新多个看板的 sort_order
+    """
+    # 验证所有看板都属于当前租户
+    board_ids = [item.id for item in reorder_data.boards]
+
+    # 查询所有涉及的看板
+    stmt = select(Board).where(
+        Board.id.in_(board_ids),
+        Board.tenant_id == tenant_id,
+        Board.deleted_at.is_(None),
+    )
+    result = await db.execute(stmt)
+    # 使用字典映射以便快速查找
+    board_map = {board.id: board for board in result.scalars().all()}
+
+    # 检查是否所有看板都存在
+    if len(board_map) != len(board_ids):
+        found_ids = set(board_map.keys())
+        missing_ids = set(board_ids) - found_ids
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"看板不存在: {', '.join(missing_ids)}",
+        )
+
+    # 更新排序
+    for item in reorder_data.boards:
+        if board := board_map.get(item.id):
+            board.sort_order = item.sort_order
+            # ORM 会自动追踪变化，且 CurrentSession 会在结束时自动提交
+            # model 的 onupdate=timezone.now 会自动更新 updated_time
+
     return response_base.success()

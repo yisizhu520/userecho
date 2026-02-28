@@ -22,6 +22,10 @@ export const MaterialSymbolsDelete = createIconifyIcon(
   'material-symbols:delete',
 );
 
+export const MaterialSymbolsDragIndicator = createIconifyIcon(
+  'material-symbols:drag-indicator',
+);
+
 export const MaterialSymbolsShield = createIconifyIcon('material-symbols:shield');
 
 export const MingcuteProfileLine = createIconifyIcon('mingcute:profile-line');

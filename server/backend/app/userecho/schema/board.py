@@ -53,3 +53,16 @@ class BoardListOut(BaseModel):
 
     boards: list[BoardOut] = Field(default_factory=list, description="看板列表")
     total: int = Field(0, description="总数")
+
+
+class BoardReorderItem(BaseModel):
+    """单个看板排序项"""
+
+    id: str = Field(..., description="看板ID")
+    sort_order: int = Field(..., description="新的排序值")
+
+
+class BoardReorder(BaseModel):
+    """批量更新看板排序"""
+
+    boards: list[BoardReorderItem] = Field(..., min_length=1, description="看板排序列表")

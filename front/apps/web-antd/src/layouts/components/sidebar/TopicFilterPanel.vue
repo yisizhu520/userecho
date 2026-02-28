@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import { Checkbox, CheckboxGroup, RangePicker, Select } from 'ant-design-vue';
+import { Checkbox, CheckboxGroup, RangePicker, Select, Radio } from 'ant-design-vue';
+const RadioGroup = Radio.Group;
+const RadioButton = Radio.Button;
 import { ref, onMounted, watch } from 'vue';
 import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type Board } from '#/api';
 import dayjs from 'dayjs';
@@ -10,6 +12,7 @@ interface Props {
   category?: string[];
   boardIds?: string[];
   dateRange?: [string, string] | null;
+  viewMode?: 'list' | 'kanban';
 }
 
 defineProps<Props>();
@@ -18,7 +21,9 @@ const emit = defineEmits<{
   'update:status': [value: string[]];
   'update:category': [value: string[]];
   'update:boardIds': [value: string[]];
+  'update:boardIds': [value: string[]];
   'update:dateRange': [value: [string, string] | null];
+  'update:viewMode': [value: 'list' | 'kanban'];
 }>();
 
 // Board 列表
@@ -158,6 +163,29 @@ watch(selectedDateKey, (key) => {
 
 <template>
   <div class="px-4 py-4 bg-transparent">
+    <!-- 视图模式 -->
+    <div class="mb-4">
+      <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">
+        视图模式
+      </label>
+      <RadioGroup
+        :value="viewMode"
+        @update:value="(val: any) => emit('update:viewMode', val)"
+        button-style="solid"
+        size="small"
+        class="w-full flex"
+      >
+        <RadioButton value="kanban" class="flex-1 text-center">
+          <span class="iconify lucide--kanban-square mr-1 inline-block align-text-bottom" />
+          看板
+        </RadioButton>
+        <RadioButton value="list" class="flex-1 text-center">
+          <span class="iconify lucide--list mr-1 inline-block align-text-bottom" />
+          列表
+        </RadioButton>
+      </RadioGroup>
+    </div>
+
     <!-- Board 筛选 -->
     <div class="mb-4">
       <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">

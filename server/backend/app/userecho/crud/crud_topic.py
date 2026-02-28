@@ -28,7 +28,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             .values(centroid=centroid)
         )
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount > 0
 
     async def update_cluster_quality(
@@ -55,7 +55,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             .values(**values)
         )
         result = await db.execute(stmt)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return result.rowcount > 0
 
     async def get_with_feedbacks(
@@ -152,7 +152,7 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             return False
 
         topic.feedback_count = max(0, topic.feedback_count + delta)
-        await db.commit()
+        # ❌ 禁止手动 commit
         return True
 
     def _apply_filters(

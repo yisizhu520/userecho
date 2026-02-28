@@ -64,8 +64,7 @@ class CRUDTenantConfig(TenantAwareCRUD[TenantConfig]):
             # 更新现有配置
             existing.config_data = config_data
             existing.is_active = True
-            await db.commit()
-            await db.refresh(existing)
+            # ❌ 禁止手动 commit 和 refresh
             return existing
         # 创建新配置
         new_config = TenantConfig(
@@ -76,8 +75,7 @@ class CRUDTenantConfig(TenantAwareCRUD[TenantConfig]):
             is_active=True,
         )
         db.add(new_config)
-        await db.commit()
-        await db.refresh(new_config)
+        # ❌ 禁止手动 commit 和 refresh
         return new_config
 
 
