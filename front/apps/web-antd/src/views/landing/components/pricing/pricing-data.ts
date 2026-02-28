@@ -4,6 +4,7 @@ export interface FeatureItem {
   text: string;
   included: boolean;
   highlight?: boolean;
+  pending?: boolean; // 标识待实现功能
 }
 
 export interface PricingTier {
@@ -22,73 +23,84 @@ export type BillingPeriod = 'monthly' | 'yearly';
 
 // 启航版功能列表
 const getStarterFeatures = (): FeatureItem[] => [
-  { text: '2,000条反馈/月', included: true },
-  { text: '3个用户席位', included: true },
-  { text: 'AI智能聚类（基础）', included: true },
+  // 已实现功能
+  { text: '无限制反馈数量', included: true },
+  { text: '1个用户席位', included: true },
+  { text: 'AI智能合并（基础）', included: true },
   { text: '优先级评分（基础模型）', included: true },
   { text: '200次截图识别/月', included: true },
   { text: '智能洞察（基础）', included: true },
-  { text: 'CSV + Excel数据导出', included: true },
-  { text: '3个月历史数据保留', included: true },
-  { text: '50个主题数量', included: true },
-  { text: '基础团队协作', included: true },
+  { text: '历史数据永久保留', included: true },
+  { text: '无限制主题数量', included: true },
   { text: '邮件技术支持', included: true },
-  { text: 'API访问', included: false },
+  // 待实现功能
+  { text: 'CSV + Excel数据导出', included: true, pending: true },
+  { text: 'API访问', included: true, pending: true },
+  // 不支持功能
+  { text: '团队协作', included: false },
   { text: '私有部署', included: false },
 ];
 
-// 中型版功能列表
+// 专业版功能列表
 const getStandardFeatures = (): FeatureItem[] => [
-  { text: '10,000条反馈/月', included: true },
-  { text: '10个用户席位', included: true },
-  { text: 'AI智能聚类（高级）', included: true, highlight: true },
+  // 已实现功能
+  { text: '无限制反馈数量', included: true },
+  { text: '3个用户席位', included: true },
+  { text: 'AI智能合并（高级）', included: true, highlight: true },
   { text: '优先级评分（标准模型）', included: true, highlight: true },
   { text: '1,000次截图识别/月', included: true },
   { text: '智能洞察（高级）', included: true, highlight: true },
-  { text: 'CSV + Excel数据导出', included: true },
-  { text: '1年历史数据保留', included: true },
-  { text: '200个主题数量', included: true },
+  { text: '历史数据永久保留', included: true },
+  { text: '无限制主题数量', included: true },
   { text: '团队权限管理', included: true, highlight: true },
   { text: '优先邮件支持', included: true },
   { text: '99.5% SLA保障', included: true },
-  { text: '标准API访问', included: true, highlight: true },
+  // 待实现功能
+  { text: 'CSV + Excel数据导出', included: true, pending: true },
+  { text: '标准API访问', included: true, pending: true, highlight: true },
+  // 不支持功能
   { text: '私有部署', included: false },
 ];
 
-// 大型版功能列表
+// 旗舰版功能列表
 const getProFeatures = (): FeatureItem[] => [
-  { text: '50,000条反馈/月', included: true },
-  { text: '无限制用户席位', included: true, highlight: true },
-  { text: 'AI智能聚类（高级+定制）', included: true, highlight: true },
+  // 已实现功能
+  { text: '无限制反馈数量', included: true },
+  { text: '10个用户席位', included: true, highlight: true },
+  { text: 'AI智能合并（高级）', included: true, highlight: true },
   { text: '优先级评分（高级模型）', included: true, highlight: true },
   { text: '无限制截图识别', included: true },
   { text: '智能洞察（高级）', included: true, highlight: true },
-  { text: '全格式导出 + API', included: true, highlight: true },
-  { text: '永久历史数据保留', included: true },
+  { text: '历史数据永久保留', included: true },
   { text: '无限制主题数量', included: true },
   { text: '高级权限管理', included: true, highlight: true },
   { text: '专属客服支持', included: true, highlight: true },
   { text: '99.9% SLA保障', included: true },
-  { text: '高级API访问', included: true, highlight: true },
+  // 待实现功能
+  { text: '全格式导出 + API', included: true, pending: true, highlight: true },
+  { text: '高级API访问', included: true, pending: true, highlight: true },
+  // 不支持功能
   { text: '私有部署', included: false },
 ];
 
 // 企业定制功能列表
 const getEnterpriseFeatures = (): FeatureItem[] => [
+  // 已实现功能
   { text: '无限制反馈数量', included: true, highlight: true },
   { text: '无限制用户席位', included: true, highlight: true },
-  { text: 'AI智能聚类（完全定制）', included: true, highlight: true },
+  { text: 'AI智能合并（高级）', included: true, highlight: true },
   { text: '优先级评分（自定义模型）', included: true, highlight: true },
   { text: '无限制截图识别', included: true },
   { text: '智能洞察 + 企业知识库', included: true, highlight: true },
-  { text: 'API优先访问', included: true, highlight: true },
-  { text: '永久保留 + 数据归档', included: true },
+  { text: '历史数据永久保留', included: true },
   { text: '无限制主题数量', included: true },
   { text: 'SSO + 审计日志', included: true, highlight: true },
   { text: '1对1专属顾问', included: true, highlight: true },
   { text: '定制SLA保障', included: true },
-  { text: '企业级API', included: true, highlight: true },
   { text: '私有化部署', included: true, highlight: true },
+  // 待实现功能
+  { text: 'API优先访问', included: true, pending: true, highlight: true },
+  { text: '企业级API', included: true, pending: true, highlight: true },
 ];
 
 // 定价层级配置

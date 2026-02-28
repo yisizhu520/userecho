@@ -98,7 +98,7 @@ const cardClass = computed(() => ({
         v-for="(feature, index) in tier.features"
         :key="index"
         class="feature-item"
-        :class="{ included: feature.included, excluded: !feature.included, highlight: feature.highlight }"
+        :class="{ included: feature.included, excluded: !feature.included, highlight: feature.highlight, pending: feature.pending }"
       >
         <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline v-if="feature.included" points="20 6 9 17 4 12"/>
@@ -106,6 +106,13 @@ const cardClass = computed(() => ({
           <line v-if="!feature.included" x1="6" y1="6" x2="18" y2="18"/>
         </svg>
         <span class="feature-text">{{ feature.text }}</span>
+        <!-- 待实现图标 -->
+        <div v-if="feature.pending" class="pending-badge" title="待实现">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
       </div>
     </div>
   </div>
@@ -363,6 +370,50 @@ const cardClass = computed(() => ({
 
 .feature-text {
   line-height: 1.4;
+  flex: 1;
+}
+
+/* 待实现标识 */
+.pending-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+  cursor: help;
+}
+
+.pending-badge svg {
+  width: 100%;
+  height: 100%;
+  color: var(--lp-accent-amber);
+}
+
+.feature-item:hover .pending-badge {
+  opacity: 1;
+}
+
+.pending-badge:hover::after {
+  content: '待实现';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-bottom: 4px;
+  pointer-events: none;
+}
+
+.feature-item.pending {
+  position: relative;
 }
 
 /* 响应式 */
