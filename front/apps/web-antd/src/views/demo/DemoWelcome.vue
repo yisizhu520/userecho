@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
 import { Target, Headphones, Settings, ChevronRight, Activity, Zap } from 'lucide-vue-next';
 import { requestClient } from '#/api/request';
 import { useAccessStore } from '@vben/stores';
@@ -11,6 +12,58 @@ const accessStore = useAccessStore();
 const { theme, initTheme } = useLandingTheme();
 const loading = ref(false);
 const selectedRole = ref('');
+
+// SEO Meta 标签配置
+useHead({
+  title: '在线演示 - 回响 AI 反馈分析平台',
+  meta: [
+    {
+      name: 'description',
+      content: '立即体验回响的 AI 反馈分析功能，无需注册即可试用智能聚类、自动洞察生成等核心功能。选择角色，开启产品反馈管理之旅。',
+    },
+    {
+      name: 'keywords',
+      content: '在线演示,Demo,用户反馈分析,AI 聚类,产品洞察,免费试用',
+    },
+    { name: 'robots', content: 'index, follow' },
+    // Open Graph
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://userecho.app/demo' },
+    { property: 'og:title', content: '在线演示 - 回响 AI 反馈分析平台' },
+    {
+      property: 'og:description',
+      content: '立即体验回响的 AI 反馈分析功能，无需注册即可试用智能聚类、自动洞察生成等核心功能。选择角色，开启产品反馈管理之旅。',
+    },
+    { property: 'og:image', content: 'https://userecho.app/logo.png' },
+    // Twitter
+    { property: 'twitter:card', content: 'summary_large_image' },
+    { property: 'twitter:url', content: 'https://userecho.app/demo' },
+    { property: 'twitter:title', content: '在线演示 - 回响 AI 反馈分析平台' },
+    {
+      property: 'twitter:description',
+      content: '立即体验回响的 AI 反馈分析功能，无需注册即可试用智能聚类、自动洞察生成等核心功能。选择角色，开启产品反馈管理之旅。',
+    },
+    { property: 'twitter:image', content: 'https://userecho.app/logo.png' },
+  ],
+  link: [{ rel: 'canonical', href: 'https://userecho.app/demo' }],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '在线演示 - 回响',
+        description: '立即体验回响的 AI 反馈分析功能，无需注册即可试用智能聚类、自动洞察生成等核心功能',
+        url: 'https://userecho.app/demo',
+        isPartOf: {
+          '@type': 'WebSite',
+          name: '回响',
+          url: 'https://userecho.app',
+        },
+      }),
+    },
+  ],
+});
 
 onMounted(() => {
   initTheme();
@@ -281,7 +334,7 @@ const handleSelectRole = async (roleKey: string) => {
 }
 
 .logo-icon {
-  height: 48px; /* Slightly larger */
+  height: 30px; /* Slightly larger */
   width: auto;
   object-fit: contain;
 }

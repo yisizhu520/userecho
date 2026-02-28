@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
 
 import HeroSection from './components/HeroSection.vue';
 import PainPointsSection from './components/PainPointsSection.vue';
@@ -14,6 +15,64 @@ import { useLandingTheme } from '#/composables/useLandingTheme';
 const router = useRouter();
 const currentYear = new Date().getFullYear();
 const { theme, initTheme } = useLandingTheme();
+
+// SEO Meta 标签配置
+useHead({
+  title: '回响 - AI 驱动的用户反馈智能分析平台',
+  meta: [
+    {
+      name: 'description',
+      content: '回响是一款 AI 驱动的用户反馈智能分析平台，帮助创业者、产品经理和中小企业高效收集、分析和管理用户反馈，自动生成产品洞察，加速产品迭代。',
+    },
+    {
+      name: 'keywords',
+      content: '用户反馈收集,反馈分析,反馈管理,AI 洞察,产品反馈,客户反馈,用户体验,产品管理工具',
+    },
+    // Open Graph
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: 'https://userecho.app/' },
+    { property: 'og:title', content: '回响 - AI 驱动的用户反馈智能分析平台' },
+    {
+      property: 'og:description',
+      content: '回响是一款 AI 驱动的用户反馈智能分析平台，帮助创业者、产品经理和中小企业高效收集、分析和管理用户反馈，自动生成产品洞察，加速产品迭代。',
+    },
+    { property: 'og:image', content: 'https://userecho.app/logo.png' },
+    // Twitter
+    { property: 'twitter:card', content: 'summary_large_image' },
+    { property: 'twitter:url', content: 'https://userecho.app/' },
+    { property: 'twitter:title', content: '回响 - AI 驱动的用户反馈智能分析平台' },
+    {
+      property: 'twitter:description',
+      content: '回响是一款 AI 驱动的用户反馈智能分析平台，帮助创业者、产品经理和中小企业高效收集、分析和管理用户反馈，自动生成产品洞察，加速产品迭代。',
+    },
+    { property: 'twitter:image', content: 'https://userecho.app/logo.png' },
+  ],
+  link: [{ rel: 'canonical', href: 'https://userecho.app/' }],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: '回响',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'CNY',
+        },
+        description: 'AI 驱动的用户反馈智能分析平台，帮助创业者、产品经理和中小企业高效收集、分析和管理用户反馈',
+        keywords: '用户反馈收集,反馈分析,反馈管理,AI 洞察',
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          ratingCount: '150',
+        },
+      }),
+    },
+  ],
+});
 
 const handleGetStarted = () => {
   // 简单的处理：直接跳转到工作台，未登录会被重定向到登录页

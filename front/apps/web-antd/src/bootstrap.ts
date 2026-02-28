@@ -8,6 +8,7 @@ import '@vben/styles';
 import '@vben/styles/antd';
 
 import { useTitle } from '@vueuse/core';
+import { createHead } from '@vueuse/head';
 import Antd from 'ant-design-vue';
 
 import { $t, setupI18n } from '#/locales';
@@ -62,6 +63,10 @@ async function bootstrap(namespace: string) {
 
   // 全局加载 antdv
   app.use(Antd);
+
+  // 配置 @vueuse/head 用于 SEO meta 标签管理
+  const head = createHead();
+  app.use(head);
 
   // 配置路由及路由守卫
   app.use(router);

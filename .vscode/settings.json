@@ -23,5 +23,7 @@
   ],
   "cursorpyright.analysis.extraPaths": [
     "${workspaceFolder}/server"
-  ]
+  ],
+  "files.insertFinalNewline": true
+
 }
