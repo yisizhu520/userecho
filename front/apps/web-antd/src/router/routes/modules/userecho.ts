@@ -57,6 +57,15 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'ScreenshotBatchUpload',
+        path: 'screenshot-batch',
+        component: () => import('#/views/userecho/feedback/screenshot-batch-upload.vue'),
+        meta: {
+          hideInMenu: true,
+          title: '批量截图识别',
+        },
+      },
+      {
         name: 'FeedbackImport',
         path: 'import',
         component: () => import('#/views/userecho/feedback/import.vue'),

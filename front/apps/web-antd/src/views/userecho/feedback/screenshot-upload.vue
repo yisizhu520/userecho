@@ -58,7 +58,7 @@
       <template v-else-if="analysisResult">
         <div class="analysis-result">
           <Row :gutter="24">
-            <!-- 左侧：截图预览 -->
+            <!-- 左侧：截图预览 + OCR 文本 -->
             <Col :span="10">
               <div class="screenshot-preview">
                 <Image
@@ -76,19 +76,16 @@
                   </Button>
                 </div>
               </div>
-            </Col>
 
-            <!-- 右侧：反馈列表 + 公共设置 -->
-            <Col :span="14">
-              <!-- OCR 原始文本（可折叠） -->
-              <Card v-if="rawText" size="small" class="raw-text-card" style="margin-bottom: 16px;">
+              <!-- OCR 原始文本 -->
+              <Card v-if="rawText" size="small" class="raw-text-card" style="margin-top: 16px;">
                 <template #title>
                   <span style="font-size: 14px;">📄 OCR 识别文本</span>
                 </template>
                 <div class="raw-text-content">
                   <Textarea
                     :value="rawText"
-                    :rows="4"
+                    :rows="6"
                     readonly
                     placeholder="暂无识别文本"
                     style="font-size: 12px; color: #666; background: #fafafa;"
@@ -100,6 +97,10 @@
                   </div>
                 </div>
               </Card>
+            </Col>
+
+            <!-- 右侧：反馈列表 + 公共设置 -->
+            <Col :span="14">
 
               <!-- 公共设置 -->
               <Card size="small" class="common-settings-card" style="margin-bottom: 16px;">

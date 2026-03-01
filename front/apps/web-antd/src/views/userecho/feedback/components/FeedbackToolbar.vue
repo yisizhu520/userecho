@@ -11,6 +11,7 @@ interface Emits {
   (e: 'search'): void;
   (e: 'create'): void;
   (e: 'screenshot'): void;
+  (e: 'screenshotBatch'): void;
   (e: 'import'): void;
   (e: 'clustering'): void;
 }
@@ -53,9 +54,13 @@ const handleSearch = () => {
         <span class="iconify lucide--camera mr-2" />
         截图识别
       </VbenButton>
+      <VbenButton @click="emit('screenshotBatch')">
+        <span class="iconify lucide--images mr-2" />
+        批量截图
+      </VbenButton>
       <VbenButton @click="emit('import')">
         <span class="iconify lucide--upload mr-2" />
-        批量导入
+        Excel导入
       </VbenButton>
     </div>
     <VbenButton

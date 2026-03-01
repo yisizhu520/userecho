@@ -346,6 +346,7 @@ onBeforeUnmount(() => {
               @search="handleSearch"
               @create="feedbackModalRef?.openCreate()"
               @screenshot="$router.push('/app/feedback/screenshot')"
+              @screenshot-batch="$router.push('/app/feedback/screenshot-batch')"
               @import="$router.push('/app/feedback/import')"
               @clustering="handleTriggerClustering"
             />

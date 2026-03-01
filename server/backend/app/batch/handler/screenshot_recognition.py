@@ -21,27 +21,51 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
         # 1. 获取输入数据
         image_url = task_item.input_data["image_url"]
         board_id = task_item.input_data.get("board_id")
+        author_type = task_item.input_data.get("author_type", "external")
 
         # 2. 调用 AI 识别
         log.info(f"Analyzing screenshot: {image_url}")
         result = await ai_client.analyze_screenshot(image_url)
 
-        # 3. 创建反馈
-        feedback = Feedback(
-            id=uuid4_str(),
-            tenant_id=task_item.batch_job.tenant_id,
-            board_id=board_id,
-            content=result.get("description", ""),
-            source="screenshot",
-            source_metadata={
+        # 提取 AI 识别结果
+        ai_content = result.get("description", "")
+        ai_user_name = result.get("user_name", "")
+        ai_platform = result.get("platform", "")
+        ai_confidence = result.get("confidence", 0)
+
+        # 3. 构建反馈数据（使用 AI 识别 + 预设配置）
+        feedback_data = {
+            "id": uuid4_str(),
+            "tenant_id": task_item.batch_job.tenant_id,
+            "board_id": board_id,
+            "content": ai_content,
+            "source": "screenshot",
+            "source_metadata": {
                 "screenshot_url": image_url,
-                "confidence": result.get("confidence", 0),
+                "confidence": ai_confidence,
                 "batch_job_id": task_item.batch_job_id,
+                "batch_mode": True,
             },
-            screenshot_url=image_url,
-            created_time=timezone.now(),
-            updated_time=timezone.now(),
-        )
+            "screenshot_url": image_url,
+            "created_time": timezone.now(),
+            "updated_time": timezone.now(),
+        }
+
+        # 4. 根据来源类型设置字段
+        if author_type == "customer":
+            # 内部客户模式：使用预设客户名
+            default_customer_name = task_item.input_data.get("default_customer_name")
+            feedback_data["customer_name"] = ai_user_name or default_customer_name
+        else:
+            # 外部用户模式：使用 AI 识别 + 预设配置
+            source_platform = task_item.input_data.get("source_platform", "wechat")
+            default_user_name = task_item.input_data.get("default_user_name")
+
+            feedback_data["anonymous_source"] = ai_platform or source_platform
+            feedback_data["anonymous_author"] = ai_user_name or default_user_name or "匿名用户"
+
+        # 5. 创建反馈
+        feedback = Feedback(**feedback_data)
         db.add(feedback)
 
         # 4. 记录积分消耗

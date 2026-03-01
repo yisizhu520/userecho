@@ -360,3 +360,62 @@ export async function uploadFeedbackImage(file: File): Promise<{ url: string }> 
     });
   }
 }
+
+/** 批量截图识别请求 */
+export interface ScreenshotBatchUploadRequest {
+  image_urls: string[];
+  board_id: string;
+  author_type: 'customer' | 'external';
+  // 内部客户模式
+  default_customer_name?: string;
+  // 外部用户模式
+  source_platform?: string;
+  default_user_name?: string;
+}
+
+/** 批量任务响应 */
+export interface BatchJobResponse {
+  batch_id: string;
+  celery_task_id: string | null;
+  total_count: number;
+}
+
+/** 批量任务进度 */
+export interface BatchJobProgress {
+  batch_id: string;
+  task_type: string;
+  name: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  total_count: number;
+  pending_count: number;
+  processing_count: number;
+  completed_count: number;
+  failed_count: number;
+  progress: number;
+  summary?: any;
+  created_time: string;
+  started_time?: string;
+  completed_time?: string;
+  celery_task_id?: string;
+}
+
+/**
+ * 批量截图识别（前端直传模式）
+ */
+export async function screenshotBatchUpload(data: ScreenshotBatchUploadRequest) {
+  return requestClient.post<BatchJobResponse>('/api/v1/app/batch/feedbacks/screenshot-batch-upload', data);
+}
+
+/**
+ * 查询批量任务进度
+ */
+export async function getBatchJobProgress(batchId: string) {
+  return requestClient.get<BatchJobProgress>(`/api/v1/app/batch/jobs/${batchId}`);
+}
+
+/**
+ * 取消批量任务
+ */
+export async function cancelBatchJob(batchId: string) {
+  return requestClient.delete(`/api/v1/app/batch/jobs/${batchId}`);
+}

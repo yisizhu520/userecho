@@ -1,6 +1,6 @@
 """批量任务 API 接口"""
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from backend.common.security.jwt import CurrentTenantId, CurrentUserId
@@ -124,34 +124,67 @@ async def list_jobs(
 # ============================================================
 
 
+class ScreenshotBatchUploadRequest(BaseModel):
+    """批量截图识别请求"""
+
+    image_urls: list[str]
+    board_id: str
+    author_type: str  # 'customer' | 'external'
+    # 内部客户模式
+    default_customer_name: str | None = None
+    # 外部用户模式
+    source_platform: str | None = None
+    default_user_name: str | None = None
+
+
 @router.post("/feedbacks/screenshot-batch-upload", summary="批量上传截图")
 async def screenshot_batch_upload(
-    db: CurrentSession,
+    data: ScreenshotBatchUploadRequest,
     background_tasks: BackgroundTasks,
-    files: list[UploadFile] = File(...),
-    board_id: str | None = None,
+    db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     user_id: str = CurrentUserId,
 ):
-    """批量上传截图（便捷接口）"""
-    from backend.utils.storage import storage
+    """
+    批量截图识别（前端直传模式）
+
+    前端流程：
+    1. 并发上传所有图片到 OSS
+    2. 收集所有 CDN URL
+    3. 调用本接口传递 URL 列表 + 配置
+
+    后端流程：
+    1. 创建批量任务
+    2. Celery 异步识别所有截图
+    3. 自动创建反馈（使用预设配置）
+    """
     from backend.utils.timezone import timezone
 
-    # 1. 上传文件到 OSS
+    if not data.image_urls:
+        raise HTTPException(status_code=400, detail="image_urls cannot be empty")
+
+    if len(data.image_urls) > 50:
+        raise HTTPException(status_code=400, detail="最多支持 50 张截图")
+
+    # 构建任务项（每个 URL 一个任务）
     items = []
-    for file in files:
-        # 上传到 OSS
-        storage_path = f"screenshots/{tenant_id}/{timezone.now().strftime('%Y%m%d')}/{file.filename}"
-        image_url = await storage.upload(file.file, storage_path, content_type=file.content_type)
+    for image_url in data.image_urls:
+        item = {
+            "image_url": image_url,
+            "board_id": data.board_id,
+            "author_type": data.author_type,
+        }
 
-        items.append(
-            {
-                "image_url": image_url,
-                "board_id": board_id,
-            }
-        )
+        # 根据来源类型附加配置
+        if data.author_type == "customer":
+            item["default_customer_name"] = data.default_customer_name
+        else:
+            item["source_platform"] = data.source_platform
+            item["default_user_name"] = data.default_user_name
 
-    # 2. 创建批量任务
+        items.append(item)
+
+    # 创建批量任务
     batch_job = await create_batch_job(
         db=db,
         tenant_id=tenant_id,
