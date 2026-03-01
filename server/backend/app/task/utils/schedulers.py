@@ -103,10 +103,19 @@ class ModelEntry(ScheduleEntry):
 
     async def _disable(self, model: TaskScheduler) -> None:
         """禁用任务"""
-        model.no_changes = True
+        # ✅ 在新 Session 中重新查询对象，而不是操作 detached 实例
+        async with async_db_session.begin() as db:
+            stmt = select(TaskScheduler).where(TaskScheduler.id == model.id)
+            result = await db.execute(stmt)
+            task = result.scalars().first()
+            if task:
+                task.no_changes = True
+                task.enabled = False
+                # Session 自动 commit
+
+        # ✅ 更新内存中的状态
         self.model.enabled = self.enabled = model.enabled = False
-        async with async_db_session.begin():
-            model.enabled = False
+        model.no_changes = True
 
     def is_due(self) -> tuple[bool, int | float]:
         """任务到期状态"""

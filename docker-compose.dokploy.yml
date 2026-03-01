@@ -63,6 +63,8 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DATABASE=${REDIS_DATABASE:-0}
+      # 远程 Redis 需要更长的超时时间
+      - REDIS_TIMEOUT=${REDIS_TIMEOUT:-30}
 
       # ======= Celery Broker 配置 =======
       # 使用独立的 Redis 数据库 1（避免和应用数据混在一起）

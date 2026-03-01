@@ -53,14 +53,21 @@ class RedisCli(Redis):
         """触发初始化连接"""
         try:
             await self.ping()
-        except TimeoutError:
-            log.error("❌ 数据库 redis 连接超时")
+        except TimeoutError as e:
+            if settings.REDIS_URL:
+                log.error(f"❌ Redis 连接超时: REDIS_URL={settings.REDIS_URL[:50]}... | {e}")
+            else:
+                log.error(
+                    f"❌ Redis 连接超时: {settings.REDIS_HOST}:{settings.REDIS_PORT} "
+                    f"(db={settings.REDIS_DATABASE}, timeout={settings.REDIS_TIMEOUT}s) | {e}"
+                )
             sys.exit()
-        except AuthenticationError:
-            log.error("❌ 数据库 redis 连接认证失败")
+        except AuthenticationError as e:
+            log.error(f"❌ Redis 认证失败: {e}")
             sys.exit()
         except Exception as e:
-            log.error("❌ 数据库 redis 连接异常 {}", e)
+            log.error(f"❌ Redis 连接异常: {e}")
+            log.exception(e)
             sys.exit()
 
     async def delete_prefix(self, prefix: str, exclude: str | list[str] | None = None, batch_size: int = 1000) -> None:

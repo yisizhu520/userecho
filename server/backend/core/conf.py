@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     REDIS_DATABASE: int = 0
 
     # Redis
-    REDIS_TIMEOUT: int = 5
+    REDIS_TIMEOUT: int = 10  # 增加到 10 秒，适应远程 Redis
 
     # .env Snowflake
     SNOWFLAKE_DATACENTER_ID: int | None = None
