@@ -113,15 +113,22 @@ export interface ImportConfig {
   default_external_user_name?: string;
 }
 
-/** 截图识别提取的数据 */
-export interface ExtractedScreenshotData {
-  platform: 'wechat' | 'xiaohongshu' | 'appstore' | 'weibo' | 'other';
+/** 单条反馈数据 */
+export interface FeedbackItem {
+  platform: 'wechat' | 'xiaohongshu' | 'appstore' | 'weibo' | 'qq' | 'other';
   user_name: string;
   user_id: string;
   content: string;
-  feedback_type: 'bug' | 'feature' | 'complaint' | 'other';
+  feedback_type: 'bug' | 'feature' | 'improvement' | 'performance' | 'complaint' | 'other';
   sentiment: 'positive' | 'neutral' | 'negative';
   confidence: number;
+}
+
+/** 截图识别提取的数据（新版：支持多条反馈） */
+export interface ExtractedScreenshotData {
+  raw_text: string;                // OCR 提取的原始文本
+  feedback_list: FeedbackItem[];   // 反馈列表（支持多条）
+  overall_confidence: number;      // 整体置信度
 }
 
 /** 截图识别响应（异步模式） */

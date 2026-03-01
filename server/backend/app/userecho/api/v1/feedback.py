@@ -313,7 +313,7 @@ async def batch_generate_summary(
                 log.warning(f"Failed to generate summary for feedback {feedback.id}: {e}")
                 failed_count += 1
 
-        await db.commit()
+        # ✅ 自动提交 - 函数结束时自动 commit
 
         log.info(
             f"Batch summary generation completed for tenant {tenant_id}: {success_count} success, {failed_count} failed"
@@ -330,7 +330,8 @@ async def batch_generate_summary(
 
     except Exception as e:
         log.error(f"Batch summary generation failed for tenant {tenant_id}: {e}")
-        return response_base.fail(res=CustomResponse(code=500, msg=f"批量生成摘要失败: {e!s}"))
+        # ✅ 自动回滚 - 异常时自动 rollback
+        raise  # 重新抛出异常，让框架处理
 
 
 # ==================== 截图上传相关接口 ====================
@@ -698,7 +699,11 @@ async def create_feedback_from_screenshot(
             external_contact = data.external_contact
 
         # 2. 创建反馈记录
+        feedback_id = uuid4_str()
+        now = timezone.now()
+
         feedback = Feedback(
+            id=feedback_id,  # 显式生成 ID
             tenant_id=tenant_id,
             board_id=data.board_id,
             customer_id=customer_id,
@@ -712,14 +717,15 @@ async def create_feedback_from_screenshot(
             source_user_name=data.external_user_name,
             source_user_id=data.source_user_id,
             ai_confidence=data.ai_confidence,
-            submitted_at=timezone.now(),
+            is_urgent=False,  # 截图反馈默认不紧急
+            submitted_at=now,
+            created_time=now,  # 显式设置创建时间
             submitter_id=submitter_id,
         )
 
         # 4. 保存到数据库
         db.add(feedback)
-        await db.commit()
-        await db.refresh(feedback)
+        # ✅ 自动提交 - 函数结束时自动 commit
 
         # 异步生成摘要（仅长文本）
         if data.content and len(data.content) > 150:
@@ -740,5 +746,5 @@ async def create_feedback_from_screenshot(
         import traceback
 
         log.error(f"Traceback: {traceback.format_exc()}")
-        await db.rollback()
-        return response_base.fail(res=CustomResponse(code=500, msg=f"创建反馈失败: {e!s}"))
+        # ✅ 自动回滚 - 异常时自动 rollback
+        raise  # 重新抛出异常，让框架处理
