@@ -35,24 +35,28 @@ class TimeZone:
         return datetime.strptime(t_str, format_str).replace(tzinfo=self.tz_info)
 
     @staticmethod
-    def to_str(t: datetime, format_str: str = settings.DATETIME_FORMAT) -> str:
+    def to_str(t: datetime | None, format_str: str = settings.DATETIME_FORMAT) -> str | None:
         """
         将 datetime 对象转换为指定格式的时间字符串
 
-        :param t: datetime 对象
+        :param t: datetime 对象（可以是 None）
         :param format_str: 时间格式字符串，默认为 settings.DATETIME_FORMAT
-        :return:
+        :return: 格式化的时间字符串，或 None（如果输入为 None）
         """
+        if t is None:
+            return None
         return t.strftime(format_str)
 
     @staticmethod
-    def to_utc(t: datetime | int) -> datetime:
+    def to_utc(t: datetime | int | None) -> datetime | None:
         """
         将 datetime 对象或时间戳转换为 UTC 时区时间
 
-        :param t: 需要转换的 datetime 对象或时间戳
-        :return:
+        :param t: 需要转换的 datetime 对象、时间戳（可以是 None）
+        :return: UTC 时区的 datetime 对象，或 None（如果输入为 None）
         """
+        if t is None:
+            return None
         if isinstance(t, datetime):
             return t.astimezone(datetime_timezone.utc)
         return datetime.fromtimestamp(t, tz=datetime_timezone.utc)

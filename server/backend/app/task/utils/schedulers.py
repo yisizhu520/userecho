@@ -13,6 +13,7 @@ from celery.beat import ScheduleEntry, Scheduler
 from celery.signals import beat_init
 from celery.utils.log import get_logger
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DatabaseError, InterfaceError
 
 from backend.app.task.enums import PeriodType, TaskSchedulerType
@@ -171,20 +172,29 @@ class ModelEntry(ScheduleEntry):
 
     @classmethod
     async def from_entry(cls, name, app=None, **entry) -> ModelEntry:
-        """保存或更新本地任务调度"""
+        """
+        保存或更新本地任务调度（幂等）
+
+        使用 UPSERT 消除并发冲突，支持多 worker 同时启动
+        """
         async with async_db_session.begin() as db:
-            stmt = select(TaskScheduler).where(TaskScheduler.name == name)
-            query = await db.execute(stmt)
-            task = query.scalars().first()
+            # 准备数据
             temp = await cls._unpack_fields(name, **entry)
-            if not task:
-                task = TaskScheduler(**temp)
-                db.add(task)
-            else:
-                for key, value in temp.items():
-                    setattr(task, key, value)
-            res = cls(task, app=app)
-            return res
+
+            # PostgreSQL UPSERT: INSERT ... ON CONFLICT DO UPDATE
+            stmt = insert(TaskScheduler).values(**temp)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["name"],  # 唯一约束列
+                set_={k: v for k, v in temp.items() if k != "name"},  # 更新所有字段（除了 name）
+            )
+            await db.execute(stmt)
+
+            # 查询插入/更新后的记录
+            query_stmt = select(TaskScheduler).where(TaskScheduler.name == name)
+            result = await db.execute(query_stmt)
+            task = result.scalars().first()
+
+            return cls(task, app=app)
 
     @staticmethod
     async def to_model_schedule(name: str, task: str, schedule: schedules.schedule | TzAwareCrontab) -> TaskScheduler:
