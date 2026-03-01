@@ -157,13 +157,20 @@ async def create_demo_subscription() -> None:
         )
         db.add(history)
 
+        # 在 commit 前保存需要显示的值
+        plan_name = pro_plan.name
+        plan_code = pro_plan.code
+        subscription_status = subscription.status
+        subscription_started_at = subscription.started_at
+        subscription_expires_at = subscription.expires_at
+
         await db.commit()
 
         print("✅ 专业版订阅创建成功")
-        print(f"   套餐: {pro_plan.name} ({pro_plan.code})")
-        print(f"   状态: {subscription.status}")
-        print(f"   开始时间: {subscription.started_at}")
-        print(f"   到期时间: {subscription.expires_at}")
+        print(f"   套餐: {plan_name} ({plan_code})")
+        print(f"   状态: {subscription_status}")
+        print(f"   开始时间: {subscription_started_at}")
+        print(f"   到期时间: {subscription_expires_at}")
         print("   有效期: 365 天（一年）")
 
 

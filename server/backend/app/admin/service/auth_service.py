@@ -102,7 +102,9 @@ class AuthService:
             user, days_remaining = await self.user_verify(db, obj.email, obj.password)
 
             await load_login_config(db)
-            if settings.LOGIN_CAPTCHA_ENABLED:
+            # Demo 角色切换场景：captcha 为 None 时跳过验证码检查
+            is_demo_switch = obj.captcha is None and obj.uuid is None
+            if settings.LOGIN_CAPTCHA_ENABLED and not is_demo_switch:
                 if not obj.uuid or not obj.captcha:
                     raise errors.RequestError(msg=t("error.captcha.invalid"))
                 captcha_code = await redis_client.get(f"{settings.LOGIN_CAPTCHA_REDIS_PREFIX}:{obj.uuid}")
