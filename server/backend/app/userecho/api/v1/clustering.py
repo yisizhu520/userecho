@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends, Query
 from fastapi_limiter.depends import RateLimiter
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import silhouette_score
@@ -40,6 +40,7 @@ async def trigger_clustering(
     max_feedbacks: int = 100,
     force_recluster: bool = False,
     async_mode: bool = False,
+    board_ids: list[str] | None = Body(None, embed=True),
 ) -> Any:
     """
     触发 AI 聚类任务
@@ -47,9 +48,10 @@ async def trigger_clustering(
     自动聚类未聚类的反馈，生成需求主题
 
     - **max_feedbacks**: 最多处理的反馈数量（默认100）
+    - **board_ids**: 指定需要聚类的看板ID列表（如果不传，则处理所有看板但会混合在一起；建议传入）
 
     流程：
-    1. 获取未聚类的反馈
+    1. 获取未聚类的反馈（按 board_ids 循环处理）
     2. 提取 AI embedding 向量
     3. 执行 DBSCAN 聚类
     4. 为每个聚类生成主题标题
@@ -59,7 +61,11 @@ async def trigger_clustering(
         async_result = celery_app.send_task(
             name="userecho_clustering_batch",
             args=[tenant_id],
-            kwargs={"max_feedbacks": max_feedbacks, "force_recluster": force_recluster},
+            kwargs={
+                "max_feedbacks": max_feedbacks,
+                "force_recluster": force_recluster,
+                "board_ids": board_ids,
+            },
         )
         return response_base.success(
             data={"status": "accepted", "task_id": async_result.id},
@@ -71,6 +77,7 @@ async def trigger_clustering(
         tenant_id=tenant_id,
         max_feedbacks=max_feedbacks,
         force_recluster=force_recluster,
+        board_ids=board_ids,
     )
 
     if result["status"] == "error":
@@ -112,6 +119,7 @@ async def get_clustering_task_status(
 async def get_clustering_status(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
+    board_ids: list[str] | None = Query(None),
 ) -> Any:
     """
     获取聚类状态概览
@@ -148,6 +156,9 @@ async def get_clustering_status(
         Feedback.clustering_status == "processing",
         Feedback.updated_time < timeout_threshold,
     )
+    if board_ids:
+        stale_processing_query = stale_processing_query.where(Feedback.board_id.in_(board_ids))
+
     stale_processing_ids = list(await db.scalars(stale_processing_query))
 
     # 如果发现超时记录，自动清理并记录日志
@@ -183,6 +194,9 @@ async def get_clustering_status(
         Feedback.clustering_status == "processing",
         Feedback.updated_time >= timeout_threshold,  # 只统计最近10分钟内的
     )
+    if board_ids:
+        processing_query = processing_query.where(Feedback.board_id.in_(board_ids))
+
     processing_count = await db.scalar(processing_query) or 0
 
     # ========================================
@@ -194,6 +208,9 @@ async def get_clustering_status(
         Feedback.topic_id.is_(None),
         Feedback.clustering_status == "pending",
     )
+    if board_ids:
+        pending_query = pending_query.where(Feedback.board_id.in_(board_ids))
+
     pending_count = await db.scalar(pending_query) or 0
 
     # ========================================
@@ -210,6 +227,9 @@ async def get_clustering_status(
         .order_by(Feedback.updated_time.desc())
         .limit(1)
     )
+    if board_ids:
+        last_clustered_query = last_clustered_query.where(Feedback.board_id.in_(board_ids))
+
     last_metadata = await db.scalar(last_clustered_query)
 
     last_run_at = None

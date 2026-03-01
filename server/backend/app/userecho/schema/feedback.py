@@ -74,6 +74,7 @@ class FeedbackOut(FeedbackBase):
     id: str = Field(description="反馈ID")
     tenant_id: str = Field(description="租户ID")
     board_id: str | None = Field(None, description="看板ID")
+    board_name: str | None = Field(None, description="看板名称")
     customer_id: str | None = Field(None, description="客户ID")
     customer_name: str | None = Field(None, description="客户名称 (关联查询)")
     author_type: str = Field(default="customer", description="来源类型: customer=内部客户, external=外部用户")

@@ -76,20 +76,25 @@ export interface TriggerClusteringParams {
   max_feedbacks?: number;
   force_recluster?: boolean;
   async_mode?: boolean;
+  board_ids?: string[];
 }
 
 /**
  * 触发聚类任务
  */
 export async function triggerClustering(params: TriggerClusteringParams = {}) {
-  return requestClient.post<ClusteringResult | ClusteringTaskAccepted>('/api/v1/app/clustering/trigger', null, {
-    params: {
-      max_feedbacks: 100,
-      force_recluster: false,
-      async_mode: true,  // 默认使用异步模式，避免请求超时
-      ...params
-    },
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { board_ids, ...restParams } = params;
+  return requestClient.post<ClusteringResult | ClusteringTaskAccepted>('/api/v1/app/clustering/trigger',
+    { board_ids }, // Pass board_ids in request body
+    {
+      params: {
+        max_feedbacks: 100,
+        force_recluster: false,
+        async_mode: true,  // 默认使用异步模式，避免请求超时
+        ...restParams
+      },
+    });
 }
 
 /**
@@ -97,6 +102,22 @@ export async function triggerClustering(params: TriggerClusteringParams = {}) {
  */
 export async function getClusteringTaskStatus(taskId: string) {
   return requestClient.get<ClusteringTaskStatus>(`/api/v1/app/clustering/task/${taskId}`);
+}
+
+
+/**
+ * 获取聚类状态概览（支持按 boardIds 筛选）
+ */
+export async function getClusteringStatus(boardIds?: string[]) {
+  return requestClient.get<{
+    pending_count: number;
+    processing_count: number;
+    last_run_at: string | null;
+  }>('/api/v1/app/clustering/status', {
+    params: {
+      board_ids: boardIds,
+    },
+  });
 }
 
 /**

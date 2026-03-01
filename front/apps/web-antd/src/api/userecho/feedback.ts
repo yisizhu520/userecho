@@ -9,6 +9,7 @@ export interface Feedback {
   id: string;
   tenant_id: string;
   board_id?: string;
+  board_name?: string;
   customer_id?: string;
   customer_name?: string;
   anonymous_author?: string;

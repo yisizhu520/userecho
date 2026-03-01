@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { requestClient } from '#/api/request';
+import { getClusteringStatus } from '#/api/userecho/clustering';
+
+const props = defineProps<{
+  boardIds?: string[];
+}>();
 
 const loading = ref(false);
 const status = ref<{
@@ -13,13 +18,17 @@ const status = ref<{
 const loadStatus = async () => {
   loading.value = true;
   try {
-    status.value = await requestClient.get('/api/v1/app/clustering/status');
+    status.value = await getClusteringStatus(props.boardIds);
   } catch (error) {
     console.error('Failed to load clustering status:', error);
   } finally {
     loading.value = false;
   }
 };
+
+watch(() => props.boardIds, () => {
+    loadStatus();
+}, { deep: true });
 
 onMounted(() => {
   loadStatus();
@@ -43,15 +52,32 @@ const bannerType = computed(() => {
 const statusText = computed(() => {
   if (!status.value) return '';
   
+  const pending = status.value.pending_count;
+  const processing = status.value.processing_count;
   const parts = [];
-  if (status.value.pending_count > 0) {
-    parts.push(`${status.value.pending_count} 条反馈待整理`);
+
+  // 看板上下文提示
+  let contextPrefix = '';
+  if (props.boardIds && props.boardIds.length > 0) {
+      if (props.boardIds.length === 1) {
+          // TODO: 这里最好能拿到 board name，但 status 接口没返回，前端 store 里有
+          // 暂时简单处理
+          contextPrefix = '当前看板：';
+      } else {
+          contextPrefix = `当前 ${props.boardIds.length} 个看板：`;
+      }
   }
-  if (status.value.processing_count > 0) {
-    parts.push(`${status.value.processing_count} 条正在处理`);
+
+  if (pending > 0) {
+    parts.push(`${pending} 条反馈待整理`);
+  }
+  if (processing > 0) {
+    parts.push(`${processing} 条正在处理`);
   }
   
-  return parts.join('，');
+  if (parts.length === 0) return '所有反馈已整理完成';
+
+  return (contextPrefix ? contextPrefix : '') + parts.join('，');
 });
 
 // 格式化时间
@@ -59,7 +85,12 @@ const formattedLastRun = computed(() => {
   if (!status.value?.last_run_at) return '从未运行';
   
   const date = new Date(status.value.last_run_at);
-  return date.toLocaleString('zh-CN');
+  return date.toLocaleString('zh-CN', { 
+    month: 'numeric', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
 });
 
 // 触发聚类

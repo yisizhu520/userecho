@@ -200,11 +200,12 @@ class PriorityService:
         customer_count: int,
         feedback_count: int,
         is_urgent: bool = False,
+        customer_ids: set[str] | None = None,
     ) -> None:
         """
         为新创建的 Topic 生成默认优先级评分
 
-        用于聚类时自动生成建议评分（使用快速规则，不调用 AI）
+        用于聚类时自动生成建议评分（使用快速规则,不调用 AI）
 
         Args:
             db: 数据库会话
@@ -215,9 +216,23 @@ class PriorityService:
             customer_count: 涉及客户数量
             feedback_count: 反馈数量
             is_urgent: 是否紧急
+            customer_ids: 可选,涉及的客户ID集合(用于聚类时避免查询数据库)
         """
-        # 商业价值：自动计算
-        business_value = await self.calculate_business_value(db, topic_id, tenant_id)
+        # 商业价值：如果提供了 customer_ids,使用简化计算;否则查询数据库
+        if customer_ids is not None:
+            # 简化计算:基于客户数量的默认值(避免查询数据库)
+            if customer_count == 0:
+                business_value = 1  # 匿名反馈默认最低价值
+            elif customer_count >= 3:
+                business_value = 3  # 多客户加成
+            else:
+                business_value = 1  # 默认值
+            log.debug(
+                f"Using simplified business_value calculation: {business_value} (based on {customer_count} customers)"
+            )
+        else:
+            # 完整计算:查询数据库获取客户详情
+            business_value = await self.calculate_business_value(db, topic_id, tenant_id)
 
         # 影响范围：快速规则判断
         impact_suggestion = await self.suggest_impact_scope_fast(customer_count, feedback_count)
@@ -230,8 +245,11 @@ class PriorityService:
         # 紧急系数
         urgency_factor = 1.5 if is_urgent else 1.0
 
-        # 创建评分
-        await crud_priority_score.upsert(
+        # 计算总分: (影响 × 价值) / 成本 × 紧急系数
+        total_score = (impact_scope * business_value) / dev_cost * urgency_factor
+
+        # 直接创建评分(不使用 upsert,避免查询数据库检查是否已存在)
+        await crud_priority_score.create(
             db=db,
             tenant_id=tenant_id,
             topic_id=topic_id,
@@ -239,6 +257,7 @@ class PriorityService:
             business_value=business_value,
             dev_cost=dev_cost,
             urgency_factor=urgency_factor,
+            total_score=total_score,
         )
 
         log.info(

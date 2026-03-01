@@ -21,9 +21,13 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         limit: int = 100,
         include_failed: bool = True,
         force_recluster: bool = False,
+        board_id: str | None = None,
     ) -> list[Feedback]:
         """
         获取待聚类的反馈（避免 topic_id=NULL 的噪声点被反复聚类）
+
+        Args:
+            board_id: 可选，指定看板ID。如果为 None，则获取所有看板的待聚类反馈（全局模式）。
 
         规则：
         - 仅处理 topic_id IS NULL
@@ -49,7 +53,10 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
             .limit(limit)
         )
 
-        log.debug(f"Query pending clustering: tenant={tenant_id}, statuses={statuses}, limit={limit}")
+        if board_id:
+            query = query.where(self.model.board_id == board_id)
+
+        log.debug(f"Query pending clustering: tenant={tenant_id}, board={board_id}, statuses={statuses}, limit={limit}")
         result = await db.execute(query)
         feedbacks = list(result.scalars().all())
         log.debug(f"Found {len(feedbacks)} pending feedbacks")
@@ -437,6 +444,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
     ) -> list[dict]:
         from sqlalchemy.orm import aliased
         from backend.app.admin.model.user import User
+        from backend.app.userecho.model.board import Board
         from backend.app.userecho.model.customer import Customer
         from backend.app.userecho.model.topic import Topic
 
@@ -451,10 +459,12 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 TopicAlias.title.label("topic_title"),
                 TopicAlias.status.label("topic_status"),
                 User.username.label("submitter_name"),
+                Board.name.label("board_name"),
             )
             .outerjoin(CustomerAlias, self.model.customer_id == CustomerAlias.id)
             .outerjoin(TopicAlias, self.model.topic_id == TopicAlias.id)
             .outerjoin(User, self.model.submitter_id == User.id)
+            .outerjoin(Board, self.model.board_id == Board.id)
             .where(self.model.tenant_id == tenant_id, self.model.deleted_at.is_(None))
         )
 
@@ -488,6 +498,7 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 "topic_title": row.topic_title,
                 "topic_status": row.topic_status,
                 "submitter_name": row.submitter_name,
+                "board_name": row.board_name,
             }
             feedback_list.append(feedback_dict)
 
@@ -567,10 +578,12 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
                 f.created_time, f.updated_time,
                 c.name as customer_name,
                 t.title as topic_title,
+                b.name as board_name,
                 (1 - (f.embedding <=> '{embedding_str}'::vector)) as similarity_score
             FROM feedbacks f
             LEFT JOIN customers c ON f.customer_id = c.id
             LEFT JOIN topics t ON f.topic_id = t.id
+            LEFT JOIN boards b ON f.board_id = b.id
             WHERE {where_clause}
             ORDER BY f.embedding <=> '{embedding_str}'::vector
             LIMIT {limit} OFFSET {skip}

@@ -174,26 +174,23 @@ class ModelEntry(ScheduleEntry):
     async def from_entry(cls, name, app=None, **entry) -> ModelEntry:
         """
         保存或更新本地任务调度（幂等）
-
         使用 UPSERT 消除并发冲突，支持多 worker 同时启动
+        修复 execute 返回值类型误用，始终 select ORM 对象
         """
         async with async_db_session.begin() as db:
-            # 准备数据
             temp = await cls._unpack_fields(name, **entry)
-
-            # PostgreSQL UPSERT: INSERT ... ON CONFLICT DO UPDATE
+            # 只执行写入，不用任何 execute 返回值
             stmt = insert(TaskScheduler).values(**temp)
             stmt = stmt.on_conflict_do_update(
-                index_elements=["name"],  # 唯一约束列
-                set_={k: v for k, v in temp.items() if k != "name"},  # 更新所有字段（除了 name）
+                index_elements=["name"],
+                set_={k: v for k, v in temp.items() if k != "name"},
             )
             await db.execute(stmt)
-
-            # 查询插入/更新后的记录
+        # 必须在新 session 查询 ORM 对象，避免 session 关闭后对象失效
+        async with async_db_session() as db:
             query_stmt = select(TaskScheduler).where(TaskScheduler.name == name)
             result = await db.execute(query_stmt)
             task = result.scalars().first()
-
             return cls(task, app=app)
 
     @staticmethod

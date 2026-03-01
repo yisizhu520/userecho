@@ -87,16 +87,29 @@ def generate_feedback_embedding_task(
 
     async def _async_run() -> dict:
         try:
-            log.info(f"[Task {self.request.id}] Generating embedding for feedback {feedback_id}")
+            log.info(f"[Task {self.request.id}] Checking existing embedding for feedback {feedback_id}")
 
-            # 生成 embedding
-            embedding = await ai_client.get_embedding(content)
-            if not embedding:
-                log.warning(f"[Task {self.request.id}] Failed to get embedding for feedback {feedback_id}")
-                return {"feedback_id": feedback_id, "success": False}
-
-            # 写入数据库
             async with local_db_session() as db:
+                # 1. 检查是否已经有了 embedding（例如通过 API 创建时已带入或导入数据）
+                feedback = await crud_feedback.get_by_id(db, tenant_id, feedback_id)
+                if not feedback:
+                    log.warning(f"[Task {self.request.id}] Feedback {feedback_id} not found")
+                    return {"feedback_id": feedback_id, "success": False}
+
+                if feedback.embedding is not None:
+                    log.info(
+                        f"[Task {self.request.id}] Embedding already exists for feedback {feedback_id}, skipping calculation"
+                    )
+                    return {"feedback_id": feedback_id, "success": True, "skipped": True}
+
+                # 2. 生成 embedding
+                log.info(f"[Task {self.request.id}] Generating embedding for feedback {feedback_id}")
+                embedding = await ai_client.get_embedding(content)
+                if not embedding:
+                    log.warning(f"[Task {self.request.id}] Failed to get embedding for feedback {feedback_id}")
+                    return {"feedback_id": feedback_id, "success": False}
+
+                # 3. 写入数据库
                 await crud_feedback.update_embedding(
                     db=db,
                     tenant_id=tenant_id,
@@ -106,7 +119,7 @@ def generate_feedback_embedding_task(
 
             log.info(f"[Task {self.request.id}] Embedding generated for feedback {feedback_id}")
 
-            # 记录积分消耗
+            # 4. 记录积分消耗
             try:
                 from backend.app.userecho.service.credits_service import credits_service
 
@@ -121,7 +134,8 @@ def generate_feedback_embedding_task(
                     )
             except Exception as e:
                 log.warning(f"Failed to record credits for embedding task: {e}")
-                return {"feedback_id": feedback_id, "success": False}
+                # 积分记录失败不应导致任务整体失败
+                return {"feedback_id": feedback_id, "success": True}
             else:
                 return {"feedback_id": feedback_id, "success": True}
 
@@ -237,6 +251,7 @@ def userecho_clustering_batch(
     tenant_id: str,
     max_feedbacks: int = 100,
     force_recluster: bool = False,
+    board_ids: list[str] | None = None,
 ) -> dict:
     """
     UserEcho 聚类批处理任务
@@ -252,6 +267,7 @@ def userecho_clustering_batch(
         tenant_id: 租户 ID
         max_feedbacks: 最大处理反馈数
         force_recluster: 是否强制重新聚类
+        board_ids: 看板 ID 列表
 
     Event Loop 管理：
     - 不使用 asyncio.run()，因为它会关闭 loop 导致第二次任务失败
@@ -266,6 +282,7 @@ def userecho_clustering_batch(
                 tenant_id=tenant_id,
                 max_feedbacks=max_feedbacks,
                 force_recluster=force_recluster,
+                board_ids=board_ids,
             )
 
     # 手动管理 event loop，避免 asyncio.run() 关闭 loop 的问题

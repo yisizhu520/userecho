@@ -316,8 +316,6 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
         """
         from sqlalchemy import text
 
-        from backend.common.log import log
-
         # 将 embedding 向量转换为 PostgreSQL vector 格式字符串
         embedding_str = str(query_embedding)
 
@@ -360,60 +358,54 @@ class CRUDTopic(TenantAwareCRUD[Topic]):
             LIMIT {limit} OFFSET {skip}
         """
 
-        try:
-            result = await db.execute(text(query_sql))
-            rows = result.all()
+        result = await db.execute(text(query_sql))
+        rows = result.all()
 
-            # 转换为 Topic 对象列表（包含关联的 priority_score）
-            topics = []
-            for row in rows:
-                from backend.app.userecho.model.priority_score import PriorityScore
+        # 转换为 Topic 对象列表（包含关联的 priority_score）
+        topics = []
+        for row in rows:
+            from backend.app.userecho.model.priority_score import PriorityScore
 
-                # 创建 Topic 对象
-                topic = Topic(
-                    id=row.id,
-                    tenant_id=row.tenant_id,
-                    title=row.title,
-                    category=row.category,
-                    status=row.status,
-                    description=row.description,
-                    ai_generated=row.ai_generated,
-                    ai_confidence=row.ai_confidence,
-                    feedback_count=row.feedback_count,
-                    cluster_quality=row.cluster_quality,
-                    is_noise=row.is_noise,
-                    deleted_at=row.deleted_at,
-                    created_time=row.created_time,
-                    updated_time=row.updated_time,
+            # 创建 Topic 对象
+            topic = Topic(
+                id=row.id,
+                tenant_id=row.tenant_id,
+                title=row.title,
+                category=row.category,
+                status=row.status,
+                description=row.description,
+                ai_generated=row.ai_generated,
+                ai_confidence=row.ai_confidence,
+                feedback_count=row.feedback_count,
+                cluster_quality=row.cluster_quality,
+                is_noise=row.is_noise,
+                deleted_at=row.deleted_at,
+                created_time=row.created_time,
+                updated_time=row.updated_time,
+            )
+
+            # 如果有 priority_score，创建关联对象
+            if row.ps_id:
+                topic.priority_score = PriorityScore(
+                    id=row.ps_id,
+                    tenant_id=row.ps_tenant_id,
+                    topic_id=row.ps_topic_id,
+                    impact_scope=row.impact_scope,
+                    business_value=row.business_value,
+                    dev_cost=row.dev_cost,
+                    urgency_factor=row.urgency_factor,
+                    total_score=row.total_score,
+                    details=row.details,
+                    created_time=row.ps_created_time,
+                    updated_time=row.ps_updated_time,
                 )
 
-                # 如果有 priority_score，创建关联对象
-                if row.ps_id:
-                    topic.priority_score = PriorityScore(
-                        id=row.ps_id,
-                        tenant_id=row.ps_tenant_id,
-                        topic_id=row.ps_topic_id,
-                        impact_scope=row.impact_scope,
-                        business_value=row.business_value,
-                        dev_cost=row.dev_cost,
-                        urgency_factor=row.urgency_factor,
-                        total_score=row.total_score,
-                        details=row.details,
-                        created_time=row.ps_created_time,
-                        updated_time=row.ps_updated_time,
-                    )
+            # 附加相似度评分（用于调试和展示）
+            topic.similarity_score = float(row.similarity_score)  # type: ignore
 
-                # 附加相似度评分（用于调试和展示）
-                topic.similarity_score = float(row.similarity_score)  # type: ignore
+            topics.append(topic)
 
-                topics.append(topic)
-
-            return topics
-
-        except Exception as e:
-            log.error(f"Semantic search failed for topics: {e}")
-            # Fallback: 返回空列表
-            return []
+        return topics
 
 
 crud_topic = CRUDTopic(Topic)

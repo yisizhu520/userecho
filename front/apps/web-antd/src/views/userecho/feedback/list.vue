@@ -243,7 +243,11 @@ const handleTriggerClustering = async () => {
     clusteringModalOpen.value = true;
     clusteringTaskId.value = '';
 
-    const resp: any = await triggerClustering({ async_mode: true });
+    const boardIds = filterValues.value.board_ids;
+    const resp: any = await triggerClustering({ 
+      async_mode: true,
+      board_ids: boardIds && boardIds.length > 0 ? boardIds : undefined
+    });
     if (resp?.status === 'accepted' && resp?.task_id) {
       clusteringTaskId.value = resp.task_id;
       return;
@@ -334,6 +338,7 @@ onBeforeUnmount(() => {
         <!-- 智能整理状态横幅 -->
         <ClusteringStatusBanner 
           ref="clusteringBannerRef"
+          :board-ids="filterValues.board_ids"
           @trigger-clustering="handleTriggerClustering"
         />
         

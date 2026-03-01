@@ -116,6 +116,14 @@ export function useColumns(
       },
     },
     {
+      field: 'board_name',
+      title: '看板',
+      width: 120,
+      formatter({ row }) {
+        return row.board_name || '-';
+      },
+    },
+    {
       field: 'topic_title',
       title: '所属需求',
       width: 180,
