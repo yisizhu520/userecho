@@ -50,6 +50,24 @@ class FeedbackUpdate(SchemaBase):
     is_urgent: bool | None = Field(None, description="是否紧急")
 
 
+class UploadImageSignRequest(SchemaBase):
+    """获取图片直传签名请求"""
+
+    filename: str = Field(description="原始文件名")
+    content_type: str | None = Field(None, description="文件 MIME 类型")
+
+
+class UploadImageSignResponse(SchemaBase):
+    """图片直传签名响应"""
+
+    upload_url: str = Field(description="直传上传地址")
+    method: Literal["PUT"] = Field(default="PUT", description="上传方法")
+    headers: dict[str, str] = Field(default_factory=dict, description="上传请求头")
+    cdn_url: str = Field(description="上传完成后访问 URL")
+    object_key: str = Field(description="对象 Key")
+    expires_in: int = Field(description="签名有效期（秒）")
+
+
 class FeedbackOut(FeedbackBase):
     """反馈输出模型"""
 
@@ -58,6 +76,9 @@ class FeedbackOut(FeedbackBase):
     board_id: str | None = Field(None, description="看板ID")
     customer_id: str | None = Field(None, description="客户ID")
     customer_name: str | None = Field(None, description="客户名称 (关联查询)")
+    author_type: str = Field(default="customer", description="来源类型: customer=内部客户, external=外部用户")
+    external_user_name: str | None = Field(None, description="外部用户名称")
+    external_contact: str | None = Field(None, description="外部用户联系方式")
     submitter_id: int | None = Field(None, description="提交者ID (内部员工)")
     submitter_name: str | None = Field(None, description="提交者姓名 (关联查询)")
     anonymous_author: str | None = Field(None, description="匿名作者")
@@ -72,6 +93,11 @@ class FeedbackOut(FeedbackBase):
     images_metadata: dict | None = Field(
         None, description='截图元数据 {"images": [{"url": "...", "uploaded_at": "..."}]}'
     )
+    screenshot_url: str | None = Field(None, description="截图 URL（单张截图识别）")
+    source_platform: str | None = Field(None, description="来源平台: wechat/xiaohongshu/appstore/weibo/other")
+    source_user_name: str | None = Field(None, description="来源平台用户昵称")
+    source_user_id: str | None = Field(None, description="来源平台用户 ID")
+    ai_confidence: float | None = Field(None, description="AI 识别置信度 (0.00-1.00)")
     clustering_status: str | None = Field(None, description="聚类状态: pending/processing/clustered/failed")
     submitted_at: datetime = Field(description="提交时间")
     created_time: datetime = Field(description="创建时间")
@@ -123,6 +149,12 @@ class ScreenshotAnalyzeResponse(SchemaBase):
 
     screenshot_url: str = Field(description="截图 URL")
     extracted: ExtractedScreenshotData = Field(description="AI 提取的信息")
+
+
+class ScreenshotAnalyzeUrlRequest(SchemaBase):
+    """截图识别直传 URL 请求"""
+
+    screenshot_url: str = Field(description="截图 URL（已上传到对象存储）")
 
 
 class ScreenshotFeedbackCreate(SchemaBase):

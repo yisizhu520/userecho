@@ -113,15 +113,22 @@ export interface ImportConfig {
   default_external_user_name?: string;
 }
 
-/** 截图识别提取的数据 */
-export interface ExtractedScreenshotData {
-  platform: 'wechat' | 'xiaohongshu' | 'appstore' | 'weibo' | 'other';
+/** 单条反馈数据 */
+export interface FeedbackItem {
+  platform: 'wechat' | 'xiaohongshu' | 'appstore' | 'weibo' | 'qq' | 'other';
   user_name: string;
   user_id: string;
   content: string;
-  feedback_type: 'bug' | 'feature' | 'complaint' | 'other';
+  feedback_type: 'bug' | 'feature' | 'improvement' | 'performance' | 'complaint' | 'other';
   sentiment: 'positive' | 'neutral' | 'negative';
   confidence: number;
+}
+
+/** 截图识别提取的数据（新版：支持多条反馈） */
+export interface ExtractedScreenshotData {
+  raw_text: string;                // OCR 提取的原始文本
+  feedback_list: FeedbackItem[];   // 反馈列表（支持多条）
+  overall_confidence: number;      // 整体置信度
 }
 
 /** 截图识别响应（异步模式） */
@@ -129,6 +136,22 @@ export interface ScreenshotAnalyzeResponse {
   task_id: string;
   status: 'processing';
   status_url: string;
+}
+
+/** 直传签名请求 */
+export interface UploadImageSignRequest {
+  filename: string;
+  content_type?: string;
+}
+
+/** 直传签名响应 */
+export interface UploadImageSignResponse {
+  upload_url: string;
+  method: 'PUT';
+  headers: Record<string, string>;
+  cdn_url: string;
+  object_key: string;
+  expires_in: number;
 }
 
 /** 任务状态响应 */
@@ -268,6 +291,44 @@ export async function analyzeScreenshot(formData: FormData) {
 }
 
 /**
+ * 截图智能识别（URL）
+ */
+export async function analyzeScreenshotByUrl(screenshotUrl: string) {
+  return requestClient.post<ScreenshotAnalyzeResponse>('/api/v1/app/feedbacks/screenshot/analyze-url', {
+    screenshot_url: screenshotUrl,
+  });
+}
+
+/**
+ * 获取截图直传签名
+ * @deprecated 请使用 getUploadSign from '#/api/core/upload'
+ */
+export async function getFeedbackImageUploadSign(data: UploadImageSignRequest) {
+  return requestClient.post<UploadImageSignResponse>('/api/v1/app/feedbacks/upload-image/sign', data);
+}
+
+/**
+ * 直传到对象存储
+ * @deprecated 请使用 uploadToSignedUrl from '#/api/core/upload'
+ */
+export async function uploadImageToSignedUrl(sign: UploadImageSignResponse, file: File) {
+  const headers = new Headers(sign.headers || {});
+  if (!headers.has('Content-Type') && file.type) {
+    headers.set('Content-Type', file.type);
+  }
+
+  const response = await fetch(sign.upload_url, {
+    method: sign.method || 'PUT',
+    headers,
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error(`直传失败: ${response.status}`);
+  }
+}
+
+/**
  * 查询截图分析任务状态
  */
 export async function getScreenshotTaskStatus(taskId: string) {
@@ -285,9 +346,76 @@ export async function createFeedbackFromScreenshot(data: ScreenshotFeedbackCreat
  * 上传反馈截图（同步，用于手动创建反馈）
  */
 export async function uploadFeedbackImage(file: File): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  return requestClient.post('/api/v1/app/feedbacks/upload-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  try {
+    // 使用通用上传 API
+    const { uploadScreenshot } = await import('#/api/core/upload');
+    const url = await uploadScreenshot(file);
+    return { url };
+  } catch (error) {
+    // 回退到后端中转上传
+    const formData = new FormData();
+    formData.append('file', file);
+    return requestClient.post('/api/v1/app/feedbacks/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  }
+}
+
+/** 批量截图识别请求 */
+export interface ScreenshotBatchUploadRequest {
+  image_urls: string[];
+  board_id: string;
+  author_type: 'customer' | 'external';
+  // 内部客户模式
+  default_customer_name?: string;
+  // 外部用户模式
+  source_platform?: string;
+  default_user_name?: string;
+}
+
+/** 批量任务响应 */
+export interface BatchJobResponse {
+  batch_id: string;
+  celery_task_id: string | null;
+  total_count: number;
+}
+
+/** 批量任务进度 */
+export interface BatchJobProgress {
+  batch_id: string;
+  task_type: string;
+  name: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  total_count: number;
+  pending_count: number;
+  processing_count: number;
+  completed_count: number;
+  failed_count: number;
+  progress: number;
+  summary?: any;
+  create_time: string;
+  started_time?: string;
+  completed_time?: string;
+  celery_task_id?: string;
+}
+
+/**
+ * 批量截图识别（前端直传模式）
+ */
+export async function screenshotBatchUpload(data: ScreenshotBatchUploadRequest) {
+  return requestClient.post<BatchJobResponse>('/api/v1/app/batch/feedbacks/screenshot-batch-upload', data);
+}
+
+/**
+ * 查询批量任务进度
+ */
+export async function getBatchJobProgress(batchId: string) {
+  return requestClient.get<BatchJobProgress>(`/api/v1/app/batch/jobs/${batchId}`);
+}
+
+/**
+ * 取消批量任务
+ */
+export async function cancelBatchJob(batchId: string) {
+  return requestClient.delete(`/api/v1/app/batch/jobs/${batchId}`);
 }

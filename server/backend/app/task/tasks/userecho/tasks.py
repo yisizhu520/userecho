@@ -397,6 +397,64 @@ def analyze_screenshot_task(
 
 
 @shared_task(
+    name="userecho_analyze_screenshot_url",
+    bind=True,
+    max_retries=2,
+    default_retry_delay=5,
+    time_limit=120,  # 2分钟硬超时
+)
+def analyze_screenshot_url_task(self: Any, screenshot_url: str, tenant_id: str) -> dict:
+    """
+    使用截图 URL 进行 AI 识别（前端已直传）
+    """
+    from backend.common.log import log
+    from backend.utils.ai_client import ai_client
+
+    async def _async_run() -> dict:
+        try:
+            log.info(f"[Task {self.request.id}] Analyzing screenshot url with AI")
+            extracted_data = await ai_client.analyze_screenshot(screenshot_url)
+            log.info(f"[Task {self.request.id}] Analysis completed: confidence={extracted_data.get('confidence', 0)}")
+
+            try:
+                from backend.app.userecho.service.credits_service import credits_service
+
+                async with local_db_session() as db:
+                    await credits_service.consume(
+                        db=db,
+                        tenant_id=tenant_id,
+                        operation_type="screenshot",
+                        count=1,
+                        description="截图识别",
+                        extra_data={"confidence": extracted_data.get("confidence", 0)},
+                    )
+            except Exception as e:
+                log.warning(f"Failed to record credits for screenshot url task: {e}")
+
+            return {
+                "screenshot_url": screenshot_url,
+                "extracted": extracted_data,
+            }
+        except Exception as e:
+            log.error(f"[Task {self.request.id}] Screenshot url analysis failed: {e}")
+            raise
+
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    try:
+        return loop.run_until_complete(_async_run())
+    except Exception as e:
+        raise self.retry(exc=e)
+
+
+@shared_task(
     name="userecho.generate_insight_report",
     bind=True,
     time_limit=300,  # 5分钟硬超时

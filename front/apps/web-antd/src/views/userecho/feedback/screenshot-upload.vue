@@ -58,7 +58,7 @@
       <template v-else-if="analysisResult">
         <div class="analysis-result">
           <Row :gutter="24">
-            <!-- 左侧：截图预览 -->
+            <!-- 左侧：截图预览 + OCR 文本 -->
             <Col :span="10">
               <div class="screenshot-preview">
                 <Image
@@ -76,92 +76,154 @@
                   </Button>
                 </div>
               </div>
+
+              <!-- OCR 原始文本 -->
+              <Card v-if="rawText" size="small" class="raw-text-card" style="margin-top: 16px;">
+                <template #title>
+                  <span style="font-size: 14px;">📄 OCR 识别文本</span>
+                </template>
+                <div class="raw-text-content">
+                  <Textarea
+                    :value="rawText"
+                    :rows="6"
+                    readonly
+                    placeholder="暂无识别文本"
+                    style="font-size: 12px; color: #666; background: #fafafa;"
+                  />
+                  <div style="margin-top: 8px; text-align: right;">
+                    <Button size="small" @click="copyRawText">
+                      复制文本
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             </Col>
 
-            <!-- 右侧：提取信息表单 -->
+            <!-- 右侧：反馈列表 + 公共设置 -->
             <Col :span="14">
-              <Form
-                ref="formRef"
-                :model="formData"
-                :rules="formRules"
-                layout="vertical"
-              >
-                <FormItem label="目标看板" name="board_id">
-                  <Select
-                    v-model:value="formData.board_id"
-                    placeholder="选择目标看板"
-                    :loading="boardsLoading"
-                  >
-                    <SelectOption v-for="board in boards" :key="board.id" :value="board.id">
-                      {{ board.name }}
-                    </SelectOption>
-                  </Select>
-                </FormItem>
 
-                <FormItem label="来源类型" name="author_type">
-                  <RadioGroup v-model:value="formData.author_type">
-                    <Radio value="customer">内部客户</Radio>
-                    <Radio value="external">外部用户</Radio>
-                  </RadioGroup>
-                </FormItem>
-
-                <!-- 内部客户模式 -->
-                <template v-if="formData.author_type === 'customer'">
-                  <FormItem label="客户名称" name="customer_name">
-                    <CustomerAutoComplete
-                      v-model="formData.customer_name"
-                      v-model:customer-type="formData.customer_type"
-                      placeholder="输入客户名称"
-                      @customer-selected="onCustomerSelected"
-                    />
-                  </FormItem>
+              <!-- 公共设置 -->
+              <Card size="small" class="common-settings-card" style="margin-bottom: 16px;">
+                <template #title>
+                  <span style="font-size: 14px;">⚙️ 公共设置</span>
                 </template>
-
-                <!-- 外部用户模式 -->
-                <template v-else>
-                  <FormItem label="来源平台" name="source_platform">
-                    <Select v-model:value="formData.source_platform" placeholder="选择平台">
-                      <SelectOption value="wechat">微信</SelectOption>
-                      <SelectOption value="xiaohongshu">小红书</SelectOption>
-                      <SelectOption value="appstore">App Store</SelectOption>
-                      <SelectOption value="weibo">微博</SelectOption>
-                      <SelectOption value="other">其他</SelectOption>
+                <Form layout="vertical">
+                  <FormItem label="目标看板">
+                    <Select
+                      v-model:value="formData.board_id"
+                      placeholder="选择目标看板"
+                      :loading="boardsLoading"
+                    >
+                      <SelectOption v-for="board in boards" :key="board.id" :value="board.id">
+                        {{ board.name }}
+                      </SelectOption>
                     </Select>
                   </FormItem>
 
-                  <FormItem label="用户名称" name="external_user_name">
-                    <Input v-model:value="formData.external_user_name" placeholder="外部用户名称（用于回访）" />
+                  <FormItem label="来源类型">
+                    <RadioGroup v-model:value="formData.author_type">
+                      <Radio value="customer">内部客户</Radio>
+                      <Radio value="external">外部用户</Radio>
+                    </RadioGroup>
                   </FormItem>
 
-                  <FormItem label="联系方式">
-                    <Input v-model:value="formData.external_contact" placeholder="邮箱/手机（可选）" />
-                  </FormItem>
-                </template>
+                  <!-- 内部客户模式 -->
+                  <template v-if="formData.author_type === 'customer'">
+                    <FormItem label="客户名称">
+                      <CustomerAutoComplete
+                        v-model="formData.customer_name"
+                        v-model:customer-type="formData.customer_type"
+                        placeholder="输入客户名称"
+                        @customer-selected="onCustomerSelected"
+                      />
+                    </FormItem>
+                  </template>
 
-                <FormItem label="反馈内容" name="content">
-                  <Textarea
-                    v-model:value="formData.content"
-                    :rows="8"
-                    placeholder="提取的反馈内容"
-                  />
-                </FormItem>
+                  <!-- 外部用户模式 -->
+                  <template v-else>
+                    <FormItem label="联系方式">
+                      <Input v-model:value="formData.external_contact" placeholder="邮箱/手机（可选）" />
+                    </FormItem>
+                  </template>
+                </Form>
+              </Card>
 
-                <div class="analysis-status-alert">
+              <!-- 反馈列表 -->
+              <div class="feedback-list">
+                <div class="feedback-list-header">
+                  <span style="font-weight: 500; font-size: 14px;">📝 识别到的反馈（{{ enabledCount }}/{{ feedbackItems.length }}）</span>
                   <Alert
+                    v-if="aiConfidence > 0"
                     :type="confidenceInfo.color"
                     :message="confidenceInfo.text"
-                    :description="confidenceInfo.desc"
                     show-icon
+                    style="flex: 1; margin-left: 16px;"
                   />
                 </div>
 
-                <div class="form-actions">
-                  <Button @click="resetUpload">取消</Button>
-                  <Button type="primary" :loading="isCreating" @click="handleSubmit">
-                    确认创建
-                  </Button>
+                <div
+                  v-for="(item, index) in feedbackItems"
+                  :key="item.id"
+                  class="feedback-item-card"
+                  :class="{ 'feedback-item-disabled': !item.enabled }"
+                >
+                  <div class="feedback-item-header">
+                    <Checkbox v-model:checked="item.enabled">
+                      <span style="font-weight: 500;">反馈 {{ index + 1 }}</span>
+                      <span v-if="item.confidence > 0" style="margin-left: 8px; color: #999; font-size: 12px;">
+                        (置信度: {{ (item.confidence * 100).toFixed(0) }}%)
+                      </span>
+                    </Checkbox>
+                    <Button
+                      type="link"
+                      danger
+                      size="small"
+                      @click="removeFeedbackItem(index)"
+                    >
+                      删除
+                    </Button>
+                  </div>
+
+                  <div v-if="item.enabled" class="feedback-item-body">
+                    <FormItem label="来源平台" style="margin-bottom: 12px;">
+                      <Select v-model:value="item.platform" size="small">
+                        <SelectOption value="wechat">微信</SelectOption>
+                        <SelectOption value="xiaohongshu">小红书</SelectOption>
+                        <SelectOption value="appstore">App Store</SelectOption>
+                        <SelectOption value="weibo">微博</SelectOption>
+                        <SelectOption value="qq">QQ</SelectOption>
+                        <SelectOption value="other">其他</SelectOption>
+                      </Select>
+                    </FormItem>
+
+                    <FormItem label="用户名称" style="margin-bottom: 12px;">
+                      <Input v-model:value="item.user_name" size="small" placeholder="用户昵称" />
+                    </FormItem>
+
+                    <FormItem label="反馈内容" style="margin-bottom: 0;">
+                      <Textarea
+                        v-model:value="item.content"
+                        :rows="4"
+                        placeholder="请输入反馈内容"
+                        size="small"
+                      />
+                    </FormItem>
+                  </div>
                 </div>
-              </Form>
+              </div>
+
+              <!-- 批量操作 -->
+              <div class="form-actions">
+                <Button @click="resetUpload">取消</Button>
+                <Button
+                  type="primary"
+                  :loading="isCreating"
+                  :disabled="enabledCount === 0"
+                  @click="handleBatchSubmit"
+                >
+                  确认创建 {{ enabledCount }} 条反馈
+                </Button>
+              </div>
             </Col>
           </Row>
         </div>
@@ -191,20 +253,21 @@ import {
   Radio,
   RadioGroup,
   Alert,
+  Checkbox,
 } from 'ant-design-vue'
 import {
   CloudUploadOutlined,
   ReloadOutlined,
   SyncOutlined,
 } from '@ant-design/icons-vue'
-import { analyzeScreenshot, createFeedbackFromScreenshot, getScreenshotTaskStatus, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
+import { analyzeScreenshot, analyzeScreenshotByUrl, createFeedbackFromScreenshot, getScreenshotTaskStatus, type ScreenshotFeedbackCreateParams } from '#/api/userecho/feedback'
+import { getUploadSign, uploadToSignedUrl } from '#/api/core/upload'
 import { getBoardList, type Board } from '#/api/userecho/board'
 import CustomerAutoComplete from './components/CustomerAutoComplete.vue'
 import type { Customer } from '#/api'
 
 const router = useRouter()
 const fileInputRef = ref<HTMLInputElement>()
-const formRef = ref()
 
 // 上传状态
 const isDragOver = ref(false)
@@ -216,6 +279,8 @@ const uploadProgress = ref(0)
 // 识别结果
 const screenshotUrl = ref('')
 const analysisResult = ref<any>(null)
+const rawText = ref('')  // OCR 原始文本
+const feedbackItems = ref<any[]>([])  // 多条反馈列表
 const aiConfidence = ref(0)
 
 // 看板列表
@@ -261,6 +326,34 @@ const confidenceInfo = computed(() => {
   }
 })
 
+// 计算启用的反馈数量
+const enabledCount = computed(() => {
+  return feedbackItems.value.filter(item => item.enabled).length
+})
+
+// 复制原始文本
+const copyRawText = () => {
+  if (!rawText.value) {
+    message.warning('暂无文本可复制')
+    return
+  }
+  
+  navigator.clipboard.writeText(rawText.value).then(() => {
+    message.success('已复制到剪贴板')
+  }).catch(() => {
+    message.error('复制失败')
+  })
+}
+
+// 删除某条反馈
+const removeFeedbackItem = (index: number) => {
+  feedbackItems.value.splice(index, 1)
+  
+  if (feedbackItems.value.length === 0) {
+    message.info('已删除所有反馈')
+  }
+}
+
 onMounted(() => {
   loadBoards()
 })
@@ -285,45 +378,6 @@ const formData = reactive({
 const selectedCustomer = ref<Customer | null>(null)
 const onCustomerSelected = (customer: Customer | null) => {
   selectedCustomer.value = customer
-}
-
-const formRules: any = {
-  board_id: [{ required: true, message: '请选择目标看板', trigger: 'change' }],
-  content: [{ required: true, message: '请输入反馈内容', trigger: 'blur' }],
-  author_type: [{ required: true, message: '请选择来源类型', trigger: 'change' }],
-  customer_name: [{ 
-    required: true, 
-    message: '请输入客户名称', 
-    trigger: 'blur',
-    validator: (_rule: any, value: string) => {
-      if (formData.author_type === 'customer' && !value) {
-        return Promise.reject('请输入客户名称')
-      }
-      return Promise.resolve()
-    }
-  }],
-  source_platform: [{ 
-    required: true, 
-    message: '请选择来源平台', 
-    trigger: 'change',
-    validator: (_rule: any, value: string) => {
-      if (formData.author_type === 'external' && !value) {
-        return Promise.reject('请选择来源平台')
-      }
-      return Promise.resolve()
-    }
-  }],
-  external_user_name: [{ 
-    required: true, 
-    message: '请输入用户名称', 
-    trigger: 'blur',
-    validator: (_rule: any, value: string) => {
-      if (formData.author_type === 'external' && !value) {
-        return Promise.reject('请输入用户名称')
-      }
-      return Promise.resolve()
-    }
-  }],
 }
 
 const isCreating = ref(false)
@@ -389,11 +443,38 @@ const processFile = async (file: File) => {
     isUploading.value = true
     uploadProgress.value = 10
 
-    // 1. 提交异步任务
-    const formDataPayload = new FormData()
-    formDataPayload.append('file', file)
+    // 1. 尝试直传到对象存储
+    let screenshotUploadedUrl = ''
+    let useDirectUpload = false
 
-    const response = await analyzeScreenshot(formDataPayload)
+    try {
+      const sign = await getUploadSign({
+        filename: file.name,
+        upload_type: 'screenshot',
+        content_type: file.type,
+      })
+
+      uploadProgress.value = 20
+      await uploadToSignedUrl(sign, file)
+      screenshotUploadedUrl = sign.cdn_url
+      useDirectUpload = true
+      console.log('✅ 直传成功:', screenshotUploadedUrl)
+    } catch (error) {
+      console.warn('❌ 直传失败，回退到后端上传', error)
+      useDirectUpload = false
+    }
+
+    // 2. 提交异步任务
+    let response
+    if (useDirectUpload) {
+      console.log('→ 使用直传 URL 识别（不重复上传）')
+      response = await analyzeScreenshotByUrl(screenshotUploadedUrl)
+    } else {
+      console.log('→ 使用后端上传识别（回退模式）')
+      const formDataPayload = new FormData()
+      formDataPayload.append('file', file)
+      response = await analyzeScreenshot(formDataPayload)
+    }
     const taskId = response.task_id
 
     message.info('已提交识别任务，正在处理中...')
@@ -429,15 +510,37 @@ const processFile = async (file: File) => {
             // 保存结果
             screenshotUrl.value = status.result.screenshot_url
             analysisResult.value = status.result.extracted
-            aiConfidence.value = status.result.extracted.confidence
+            rawText.value = status.result.extracted.raw_text || ''
+            
+            // 处理反馈列表
+            const extractedList = status.result.extracted.feedback_list || []
+            if (extractedList.length === 0) {
+              message.warning('未识别到有效反馈内容，请手动填写')
+              // 创建空白表单项
+              feedbackItems.value = [{
+                id: Date.now(),
+                content: '',
+                platform: 'wechat',
+                user_name: '',
+                user_id: '',
+                confidence: 0,
+                enabled: true,
+              }]
+            } else {
+              // 转换为前端可编辑的格式
+              feedbackItems.value = extractedList.map((item: any, index: number) => ({
+                id: Date.now() + index,  // 唯一 ID
+                content: item.content || '',
+                platform: item.platform || 'wechat',
+                user_name: item.user_name || '',
+                user_id: item.user_id || '',
+                confidence: item.confidence || 0,
+                enabled: true,  // 默认全部启用
+              }))
 
-            // 填充表单
-            formData.content = status.result.extracted.content || ''
-            formData.source_platform = status.result.extracted.platform || 'wechat'
-            formData.external_user_name = status.result.extracted.user_name || ''
-            formData.source_user_id = status.result.extracted.user_id || ''
-
-            message.success('识别成功，请确认信息后提交')
+              aiConfidence.value = status.result.extracted.overall_confidence || 0
+              message.success(`识别成功，共识别到 ${feedbackItems.value.length} 条反馈`)
+            }
           } else {
             message.warning('识别完成，但未返回结果')
           }
@@ -499,7 +602,10 @@ const resetUpload = () => {
   uploadedFile.value = null
   screenshotUrl.value = ''
   analysisResult.value = null
+  rawText.value = ''
+  feedbackItems.value = []
   uploadProgress.value = 0
+  aiConfidence.value = 0
   // 恢复表单默认值（保留 board_id）
   formData.author_type = 'external'
   formData.customer_name = ''
@@ -519,50 +625,74 @@ const reanalyze = async () => {
   }
 }
 
-// 提交创建反馈
-const handleSubmit = async () => {
+// 批量提交创建反馈
+const handleBatchSubmit = async () => {
+  // 验证公共字段
+  if (!formData.board_id) {
+    message.warning('请选择目标看板')
+    return
+  }
+
+  if (formData.author_type === 'customer' && !formData.customer_name.trim()) {
+    message.warning('请输入客户名称')
+    return
+  }
+
+  // 获取启用的反馈
+  const enabledFeedbacks = feedbackItems.value.filter(item => item.enabled)
+  
+  if (enabledFeedbacks.length === 0) {
+    message.warning('请至少选择一条反馈')
+    return
+  }
+
+  // 验证每条反馈的内容
+  for (const item of enabledFeedbacks) {
+    if (!item.content.trim()) {
+      message.warning('请填写所有反馈的内容')
+      return
+    }
+    if (formData.author_type === 'external' && !item.user_name.trim()) {
+      message.warning('请填写所有反馈的用户名称')
+      return
+    }
+  }
+
   try {
-    await formRef.value.validate()
-
-    // 根据来源类型进行额外验证
-    if (formData.author_type === 'customer' && !formData.customer_name.trim()) {
-      message.warning('请输入客户名称')
-      return
-    }
-    if (formData.author_type === 'external' && !formData.external_user_name.trim()) {
-      message.warning('请输入用户名称')
-      return
-    }
-
     isCreating.value = true
 
-    const payload: ScreenshotFeedbackCreateParams = {
-      board_id: formData.board_id,
-      content: formData.content,
-      screenshot_url: screenshotUrl.value,
-      source_type: 'screenshot',
-      author_type: formData.author_type,
-      ai_confidence: aiConfidence.value,
-    }
-
-    if (formData.author_type === 'customer') {
-      // 内部客户模式
-      payload.customer_name = formData.customer_name
-      payload.customer_type = formData.customer_type
-      if (selectedCustomer.value) {
-        payload.customer_id = selectedCustomer.value.id
+    // 批量创建反馈
+    const promises = enabledFeedbacks.map(async (item) => {
+      const payload: ScreenshotFeedbackCreateParams = {
+        board_id: formData.board_id,
+        content: item.content,
+        screenshot_url: screenshotUrl.value,
+        source_type: 'screenshot',
+        author_type: formData.author_type,
+        ai_confidence: item.confidence,
       }
-    } else {
-      // 外部用户模式
-      payload.source_platform = formData.source_platform as any
-      payload.external_user_name = formData.external_user_name
-      payload.external_contact = formData.external_contact || undefined
-      payload.source_user_id = formData.source_user_id || undefined
-    }
 
-    await createFeedbackFromScreenshot(payload)
+      if (formData.author_type === 'customer') {
+        // 内部客户模式
+        payload.customer_name = formData.customer_name
+        payload.customer_type = formData.customer_type
+        if (selectedCustomer.value) {
+          payload.customer_id = selectedCustomer.value.id
+        }
+      } else {
+        // 外部用户模式
+        payload.source_platform = item.platform as any
+        payload.external_user_name = item.user_name
+        payload.external_contact = formData.external_contact || undefined
+        payload.source_user_id = item.user_id || undefined
+      }
 
-    message.success('反馈创建成功')
+      return createFeedbackFromScreenshot(payload)
+    })
+
+    await Promise.all(promises)
+
+    message.success(`成功创建 ${enabledFeedbacks.length} 条反馈`)
 
     // 跳转到反馈列表
     setTimeout(() => {
@@ -671,8 +801,55 @@ const handleSubmit = async () => {
     }
   }
 
-  .analysis-status-alert {
-    margin-bottom: 24px;
+  .raw-text-card {
+    border: 1px solid #e8e8e8;
+  }
+
+  .common-settings-card {
+    border: 1px solid #e8e8e8;
+  }
+
+  .feedback-list {
+    .feedback-list-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: #fafafa;
+      border-radius: 8px;
+    }
+
+    .feedback-item-card {
+      margin-bottom: 16px;
+      padding: 16px;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      background: #fff;
+      transition: all 0.3s;
+
+      &:hover {
+        border-color: #1890ff;
+        box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+      }
+
+      &.feedback-item-disabled {
+        opacity: 0.5;
+        background: #fafafa;
+      }
+
+      .feedback-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .feedback-item-body {
+        padding-top: 8px;
+      }
+    }
   }
 
   .form-actions {
@@ -681,6 +858,7 @@ const handleSubmit = async () => {
     gap: 12px;
     padding-top: 24px;
     border-top: 1px solid #f0f0f0;
+    margin-top: 24px;
   }
 }
 </style>
