@@ -1,7 +1,8 @@
 # Dokploy 部署专用 docker-compose
 # 单一镜像 (Monolithic) 部署
-# 包含：Nginx + FastAPI + Celery Worker + Celery Beat
+# 包含：Nginx + FastAPI + Celery Worker
 # 支持通过环境变量切换 demo/prod 模式
+# 注意：Celery Beat 已暂时注释
 
 networks:
   fba_network:
@@ -47,8 +48,9 @@ services:
       - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
 
       # ======= 数据重置配置（Demo 专用）=======
-      - DEMO_DATA_RESET_ENABLED=${DEMO_DATA_RESET_ENABLED:-false}
-      - DEMO_DATA_RESET_CRON=${DEMO_DATA_RESET_CRON:-0 2 * * *}
+      # Celery Beat 相关配置，已暂时注释
+      # - DEMO_DATA_RESET_ENABLED=${DEMO_DATA_RESET_ENABLED:-false}
+      # - DEMO_DATA_RESET_CRON=${DEMO_DATA_RESET_CRON:-0 2 * * *}
 
       # ======= 数据库配置 =======
       - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
