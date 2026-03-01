@@ -150,7 +150,7 @@ async def _claim_task_items(batch_job_id: str, batch_size: int) -> list[str]:
             claimed = len(task_items)
             batch_job.pending_count = max(0, batch_job.pending_count - claimed)
             batch_job.processing_count += claimed
-            batch_job.updated_time = now
+            batch_job.update_time = now
 
         return [task_item.id for task_item in task_items]
 
@@ -181,7 +181,7 @@ async def _process_single_task_item(task_item_id: str, batch_job_id: str):
                     elif previous_status == TaskItemStatus.PENDING.value:
                         batch_job.pending_count = max(0, batch_job.pending_count - 1)
                     batch_job.failed_count += 1
-                    batch_job.updated_time = timezone.now()
+                    batch_job.update_time = timezone.now()
                     await db.commit()
                 return
 
@@ -201,7 +201,7 @@ async def _process_single_task_item(task_item_id: str, batch_job_id: str):
             # 更新批量任务统计
             batch_job.processing_count -= 1
             batch_job.completed_count += 1
-            batch_job.updated_time = timezone.now()
+            batch_job.update_time = timezone.now()
 
             await db.commit()
 
@@ -241,7 +241,7 @@ async def _process_single_task_item(task_item_id: str, batch_job_id: str):
                 batch_job.failed_count += 1
                 log.error(f"Task item {task_item_id} failed permanently: {e}")
 
-            batch_job.updated_time = timezone.now()
+            batch_job.update_time = timezone.now()
             await db.commit()
 
 
@@ -264,7 +264,7 @@ async def _complete_batch_job(task_self: Any, batch_job_id: str) -> dict:
 
         if batch_job.status == BatchJobStatus.CANCELLED.value:
             batch_job.completed_time = timezone.now()
-            batch_job.updated_time = timezone.now()
+            batch_job.update_time = timezone.now()
             await db.commit()
             return {
                 "batch_job_id": batch_job.id,
@@ -288,7 +288,7 @@ async def _complete_batch_job(task_self: Any, batch_job_id: str) -> dict:
             batch_job.status = BatchJobStatus.COMPLETED.value
 
         batch_job.completed_time = timezone.now()
-        batch_job.updated_time = timezone.now()
+        batch_job.update_time = timezone.now()
 
         await db.commit()
 

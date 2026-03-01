@@ -88,7 +88,7 @@ def check_imports(root_path: Path) -> tuple[list[str], list[tuple[str, str]]]:
             success_files.append(rel_path)
             print(f"[OK] {rel_path}")
         else:
-            errors.append((rel_path, error))
+            errors.append((rel_path, error or "Unknown error"))
             print(f"[FAIL] {rel_path}")
             print(f"       {error}")
 

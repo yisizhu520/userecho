@@ -393,7 +393,7 @@ export interface BatchJobProgress {
   failed_count: number;
   progress: number;
   summary?: any;
-  created_time: string;
+  create_time: string;
   started_time?: string;
   completed_time?: string;
   celery_task_id?: string;

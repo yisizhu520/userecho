@@ -5,7 +5,8 @@ import enum
 from sqlalchemy import JSON, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.common.model import MappedBase, id_key
+from backend.common.model import MappedBase, TimeZone
+from backend.utils.uuid import uuid4_str
 
 
 class BatchJobStatus(str, enum.Enum):
@@ -33,7 +34,7 @@ class BatchJob(MappedBase):
 
     __tablename__ = "batch_job"
 
-    id: Mapped[id_key]
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str, comment="主键ID")
 
     # 必填字段（没有默认值）
     tenant_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True, comment="租户ID")
@@ -59,6 +60,10 @@ class BatchJob(MappedBase):
     started_time: Mapped[datetime | None] = mapped_column(default=None, comment="开始时间")
     completed_time: Mapped[datetime | None] = mapped_column(default=None, comment="完成时间")
 
+    # 时间戳字段（手动添加）
+    create_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="创建时间")
+    update_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="更新时间")
+
     # 关联任务项
     task_items: Mapped[list["BatchTaskItem"]] = relationship(
         back_populates="batch_job",
@@ -71,7 +76,7 @@ class BatchTaskItem(MappedBase):
 
     __tablename__ = "batch_task_item"
 
-    id: Mapped[id_key]
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid4_str, comment="主键ID")
 
     # 必填字段（没有默认值）
     batch_job_id: Mapped[str] = mapped_column(
@@ -93,6 +98,10 @@ class BatchTaskItem(MappedBase):
     error_code: Mapped[str | None] = mapped_column(String(50), default=None, comment="错误码")
     started_time: Mapped[datetime | None] = mapped_column(default=None, comment="开始时间")
     completed_time: Mapped[datetime | None] = mapped_column(default=None, comment="完成时间")
+
+    # 时间戳字段（手动添加）
+    create_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="创建时间")
+    update_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="更新时间")
 
     # 关联批量任务
     batch_job: Mapped["BatchJob"] = relationship(back_populates="task_items")

@@ -39,18 +39,19 @@ async def create_batch_job(
     get_task_handler(task_type)  # 如果不存在会抛出异常
 
     # 创建批量任务
+    now = timezone.now()
     batch_job = BatchJob(
         id=uuid4_str(),
         tenant_id=tenant_id,
         task_type=task_type,
-        name=name or f"{task_type}_{timezone.now().strftime('%Y%m%d_%H%M%S')}",
+        name=name or f"{task_type}_{now.strftime('%Y%m%d_%H%M%S')}",
         total_count=len(items),
         pending_count=len(items),
         status=BatchJobStatus.PENDING.value,
         config=config or {},
         created_by=created_by,
-        created_time=timezone.now(),
-        updated_time=timezone.now(),
+        create_time=now,
+        update_time=now,
     )
     db.add(batch_job)
 
@@ -62,8 +63,8 @@ async def create_batch_job(
             sequence_no=idx,
             input_data=item_data,
             max_retries=config.get("max_retries", 3) if config else 3,
-            created_time=timezone.now(),
-            updated_time=timezone.now(),
+            create_time=now,
+            update_time=now,
         )
         db.add(task_item)
 
@@ -84,7 +85,7 @@ async def enqueue_batch_job(batch_job_id: str) -> str:
             log.error(f"Batch job {batch_job_id} not found when enqueueing")
             return task.id
         batch_job.celery_task_id = task.id
-        batch_job.updated_time = timezone.now()
+        batch_job.update_time = timezone.now()
         await db.commit()
 
     log.info(f"Triggered Celery task {task.id} for batch job {batch_job_id}")
@@ -118,7 +119,7 @@ async def get_batch_progress(
         "failed_count": batch_job.failed_count,
         "progress": round(progress, 2),
         "summary": batch_job.summary,
-        "created_time": batch_job.created_time,
+        "create_time": batch_job.create_time,
         "started_time": batch_job.started_time,
         "completed_time": batch_job.completed_time,
         "celery_task_id": batch_job.celery_task_id,
@@ -162,7 +163,7 @@ async def cancel_batch_job(
     batch_job.status = BatchJobStatus.CANCELLED.value
     batch_job.failed_count += skipped_count
     batch_job.pending_count = max(0, batch_job.pending_count - skipped_count)
-    batch_job.updated_time = timezone.now()
+    batch_job.update_time = timezone.now()
     log.info(f"Cancelled batch job {batch_id}")
 
     return True
@@ -182,7 +183,7 @@ async def list_batch_jobs(
     if task_type:
         query = query.where(BatchJob.task_type == task_type)
 
-    query = query.order_by(BatchJob.created_time.desc()).limit(page_size).offset((page - 1) * page_size)
+    query = query.order_by(BatchJob.create_time.desc()).limit(page_size).offset((page - 1) * page_size)
 
     result = await db.execute(query)
     jobs = result.scalars().all()
@@ -199,7 +200,7 @@ async def list_batch_jobs(
             "progress": (
                 round((job.completed_count + job.failed_count) / job.total_count * 100, 2) if job.total_count > 0 else 0
             ),
-            "created_time": job.created_time,
+            "create_time": job.create_time,
             "celery_task_id": job.celery_task_id,
         }
         for job in jobs

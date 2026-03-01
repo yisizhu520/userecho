@@ -143,7 +143,7 @@ platform = ai_platform or source_platform
     "completed_count": 10,
     "failed_count": 2,
     "progress": 60.0,
-    "created_time": "2024-01-26T14:30:00",
+    "create_time": "2024-01-26T14:30:00",
     "started_time": "2024-01-26T14:30:05"
   }
 }
