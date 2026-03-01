@@ -71,7 +71,7 @@
 
 ## 三、 人设定位 (Brand Persona)
 
-为了建立最深层的信任，我们采用 **“回响 UserEcho 创始人”** 的真实身份，进行 **Build in Public (公开透明)** 的叙事。
+为了建立最深层的信任，我们采用 **“回响 UserEcho 创始人”** 的真实身份，进行 **Build in Public (公开透明)** 的叙事。 
 
 ### 3.1 人设画像 (Updated)
 *   **身份**: **回响 UserEcho 创始人 / 独立开发者**。
