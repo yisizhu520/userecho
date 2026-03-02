@@ -7,6 +7,7 @@ import HeroSection from './components/HeroSection.vue';
 import PainPointsSection from './components/PainPointsSection.vue';
 import FeaturesSection from './components/FeaturesSection.vue';
 import WorkflowSection from './components/WorkflowSection.vue';
+import RoadmapSection from './components/RoadmapSection.vue';
 import PricingSection from './components/pricing/index.vue';
 import CTASection from './components/CTASection.vue';
 import LandingNavbar from './components/LandingNavbar.vue';
@@ -96,6 +97,7 @@ onMounted(() => {
       <PainPointsSection />
       <FeaturesSection />
       <WorkflowSection />
+      <RoadmapSection />
       <PricingSection />
       <CTASection @get-started="handleGetStarted" />
     </main>

@@ -4,6 +4,7 @@ import { ref, onMounted } from 'vue';
 const sectionRef = ref<HTMLElement>();
 const isVisible = ref(false);
 const features = ref([
+
   {
     // Simplified features data without rainbow gradients
     icon: 'lucide:sparkles',
@@ -15,15 +16,6 @@ const features = ref([
     tags: ['语义分析', '自动分组', '去重合并'],
   },
   {
-    icon: 'lucide:sliders',
-    iconEmoji: '📊',
-    title: '优先级评分',
-    description: 'AI 算出哪些需求最该做，不再纠结先做什么后做什么',
-    color: 'var(--lp-primary-600)',
-    delay: 100,
-    tags: ['影响范围', '商业价值', '开发成本'],
-  },
-  {
     icon: 'lucide:scan',
     iconEmoji: '📸',
     title: '截图智能识别',
@@ -32,14 +24,24 @@ const features = ref([
     delay: 200,
     tags: ['OCR识别', '多平台支持', '一键粘贴'],
   },
+   {
+    // Simplified features data without rainbow gradients
+    icon: 'lucide:message-square',
+    iconEmoji: '🤖',
+    title: '智能回复助手',
+    description: '根据客户等级自动调整语气，一键生成 5 种风格的专业回复',
+    color: 'var(--lp-primary-500)',
+    delay: 0,
+    tags: ['自动回复', '多语气支持', '效率提升'],
+  },
   {
-    icon: 'lucide:lightbulb',
-    iconEmoji: '⚡',
-    title: '智能洞察',
-    description: 'AI 识别高风险需求，提前预警可能流失的大客户',
+    icon: 'lucide:bar-chart-big',
+    iconEmoji: '📈',
+    title: '智能周报 & 洞察',
+    description: '自动生成周报与决策建议，识别 TOP 3 痛点，辅助科学决策',
     color: 'var(--lp-primary-400)',
     delay: 300,
-    tags: ['风险预警', '客户分析', '趋势发现'],
+    tags: ['周报生成', '决策建议', '趋势分析'],
   },
 ]);
 
@@ -70,10 +72,10 @@ onMounted(() => {
           <span class="badge-text">核心功能</span>
         </div>
         <h2 class="section-title">
-          全能的<span class="title-gradient">反馈分析</span>工具
+          AI 驱动的<span class="title-gradient">核心能力</span>
         </h2>
         <p class="section-subtitle">
-          四大核心能力，让产品决策更加智能高效
+          四大智能引擎，让产品决策更加智能高效
         </p>
       </div>
 
