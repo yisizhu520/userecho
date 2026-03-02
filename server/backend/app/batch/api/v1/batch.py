@@ -9,6 +9,7 @@ from backend.app.batch.service.batch_service import (
     create_batch_job,
     enqueue_batch_job,
     get_batch_progress,
+    get_batch_results,
     list_batch_jobs,
 )
 from backend.common.response.response_schema import response_base
@@ -29,7 +30,6 @@ class BatchJobCreate(BaseModel):
 @router.post("/jobs", summary="创建批量任务")
 async def create_job(
     data: BatchJobCreate,
-    background_tasks: BackgroundTasks,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     user_id: str = CurrentUserId,
@@ -61,11 +61,17 @@ async def create_job(
             items=data.items,
             name=data.name,
             config=data.config,
-            created_by=user_id,
+            created_by=str(user_id),
         )
-
-        background_tasks.add_task(enqueue_batch_job, batch_job.id)
-        return response_base.success(data={"batch_id": batch_job.id, "celery_task_id": None})
+        batch_job_id = batch_job.id
+        
+        # 强制提交当前事务，确保数据持久化到数据库
+        await db.commit()
+        
+        # 现在数据已经在数据库中，触发 Celery 任务
+        celery_task_id = await enqueue_batch_job(batch_job_id)
+        
+        return response_base.success(data={"batch_id": batch_job_id, "celery_task_id": celery_task_id})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -80,6 +86,21 @@ async def get_job_progress(
     try:
         progress = await get_batch_progress(db, batch_id)
         return response_base.success(data=progress)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/jobs/{batch_id}/results", summary="获取批量任务详细结果")
+async def get_job_results(
+    batch_id: str,
+    db: CurrentSession,
+    status: str | None = None,
+):
+    """获取批量任务的详细结果列表"""
+
+    try:
+        results = await get_batch_results(db, batch_id, status=status)
+        return response_base.success(data=results)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -140,7 +161,6 @@ class ScreenshotBatchUploadRequest(BaseModel):
 @router.post("/feedbacks/screenshot-batch-upload", summary="批量上传截图")
 async def screenshot_batch_upload(
     data: ScreenshotBatchUploadRequest,
-    background_tasks: BackgroundTasks,
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
     user_id: str = CurrentUserId,
@@ -191,15 +211,20 @@ async def screenshot_batch_upload(
         task_type="screenshot_recognition",
         items=items,
         name=f"批量截图识别 {timezone.now().strftime('%Y-%m-%d %H:%M')}",
-        created_by=user_id,
+        created_by=str(user_id),
     )
-
-    background_tasks.add_task(enqueue_batch_job, batch_job.id)
+    batch_job_id = batch_job.id
+    
+    # 强制提交当前事务，确保数据持久化到数据库
+    await db.commit()
+    
+    # 现在数据已经在数据库中，触发 Celery 任务
+    celery_task_id = await enqueue_batch_job(batch_job_id)
 
     return response_base.success(
         data={
-            "batch_id": batch_job.id,
-            "celery_task_id": None,
+            "batch_id": batch_job_id,
+            "celery_task_id": celery_task_id,
             "total_count": len(items),
         }
     )

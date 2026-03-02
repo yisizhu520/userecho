@@ -259,6 +259,155 @@
             </a-col>
           </a-row>
 
+          <!-- 反馈列表 -->
+          <Card v-if="batchResults.length > 0" title="📋 识别结果列表" class="mt-6 result-list-card" size="small">
+            <a-tabs v-model:activeKey="resultTab">
+              <a-tab-pane key="all" tab="全部">
+                <div class="result-list">
+                  <a-empty v-if="batchResults.length === 0" description="暂无数据" />
+                  <div
+                    v-for="(item, index) in batchResults"
+                    :key="item.task_item_id"
+                    class="result-item"
+                  >
+                    <div class="result-header">
+                      <span class="result-index">#{{ index + 1 }}</span>
+                      <a-tag v-if="item.status === 'completed'" color="success">
+                        <CheckOutlined /> 成功
+                      </a-tag>
+                      <a-tag v-else-if="item.status === 'failed'" color="error">
+                        <CloseOutlined /> 失败
+                      </a-tag>
+                      <a-tag v-else>{{ item.status }}</a-tag>
+                      <a-tag
+                        v-if="item.output_data?.confidence !== undefined"
+                        :color="item.output_data.confidence > 0.8 ? 'blue' : 'warning'"
+                      >
+                        置信度: {{ (item.output_data.confidence * 100).toFixed(0) }}%
+                      </a-tag>
+                    </div>
+
+                    <div class="result-content">
+                      <div class="screenshot-preview">
+                        <Image
+                          :src="item.output_data?.screenshot_url || item.input_data?.image_url"
+                          :width="60"
+                          :height="60"
+                          style="object-fit: cover; border-radius: 4px;"
+                        >
+                          <template #preview-mask>
+                            <div><EyeOutlined /> 预览</div>
+                          </template>
+                        </Image>
+                      </div>
+
+                      <div class="feedback-info">
+                        <template v-if="item.status === 'completed' && item.output_data">
+                          <div class="feedback-content">
+                            {{ item.output_data.content || '（无内容）' }}
+                          </div>
+                          <div v-if="item.output_data.feedback_id" class="feedback-meta">
+                            <span class="text-gray-500">
+                              反馈ID: {{ item.output_data.feedback_id.slice(0, 8) }}...
+                            </span>
+                          </div>
+                        </template>
+                        <template v-else-if="item.error_message">
+                          <div class="error-info">
+                            <a-alert type="error" :message="item.error_message" banner />
+                          </div>
+                        </template>
+                        <div v-else class="text-gray-500">处理中...</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a-tab-pane>
+              <a-tab-pane key="completed" :tab="`成功 (${completedResults.length})`">
+                <div class="result-list">
+                  <a-empty v-if="completedResults.length === 0" description="暂无数据" />
+                  <div
+                    v-for="(item, index) in completedResults"
+                    :key="item.task_item_id"
+                    class="result-item"
+                  >
+                    <div class="result-header">
+                      <span class="result-index">#{{ index + 1 }}</span>
+                      <a-tag color="success"><CheckOutlined /> 成功</a-tag>
+                      <a-tag
+                        v-if="item.output_data?.confidence !== undefined"
+                        :color="item.output_data.confidence > 0.8 ? 'blue' : 'warning'"
+                      >
+                        置信度: {{ (item.output_data.confidence * 100).toFixed(0) }}%
+                      </a-tag>
+                    </div>
+
+                    <div class="result-content">
+                      <div class="screenshot-preview">
+                        <Image
+                          :src="item.output_data?.screenshot_url || item.input_data?.image_url"
+                          :width="60"
+                          :height="60"
+                          style="object-fit: cover; border-radius: 4px;"
+                        >
+                          <template #preview-mask>
+                            <div><EyeOutlined /> 预览</div>
+                          </template>
+                        </Image>
+                      </div>
+
+                      <div class="feedback-info">
+                        <div class="feedback-content">
+                          {{ item.output_data?.content || '（无内容）' }}
+                        </div>
+                        <div v-if="item.output_data?.feedback_id" class="feedback-meta">
+                          <span class="text-gray-500">
+                            反馈ID: {{ item.output_data.feedback_id.slice(0, 8) }}...
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a-tab-pane>
+              <a-tab-pane v-if="failedResults.length > 0" key="failed" :tab="`失败 (${failedResults.length})`">
+                <div class="result-list">
+                  <div
+                    v-for="(item, index) in failedResults"
+                    :key="item.task_item_id"
+                    class="result-item"
+                  >
+                    <div class="result-header">
+                      <span class="result-index">#{{ index + 1 }}</span>
+                      <a-tag color="error"><CloseOutlined /> 失败</a-tag>
+                    </div>
+
+                    <div class="result-content">
+                      <div class="screenshot-preview">
+                        <Image
+                          :src="item.output_data?.screenshot_url || item.input_data?.image_url"
+                          :width="60"
+                          :height="60"
+                          style="object-fit: cover; border-radius: 4px;"
+                        >
+                          <template #preview-mask>
+                            <div><EyeOutlined /> 预览</div>
+                          </template>
+                        </Image>
+                      </div>
+
+                      <div class="feedback-info">
+                        <div class="error-info">
+                          <a-alert type="error" :message="item.error_message || '未知错误'" banner />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a-tab-pane>
+            </a-tabs>
+          </Card>
+
           <div class="action-buttons mt-4">
             <VbenButton type="primary" @click="goToFeedbackList">
               查看反馈列表
@@ -312,15 +461,20 @@ import {
   PlusOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  EyeOutlined,
 } from '@ant-design/icons-vue'
 import { VbenButton } from '@vben/common-ui'
 import { uploadScreenshot } from '#/api/core/upload'
 import {
   screenshotBatchUpload,
   getBatchJobProgress,
+  getBatchJobResults,
   cancelBatchJob,
   type ScreenshotBatchUploadRequest,
   type BatchJobProgress,
+  type BatchTaskItemResult,
 } from '#/api/userecho/feedback'
 import { getBoardList, type Board } from '#/api/userecho/board'
 
@@ -343,11 +497,22 @@ const boardsLoading = ref(false)
 // 批量任务
 const batchJobId = ref<string>('')
 const progressData = ref<BatchJobProgress | null>(null)
+const batchResults = ref<BatchTaskItemResult[]>([])
+const resultTab = ref('all')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
 // 轮询定时器
 let pollTimer: number | null = null
+
+// 计算完成和失败的结果
+const completedResults = computed(() =>
+  batchResults.value.filter(r => r.status === 'completed')
+)
+
+const failedResults = computed(() =>
+  batchResults.value.filter(r => r.status === 'failed')
+)
 
 // 计算当前步骤
 const currentStep = computed(() => {
@@ -551,6 +716,10 @@ const startPolling = () => {
       // 根据状态判断是否完成
       if (progress.status === 'completed') {
         if (pollTimer) clearInterval(pollTimer)
+
+        // 加载详细结果
+        await loadBatchResults()
+
         uploadStatus.value = 'success'
         message.success('批量识别完成！')
       } else if (progress.status === 'failed' || progress.status === 'cancelled') {
@@ -568,6 +737,16 @@ const startPolling = () => {
 
   // 每 2 秒轮询一次
   pollTimer = window.setInterval(pollProgress, 2000)
+}
+
+// 加载批量结果详情
+const loadBatchResults = async () => {
+  try {
+    const results = await getBatchJobResults(batchJobId.value)
+    batchResults.value = results
+  } catch (error: any) {
+    console.error('加载结果失败', error)
+  }
 }
 
 // 取消批量任务
@@ -592,8 +771,10 @@ const handleReset = () => {
   uploadedCount.value = 0
   batchJobId.value = ''
   progressData.value = null
+  batchResults.value = []
+  resultTab.value = 'all'
   errorMessage.value = ''
-  
+
   if (pollTimer) {
     clearInterval(pollTimer)
     pollTimer = null
@@ -714,4 +895,73 @@ const goToFeedbackList = () => {
   color: #666;
   margin-top: 12px;
 }
+
+.result-list-card {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.result-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.result-item {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.3s;
+}
+
+.result-item:hover {
+  background-color: #fafafa;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.result-index {
+  font-weight: 600;
+  color: #1890ff;
+  min-width: 40px;
+}
+
+.result-content {
+  display: flex;
+  gap: 16px;
+}
+
+.screenshot-preview {
+  flex-shrink: 0;
+}
+
+.feedback-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.feedback-content {
+  color: #262626;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  word-wrap: break-word;
+}
+
+.feedback-meta {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.error-info {
+  margin-top: 4px;
+}
+
 </style>

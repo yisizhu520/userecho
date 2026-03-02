@@ -408,6 +408,23 @@ export interface BatchJobProgress {
   celery_task_id?: string;
 }
 
+/** 批量任务项结果 */
+export interface BatchTaskItemResult {
+  task_item_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+  input_data: any;
+  output_data?: {
+    feedback_id: string;
+    content: string;
+    confidence: number;
+    screenshot_url: string;
+  };
+  error_message?: string;
+  retry_count: number;
+  started_time?: string;
+  completed_time?: string;
+}
+
 /**
  * 批量截图识别（前端直传模式）
  */
@@ -420,6 +437,15 @@ export async function screenshotBatchUpload(data: ScreenshotBatchUploadRequest) 
  */
 export async function getBatchJobProgress(batchId: string) {
   return requestClient.get<BatchJobProgress>(`/api/v1/app/batch/jobs/${batchId}`);
+}
+
+/**
+ * 获取批量任务详细结果
+ */
+export async function getBatchJobResults(batchId: string, status?: string) {
+  return requestClient.get<BatchTaskItemResult[]>(`/api/v1/app/batch/jobs/${batchId}/results`, {
+    params: { status },
+  });
 }
 
 /**

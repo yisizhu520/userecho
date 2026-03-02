@@ -57,8 +57,8 @@ class BatchJob(MappedBase):
     description: Mapped[str | None] = mapped_column(Text, default=None, comment="任务描述")
     created_by: Mapped[str | None] = mapped_column(String(36), default=None, comment="创建者ID")
     celery_task_id: Mapped[str | None] = mapped_column(String(255), default=None, index=True, comment="Celery任务ID")
-    started_time: Mapped[datetime | None] = mapped_column(default=None, comment="开始时间")
-    completed_time: Mapped[datetime | None] = mapped_column(default=None, comment="完成时间")
+    started_time: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment="开始时间")
+    completed_time: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment="完成时间")
 
     # 时间戳字段（手动添加）
     create_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="创建时间")
@@ -96,8 +96,12 @@ class BatchTaskItem(MappedBase):
     output_data: Mapped[dict | None] = mapped_column(JSON, default=None, comment="输出数据")
     error_message: Mapped[str | None] = mapped_column(Text, default=None, comment="错误信息")
     error_code: Mapped[str | None] = mapped_column(String(50), default=None, comment="错误码")
-    started_time: Mapped[datetime | None] = mapped_column(default=None, comment="开始时间")
-    completed_time: Mapped[datetime | None] = mapped_column(default=None, comment="完成时间")
+    started_time: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment="开始时间")
+    completed_time: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment="完成时间")
+
+    # 时间戳字段（手动添加）
+    create_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="创建时间")
+    update_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="更新时间")
 
     # 时间戳字段（手动添加）
     create_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, comment="创建时间")

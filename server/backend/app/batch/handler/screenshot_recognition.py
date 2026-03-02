@@ -27,11 +27,28 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
         log.info(f"Analyzing screenshot: {image_url}")
         result = await ai_client.analyze_screenshot(image_url)
 
-        # 提取 AI 识别结果
-        ai_content = result.get("description", "")
-        ai_user_name = result.get("user_name", "")
-        ai_platform = result.get("platform", "")
-        ai_confidence = result.get("confidence", 0)
+        # 提取 AI 识别结果（新格式：返回 feedback_list）
+        feedback_list = result.get("feedback_list", [])
+        raw_text = result.get("raw_text", "")
+        
+        log.info(f"AI recognition result: {len(feedback_list)} feedback(s) found, raw_text length: {len(raw_text)}")
+        
+        # 如果识别到多条反馈，只取第一条（批量场景下每张图片对应一条反馈）
+        if feedback_list:
+            first_feedback = feedback_list[0]
+            ai_content = first_feedback.get("content", "")
+            ai_user_name = first_feedback.get("user_name", "")
+            ai_platform = first_feedback.get("platform", "")
+            ai_confidence = first_feedback.get("confidence", 0)
+            
+            log.info(f"Using feedback: content={ai_content[:50]}..., user={ai_user_name}, platform={ai_platform}, confidence={ai_confidence}")
+        else:
+            # 如果识别失败，使用 OCR 原文作为内容
+            log.warning(f"No feedback extracted from screenshot, using raw_text as fallback")
+            ai_content = raw_text or "图像识别失败，请手动填写"
+            ai_user_name = ""
+            ai_platform = ""
+            ai_confidence = 0
 
         # 3. 构建反馈数据（使用 AI 识别 + 预设配置）
         feedback_data = {
@@ -40,29 +57,41 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
             "board_id": board_id,
             "content": ai_content,
             "source": "screenshot",
-            "source_metadata": {
-                "screenshot_url": image_url,
-                "confidence": ai_confidence,
-                "batch_job_id": task_item.batch_job_id,
-                "batch_mode": True,
+            "images_metadata": {
+                "images": [
+                    {
+                        "url": image_url,
+                        "platform": ai_platform,
+                        "user_name": ai_user_name,
+                        "confidence": ai_confidence,
+                        "uploaded_at": timezone.now().isoformat(),
+                        "batch_job_id": task_item.batch_job_id,
+                        "batch_mode": True,
+                    }
+                ]
             },
             "screenshot_url": image_url,
+            "ai_confidence": ai_confidence,
             "created_time": timezone.now(),
             "updated_time": timezone.now(),
         }
 
         # 4. 根据来源类型设置字段
         if author_type == "customer":
-            # 内部客户模式：使用预设客户名
+            # 内部客户模式：使用预设客户名（不再支持，AI 无法识别内部客户）
+            # 保留字段以防万一
             default_customer_name = task_item.input_data.get("default_customer_name")
-            feedback_data["customer_name"] = ai_user_name or default_customer_name
+            feedback_data["external_user_name"] = ai_user_name or default_customer_name
+            feedback_data["author_type"] = "external"  # 强制为外部用户
         else:
             # 外部用户模式：使用 AI 识别 + 预设配置
             source_platform = task_item.input_data.get("source_platform", "wechat")
             default_user_name = task_item.input_data.get("default_user_name")
 
-            feedback_data["anonymous_source"] = ai_platform or source_platform
-            feedback_data["anonymous_author"] = ai_user_name or default_user_name or "匿名用户"
+            feedback_data["source_platform"] = ai_platform or source_platform
+            feedback_data["source_user_name"] = ai_user_name or default_user_name or "匿名用户"
+            feedback_data["external_user_name"] = ai_user_name or default_user_name or "匿名用户"
+            feedback_data["author_type"] = "external"
 
         # 5. 创建反馈
         feedback = Feedback(**feedback_data)
@@ -109,12 +138,12 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
             "failed": batch_job.failed_count,
         }
 
-        # 发送完成通知
-        try:
-            from backend.common.socketio.actions import task_notification
-
-            await task_notification(
-                msg=f"批量截图识别完成：成功 {batch_job.completed_count} 个，失败 {batch_job.failed_count} 个"
-            )
-        except Exception as e:
-            log.warning(f"Failed to send notification: {e}")
+        # FIXME: task_notification 在 Celery Worker 中会导致 event loop 冲突
+        # 临时注释，后续使用同步 Redis Pub/Sub 实现
+        # try:
+        #     from backend.common.socketio.actions import task_notification
+        #     await task_notification(
+        #         msg=f"批量截图识别完成：成功 {batch_job.completed_count} 个，失败 {batch_job.failed_count} 个"
+        #     )
+        # except Exception as e:
+        #     log.warning(f"Failed to send notification: {e}")

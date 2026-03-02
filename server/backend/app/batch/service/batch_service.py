@@ -126,6 +126,46 @@ async def get_batch_progress(
     }
 
 
+async def get_batch_results(
+    db: AsyncSession,
+    batch_id: str,
+    status: str | None = None,
+) -> list[dict]:
+    """获取批量任务的详细结果列表"""
+
+    batch_job = await db.get(BatchJob, batch_id)
+    if not batch_job:
+        raise ValueError(f"Batch job {batch_id} not found")
+
+    # 查询任务项
+    query = select(BatchTaskItem).where(BatchTaskItem.batch_job_id == batch_id)
+
+    if status:
+        query = query.where(BatchTaskItem.status == status)
+
+    query = query.order_by(BatchTaskItem.sequence_no, BatchTaskItem.create_time)
+
+    result = await db.execute(query)
+    task_items = result.scalars().all()
+
+    # 构建结果列表
+    results = []
+    for item in task_items:
+        result_item = {
+            "task_item_id": item.id,
+            "status": item.status,
+            "input_data": item.input_data,
+            "output_data": item.output_data,
+            "error_message": item.error_message,
+            "retry_count": item.retry_count,
+            "started_time": item.started_time,
+            "completed_time": item.completed_time,
+        }
+        results.append(result_item)
+
+    return results
+
+
 async def cancel_batch_job(
     db: AsyncSession,
     batch_id: str,

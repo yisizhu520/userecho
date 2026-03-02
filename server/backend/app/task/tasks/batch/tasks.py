@@ -1,39 +1,71 @@
 """批量任务 Celery 任务实现"""
 
 import asyncio
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
 from celery import shared_task
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from backend.app.batch.handler.base import get_task_handler
 from backend.app.batch.model.batch_job import BatchJob, BatchJobStatus, BatchTaskItem, TaskItemStatus
 from backend.common.log import log
-from backend.database.db import async_db_session
+from backend.core.conf import settings
+from backend.database.db import create_database_url
 from backend.utils.timezone import timezone
 
 
-def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
-    """获取或创建事件循环（Celery 任务复用）"""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop
+# Celery Worker 专用的异步数据库引擎（每个 worker 一个）
+_celery_async_engine: AsyncEngine | None = None
+_celery_async_session: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_celery_db_session() -> async_sessionmaker[AsyncSession]:
+    """
+    获取 Celery Worker 专用的异步数据库 Session Factory
+    
+    为每个 Celery Worker 进程创建独立的异步引擎，避免跨 loop 冲突
+    """
+    global _celery_async_engine, _celery_async_session
+    
+    if _celery_async_engine is None:
+        db_url = create_database_url()
+        
+        _celery_async_engine = create_async_engine(
+            db_url,
+            echo=settings.DATABASE_ECHO,
+            pool_size=5,
+            max_overflow=10,
+            pool_timeout=30,
+            pool_recycle=3600,
+            pool_pre_ping=True,
+        )
+        
+        _celery_async_session = async_sessionmaker(
+            bind=_celery_async_engine,
+            class_=AsyncSession,
+            autoflush=False,
+            expire_on_commit=True,
+        )
+        
+        log.info(f"[Celery] Created async database engine for worker")
+    
+    return _celery_async_session
 
 
 @asynccontextmanager
-async def local_db_session() -> AsyncGenerator[AsyncSession, None]:
+async def local_db_session():
     """创建本地数据库会话（用于 Celery 任务）"""
-    async with async_db_session() as session:
-        yield session
+    session_factory = get_celery_db_session()
+    async with session_factory() as session:
+        async with session.begin():
+            yield session
 
 
 @shared_task(
@@ -42,7 +74,7 @@ async def local_db_session() -> AsyncGenerator[AsyncSession, None]:
     time_limit=3600,  # 1小时硬超时
     soft_time_limit=3300,  # 55分钟软超时
 )
-def process_batch_job_task(
+async def process_batch_job_task(
     self: Any,
     batch_job_id: str,
 ) -> dict:
@@ -68,40 +100,32 @@ def process_batch_job_task(
         }
     """
 
-    async def _async_run() -> dict:
-        """异步执行批量任务"""
+    # 1. 获取批量任务并更新状态
+    async with local_db_session() as db:
+        batch_job = await db.get(BatchJob, batch_job_id)
+        if not batch_job:
+            raise ValueError(f"Batch job {batch_job_id} not found")
 
-        # 1. 获取批量任务并更新状态
-        async with local_db_session() as db:
-            batch_job = await db.get(BatchJob, batch_job_id)
-            if not batch_job:
-                raise ValueError(f"Batch job {batch_job_id} not found")
+        log.info(f"[Task {self.request.id}] Starting batch job: {batch_job_id} ({batch_job.task_type})")
 
-            log.info(f"[Task {self.request.id}] Starting batch job: {batch_job_id} ({batch_job.task_type})")
+        batch_job.status = BatchJobStatus.PROCESSING.value
+        batch_job.started_time = timezone.now()
+        batch_job.celery_task_id = self.request.id
 
-            batch_job.status = BatchJobStatus.PROCESSING.value
-            batch_job.started_time = timezone.now()
-            batch_job.celery_task_id = self.request.id
-            await db.commit()
+        # 2. 获取任务处理器
+        handler = get_task_handler(batch_job.task_type)
 
-            # 2. 获取任务处理器
-            handler = get_task_handler(batch_job.task_type)
+        # 3. 调用 on_batch_start 钩子
+        try:
+            await handler.on_batch_start(batch_job, db)
+        except Exception as e:
+            log.error(f"[Task {self.request.id}] on_batch_start failed: {e}")
 
-            # 3. 调用 on_batch_start 钩子
-            try:
-                await handler.on_batch_start(batch_job, db)
-                await db.commit()
-            except Exception as e:
-                log.error(f"[Task {self.request.id}] on_batch_start failed: {e}")
+    # 4. 执行所有任务项
+    await _execute_all_task_items(self, batch_job_id)
 
-        # 4. 执行所有任务项
-        await _execute_all_task_items(self, batch_job_id)
-
-        # 5. 完成批量任务
-        return await _complete_batch_job(self, batch_job_id)
-
-    loop = _get_or_create_event_loop()
-    return loop.run_until_complete(_async_run())
+    # 5. 完成批量任务
+    return await _complete_batch_job(self, batch_job_id)
 
 
 async def _execute_all_task_items(task_self: Any, batch_job_id: str):
@@ -124,33 +148,32 @@ async def _execute_all_task_items(task_self: Any, batch_job_id: str):
 async def _claim_task_items(batch_job_id: str, batch_size: int) -> list[str]:
     """原子领取待处理任务项（避免重复处理）"""
     async with local_db_session() as db:
-        async with db.begin():
-            result = await db.execute(select(BatchJob).where(BatchJob.id == batch_job_id).with_for_update())
-            batch_job = result.scalars().first()
-            if not batch_job or batch_job.status == BatchJobStatus.CANCELLED.value:
-                return []
+        result = await db.execute(select(BatchJob).where(BatchJob.id == batch_job_id).with_for_update())
+        batch_job = result.scalars().first()
+        if not batch_job or batch_job.status == BatchJobStatus.CANCELLED.value:
+            return []
 
-            result = await db.execute(
-                select(BatchTaskItem)
-                .where(BatchTaskItem.batch_job_id == batch_job_id)
-                .where(BatchTaskItem.status == TaskItemStatus.PENDING.value)
-                .order_by(BatchTaskItem.sequence_no)
-                .with_for_update(skip_locked=True)
-                .limit(batch_size)
-            )
-            task_items = list(result.scalars().all())
-            if not task_items:
-                return []
+        result = await db.execute(
+            select(BatchTaskItem)
+            .where(BatchTaskItem.batch_job_id == batch_job_id)
+            .where(BatchTaskItem.status == TaskItemStatus.PENDING.value)
+            .order_by(BatchTaskItem.sequence_no)
+            .with_for_update(skip_locked=True)
+            .limit(batch_size)
+        )
+        task_items = list(result.scalars().all())
+        if not task_items:
+            return []
 
-            now = timezone.now()
-            for task_item in task_items:
-                task_item.status = TaskItemStatus.PROCESSING.value
-                task_item.started_time = now
+        now = timezone.now()
+        for task_item in task_items:
+            task_item.status = TaskItemStatus.PROCESSING.value
+            task_item.started_time = now
 
-            claimed = len(task_items)
-            batch_job.pending_count = max(0, batch_job.pending_count - claimed)
-            batch_job.processing_count += claimed
-            batch_job.update_time = now
+        claimed = len(task_items)
+        batch_job.pending_count = max(0, batch_job.pending_count - claimed)
+        batch_job.processing_count += claimed
+        batch_job.update_time = now
 
         return [task_item.id for task_item in task_items]
 
@@ -182,7 +205,6 @@ async def _process_single_task_item(task_item_id: str, batch_job_id: str):
                         batch_job.pending_count = max(0, batch_job.pending_count - 1)
                     batch_job.failed_count += 1
                     batch_job.update_time = timezone.now()
-                    await db.commit()
                 return
 
             if task_item.status != TaskItemStatus.PROCESSING.value:
@@ -203,12 +225,9 @@ async def _process_single_task_item(task_item_id: str, batch_job_id: str):
             batch_job.completed_count += 1
             batch_job.update_time = timezone.now()
 
-            await db.commit()
-
             # 调用进度钩子
             try:
                 await handler.on_batch_progress(batch_job, db)
-                await db.commit()
             except Exception as e:
                 log.warning(f"on_batch_progress failed: {e}")
 
@@ -242,7 +261,6 @@ async def _process_single_task_item(task_item_id: str, batch_job_id: str):
                 log.error(f"Task item {task_item_id} failed permanently: {e}")
 
             batch_job.update_time = timezone.now()
-            await db.commit()
 
 
 async def _complete_batch_job(task_self: Any, batch_job_id: str) -> dict:
@@ -290,22 +308,20 @@ async def _complete_batch_job(task_self: Any, batch_job_id: str) -> dict:
         batch_job.completed_time = timezone.now()
         batch_job.update_time = timezone.now()
 
-        await db.commit()
-
         log.info(
             f"[Task {task_self.request.id}] Batch job {batch_job_id} completed: "
             f"{batch_job.completed_count} succeeded, {batch_job.failed_count} failed"
         )
 
-        # 发送完成通知
-        try:
-            from backend.common.socketio.actions import task_notification
-
-            await task_notification(
-                msg=f"批量任务完成：{batch_job.name}（成功 {batch_job.completed_count} 个，失败 {batch_job.failed_count} 个）"
-            )
-        except Exception as e:
-            log.warning(f"Failed to send task notification: {e}")
+        # FIXME: task_notification 在 Celery Worker 中会导致 event loop 冲突
+        # 临时注释，后续使用同步 Redis Pub/Sub 实现
+        # try:
+        #     from backend.common.socketio.actions import task_notification
+        #     await task_notification(
+        #         msg=f"批量任务完成：{batch_job.name}（成功 {batch_job.completed_count} 个，失败 {batch_job.failed_count} 个）"
+        #     )
+        # except Exception as e:
+        #     log.warning(f"Failed to send task notification: {e}")
 
         return {
             "batch_job_id": batch_job.id,

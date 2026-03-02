@@ -1,11 +1,8 @@
-import asyncio
-
 from typing import Any
 
 from celery import Task
 from sqlalchemy.exc import SQLAlchemyError
 
-from backend.common.socketio.actions import task_notification
 from backend.core.conf import settings
 
 
@@ -22,7 +19,9 @@ class TaskBase(Task):
         :param task_id: 任务 ID
         :return:
         """
-        await task_notification(msg=f"任务 {task_id} 开始执行")
+        # FIXME: task_notification 在 Celery Worker 中会导致 event loop 冲突
+        # await task_notification(msg=f"任务 {task_id} 开始执行")
+        pass
 
     async def on_success(self, retval: Any, task_id: str, args, kwargs) -> None:
         """
@@ -32,7 +31,9 @@ class TaskBase(Task):
         :param task_id: 任务 ID
         :return:
         """
-        await task_notification(msg=f"任务 {task_id} 执行成功")
+        # FIXME: task_notification 在 Celery Worker 中会导致 event loop 冲突
+        # await task_notification(msg=f"任务 {task_id} 执行成功")
+        pass
 
     def on_failure(self, exc: Exception, task_id: str, args, kwargs, einfo) -> None:
         """
@@ -43,13 +44,6 @@ class TaskBase(Task):
         :param einfo: 异常信息
         :return:
         """
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_closed():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        loop.run_until_complete(task_notification(msg=f"任务 {task_id} 执行失败"))
+        # FIXME: task_notification 在 Celery Worker 中会导致 event loop 冲突
+        # 临时注释，后续使用同步 Redis Pub/Sub 实现
+        pass
