@@ -138,17 +138,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    name: 'TaskCenter',
-    path: '/app/task-center',
-    component: () => import('#/views/userecho/task-center/index.vue'),
-    meta: {
-      icon: 'lucide:activity',
-      order: 10,
-      title: '任务中心',
-      permissionCode: 'settings',
-    },
-  },
-  {
     name: 'Settings',
     path: '/app/settings',
     meta: {
