@@ -414,10 +414,14 @@ export interface BatchTaskItemResult {
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
   input_data: any;
   output_data?: {
-    feedback_id: string;
-    content: string;
-    confidence: number;
     screenshot_url: string;
+    feedbacks: Array<{
+      feedback_id: string;
+      content: string;
+      confidence: number;
+    }>;
+    total_feedbacks: number;
+    overall_confidence: number;
   };
   error_message?: string;
   retry_count: number;

@@ -33,71 +33,84 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
         
         log.info(f"AI recognition result: {len(feedback_list)} feedback(s) found, raw_text length: {len(raw_text)}")
         
-        # 如果识别到多条反馈，只取第一条（批量场景下每张图片对应一条反馈）
-        if feedback_list:
-            first_feedback = feedback_list[0]
-            ai_content = first_feedback.get("content", "")
-            ai_user_name = first_feedback.get("user_name", "")
-            ai_platform = first_feedback.get("platform", "")
-            ai_confidence = first_feedback.get("confidence", 0)
-            
-            log.info(f"Using feedback: content={ai_content[:50]}..., user={ai_user_name}, platform={ai_platform}, confidence={ai_confidence}")
-        else:
-            # 如果识别失败，使用 OCR 原文作为内容
+        # 如果识别失败，创建一条空反馈
+        if not feedback_list:
             log.warning(f"No feedback extracted from screenshot, using raw_text as fallback")
-            ai_content = raw_text or "图像识别失败，请手动填写"
-            ai_user_name = ""
-            ai_platform = ""
-            ai_confidence = 0
+            feedback_list = [{
+                "content": raw_text or "图像识别失败，请手动填写",
+                "user_name": "",
+                "platform": "",
+                "confidence": 0,
+            }]
+        
+        # 3. 为每条反馈创建独立的 Feedback 记录
+        created_feedbacks = []
+        for idx, feedback_data in enumerate(feedback_list):
+            ai_content = feedback_data.get("content", "")
+            ai_user_name = feedback_data.get("user_name", "")
+            ai_platform = feedback_data.get("platform", "")
+            ai_confidence = feedback_data.get("confidence", 0)
+            
+            log.info(
+                f"Creating feedback {idx + 1}/{len(feedback_list)}: "
+                f"content={ai_content[:50]}..., user={ai_user_name}, "
+                f"platform={ai_platform}, confidence={ai_confidence}"
+            )
 
-        # 3. 构建反馈数据（使用 AI 识别 + 预设配置）
-        feedback_data = {
-            "id": uuid4_str(),
-            "tenant_id": task_item.batch_job.tenant_id,
-            "board_id": board_id,
-            "content": ai_content,
-            "source": "screenshot",
-            "images_metadata": {
-                "images": [
-                    {
-                        "url": image_url,
-                        "platform": ai_platform,
-                        "user_name": ai_user_name,
-                        "confidence": ai_confidence,
-                        "uploaded_at": timezone.now().isoformat(),
-                        "batch_job_id": task_item.batch_job_id,
-                        "batch_mode": True,
-                    }
-                ]
-            },
-            "screenshot_url": image_url,
-            "ai_confidence": ai_confidence,
-            "created_time": timezone.now(),
-            "updated_time": timezone.now(),
-        }
+            # 构建反馈数据（使用 AI 识别 + 预设配置）
+            feedback_dict = {
+                "id": uuid4_str(),
+                "tenant_id": task_item.batch_job.tenant_id,
+                "board_id": board_id,
+                "content": ai_content,
+                "source": "screenshot",
+                "images_metadata": {
+                    "images": [
+                        {
+                            "url": image_url,
+                            "platform": ai_platform,
+                            "user_name": ai_user_name,
+                            "confidence": ai_confidence,
+                            "uploaded_at": timezone.now().isoformat(),
+                            "batch_job_id": task_item.batch_job_id,
+                            "batch_mode": True,
+                            "feedback_index": idx,  # 同一张图的第几条反馈
+                            "total_feedbacks": len(feedback_list),  # 该图共识别出几条
+                        }
+                    ]
+                },
+                "screenshot_url": image_url,
+                "ai_confidence": ai_confidence,
+                "created_time": timezone.now(),
+                "updated_time": timezone.now(),
+            }
 
-        # 4. 根据来源类型设置字段
-        if author_type == "customer":
-            # 内部客户模式：使用预设客户名（不再支持，AI 无法识别内部客户）
-            # 保留字段以防万一
-            default_customer_name = task_item.input_data.get("default_customer_name")
-            feedback_data["external_user_name"] = ai_user_name or default_customer_name
-            feedback_data["author_type"] = "external"  # 强制为外部用户
-        else:
-            # 外部用户模式：使用 AI 识别 + 预设配置
-            source_platform = task_item.input_data.get("source_platform", "wechat")
-            default_user_name = task_item.input_data.get("default_user_name")
+            # 根据来源类型设置字段
+            if author_type == "customer":
+                # 内部客户模式：使用预设客户名（不再支持，AI 无法识别内部客户）
+                default_customer_name = task_item.input_data.get("default_customer_name")
+                feedback_dict["external_user_name"] = ai_user_name or default_customer_name
+                feedback_dict["author_type"] = "external"  # 强制为外部用户
+            else:
+                # 外部用户模式：使用 AI 识别 + 预设配置
+                source_platform = task_item.input_data.get("source_platform", "wechat")
+                default_user_name = task_item.input_data.get("default_user_name")
 
-            feedback_data["source_platform"] = ai_platform or source_platform
-            feedback_data["source_user_name"] = ai_user_name or default_user_name or "匿名用户"
-            feedback_data["external_user_name"] = ai_user_name or default_user_name or "匿名用户"
-            feedback_data["author_type"] = "external"
+                feedback_dict["source_platform"] = ai_platform or source_platform
+                feedback_dict["source_user_name"] = ai_user_name or default_user_name or "匿名用户"
+                feedback_dict["external_user_name"] = ai_user_name or default_user_name or "匿名用户"
+                feedback_dict["author_type"] = "external"
 
-        # 5. 创建反馈
-        feedback = Feedback(**feedback_data)
-        db.add(feedback)
+            # 创建反馈
+            feedback = Feedback(**feedback_dict)
+            db.add(feedback)
+            created_feedbacks.append({
+                "feedback_id": feedback.id,
+                "content": feedback.content[:100] if feedback.content else "",
+                "confidence": ai_confidence,
+            })
 
-        # 4. 记录积分消耗
+        # 4. 记录积分消耗（按识别出的反馈数量计费）
         try:
             from backend.app.userecho.service.credits_service import credits_service
 
@@ -105,19 +118,22 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
                 db=db,
                 tenant_id=task_item.batch_job.tenant_id,
                 operation_type="screenshot",
-                count=1,
-                description="批量截图识别",
-                extra_data={"feedback_id": feedback.id, "batch_job_id": task_item.batch_job_id},
+                count=len(created_feedbacks),
+                description=f"批量截图识别（识别出 {len(created_feedbacks)} 条反馈）",
+                extra_data={
+                    "batch_job_id": task_item.batch_job_id,
+                    "feedback_ids": [f["feedback_id"] for f in created_feedbacks],
+                },
             )
         except Exception as e:
             log.warning(f"Failed to record credits: {e}")
 
         # 5. 返回输出数据
         return {
-            "feedback_id": feedback.id,
-            "content": feedback.content[:100] if feedback.content else "",  # 截断内容
-            "confidence": result.get("confidence", 0),
             "screenshot_url": image_url,
+            "feedbacks": created_feedbacks,
+            "total_feedbacks": len(created_feedbacks),
+            "overall_confidence": result.get("overall_confidence", 0),
         }
 
     async def on_batch_start(self, batch_job: BatchJob, db: AsyncSession):

@@ -229,38 +229,50 @@
       <!-- 步骤4：完成 -->
       <template v-if="uploadStatus === 'success'">
         <div class="batch-result success">
-          <CheckCircleOutlined class="result-icon success-icon" />
-          <h3>批量识别完成！</h3>
+          <div class="result-header-section">
+            <CheckCircleOutlined class="result-icon success-icon" />
+            <h3>批量识别完成！</h3>
+          </div>
 
-          <a-row :gutter="16" class="statistics mt-4">
-            <a-col :span="6">
-              <a-statistic title="总计" :value="progressData?.total_count || 0" />
-            </a-col>
-            <a-col :span="6">
-              <a-statistic
-                title="成功"
-                :value="progressData?.completed_count || 0"
-                :value-style="{ color: '#3f8600' }"
-              />
-            </a-col>
-            <a-col :span="6">
-              <a-statistic
-                title="失败"
-                :value="progressData?.failed_count || 0"
-                :value-style="{ color: (progressData?.failed_count || 0) > 0 ? '#cf1322' : undefined }"
-              />
-            </a-col>
-            <a-col :span="6">
-              <a-statistic
-                title="成功率"
-                :value="successRate"
-                suffix="%"
-              />
-            </a-col>
-          </a-row>
+          <div class="result-content-section">
+            <a-row :gutter="16" class="statistics mb-6">
+              <a-col :span="6">
+                <a-statistic title="总计" :value="progressData?.total_count || 0" />
+              </a-col>
+              <a-col :span="6">
+                <a-statistic
+                  title="成功"
+                  :value="progressData?.completed_count || 0"
+                  :value-style="{ color: '#3f8600' }"
+                />
+              </a-col>
+              <a-col :span="6">
+                <a-statistic
+                  title="失败"
+                  :value="progressData?.failed_count || 0"
+                  :value-style="{ color: (progressData?.failed_count || 0) > 0 ? '#cf1322' : undefined }"
+                />
+              </a-col>
+              <a-col :span="6">
+                <a-statistic
+                  title="成功率"
+                  :value="successRate"
+                  suffix="%"
+                />
+              </a-col>
+            </a-row>
 
-          <!-- 反馈列表 -->
-          <Card v-if="batchResults.length > 0" title="📋 识别结果列表" class="mt-6 result-list-card" size="small">
+            <!-- 反馈列表 -->
+            <Card v-if="batchResults.length > 0" title="📋 识别结果列表" class="result-list-card" size="small">
+            <template #extra>
+              <a-statistic
+                title="共识别反馈"
+                :value="totalCreatedFeedbacks"
+                suffix="条"
+                :value-style="{ fontSize: '16px', color: '#1890ff' }"
+              />
+            </template>
+
             <a-tabs v-model:activeKey="resultTab">
               <a-tab-pane key="all" tab="全部">
                 <div class="result-list">
@@ -279,11 +291,20 @@
                         <CloseOutlined /> 失败
                       </a-tag>
                       <a-tag v-else>{{ item.status }}</a-tag>
+
+                      <!-- 显示该截图识别出的反馈数量 -->
                       <a-tag
-                        v-if="item.output_data?.confidence !== undefined"
-                        :color="item.output_data.confidence > 0.8 ? 'blue' : 'warning'"
+                        v-if="item.output_data?.total_feedbacks"
+                        color="purple"
                       >
-                        置信度: {{ (item.output_data.confidence * 100).toFixed(0) }}%
+                        识别 {{ item.output_data.total_feedbacks }} 条反馈
+                      </a-tag>
+
+                      <a-tag
+                        v-if="item.output_data?.overall_confidence !== undefined"
+                        :color="item.output_data.overall_confidence > 0.8 ? 'blue' : 'warning'"
+                      >
+                        置信度: {{ (item.output_data.overall_confidence * 100).toFixed(0) }}%
                       </a-tag>
                     </div>
 
@@ -302,14 +323,31 @@
                       </div>
 
                       <div class="feedback-info">
-                        <template v-if="item.status === 'completed' && item.output_data">
-                          <div class="feedback-content">
-                            {{ item.output_data.content || '（无内容）' }}
-                          </div>
-                          <div v-if="item.output_data.feedback_id" class="feedback-meta">
-                            <span class="text-gray-500">
-                              反馈ID: {{ item.output_data.feedback_id.slice(0, 8) }}...
-                            </span>
+                        <template v-if="item.status === 'completed' && item.output_data?.feedbacks">
+                          <!-- 展示该截图识别出的所有反馈 -->
+                          <div
+                            v-for="(feedback, fbIndex) in item.output_data.feedbacks"
+                            :key="feedback.feedback_id"
+                            class="feedback-item"
+                            :class="{ 'mt-3': fbIndex > 0 }"
+                          >
+                            <div class="feedback-item-header">
+                              <a-tag size="small" color="cyan">反馈 {{ fbIndex + 1 }}</a-tag>
+                              <a-tag
+                                size="small"
+                                :color="feedback.confidence > 0.8 ? 'green' : 'orange'"
+                              >
+                                {{ (feedback.confidence * 100).toFixed(0) }}%
+                              </a-tag>
+                            </div>
+                            <div class="feedback-content">
+                              {{ feedback.content || '（无内容）' }}
+                            </div>
+                            <div class="feedback-meta">
+                              <span class="text-gray-500">
+                                ID: {{ feedback.feedback_id.slice(0, 8) }}...
+                              </span>
+                            </div>
                           </div>
                         </template>
                         <template v-else-if="item.error_message">
@@ -335,10 +373,16 @@
                       <span class="result-index">#{{ index + 1 }}</span>
                       <a-tag color="success"><CheckOutlined /> 成功</a-tag>
                       <a-tag
-                        v-if="item.output_data?.confidence !== undefined"
-                        :color="item.output_data.confidence > 0.8 ? 'blue' : 'warning'"
+                        v-if="item.output_data?.total_feedbacks"
+                        color="purple"
                       >
-                        置信度: {{ (item.output_data.confidence * 100).toFixed(0) }}%
+                        识别 {{ item.output_data.total_feedbacks }} 条反馈
+                      </a-tag>
+                      <a-tag
+                        v-if="item.output_data?.overall_confidence !== undefined"
+                        :color="item.output_data.overall_confidence > 0.8 ? 'blue' : 'warning'"
+                      >
+                        置信度: {{ (item.output_data.overall_confidence * 100).toFixed(0) }}%
                       </a-tag>
                     </div>
 
@@ -357,13 +401,29 @@
                       </div>
 
                       <div class="feedback-info">
-                        <div class="feedback-content">
-                          {{ item.output_data?.content || '（无内容）' }}
-                        </div>
-                        <div v-if="item.output_data?.feedback_id" class="feedback-meta">
-                          <span class="text-gray-500">
-                            反馈ID: {{ item.output_data.feedback_id.slice(0, 8) }}...
-                          </span>
+                        <div
+                          v-for="(feedback, fbIndex) in item.output_data?.feedbacks || []"
+                          :key="feedback.feedback_id"
+                          class="feedback-item"
+                          :class="{ 'mt-3': fbIndex > 0 }"
+                        >
+                          <div class="feedback-item-header">
+                            <a-tag size="small" color="cyan">反馈 {{ fbIndex + 1 }}</a-tag>
+                            <a-tag
+                              size="small"
+                              :color="feedback.confidence > 0.8 ? 'green' : 'orange'"
+                            >
+                              {{ (feedback.confidence * 100).toFixed(0) }}%
+                            </a-tag>
+                          </div>
+                          <div class="feedback-content">
+                            {{ feedback.content || '（无内容）' }}
+                          </div>
+                          <div class="feedback-meta">
+                            <span class="text-gray-500">
+                              ID: {{ feedback.feedback_id.slice(0, 8) }}...
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -408,13 +468,14 @@
             </a-tabs>
           </Card>
 
-          <div class="action-buttons mt-4">
-            <VbenButton type="primary" @click="goToFeedbackList">
-              查看反馈列表
-            </VbenButton>
-            <VbenButton @click="handleReset">
-              继续批量识别
-            </VbenButton>
+            <div class="action-buttons mt-6">
+              <VbenButton type="primary" @click="goToFeedbackList">
+                查看反馈列表
+              </VbenButton>
+              <VbenButton @click="handleReset">
+                继续批量识别
+              </VbenButton>
+            </div>
           </div>
         </div>
       </template>
@@ -513,6 +574,16 @@ const completedResults = computed(() =>
 const failedResults = computed(() =>
   batchResults.value.filter(r => r.status === 'failed')
 )
+
+// 计算所有识别出的反馈总数
+const totalCreatedFeedbacks = computed(() => {
+  return batchResults.value.reduce((total, item) => {
+    if (item.status === 'completed' && item.output_data?.feedbacks) {
+      return total + item.output_data.feedbacks.length
+    }
+    return total
+  }, 0)
+})
 
 // 计算当前步骤
 const currentStep = computed(() => {
@@ -870,8 +941,18 @@ const goToFeedbackList = () => {
 }
 
 .batch-result {
+  padding: 20px 0;
+}
+
+.result-header-section {
   text-align: center;
-  padding: 60px 0;
+  padding: 40px 0 20px;
+}
+
+.result-content-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: left;
 }
 
 .result-icon {
@@ -897,8 +978,6 @@ const goToFeedbackList = () => {
 }
 
 .result-list-card {
-  max-width: 900px;
-  margin: 0 auto;
   text-align: left;
 }
 
@@ -946,6 +1025,20 @@ const goToFeedbackList = () => {
 .feedback-info {
   flex: 1;
   min-width: 0;
+}
+
+.feedback-item {
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border-left: 3px solid #1890ff;
+}
+
+.feedback-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .feedback-content {
