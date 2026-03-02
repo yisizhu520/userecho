@@ -24,15 +24,15 @@ const searchTopics = useDebounceFn(async (title: string) => {
     similarTopics.value = [];
     return;
   }
-  
+
   try {
     loading.value = true;
-    const topics = await getTopicList({
+    const result = await getTopicList({
       search_query: title,
       search_mode: 'keyword',
       limit: 10,
     });
-    similarTopics.value = topics;
+    similarTopics.value = result.items || [];
   } catch (error: any) {
     console.error('搜索 Topic 失败', error);
   } finally {
@@ -57,17 +57,17 @@ const handleTopicSelect = (topicId: string) => {
       <span class="iconify lucide--lightbulb mr-2" />
       相似主题
     </div>
-    
+
     <div v-if="loading" class="panel-loading">
       <a-spin />
       <p>搜索中...</p>
     </div>
-    
+
     <div v-else-if="similarTopics.length === 0" class="panel-empty">
       <span class="iconify lucide--search text-4xl mb-2" />
       <p>输入标题以搜索相似主题</p>
     </div>
-    
+
     <div v-else class="topic-list">
       <div
         v-for="topic in similarTopics"

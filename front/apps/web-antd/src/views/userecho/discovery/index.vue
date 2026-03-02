@@ -42,12 +42,13 @@ const stats = computed(() => {
 async function refresh() {
   try {
     loading.value = true;
-    topics.value = await getTopicList({
+    const response = await getTopicList({
       skip: 0,
       limit: 200,
       sort_by: 'feedback_count',
       sort_order: 'desc',
     });
+    topics.value = response.items || [];
   } catch {
     message.error('加载失败，请稍后重试');
   } finally {
@@ -222,9 +223,9 @@ onMounted(() => {
                 <span class="iconify lucide--eye" />
                 查看
               </a-button>
-              <a-button 
-                v-if="item.status === 'pending'" 
-                type="primary" 
+              <a-button
+                v-if="item.status === 'pending'"
+                type="primary"
                 size="small"
                 ghost
                 @click.stop="confirmTopic(item)"
@@ -232,9 +233,9 @@ onMounted(() => {
                 <span class="iconify lucide--check" />
                 采纳
               </a-button>
-              <a-button 
-                v-if="item.status === 'pending'" 
-                danger 
+              <a-button
+                v-if="item.status === 'pending'"
+                danger
                 size="small"
                 ghost
                 @click.stop="ignoreTopic(item)"
