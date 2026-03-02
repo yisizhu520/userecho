@@ -62,6 +62,83 @@ class CRUDFeedback(TenantAwareCRUD[Feedback]):
         log.debug(f"Found {len(feedbacks)} pending feedbacks")
         return feedbacks
 
+    async def claim_pending_clustering(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        limit: int = 100,
+        include_failed: bool = True,
+        force_recluster: bool = False,
+        board_id: str | None = None,
+        *,
+        started_at,
+    ) -> list[dict[str, object]]:
+        """
+        原子领取待聚类反馈并标记为 processing（使用 SKIP LOCKED 避免并发冲突）
+
+        返回：脱离 ORM 的纯数据列表，避免提交后对象过期。
+        """
+        from sqlalchemy import update
+        from backend.common.log import log
+
+        statuses = ["pending"]
+        if include_failed:
+            statuses.append("failed")
+        if force_recluster:
+            statuses.append("clustered")
+
+        query = (
+            select(self.model)
+            .where(
+                self.model.tenant_id == tenant_id,
+                self.model.topic_id.is_(None),
+                self.model.clustering_status.in_(statuses),
+                self.model.deleted_at.is_(None),
+            )
+            .order_by(self.model.updated_time.asc())
+            .limit(limit)
+            .with_for_update(skip_locked=True)
+        )
+
+        if board_id:
+            query = query.where(self.model.board_id == board_id)
+
+        result = await db.execute(query)
+        feedbacks = list(result.scalars().all())
+        if not feedbacks:
+            return []
+
+        feedback_ids = [f.id for f in feedbacks]
+        values = {
+            "clustering_status": "processing",
+            "clustering_metadata": {"started_at": started_at.isoformat()},
+        }
+
+        stmt = (
+            update(self.model)
+            .where(
+                self.model.id.in_(feedback_ids),
+                self.model.tenant_id == tenant_id,
+                self.model.clustering_status.in_(statuses),
+                self.model.deleted_at.is_(None),
+            )
+            .values(**values)
+        )
+        await db.execute(stmt)
+
+        log.info(f"Claimed {len(feedbacks)} feedbacks for clustering: tenant={tenant_id}, board={board_id}")
+
+        return [
+            {
+                "id": f.id,
+                "content": f.content,
+                "board_id": f.board_id,
+                "customer_id": f.customer_id,
+                "embedding": f.embedding,
+            }
+            for f in feedbacks
+        ]
+
     async def get_unclustered(
         self,
         db: AsyncSession,

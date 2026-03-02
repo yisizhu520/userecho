@@ -35,10 +35,6 @@ class Board(MappedBase):
     category: Mapped[str | None] = mapped_column(String(50), default=None, comment="看板分类，如 mobile, web, api")
     tags: Mapped[list | None] = mapped_column(ARRAY(String), default=None, comment="看板标签")
 
-    # 统计（通过触发器自动更新）
-    feedback_count: Mapped[int] = mapped_column(default=0, comment="反馈数量")
-    topic_count: Mapped[int] = mapped_column(default=0, comment="主题数量")
-
     # 配置
     settings: Mapped[dict | None] = mapped_column(JSON, default=None, comment="Board 特定配置")
 

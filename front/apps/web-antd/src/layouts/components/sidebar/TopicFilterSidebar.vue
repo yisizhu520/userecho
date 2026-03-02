@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import TopicFilterPanel from './TopicFilterPanel.vue';
+import type { Topic } from '#/api';
 
 interface Props {
   searchQuery?: string;
@@ -9,6 +10,7 @@ interface Props {
   boardIds?: string[];
   dateRange?: [string, string] | null;
   viewMode?: 'list' | 'kanban';
+  topics?: Topic[];  // ✅ 接收当前过滤后的 Topic 列表
 }
 
 defineProps<Props>();
@@ -31,7 +33,7 @@ const emit = defineEmits<{
       <!-- BoardSelector 暂时注释，未来多看板功能时启用 -->
       <!-- <BoardSelector /> -->
       <!-- <div class="mx-4 my-2 border-t border-gray-100 dark:border-gray-800"></div> -->
-      
+
       <TopicFilterPanel
         :search-query="searchQuery"
         :search-mode="searchMode"
@@ -40,6 +42,7 @@ const emit = defineEmits<{
         :board-ids="boardIds"
         :date-range="dateRange"
         :view-mode="viewMode"
+        :topics="topics"
         @update:search-query="emit('update:searchQuery', $event)"
         @update:search-mode="emit('update:searchMode', $event)"
         @update:status="emit('update:status', $event)"
@@ -50,7 +53,7 @@ const emit = defineEmits<{
         @search="emit('search')"
       />
     </div>
-    
+
     <div class="p-4 text-xs text-center text-gray-400">
       Powered by userecho
     </div>

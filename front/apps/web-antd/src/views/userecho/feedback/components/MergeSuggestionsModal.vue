@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
- * 合并建议弹窗
- * 
+ * 合并建议弹窗（Linus 简化版）
+ *
  * 展示聚类后发现的与已有需求重复的反馈聚类，让用户选择操作：
- * - 关联到已有需求
+ * - 关联到已有需求（推荐）
  * - 创建新需求
- * - 重新打开需求（如果是已完成状态）
+ *
+ * ✅ 删除无用选项：mark_outdated, reopen_and_link
+ * ✅ 统一逻辑：不区分 completed vs non-completed
  */
 import type { MergeSuggestion } from '#/api';
 
@@ -13,7 +15,7 @@ import { ref, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 
-import { linkFeedbacksToTopic, updateTopicStatus } from '#/api';
+import { linkFeedbacksToTopic } from '#/api';
 import { getCategoryConfig, getStatusConfig, categoryIcons } from '#/views/userecho/topic/data';
 
 interface Props {
@@ -33,12 +35,8 @@ const router = useRouter();
 const processing = ref<string | null>(null);  // 当前正在处理的 suggestion cluster_label
 
 const sortedSuggestions = computed(() => {
-  // 已完成的需求排在前面（更需要用户关注）
-  return [...props.suggestions].sort((a, b) => {
-    if (a.is_completed && !b.is_completed) return -1;
-    if (!a.is_completed && b.is_completed) return 1;
-    return b.similarity - a.similarity;
-  });
+  // ✅ Linus 简化：按相似度排序，不区分 completed vs non-completed
+  return [...props.suggestions].sort((a, b) => b.similarity - a.similarity);
 });
 
 const close = () => {
@@ -46,7 +44,7 @@ const close = () => {
 };
 
 /**
- * 关联到已有需求
+ * 关联到已有需求（推荐操作）
  */
 async function handleLinkToExisting(suggestion: MergeSuggestion) {
   processing.value = String(suggestion.cluster_label);
@@ -63,37 +61,11 @@ async function handleLinkToExisting(suggestion: MergeSuggestion) {
 
 
 /**
- * 重新打开需求并关联
- */
-async function handleReopenAndLink(suggestion: MergeSuggestion) {
-  processing.value = String(suggestion.cluster_label);
-  try {
-    // 1. 重新打开需求
-    await updateTopicStatus(suggestion.suggested_topic_id, {
-      status: 'in_progress',
-      reason: '收到新的用户反馈，重新打开',
-    });
-    
-    // 2. 关联反馈
-    await linkFeedbacksToTopic(suggestion.suggested_topic_id, suggestion.feedback_ids);
-    
-    message.success(`已重新打开「${suggestion.suggested_topic_title}」并关联 ${suggestion.feedback_count} 条反馈`);
-    emit('refresh');
-  } catch (error: any) {
-    message.error(error.message || '操作失败');
-  } finally {
-    processing.value = null;
-  }
-}
-
-
-/**
  * 创建新需求
  */
 async function handleCreateNew(suggestion: MergeSuggestion) {
   // 跳转到需求创建页面，预填标题
   close();
-  // 通过 query 参数传递预填信息
   router.push({
     path: '/app/topic/list',
     query: {
@@ -154,15 +126,6 @@ function handleViewTopic(topicId: string) {
           </a-tag>
         </div>
 
-        <!-- 警告信息（已完成的需求） -->
-        <a-alert
-          v-if="suggestion.warning"
-          type="warning"
-          :message="suggestion.warning"
-          show-icon
-          class="my-2"
-        />
-
         <!-- 反馈信息 -->
         <div class="feedback-info">
           <span class="text-gray-500">
@@ -175,42 +138,22 @@ function handleViewTopic(topicId: string) {
           <span class="text-gray-400">条反馈</span>
         </div>
 
-        <!-- 操作按钮 -->
+        <!-- 操作按钮（✅ Linus 简化：统一逻辑，只有2个按钮） -->
         <div class="suggestion-actions">
-          <template v-if="suggestion.is_completed">
-            <!-- 已完成需求的操作 -->
-            <a-button
-              type="primary"
-              :loading="processing === String(suggestion.cluster_label)"
-              @click="handleReopenAndLink(suggestion)"
-            >
-              <span class="iconify lucide--redo-2 mr-1" />
-              重新打开并关联
-            </a-button>
-            <a-button
-              @click="handleCreateNew(suggestion)"
-            >
-              <span class="iconify lucide--plus mr-1" />
-              创建新需求
-            </a-button>
-          </template>
-          <template v-else>
-            <!-- 进行中的需求操作 -->
-            <a-button
-              type="primary"
-              :loading="processing === String(suggestion.cluster_label)"
-              @click="handleLinkToExisting(suggestion)"
-            >
-              <span class="iconify lucide--link mr-1" />
-              关联到此需求
-            </a-button>
-            <a-button
-              @click="handleCreateNew(suggestion)"
-            >
-              <span class="iconify lucide--plus mr-1" />
-              创建新需求
-            </a-button>
-          </template>
+          <a-button
+            type="primary"
+            :loading="processing === String(suggestion.cluster_label)"
+            @click="handleLinkToExisting(suggestion)"
+          >
+            <span class="iconify lucide--link mr-1" />
+            关联到此需求
+          </a-button>
+          <a-button
+            @click="handleCreateNew(suggestion)"
+          >
+            <span class="iconify lucide--plus mr-1" />
+            创建新需求
+          </a-button>
         </div>
       </div>
     </div>
@@ -242,11 +185,6 @@ function handleViewTopic(topicId: string) {
 .suggestion-card:hover {
   border-color: hsl(var(--primary));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.suggestion-card.is-completed {
-  border-color: #faad14;
-  background: linear-gradient(135deg, hsl(var(--card)) 0%, #fffbe6 100%);
 }
 
 .suggestion-header {

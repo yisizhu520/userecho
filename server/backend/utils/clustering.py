@@ -1,6 +1,6 @@
 """反馈聚类算法
 
-使用 DBSCAN 进行基于相似度的聚类
+使用 DBSCAN 和 HDBSCAN 进行基于相似度的聚类
 """
 
 import math
@@ -9,6 +9,13 @@ import numpy as np
 
 from sklearn.cluster import DBSCAN
 from sklearn.metrics.pairwise import cosine_similarity
+
+try:
+    from hdbscan import HDBSCAN
+
+    HDBSCAN_AVAILABLE = True
+except ImportError:
+    HDBSCAN_AVAILABLE = False
 
 from backend.common.log import log
 from backend.core.conf import settings
@@ -151,6 +158,70 @@ class FeedbackClustering:
         except Exception as e:
             log.error(f"Failed to calculate cluster quality: {e}")
             return {"silhouette": 0.0, "davies_bouldin": None, "noise_ratio": 1.0}
+
+    def cluster_hdbscan(
+        self,
+        embeddings: np.ndarray,
+        min_cluster_size: int | None = None,
+        min_samples: int | None = None,
+    ) -> np.ndarray:
+        """
+        使用 HDBSCAN 进行自适应层次聚类
+
+        Args:
+            embeddings: shape (n_samples, embedding_dim) 的 embedding 矩阵
+            min_cluster_size: 最小聚类大小（至少 N 条反馈才形成聚类），默认使用配置值
+            min_samples: 核心点要求（至少 N 个邻居才是核心点），默认使用配置值
+
+        Returns:
+            labels: shape (n_samples,) 聚类标签，-1 表示噪声点
+        """
+        if not HDBSCAN_AVAILABLE:
+            log.warning("HDBSCAN not available, falling back to DBSCAN")
+            return self.cluster(embeddings)
+
+        # 使用配置值或传入参数
+        _min_cluster_size = min_cluster_size or self.min_samples
+        _min_samples = min_samples or max(1, self.min_samples - 1)
+
+        if embeddings.shape[0] < _min_cluster_size:
+            log.warning(f"Too few samples for HDBSCAN clustering: {embeddings.shape[0]} < {_min_cluster_size}")
+            return np.full(embeddings.shape[0], -1)
+
+        try:
+            # 计算余弦相似度矩阵
+            similarity_matrix = cosine_similarity(embeddings)
+
+            # 转换为距离矩阵 (1 - similarity)
+            similarity_matrix = np.clip(similarity_matrix, -1.0, 1.0)
+            distance_matrix = 1 - similarity_matrix
+
+            # 初始化 HDBSCAN（使用预计算的距离矩阵）
+            clusterer = HDBSCAN(
+                min_cluster_size=_min_cluster_size,
+                min_samples=_min_samples,
+                metric="precomputed",  # 使用预计算的距离矩阵
+                cluster_selection_method="eom",  # Excess of Mass (更保守)
+                cluster_selection_epsilon=0.1,  # 合并相近聚类的阈值
+            )
+
+            # 执行聚类
+            labels = clusterer.fit_predict(distance_matrix)
+
+            # 统计聚类结果
+            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+            n_noise = list(labels).count(-1)
+
+            log.info(
+                f"HDBSCAN clustering completed: {n_clusters} clusters, {n_noise} noise points "
+                f"(min_cluster_size={_min_cluster_size}, min_samples={_min_samples})"
+            )
+
+            return labels
+
+        except Exception as e:
+            log.error(f"HDBSCAN clustering failed: {e}, falling back to DBSCAN")
+            return self.cluster(embeddings)
 
 
 # 全局单例

@@ -1,11 +1,15 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.common.model import MappedBase, TimeZone
 from backend.database.db import uuid4_str
 from backend.utils.timezone import timezone
+
+if TYPE_CHECKING:
+    from backend.app.userecho.model.merge_suggestion import MergeSuggestion
 
 
 class Tenant(MappedBase):
@@ -24,4 +28,11 @@ class Tenant(MappedBase):
     created_time: Mapped[datetime] = mapped_column(TimeZone, default=timezone.now, comment="创建时间")
     updated_time: Mapped[datetime | None] = mapped_column(
         TimeZone, onupdate=timezone.now, default=None, comment="更新时间"
+    )
+
+    # 关联关系
+    merge_suggestions: Mapped[list["MergeSuggestion"]] = relationship(
+        "MergeSuggestion",
+        back_populates="tenant",
+        cascade="all, delete-orphan",
     )

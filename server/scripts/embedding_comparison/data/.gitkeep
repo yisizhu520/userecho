@@ -1,0 +1,65 @@
+# 脚本说明
+
+这个目录包含 Embedding 模型对比实验的所有脚本。
+
+## 文件结构
+
+```
+embedding_comparison/
+├── README.md                           # 实验指南
+├── 01_prepare_annotation_dataset.py    # 步骤1: 准备标注数据
+├── 02_compare_embedding_models.py      # 步骤2: 对比模型
+├── 03_test_clustering_quality.py       # 步骤3: 真实聚类测试(可选)
+└── data/                               # 实验数据(自动生成)
+    ├── suspicious_pairs_raw.json       # 原始可疑对
+    ├── annotation_dataset.json         # 标注数据集
+    ├── model_comparison_results.json   # 模型对比结果
+    ├── comparison_report.md            # 对比报告
+    ├── clustering_quality_results.json # 聚类质量结果
+    └── clustering_quality_report.md    # 聚类质量报告
+```
+
+## 运行顺序
+
+1. `01_prepare_annotation_dataset.py` - 必须先运行
+2. `02_compare_embedding_models.py` - 核心步骤
+3. `03_test_clustering_quality.py` - 可选验证
+
+## 配置说明
+
+在运行脚本前,需要修改以下配置:
+
+### 1. 租户 ID 配置
+
+编辑脚本中的 `TENANT_ID`:
+
+```python
+# 在 01_prepare_annotation_dataset.py 中
+TENANT_ID = "your-tenant-id-here"  # 替换为你的租户ID
+
+# 在 03_test_clustering_quality.py 中
+TENANT_ID = "your-tenant-id-here"  # 替换为你的租户ID
+```
+
+### 2. API Keys 配置
+
+编辑 `server/backend/.env`:
+
+```bash
+# Volcengine (已有)
+VOLCENGINE_API_KEY=your-key
+VOLCENGINE_EMBEDDING_ENDPOINT=ep-xxx
+
+# OpenAI (需要配置)
+OPENAI_API_KEY=sk-xxx
+
+# GLM (需要配置)
+GLM_API_KEY=your-glm-key
+```
+
+## 注意事项
+
+- 所有脚本都需要在 `server/` 目录下运行
+- 确保虚拟环境已激活: `source .venv/Scripts/activate`
+- 标注数据会保存在 `data/` 目录,不要删除
+- 如果中断标注,可以继续从断点开始

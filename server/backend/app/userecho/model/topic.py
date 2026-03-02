@@ -1,6 +1,6 @@
 from datetime import date, datetime
-from decimal import Decimal
 from typing import TYPE_CHECKING
+from decimal import Decimal
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, Date, ForeignKey, Numeric, String, Text
@@ -10,6 +10,7 @@ from backend.common.model import MappedBase, TimeZone
 from backend.utils.timezone import timezone
 
 if TYPE_CHECKING:
+    from backend.app.userecho.model.merge_suggestion import MergeSuggestion
     from backend.app.userecho.model.priority_score import PriorityScore
 
 
@@ -96,4 +97,9 @@ class Topic(MappedBase):
         back_populates="topic",
         uselist=False,
         lazy="joined",
+    )
+    merge_suggestions: Mapped[list["MergeSuggestion"]] = relationship(
+        "MergeSuggestion",
+        back_populates="topic",
+        cascade="all, delete-orphan",
     )

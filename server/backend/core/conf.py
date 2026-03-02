@@ -275,6 +275,7 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     GLM_API_KEY: str = ""  # 智谱 AI
+    DASHSCOPE_API_KEY: str = ""  # 阿里云通义千问
     VOLCENGINE_API_KEY: str = ""  # 火山引擎（豆包）
 
     # AI 配置
@@ -288,8 +289,13 @@ class Settings(BaseSettings):
     # 聚类配置
     CLUSTERING_SIMILARITY_THRESHOLD: float = 0.85  # 相似度阈值（0.75太宽松，改为0.85更严格）
     CLUSTERING_MIN_SAMPLES: int = 2  # 最小聚类大小（至少2条相似反馈才能形成聚类）
-    CLUSTERING_MIN_SILHOUETTE: float = 0.3  # 最低轮廓系数（越高越好）0.0=测试阶段放开，生产建议 0.3
-    CLUSTERING_MAX_NOISE_RATIO: float = 0.5  # 最高噪声率（越低越好）1.0=测试阶段放开，生产建议 0.5
+    CLUSTERING_MIN_SILHOUETTE: float = 0.0  # 最低轮廓系数（越高越好）0.0=测试阶段放开，生产建议 0.3
+    CLUSTERING_MAX_NOISE_RATIO: float = 1.0  # 最高噪声率（越低越好）1.0=测试阶段放开，生产建议 0.5
+    CLUSTERING_USE_HDBSCAN: bool = True  # 是否使用 HDBSCAN（True=自适应聚类，False=DBSCAN）
+    CLUSTERING_HDBSCAN_MIN_CLUSTER_SIZE: int = 3  # HDBSCAN 最小聚类大小（至少3条反馈才形成聚类，更保守）
+    CLUSTERING_HDBSCAN_MIN_SAMPLES: int = 2  # HDBSCAN 核心点要求（至少2个邻居才是核心点）
+    CLUSTERING_LLM_VALIDATION_ENABLED: bool = True  # 是否启用 LLM 验证（提高聚类质量，拆分混杂聚类）
+    CLUSTERING_LLM_VALIDATION_MIN_SIZE: int = 3  # LLM 验证的最小聚类大小（只验证大聚类）
 
     # 导入配置
     IMPORT_MAX_FILE_SIZE: int = 10485760  # 10MB

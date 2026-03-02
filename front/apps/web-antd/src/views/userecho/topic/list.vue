@@ -414,7 +414,7 @@ const [addModal, addModalApi] = useVbenModal({
       const data = await addFormApi.getValues<CreateTopicParams>();
       try {
         const newTopic = await createTopic(data);
-        
+
         // 如果有待关联的反馈（从合并建议跳转过来的）
         if (pendingLinkFeedbackIds.value.length > 0) {
           isLinkingPending.value = true;
@@ -431,7 +431,7 @@ const [addModal, addModalApi] = useVbenModal({
         } else {
           message.success('创建成功');
         }
-        
+
         await addModalApi.close();
         onRefresh();
       } catch {
@@ -448,12 +448,12 @@ const [addModal, addModalApi] = useVbenModal({
       if (pendingLinkFeedbackIds.value.length === 0) {
         addFormApi.resetForm();
       }
-      
+
       // 加载看板列表
       await boardStore.refreshBoards();
       const boardOptions = boardStore.boards.map((b) => ({ label: b.name, value: b.id }));
       addFormApi.updateSchema([{ fieldName: 'board_id', componentProps: { options: boardOptions } }]);
-      
+
       // 默认选中当前筛选的看板（如果有且只有一个），且表单中没有值
       const currentValues = await addFormApi.getValues();
       if (!currentValues.board_id) {
@@ -485,14 +485,14 @@ onMounted(async () => {
   const mediaQuery = window.matchMedia('(max-width: 767px)');
   handleMediaChange(mediaQuery);
   mediaQuery.addEventListener('change', handleMediaChange);
-  
+
   (window as any).__topicMediaQuery = mediaQuery;
 
   // 处理路由参数（从合并建议跳转过来）
   if (route.query.action === 'create') {
     const title = route.query.title as string;
     const feedbackIdsStr = route.query.feedback_ids as string;
-    
+
     if (title) {
         // 等待一下确保组件加载
         setTimeout(() => {
@@ -502,7 +502,7 @@ onMounted(async () => {
                 description: `基于 ${feedbackIdsStr?.split(',').length || 0} 条用户反馈自动创建。`,
                 category: 'feature', // 默认分类
             });
-            
+
             if (feedbackIdsStr) {
                 pendingLinkFeedbackIds.value = feedbackIdsStr.split(',');
             }
@@ -533,17 +533,18 @@ onBeforeUnmount(() => {
           v-model:board-ids="filterValues.board_ids"
           v-model:date-range="filterValues.date_range"
           v-model:view-mode="viewMode"
+          :topics="allTopics"
         />
       </div>
-      
+
       <!-- 右侧内容区域 -->
       <div class="topic-main-content" :class="isMobile ? 'p-2' : 'p-2'">
         <!-- 合并建议 Banner -->
         <MergeSuggestionsBanner />
-        
+
         <!-- 移动端汉堡菜单按钮 -->
-        <VbenButton 
-          v-if="isMobile" 
+        <VbenButton
+          v-if="isMobile"
           class="mb-3"
           variant="outline"
           @click="drawerVisible = true"
@@ -551,18 +552,18 @@ onBeforeUnmount(() => {
           <span class="iconify lucide--menu mr-2" />
           筛选条件
         </VbenButton>
-        
+
         <!-- 看板视图 -->
         <div v-if="viewMode === 'kanban'" class="topic-kanban-wrapper">
-          <KanbanView 
-            :topics="allTopics" 
+          <KanbanView
+            :topics="allTopics"
             :loading="kanbanLoading"
             @refresh="onKanbanRefresh"
             @edit="(t) => onActionClick({ code: 'edit', row: t })"
             @delete="(t) => handleDelete(t)"
           />
         </div>
-        
+
         <!-- 列表视图 -->
         <div v-else class="topic-grid-wrapper">
           <Grid>
@@ -580,7 +581,7 @@ onBeforeUnmount(() => {
                 <span class="iconify lucide--search" />
               </template>
             </a-input>
-            
+
             <VbenButton @click="() => addModalApi.open()">
               <MaterialSymbolsAdd class="size-5" />
               手动创建需求
@@ -689,7 +690,7 @@ onBeforeUnmount(() => {
           </Grid>
         </div>
       </div>
-      
+
       <!-- 移动端抽屉 -->
       <a-drawer
         v-model:open="drawerVisible"
@@ -704,6 +705,7 @@ onBeforeUnmount(() => {
           v-model:board-ids="filterValues.board_ids"
           v-model:date-range="filterValues.date_range"
           v-model:view-mode="viewMode"
+          :topics="allTopics"
         />
       </a-drawer>
     </div>

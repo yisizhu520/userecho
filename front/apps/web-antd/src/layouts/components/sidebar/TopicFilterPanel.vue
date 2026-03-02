@@ -2,8 +2,8 @@
 import { Checkbox, CheckboxGroup, RangePicker, Select, Radio } from 'ant-design-vue';
 const RadioGroup = Radio.Group;
 const RadioButton = Radio.Button;
-import { ref, onMounted, watch } from 'vue';
-import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type Board } from '#/api';
+import { ref, onMounted, watch, computed } from 'vue';
+import { TOPIC_STATUSES, TOPIC_CATEGORIES, getBoardList, type Board, type Topic } from '#/api';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 
@@ -13,14 +13,14 @@ interface Props {
   boardIds?: string[];
   dateRange?: [string, string] | null;
   viewMode?: 'list' | 'kanban';
+  topics?: Topic[];  // ✅ 接收当前过滤后的 Topic 列表（用于实时计算看板数量）
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   'update:status': [value: string[]];
   'update:category': [value: string[]];
-  'update:boardIds': [value: string[]];
   'update:boardIds': [value: string[]];
   'update:dateRange': [value: [string, string] | null];
   'update:viewMode': [value: 'list' | 'kanban'];
@@ -45,6 +45,38 @@ async function loadBoards() {
 onMounted(() => {
   loadBoards();
 });
+
+/**
+ * ✅ Linus: "数据都在手里了，为什么要再问后端一次？前端自己算！"
+ *
+ * 计算每个看板在当前过滤条件下的 Topic 数量
+ *
+ * 这个计算逻辑基于当前已加载的 Topic 列表（经过 status/category/date_range/search_query 过滤）
+ * 消除了看板筛选数量和列表数量不一致的问题
+ */
+const boardCountsMap = computed(() => {
+  const countsMap: Record<string, number> = {};
+
+  if (!props.topics || props.topics.length === 0) {
+    return countsMap;
+  }
+
+  // GROUP BY board_id，统计每个看板的 Topic 数量
+  for (const topic of props.topics) {
+    if (topic.board_id) {
+      countsMap[topic.board_id] = (countsMap[topic.board_id] || 0) + 1;
+    }
+  }
+
+  return countsMap;
+});
+
+/**
+ * ✅ 获取看板的实时 Topic 数量（基于当前过滤条件）
+ */
+function getTopicCount(boardId: string): number {
+  return boardCountsMap.value[boardId] || 0;
+}
 
 // 当前选中的相对日期 key
 const selectedDateKey = ref<string>('all');
@@ -210,7 +242,7 @@ watch(selectedDateKey, (key) => {
             class="ml-0"
           >
             <span class="text-sm">{{ board.name }}</span>
-            <span class="text-xs text-gray-400 ml-1">({{ board.topic_count }})</span>
+            <span class="text-xs text-gray-400 ml-1">({{ getTopicCount(board.id) }})</span>
           </Checkbox>
         </div>
       </CheckboxGroup>

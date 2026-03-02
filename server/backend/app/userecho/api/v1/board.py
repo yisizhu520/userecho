@@ -1,10 +1,12 @@
 """Board API 端点"""
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from backend.app.userecho.crud.crud_board import crud_board
 from backend.app.userecho.model.board import Board
+from backend.app.userecho.model.feedback import Feedback
+from backend.app.userecho.model.topic import Topic
 from backend.app.userecho.schema.board import BoardCreate, BoardListOut, BoardOut, BoardReorder, BoardUpdate
 from backend.common.response.response_schema import ResponseSchemaModel, response_base
 from backend.common.security.jwt import CurrentTenantId
@@ -12,6 +14,56 @@ from backend.database.db import CurrentSession, uuid4_str
 from backend.utils.timezone import timezone
 
 router = APIRouter(prefix="/boards", tags=["UserEcho - 看板"])
+
+
+async def _enrich_boards_with_counts(db: CurrentSession, boards: list[Board]) -> list[dict]:
+    """
+    为看板列表附加实时计数（简单、准确、永远不会不一致）
+
+    Linus: "数据结构决定一切。这里是一次JOIN，简单清晰。"
+    """
+    if not boards:
+        return []
+
+    board_ids = [b.id for b in boards]
+
+    # 实时查询反馈计数
+    feedback_counts_stmt = (
+        select(Feedback.board_id, func.count(Feedback.id).label("count"))
+        .where(Feedback.board_id.in_(board_ids))
+        .where(Feedback.deleted_at.is_(None))
+        .group_by(Feedback.board_id)
+    )
+    feedback_result = await db.execute(feedback_counts_stmt)
+    feedback_counts = {row[0]: row[1] for row in feedback_result.all()}
+
+    # 实时查询主题计数
+    topic_counts_stmt = (
+        select(Topic.board_id, func.count(Topic.id).label("count"))
+        .where(Topic.board_id.in_(board_ids))
+        .where(Topic.deleted_at.is_(None))
+        .group_by(Topic.board_id)
+    )
+    topic_result = await db.execute(topic_counts_stmt)
+    topic_counts = {row[0]: row[1] for row in topic_result.all()}
+
+    # 组装数据
+    result = []
+    for board in boards:
+        board_dict = {
+            "id": board.id,
+            "tenant_id": board.tenant_id,
+            "name": board.name,
+            "url_name": board.url_name,
+            "description": board.description,
+            "feedback_count": feedback_counts.get(board.id, 0),  # 实时计算，永远准确
+            "topic_count": topic_counts.get(board.id, 0),  # 实时计算，永远准确
+            "is_archived": board.is_archived,
+            "created_time": board.created_time,
+        }
+        result.append(board_dict)
+
+    return result
 
 
 @router.get("", summary="获取看板列表")
@@ -35,7 +87,10 @@ async def get_boards(
     result = await db.execute(stmt)
     boards = result.scalars().all()
 
-    return response_base.success(data=BoardListOut(boards=boards, total=len(boards)))
+    # 附加实时计数
+    boards_with_counts = await _enrich_boards_with_counts(db, list(boards))
+
+    return response_base.success(data=BoardListOut(boards=boards_with_counts, total=len(boards_with_counts)))
 
 
 @router.post("", summary="创建看板")
@@ -70,7 +125,20 @@ async def create_board_management(
     )
     db.add(board)
 
-    return response_base.success(data=BoardOut.model_validate(board))
+    # 新建看板，计数为0，直接返回
+    board_dict = {
+        "id": board.id,
+        "tenant_id": board.tenant_id,
+        "name": board.name,
+        "url_name": board.url_name,
+        "description": board.description,
+        "feedback_count": 0,
+        "topic_count": 0,
+        "is_archived": False,
+        "created_time": board.created_time,
+    }
+
+    return response_base.success(data=BoardOut.model_validate(board_dict))
 
 
 @router.put("/{board_id}", summary="更新看板")
@@ -113,7 +181,9 @@ async def update_board_management(
         board.is_archived = update_data.is_archived
 
     # ✅ 不要手动设置 updated_time，让 onupdate=timezone.now 自动处理
-    return response_base.success(data=BoardOut.model_validate(board))
+    # 附加实时计数
+    boards_with_counts = await _enrich_boards_with_counts(db, [board])
+    return response_base.success(data=BoardOut.model_validate(boards_with_counts[0]))
 
 
 @router.delete("/{board_id}", summary="删除看板（软删除）")

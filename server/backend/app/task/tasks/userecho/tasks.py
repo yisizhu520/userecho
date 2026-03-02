@@ -30,7 +30,7 @@ def _get_or_create_event_loop() -> asyncio.AbstractEventLoop:
 @asynccontextmanager
 async def local_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
-    创建本地数据库会话（用于 Celery 任务）
+    创建本地数据库会话（用于 Celery 任务）- 自动管理事务
 
     解决问题：
     全局 `async_engine` 绑定在主线程/主进程的事件循环上。
@@ -38,11 +38,16 @@ async def local_db_session() -> AsyncGenerator[AsyncSession, None]:
     `RuntimeError: Task ... got Future ... attached to a different loop`。
 
     此上下文管理器会在每次调用时创建一个全新的 engine 和 session，
-    确保它们绑定到当前任务的 event loop 上。虽然有一定开销，但保证了正确性。
+    确保它们绑定到当前任务的 event loop 上。
+
+    ✅ Linus 优化：使用 .begin() 自动管理事务
+    - 进入上下文：自动 begin()
+    - 退出上下文：自动 commit()（无异常）或 rollback()（有异常）
+    - 禁止手动 commit()/rollback()，消除特殊情况
     """
     engine, session_maker = create_async_engine_and_session(SQLALCHEMY_DATABASE_URL)
     try:
-        async with session_maker() as session:
+        async with session_maker.begin() as session:
             yield session
     finally:
         await engine.dispose()
@@ -277,13 +282,14 @@ def userecho_clustering_batch(
     async def _async_run() -> Any:
         """异步执行聚类任务"""
         async with local_db_session() as db:
-            return await clustering_service.trigger_clustering(
+            result = await clustering_service.trigger_clustering(
                 db=db,
                 tenant_id=tenant_id,
                 max_feedbacks=max_feedbacks,
                 force_recluster=force_recluster,
                 board_ids=board_ids,
             )
+        return result
 
     # 手动管理 event loop，避免 asyncio.run() 关闭 loop 的问题
     try:

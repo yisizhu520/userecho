@@ -49,6 +49,12 @@ class AIClient:
             "chat_model": "glm-4-flash",
             "env_key": "GLM_API_KEY",
         },
+        "qwen": {
+            "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "embedding_model": "text-embedding-v3",
+            "chat_model": "qwen-plus",
+            "env_key": "DASHSCOPE_API_KEY",
+        },
         "volcengine": {
             "base_url": "https://ark.cn-beijing.volces.com/api/v3",
             "embedding_model": None,  # 火山引擎使用 endpoint ID，从环境变量读取
@@ -144,7 +150,7 @@ class AIClient:
         return None
 
     async def get_embeddings_batch(
-        self, texts: list[str], batch_size: int = 50, max_retries: int = 2
+        self, texts: list[str], batch_size: int | None = None, max_retries: int = 2, provider: str | None = None
     ) -> list[list[float] | None]:
         """
         批量获取文本 embedding 向量
@@ -154,14 +160,24 @@ class AIClient:
 
         Args:
             texts: 输入文本列表
-            batch_size: 单次请求的批量大小（默认 50，避免请求过大）
+            batch_size: 单次请求的批量大小（None 则自动根据 provider 选择）
             max_retries: 最大重试次数
+            provider: 可选，临时指定使用的 provider（不修改 self.current_provider）
 
         Returns:
             embedding 向量列表，失败的返回 None
         """
         if not texts:
             return []
+
+        # 根据 provider 自动选择 batch_size
+        if batch_size is None:
+            target_provider = provider or self.current_provider
+            # Qwen 限制最大 batch size = 10
+            if target_provider == "qwen":
+                batch_size = 10
+            else:
+                batch_size = 50
 
         # 过滤和截断文本
         processed_texts = []
@@ -176,18 +192,21 @@ class AIClient:
         # 分批处理
         for i in range(0, len(processed_texts), batch_size):
             batch = processed_texts[i : i + batch_size]
-            batch_results = await self._get_embeddings_batch_single(batch, max_retries)
+            batch_results = await self._get_embeddings_batch_single(batch, max_retries, provider)
             results.extend(batch_results)
 
         return results
 
-    async def _get_embeddings_batch_single(self, texts: list[str], max_retries: int = 2) -> list[list[float] | None]:
+    async def _get_embeddings_batch_single(
+        self, texts: list[str], max_retries: int = 2, provider: str | None = None
+    ) -> list[list[float] | None]:
         """
         单次批量获取 embedding（内部方法）
 
         Args:
             texts: 输入文本列表
             max_retries: 最大重试次数
+            provider: 可选，临时指定使用的 provider
 
         Returns:
             embedding 向量列表
@@ -204,34 +223,43 @@ class AIClient:
         if not non_empty_texts:
             return [None] * len(texts)
 
+        # 使用指定的 provider 或当前 provider
+        target_provider = provider if provider and provider in self.clients else self.current_provider
+
         for attempt in range(max_retries):
-            # 确保当前 provider 可用
-            if self.current_provider not in self.clients:
+            # 确保目标 provider 可用
+            if target_provider not in self.clients:
                 break
 
             try:
-                config = self.PROVIDERS_CONFIG[self.current_provider]
+                config = self.PROVIDERS_CONFIG[target_provider]
 
                 # 获取 embedding model
                 embedding_model = config["embedding_model"]
 
                 # 火山引擎特殊处理：从环境变量读取 endpoint ID
-                if self.current_provider == "volcengine":
+                if target_provider == "volcengine":
                     embedding_model = getattr(settings, "VOLCENGINE_EMBEDDING_ENDPOINT", None)
                     if not embedding_model:
                         log.warning("VOLCENGINE_EMBEDDING_ENDPOINT not configured")
+                        if provider:  # 指定了 provider 则直接失败
+                            break
                         self._fallback_to_next_provider()
+                        target_provider = self.current_provider
                         continue
 
                 # 如果当前 provider 不支持 embedding，跳到下一个
                 if embedding_model is None:
-                    log.info(f"{self.current_provider} does not support embedding, trying next provider")
+                    log.info(f"{target_provider} does not support embedding, trying next provider")
+                    if provider:  # 指定了 provider 则直接失败
+                        break
                     self._fallback_to_next_provider()
+                    target_provider = self.current_provider
                     continue
 
                 # 批量调用 embedding API
                 # 所有 provider（OpenAI, GLM, Volcengine）都支持 input 为数组
-                response = await self.clients[self.current_provider].embeddings.create(
+                response = await self.clients[target_provider].embeddings.create(
                     model=embedding_model,
                     input=non_empty_texts,  # 批量输入
                 )
@@ -250,14 +278,18 @@ class AIClient:
                         results.append(None)
 
                 log.info(
-                    f"Batch embedding completed: {len(non_empty_texts)}/{len(texts)} texts, "
-                    f"provider: {self.current_provider}"
+                    f"Batch embedding completed: {len(non_empty_texts)}/{len(texts)} texts, provider: {target_provider}"
                 )
             except Exception as e:
                 log.warning(f"Batch embedding failed (attempt {attempt + 1}/{max_retries}): {e}")
 
+                # 如果指定了 provider，不降级
+                if provider:
+                    break
+
                 # 尝试降级到其他可用的 provider
                 self._fallback_to_next_provider()
+                target_provider = self.current_provider
             else:
                 return results
 

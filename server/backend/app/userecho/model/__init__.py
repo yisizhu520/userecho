@@ -4,6 +4,7 @@ from .customer import Customer
 from .feedback import Feedback
 from .insight import Insight
 from .manual_adjustment import ManualAdjustment
+from .merge_suggestion import MergeSuggestion
 from .priority_score import PriorityScore
 from .reply_template import ReplyTemplate
 from .status_history import StatusHistory
@@ -37,6 +38,7 @@ __all__ = [
     "Feedback",
     "Insight",
     "ManualAdjustment",
+    "MergeSuggestion",
     "PriorityScore",
     "ReplyTemplate",
     "StatusHistory",

@@ -1,0 +1,111 @@
+[32m2026-02-05 09:48:31.659[0m | [1mINFO    [0m | [36mbackend.database.db[0m:[36mcreate_async_engine_and_session[0m:[36m50[0m - [1m[DB Engine] Creating async engine with URL: postgresql+asyncpg://maoku:***@193.134.210.140:5433/userecho[0m
+[32m2026-02-05 09:48:31.707[0m | [1mINFO    [0m | [36mbackend.database.db[0m:[36mcreate_async_engine_and_session[0m:[36m65[0m - [1m[DB Engine] Async engine created successfully[0m
+[Celery Init] CELERY_BROKER=redis
+[Celery Init] REDIS_HOST=193.134.210.140
+[Celery Init] REDIS_PORT=6380
+[Celery Init] REDIS_URL=None
+[Celery Init] CELERY_BROKER_REDIS_DATABASE=0
+[Celery Init] Constructed broker_url: redis://:maokutest@193.134.210.140:6380/0
+[Celery Init] Final broker_url: redis://:maokutest@193.134.210.140:6380/0
+[Celery Init] Final result_backend: db+postgresql+psycopg://maoku:maokutest@193.134.210.140:5433/userecho
+[Celery Init] [OK] App conf broker_url: redis://:maokutest@193.134.210.140:6380/0
+[Celery Init] [OK] App conf result_backend: db+postgresql+psycopg://maoku:maokutest@193.134.210.140:5433/userecho
+[Celery Init] Searching for tasks in: C:\workspace\private\userecho\server\backend\app\task\tasks
+[Celery Init] [OK] Found tasks package: backend.app.task.tasks
+[Celery Init] [OK] Found tasks package: backend.app.task.tasks.batch
+[Celery Init] [OK] Found tasks package: backend.app.task.tasks.db_log
+[Celery Init] [OK] Found tasks package: backend.app.task.tasks.userecho
+[Celery Init] Total task packages found: 4
+[Celery Init] [WARNING] autodiscover_tasks failed, trying manual import
+[Celery Init] [OK] Registered 13 user tasks: ['task_demo', 'task_demo_async', 'task_demo_params', 'batch.process_batch_job', 'backend.app.task.tasks.db_log.tasks.delete_db_opera_log', 'backend.app.task.tasks.db_log.tasks.delete_db_login_log', 'userecho.generate_feedback_embedding', 'userecho.generate_topic_centroid', 'userecho_clustering_batch', 'userecho_analyze_screenshot', 'userecho_analyze_screenshot_url', 'userecho.generate_insight_report', 'userecho.generate_feedback_summary']
+[Celery Init] Registering signal handlers...
+[Celery Signals] Installing signal handlers...
+[Celery Signals] [OK] Signal handlers installed successfully
+[Celery Init] Signal handlers registered
+================================================================================
+¿´°å·´À¡¼ÆÊıÕï¶Ï±¨¸æ
+================================================================================
+
+¿´°å: Ä¬ÈÏ¿´°å (ID: default-board)
+   ´¥·¢Æ÷Í³¼Æ: 48 Ìõ
+
+   Êµ¼ÊÍ³¼Æ£¨Î´É¾³ı£©: 48 Ìõ
+   OK: ´¥·¢Æ÷¼ÆÊıÕıÈ·
+
+   ÏêÏ¸·ÖÎö£º
+      - ½ô¼±: 0 Ìõ
+      - ³£¹æ: 48 Ìõ
+      - ´ı´¦Àí£¨Î´¹ØÁªÖ÷Ìâ£©: 48 Ìõ
+      - ÒÑ¹ØÁªÖ÷Ìâ: 0 Ìõ
+
+--------------------------------------------------------------------------------
+
+¿´°å: ¹¦ÄÜ½¨Òé (ID: 67cce548-293e-4d3e-80da-f1bbdb91ceb5)
+   ´¥·¢Æ÷Í³¼Æ: 0 Ìõ
+
+   Êµ¼ÊÍ³¼Æ£¨Î´É¾³ı£©: 0 Ìõ
+   OK: ´¥·¢Æ÷¼ÆÊıÕıÈ·
+
+   ÏêÏ¸·ÖÎö£º
+      - ½ô¼±: 0 Ìõ
+      - ³£¹æ: 0 Ìõ
+      - ´ı´¦Àí£¨Î´¹ØÁªÖ÷Ìâ£©: 0 Ìõ
+      - ÒÑ¹ØÁªÖ÷Ìâ: 0 Ìõ
+
+--------------------------------------------------------------------------------
+
+¿´°å: Bug ·´À¡ (ID: 3aa47a7a-ccad-4ae3-a8dd-3700d6cfce73)
+   ´¥·¢Æ÷Í³¼Æ: 0 Ìõ
+
+   Êµ¼ÊÍ³¼Æ£¨Î´É¾³ı£©: 0 Ìõ
+   OK: ´¥·¢Æ÷¼ÆÊıÕıÈ·
+
+   ÏêÏ¸·ÖÎö£º
+      - ½ô¼±: 0 Ìõ
+      - ³£¹æ: 0 Ìõ
+      - ´ı´¦Àí£¨Î´¹ØÁªÖ÷Ìâ£©: 0 Ìõ
+      - ÒÑ¹ØÁªÖ÷Ìâ: 0 Ìõ
+
+--------------------------------------------------------------------------------
+
+¿´°å: ÌåÑéÓÅ»¯ (ID: a67a1422-59ca-441c-a0b7-a6bbf7123d6b)
+   ´¥·¢Æ÷Í³¼Æ: 0 Ìõ
+
+   Êµ¼ÊÍ³¼Æ£¨Î´É¾³ı£©: 0 Ìõ
+   OK: ´¥·¢Æ÷¼ÆÊıÕıÈ·
+
+   ÏêÏ¸·ÖÎö£º
+      - ½ô¼±: 0 Ìõ
+      - ³£¹æ: 0 Ìõ
+      - ´ı´¦Àí£¨Î´¹ØÁªÖ÷Ìâ£©: 0 Ìõ
+      - ÒÑ¹ØÁªÖ÷Ìâ: 0 Ìõ
+
+--------------------------------------------------------------------------------
+
+¿´°å: ¼¯³ÉĞèÇó (ID: f12b1145-6af7-4dba-8560-1b47a24b95fc)
+   ´¥·¢Æ÷Í³¼Æ: 0 Ìõ
+
+   Êµ¼ÊÍ³¼Æ£¨Î´É¾³ı£©: 0 Ìõ
+   OK: ´¥·¢Æ÷¼ÆÊıÕıÈ·
+
+   ÏêÏ¸·ÖÎö£º
+      - ½ô¼±: 0 Ìõ
+      - ³£¹æ: 0 Ìõ
+      - ´ı´¦Àí£¨Î´¹ØÁªÖ÷Ìâ£©: 0 Ìõ
+      - ÒÑ¹ØÁªÖ÷Ìâ: 0 Ìõ
+
+--------------------------------------------------------------------------------
+
+
+Õï¶ÏÍê³É£¡
+
+×Ü½á£º
+1. board.feedback_count Í³¼ÆµÄÊÇ£º¸Ã¿´°åÏÂËùÓĞÎ´É¾³ıµÄ·´À¡
+2. Ç°¶Ë·´À¡ÁĞ±í¿ÉÄÜÓĞ¶îÍâÉ¸Ñ¡Ìõ¼ş£º
+   - ½ô¼±³Ì¶È£¨½ô¼±/³£¹æ£©
+   - ÅÉÉú×´Ì¬£¨´ı´¦Àí/ÒÑ¹ØÁªµÈ£©
+   - ÈÕÆÚ·¶Î§
+3. Èç¹û×ó²àÀ¸Êı×ÖºÍÁĞ±íÊı¾İ¶Ô²»ÉÏ£¬¿ÉÄÜÊÇÒòÎª£º
+   - Ç°¶ËÄ¬ÈÏÓ¦ÓÃÁËÄ³Ğ©É¸Ñ¡Ìõ¼ş
+   - ÓÃ»§ÊÖ¶¯Ñ¡ÔñÁËÉ¸Ñ¡Ìõ¼ş
+

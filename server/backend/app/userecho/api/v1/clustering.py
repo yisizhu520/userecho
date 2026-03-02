@@ -300,15 +300,18 @@ async def get_pending_suggestions(
 async def debug_similarity_matrix(
     db: CurrentSession,
     tenant_id: str = CurrentTenantId,
-    limit: int = 20,
-    similarity_threshold: float | None = None,
-    min_samples: int | None = None,
+    limit: int = Query(20),
+    board_id: str | None = Query(None),
+    similarity_threshold: float | None = Query(None),
+    min_samples: int | None = Query(None),
 ) -> Any:
     """
     调试接口：查看待聚类反馈之间的相似度矩阵 + 实际聚类结果
 
     帮助调整聚类参数
 
+    - **limit**: 最多分析的反馈数量（默认 20）
+    - **board_id**: 指定看板 ID（可选，不传则分析所有看板的反馈）
     - **similarity_threshold**: 自定义相似度阈值（默认使用配置值）
     - **min_samples**: 自定义最小簇大小（默认使用配置值）
 
@@ -322,13 +325,14 @@ async def debug_similarity_matrix(
     threshold = similarity_threshold if similarity_threshold is not None else settings.CLUSTERING_SIMILARITY_THRESHOLD
     min_samples_val = min_samples if min_samples is not None else settings.CLUSTERING_MIN_SAMPLES
 
-    # 获取待聚类的反馈
+    # 获取待聚类的反馈（支持按看板过滤）
     feedbacks = await crud_feedback.get_pending_clustering(
         db=db,
         tenant_id=tenant_id,
         limit=limit,
         include_failed=True,
         force_recluster=False,
+        board_id=board_id,
     )
 
     if len(feedbacks) < 2:
@@ -367,21 +371,42 @@ async def debug_similarity_matrix(
         for fb in valid_feedbacks
     ]
 
-    # 找出高相似度对（>= 0.75）
+    # 找出高相似度对（>= 0.75）+ 添加语义分析
     high_similarity_pairs = []
+    suspicious_pairs = []  # 疑似误判对（高相似度但内容不相关）
+
     for i in range(len(similarity_matrix)):
         for j in range(i + 1, len(similarity_matrix)):
             sim = float(similarity_matrix[i][j])
             if sim >= 0.75:
-                high_similarity_pairs.append(
-                    {
-                        "feedback1_id": valid_feedbacks[i].id,
-                        "feedback1_content": feedbacks_info[i]["content"],
-                        "feedback2_id": valid_feedbacks[j].id,
-                        "feedback2_content": feedbacks_info[j]["content"],
-                        "similarity": round(sim, 4),
-                    }
-                )
+                pair = {
+                    "feedback1_id": valid_feedbacks[i].id,
+                    "feedback1_content": feedbacks_info[i]["content"],
+                    "feedback2_id": valid_feedbacks[j].id,
+                    "feedback2_content": feedbacks_info[j]["content"],
+                    "similarity": round(sim, 4),
+                }
+                high_similarity_pairs.append(pair)
+
+                # 简单的启发式检测: 如果相似度高但前10个字完全不同,可能是误判
+                content1 = valid_feedbacks[i].content
+                content2 = valid_feedbacks[j].content
+                prefix1 = content1[:10] if len(content1) >= 10 else content1
+                prefix2 = content2[:10] if len(content2) >= 10 else content2
+
+                # 检查前缀相似度（简单的字符级别）
+                common_chars = sum(1 for c1, c2 in zip(prefix1, prefix2) if c1 == c2)
+                prefix_sim = common_chars / max(len(prefix1), len(prefix2))
+
+                # 如果相似度 > 0.85 但前缀差异大,标记为可疑
+                if sim > 0.85 and prefix_sim < 0.3:
+                    suspicious_pairs.append(
+                        {
+                            **pair,
+                            "prefix_similarity": round(prefix_sim, 4),
+                            "warning": "高相似度但内容前缀差异大,可能是Embedding模型误判",
+                        }
+                    )
 
     # 按相似度降序排列
     high_similarity_pairs.sort(key=operator.itemgetter("similarity"), reverse=True)
@@ -492,16 +517,17 @@ async def debug_similarity_matrix(
         quality_pass = False
         quality_issues.append("未形成任何聚类簇")
 
+    # 注意：noise_ratio 仅供参考，不影响质量判断
+    # 大量反馈中有噪声是正常的，核心是找出有共性的需求
     if noise_ratio > settings.CLUSTERING_MAX_NOISE_RATIO:
-        quality_pass = False
-        quality_issues.append(f"噪声率过高: {noise_ratio:.2%} > {settings.CLUSTERING_MAX_NOISE_RATIO:.2%}")
+        quality_issues.append(f"噪声率: {noise_ratio:.2%} (仅供参考，不影响主题生成)")
 
     if silhouette is not None and silhouette < settings.CLUSTERING_MIN_SILHOUETTE:
         quality_pass = False
         quality_issues.append(f"轮廓系数过低: {silhouette:.3f} < {settings.CLUSTERING_MIN_SILHOUETTE:.3f}")
 
     # ========================================
-    # 返回完整数据
+    # 返回完整数据（包含诊断信息）
     # ========================================
     return response_base.success(
         data={
@@ -509,12 +535,14 @@ async def debug_similarity_matrix(
             "feedbacks": feedbacks_info,
             "similarity_matrix": similarity_matrix.tolist(),
             "high_similarity_pairs": high_similarity_pairs,
+            "suspicious_pairs": suspicious_pairs,  # 新增：疑似误判对
             "stats": {
                 "total_feedbacks": len(valid_feedbacks),
                 "avg_similarity": float(np.mean(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
                 "max_similarity": float(np.max(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
                 "min_similarity": float(np.min(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])),
                 "pairs_above_075": len(high_similarity_pairs),
+                "suspicious_pairs_count": len(suspicious_pairs),  # 新增
             },
             # 新增：聚类结果
             "clustering": {
@@ -542,6 +570,17 @@ async def debug_similarity_matrix(
                         "max_noise_ratio": settings.CLUSTERING_MAX_NOISE_RATIO,
                     },
                 },
+            },
+            # 新增：诊断建议
+            "diagnostics": {
+                "embedding_model": settings.AI_DEFAULT_PROVIDER,
+                "recommendations": [
+                    "如果 suspicious_pairs 数量多，考虑提高相似度阈值到 0.90+",
+                    "如果簇内平均相似度低于 0.90，说明 Embedding 质量不够好",
+                    "Volcengine Embedding 对句式结构敏感，建议测试其他模型",
+                ]
+                if settings.AI_DEFAULT_PROVIDER == "volcengine"
+                else [],
             },
         }
     )

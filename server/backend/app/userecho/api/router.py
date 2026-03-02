@@ -12,6 +12,7 @@ from backend.app.userecho.api.v1 import (
     feedback,
     insight,
     landing,
+    merge_suggestion,
     onboarding,
     priority,
     reply_template,
@@ -35,6 +36,7 @@ v1.include_router(topic.router)
 v1.include_router(topic_notification.router)
 v1.include_router(customer.router)
 v1.include_router(clustering.router)
+v1.include_router(merge_suggestion.router)
 v1.include_router(tenant_config.router)
 v1.include_router(priority.router)
 v1.include_router(dashboard.router)

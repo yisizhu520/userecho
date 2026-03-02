@@ -24,11 +24,12 @@ Write-Host "  -A backend.app.task.celery:celery_app" -ForegroundColor Gray
 Write-Host "  -P custom (AsyncIOPool)" -ForegroundColor Gray
 Write-Host "  -c 4 (concurrency)" -ForegroundColor Gray
 Write-Host "  -l info (log level)" -ForegroundColor Gray
-Write-Host "  --logfile $logFile" -ForegroundColor Gray
+Write-Host "  Output: Terminal + Log file" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "Log file: $logFile" -ForegroundColor Yellow
 Write-Host ""
 
 # 使用 -P custom 启动 worker，Celery 会使用环境变量指定的池
-& "$PSScriptRoot\.venv\Scripts\python.exe" -m celery -A backend.app.task.celery:celery_app worker -P custom -c 4 -l info --without-gossip --without-mingle --logfile="$logFile"
+# 使用 Tee-Object 将输出同时写入文件和终端
+& "$PSScriptRoot\.venv\Scripts\python.exe" -m celery -A backend.app.task.celery:celery_app worker -P custom -c 4 -l info --without-gossip --without-mingle 2>&1 | Tee-Object -FilePath $logFile

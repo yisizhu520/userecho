@@ -1,0 +1,123 @@
+{
+  "volcengine": {
+    "provider": "volcengine",
+    "threshold": 0.9,
+    "total_feedbacks": 48,
+    "cluster_count": 4,
+    "clustered_count": 13,
+    "noise_count": 35,
+    "clusters": [
+      {
+        "cluster_id": 3,
+        "size": 4,
+        "feedbacks": [
+          {
+            "id": "b384ed9e-1b74-43ce-b3d6-5bd2f7a1529d",
+            "content": "希望能给反馈打标签，方便分类管理",
+            "created_time": "2026-02-04T13:37:38.997240+00:00"
+          },
+          {
+            "id": "9595e089-1c07-4eac-84df-28944caea2b1",
+            "content": "能否支持多标签？一个反馈可能属于多个类别",
+            "created_time": "2026-02-04T13:37:39.255116+00:00"
+          },
+          {
+            "id": "1a7fef64-234e-4530-9ce1-dff4a76ec9aa",
+            "content": "能否添加回复功能？方便和用户沟通",
+            "created_time": "2026-02-04T13:37:39.725849+00:00"
+          },
+          {
+            "id": "2ab7a04e-d598-43a0-bd70-c09444fe4cb9",
+            "content": "希望能看到反馈趋势图，按周/月统计数量变化",
+            "created_time": "2026-02-04T13:37:39.941042+00:00"
+          }
+        ],
+        "avg_similarity": 0.8953222193515717
+      },
+      {
+        "cluster_id": 1,
+        "size": 3,
+        "feedbacks": [
+          {
+            "id": "0337fa54-e81b-4826-89d1-46d61da51d49",
+            "content": "新反馈提交时希望能发送邮件通知",
+            "created_time": "2026-02-04T13:37:36.418723+00:00"
+          },
+          {
+            "id": "3c742ba6-1400-4455-bba5-44572dc5917b",
+            "content": "可以加个邮件提醒功能吗？现在总是忘记查看反馈",
+            "created_time": "2026-02-04T13:37:36.539248+00:00"
+          },
+          {
+            "id": "fae52a36-db11-4d45-b7ab-9f3c9f7638cd",
+            "content": "希望有新反馈时能收到邮件",
+            "created_time": "2026-02-04T13:37:36.663822+00:00"
+          }
+        ],
+        "avg_similarity": 0.9047351479795762
+      },
+      {
+        "cluster_id": 2,
+        "size": 3,
+        "feedbacks": [
+          {
+            "id": "13f94d9b-6c72-44f9-ac2f-a45ae9cbc9d5",
+            "content": "搜索功能太弱了，希望能支持模糊搜索和关键词高亮",
+            "created_time": "2026-02-04T13:37:37.821795+00:00"
+          },
+          {
+            "id": "50171eae-5c61-45b6-b73e-67cb9a77d3d1",
+            "content": "希望搜索能支持多个关键词，AND/OR 逻辑",
+            "created_time": "2026-02-04T13:37:38.207021+00:00"
+          },
+          {
+            "id": "72ea1f37-43d0-4f59-b5b0-a4abf95212f0",
+            "content": "全文搜索功能不太好用，经常搜不到明明存在的内容",
+            "created_time": "2026-02-04T13:37:38.335718+00:00"
+          }
+        ],
+        "avg_similarity": 0.9039392108627328
+      },
+      {
+        "cluster_id": 4,
+        "size": 3,
+        "feedbacks": [
+          {
+            "id": "095f306e-3223-4e15-894c-7f6ba58328de",
+            "content": "希望支持多语言，我们的用户来自不同国家",
+            "created_time": "2026-02-04T13:37:40.368989+00:00"
+          },
+          {
+            "id": "88b79bb4-57a2-498e-9931-0ea06e711a88",
+            "content": "能否添加英文界面？现在全中文不太方便",
+            "created_time": "2026-02-04T13:37:40.470350+00:00"
+          },
+          {
+            "id": "71aaec91-88a1-4f44-8062-4319f4b609fc",
+            "content": "需要国际化支持，至少要有中英文切换",
+            "created_time": "2026-02-04T13:37:40.571627+00:00"
+          }
+        ],
+        "avg_similarity": 0.9039865998445689
+      }
+    ]
+  },
+  "glm": {
+    "provider": "glm",
+    "threshold": 0.9,
+    "total_feedbacks": 48,
+    "cluster_count": 0,
+    "clustered_count": 0,
+    "noise_count": 48,
+    "clusters": []
+  },
+  "qwen": {
+    "provider": "qwen",
+    "threshold": 0.9,
+    "total_feedbacks": 48,
+    "cluster_count": 0,
+    "clustered_count": 0,
+    "noise_count": 48,
+    "clusters": []
+  }
+}
