@@ -8,11 +8,21 @@ interface ImageItem {
 
 interface Props {
   images?: ImageItem[] | null;
+  screenshotUrl?: string | null; // 支持单张截图URL（截图识别）
 }
 
 const props = defineProps<Props>();
 
-const imageList = computed(() => props.images ?? []);
+// 优先使用 images 数组，其次使用 screenshotUrl
+const imageList = computed(() => {
+  if (props.images && props.images.length > 0) {
+    return props.images;
+  }
+  if (props.screenshotUrl) {
+    return [{ url: props.screenshotUrl }];
+  }
+  return [];
+});
 const hasImages = computed(() => imageList.value.length > 0);
 </script>
 

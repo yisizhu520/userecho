@@ -575,35 +575,50 @@ class AIClient:
 
         prompt = """你是一个专业的反馈分析助手。分析这张截图，提取用户反馈信息。
 
-**关键要求：**
-1. **识别多条反馈** - 截图中可能包含多条独立的反馈内容，例如：
-   - 用户列举的多个需求点（"1. 希望...; 2. 建议...; 3. 能否..."）
-   - 群聊中多个用户的不同意见
-   - 评论区多条不同的评论
-   - 一段文字中提到的多个问题
+**核心任务：**
+1. **OCR识别** - 完整提取截图中的所有文本内容
+2. **内容整理** - 将OCR原文整理成专业、清晰、明确的反馈内容
+3. **多条识别** - 识别并拆分多条独立反馈
+4. **结构化输出** - 提取平台、用户、分类等结构化信息
 
-2. **自动去重** - 如果多条反馈内容重复或高度相似，只保留一条
+**内容整理原则：**
+- **专业性**：使用规范的产品反馈语言，去除口语化、重复、无关内容
+- **清晰性**：逻辑清晰，重点突出，一句话说清核心诉求
+- **明确性**：保留关键细节（功能名称、操作步骤、问题现象），去除冗余信息
+- **简洁性**：控制在100字以内，最多不超过200字
 
-3. **提取原始文本** - 完整的 OCR 文本内容（保留原始格式）
+**示例转换：**
+❌ 原文："建议加个批量截图识别的功能，现在单个单个加，不太方便"
+✅ 整理后："建议增加批量截图识别功能，当前单个处理效率低"
 
-4. **结构化每条反馈** - 每条反馈包含：
-   - platform: 平台类型（wechat/xiaohongshu/weibo/appstore/qq/other）
-   - user_name: 用户昵称（如果有多个用户，每条反馈对应不同的用户）
-   - user_id: 用户 ID（可选）
-   - content: 反馈内容（简洁清晰，不超过200字）
-   - feedback_type: 反馈类型（bug/improvement/feature/performance/other）
-   - sentiment: 情感倾向（positive/neutral/negative）
-   - confidence: 单条反馈的识别置信度（0.0-1.0）
+❌ 原文："对，而且我还希望单个单个加，不太方便，还是要批量添加，把截图图片识别成文字，尤其是微信图片，这样就很方便了"
+✅ 整理后："建议增加批量截图识别功能，支持将微信图片等截图批量识别为文字反馈"
 
-**输出格式（严格 JSON）：**
+**多条反馈识别：**
+- 用户列举的多个需求点（"1. 希望...; 2. 建议...; 3. 能否..."）
+- 群聊中多个用户的不同意见
+- 评论区多条不同的评论
+- 一段文字中提到的多个独立问题
+- 自动去重：多条反馈内容重复或高度相似时，只保留一条
+
+**结构化字段要求：**
+- platform: 平台类型（wechat/xiaohongshu/weibo/appstore/qq/other）
+- user_name: 用户昵称（多用户时每条反馈对应不同用户）
+- user_id: 用户ID（可选）
+- content: **整理后的专业反馈内容**（非OCR原文）
+- feedback_type: 反馈类型（bug/improvement/feature/performance/other）
+- sentiment: 情感倾向（positive/neutral/negative）
+- confidence: 识别置信度（0.0-1.0）
+
+**输出格式（严格JSON）：**
 {
-  "raw_text": "完整的 OCR 文本...",
+  "raw_text": "完整的OCR原文（保留原始格式）",
   "feedback_list": [
     {
       "platform": "wechat",
       "user_name": "张三",
       "user_id": "",
-      "content": "第一条反馈内容",
+      "content": "建议增加批量截图识别功能，支持将微信图片等截图批量识别为文字反馈",
       "feedback_type": "feature",
       "sentiment": "neutral",
       "confidence": 0.95
@@ -612,20 +627,21 @@ class AIClient:
       "platform": "wechat",
       "user_name": "李四",
       "user_id": "",
-      "content": "第二条反馈内容",
-      "feedback_type": "bug",
-      "sentiment": "negative",
+      "content": "希望看板能够按照自定义字段进行筛选，方便数据统计",
+      "feedback_type": "improvement",
+      "sentiment": "neutral",
       "confidence": 0.88
     }
   ],
   "overall_confidence": 0.92
 }
 
-**注意：**
-- 如果只有一条反馈，feedback_list 数组长度为 1
+**严格要求：**
+- raw_text 必须是完整的OCR原文，保持原始格式
+- content 必须是整理后的专业反馈内容，而不是OCR原文
+- 如果只有一条反馈，feedback_list 数组长度为1
 - 如果无法识别任何有效反馈，feedback_list 为空数组
-- raw_text 必须包含完整的 OCR 文本
-- 不要添加任何其他文字，只返回 JSON
+- 只返回JSON，不要添加任何其他文字
 """
 
         for attempt in range(max_retries):

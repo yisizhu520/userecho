@@ -123,7 +123,7 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
             skip: (page.currentPage - 1) * page.pageSize,
             limit: page.pageSize,
           };
-          
+
           if (filterValues.value.search_query) {
             queryParams.search_query = filterValues.value.search_query;
             queryParams.search_mode = 'keyword';
@@ -145,7 +145,7 @@ const gridOptions: VxeTableGridOptions<Feedback> = {
           if (isMyFeedbacksMode.value) {
             queryParams.creator_me = true;
           }
-          
+
           const data: any = await getFeedbackList(queryParams);
 
           return {
@@ -244,7 +244,7 @@ const handleTriggerClustering = async () => {
     clusteringTaskId.value = '';
 
     const boardIds = filterValues.value.board_ids;
-    const resp: any = await triggerClustering({ 
+    const resp: any = await triggerClustering({
       async_mode: true,
       board_ids: boardIds && boardIds.length > 0 ? boardIds : undefined
     });
@@ -297,7 +297,7 @@ onMounted(() => {
   const mediaQuery = window.matchMedia('(max-width: 767px)');
   handleMediaChange(mediaQuery);
   mediaQuery.addEventListener('change', handleMediaChange);
-  
+
   (window as any).__feedbackMediaQuery = mediaQuery;
 });
 
@@ -321,12 +321,12 @@ onBeforeUnmount(() => {
           v-model:date-range="filterValues.date_range"
         />
       </div>
-      
+
       <!-- 右侧内容区域 -->
       <div class="feedback-main-content" :class="isMobile ? 'p-2' : 'p-2'">
         <!-- 移动端汉堡菜单按钮 -->
-        <VbenButton 
-          v-if="isMobile" 
+        <VbenButton
+          v-if="isMobile"
           class="mb-3"
           variant="outline"
           @click="drawerVisible = true"
@@ -334,14 +334,14 @@ onBeforeUnmount(() => {
           <span class="iconify lucide--menu mr-2" />
           筛选条件
         </VbenButton>
-        
+
         <!-- 智能整理状态横幅 -->
-        <ClusteringStatusBanner 
+        <ClusteringStatusBanner
           ref="clusteringBannerRef"
           :board-ids="filterValues.board_ids"
           @trigger-clustering="handleTriggerClustering"
         />
-        
+
         <div class="feedback-grid-wrapper">
           <Grid>
           <template #toolbar-actions>
@@ -394,7 +394,7 @@ onBeforeUnmount(() => {
           </template>
 
           <template #screenshots="{ row }">
-            <ScreenshotCell :images="row.images_metadata?.images" />
+            <ScreenshotCell :images="row.images_metadata?.images" :screenshot-url="row.screenshot_url" />
           </template>
 
           <template #submitted_at="{ row }">
@@ -423,7 +423,7 @@ onBeforeUnmount(() => {
         />
 
       </div>
-      
+
       <!-- 移动端抽屉 -->
       <a-drawer
         v-model:open="drawerVisible"

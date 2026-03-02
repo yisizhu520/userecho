@@ -33,6 +33,14 @@ export interface Feedback {
   images_metadata?: {
     images?: Array<{ url: string; uploaded_at?: string }>;
   } | null;
+  screenshot_url?: string | null; // 截图识别模式的单张截图URL
+  source_platform?: string | null; // 来源平台
+  source_user_name?: string | null; // 来源平台用户昵称
+  source_user_id?: string | null; // 来源平台用户ID
+  ai_confidence?: number | null; // AI识别置信度
+  author_type?: 'customer' | 'external'; // 来源类型
+  external_user_name?: string | null; // 外部用户名称
+  external_contact?: string | null; // 外部用户联系方式
 }
 
 /** 创建反馈参数 */

@@ -81,7 +81,7 @@ const [Modal, modalApi] = useVbenModal({
     // 验证表单
     const topValid = await topFormApi.validate();
     const bottomValid = await bottomFormApi.validate();
-    
+
     // 创建模式验证来源信息
     if (isCreateMode.value) {
       if (authorType.value === 'customer') {
@@ -96,7 +96,7 @@ const [Modal, modalApi] = useVbenModal({
         }
       }
     }
-    
+
     if (topValid.valid && bottomValid.valid) {
       await handleSubmit(false);
     }
@@ -117,7 +117,7 @@ const [Modal, modalApi] = useVbenModal({
       externalUserName.value = '';
       externalContact.value = '';
       loadBoardList();
-      
+
       // 编辑模式：填充初始数据
       if (isEditMode.value && editingFeedback.value) {
         const data = editingFeedback.value;
@@ -133,10 +133,20 @@ const [Modal, modalApi] = useVbenModal({
         // 填充现有的主题关联
         selectedTopicId.value = data.topic_id || '';
         // 填充现有的图片（使用 nextTick 确保组件已挂载）
+        const existingUrls: string[] = [];
+
+        // 优先使用 images_metadata.images（手动上传）
         if (data.images_metadata?.images && data.images_metadata.images.length > 0) {
-          const urls = data.images_metadata.images.map((img: { url: string }) => img.url);
+          existingUrls.push(...data.images_metadata.images.map((img: { url: string }) => img.url));
+        }
+        // 其次使用 screenshot_url（截图识别）
+        else if (data.screenshot_url) {
+          existingUrls.push(data.screenshot_url);
+        }
+
+        if (existingUrls.length > 0) {
           nextTick(() => {
-            screenshotUploadRef.value?.initWithUrls(urls);
+            screenshotUploadRef.value?.initWithUrls(existingUrls);
           });
         }
       }
@@ -155,7 +165,7 @@ const loadBoardList = async () => {
       label: board.name,
       value: board.id,
     }));
-    
+
     // 更新顶部表单的 board_id 字段选项
     topFormApi.updateSchema([
       {
@@ -184,14 +194,14 @@ const handleSubmit = async (continueCreating: boolean) => {
     modalApi.lock();
     const topData = await topFormApi.getValues();
     const bottomData = await bottomFormApi.getValues();
-    
+
     if (isCreateMode.value) {
       // 创建模式
       const data = { ...topData, ...bottomData } as CreateFeedbackParams;
-      
+
       // 设置来源类型
       data.author_type = authorType.value;
-      
+
       if (authorType.value === 'customer') {
         // 内部客户模式
         data.customer_name = customerName.value;
@@ -204,12 +214,12 @@ const handleSubmit = async (continueCreating: boolean) => {
         data.external_contact = externalContact.value || undefined;
         data.source_platform = sourcePlatform.value;
       }
-      
+
       // 添加 Topic 关联
       if (selectedTopicId.value) {
         data.topic_id = selectedTopicId.value;
       }
-      
+
       // 上传截图
       if (screenshotUploadRef.value?.hasFiles) {
         const urls = await screenshotUploadRef.value.uploadAll();
@@ -217,34 +227,34 @@ const handleSubmit = async (continueCreating: boolean) => {
           data.screenshots = urls;
         }
       }
-      
+
       await createFeedback(data);
       message.success('创建成功');
       emit('success', data.board_id);
       boardStore.forceRefresh();
-      
+
       if (continueCreating) {
         // 保存当前选择的看板和来源类型
         const savedBoardId = data.board_id;
         const savedAuthorType = authorType.value;
         const savedSourcePlatform = sourcePlatform.value;
-        
+
         // 重置表单但保持弹窗打开
         topFormApi.resetForm();
         bottomFormApi.resetForm();
         selectedTopicId.value = '';
         screenshotUploadRef.value?.reset();
         currentTitle.value = '';
-        
+
         // 恢复看板选择
         topFormApi.setValues({ board_id: savedBoardId });
-        
+
         // 恢复来源类型
         authorType.value = savedAuthorType;
         if (savedAuthorType === 'external') {
           sourcePlatform.value = savedSourcePlatform;
         }
-        
+
         // 重置来源信息的具体内容
         customerName.value = '';
         customerType.value = 'normal';
@@ -260,7 +270,7 @@ const handleSubmit = async (continueCreating: boolean) => {
         message.error('缺少反馈数据');
         return;
       }
-      
+
       const data = { ...topData, ...bottomData } as UpdateFeedbackParams;
       // 添加主题关联更新
       if (selectedTopicId.value) {
@@ -293,7 +303,7 @@ const handleSubmit = async (continueCreating: boolean) => {
 const handleCreateAndContinue = async () => {
   const topValid = await topFormApi.validate();
   const bottomValid = await bottomFormApi.validate();
-  
+
   // 根据来源类型验证
   if (authorType.value === 'customer') {
     if (!customerName.value.trim()) {
@@ -306,7 +316,7 @@ const handleCreateAndContinue = async () => {
       return;
     }
   }
-  
+
   if (topValid.valid && bottomValid.valid) {
     await handleSubmit(true);
   }
@@ -342,12 +352,12 @@ defineExpose({
           <div class="left-content-area">
             <!-- 顶部表单：看板 + 反馈内容 -->
             <TopForm />
-            
+
             <!-- 截图上传组件 -->
             <div class="screenshot-upload-section">
               <ScreenshotUpload ref="screenshotUploadRef" />
             </div>
-            
+
             <!-- 来源类型选择 -->
             <div class="author-type-field">
               <label class="field-label">来源类型</label>
@@ -358,7 +368,7 @@ defineExpose({
                 </a-radio-group>
               </div>
             </div>
-            
+
             <!-- 内部客户模式 -->
             <template v-if="authorType === 'customer'">
               <div class="customer-field">
@@ -373,7 +383,7 @@ defineExpose({
                 </div>
               </div>
             </template>
-            
+
             <!-- 外部用户模式 -->
             <template v-else>
               <div class="external-user-field">
@@ -401,12 +411,12 @@ defineExpose({
                 </div>
               </div>
             </template>
-            
+
             <!-- 底部表单：紧急标记等 -->
             <BottomForm />
           </div>
         </a-col>
-        
+
         <!-- 右侧相似主题面板（创建和编辑模式都显示） -->
         <a-col :span="10">
           <SimilarTopicsPanel
@@ -416,7 +426,7 @@ defineExpose({
         </a-col>
       </a-row>
     </div>
-    
+
     <template #footer>
       <div class="modal-footer-actions">
         <VbenButton @click="() => modalApi.close()">取消</VbenButton>
