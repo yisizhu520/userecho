@@ -113,6 +113,16 @@ BUSINESS_PERMISSIONS = [
         "menu_icon": "lucide:layout-dashboard",
         "sort": 93,
     },
+    # 任务中心（设置子菜单）
+    {
+        "code": "task_center",  # 对应前端 permissionCode: 'task_center'
+        "name": "任务中心",
+        "type": "action",
+        "parent_code": "settings",
+        "menu_path": "/app/settings/tasks",
+        "menu_icon": "lucide:activity",
+        "sort": 94,
+    },
 ]
 
 
