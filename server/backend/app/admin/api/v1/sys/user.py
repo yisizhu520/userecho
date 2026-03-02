@@ -73,9 +73,6 @@ async def get_current_user(
     data["hasSystemRole"] = has_system_role
     data["hasBusinessRole"] = has_business_role
 
-    log.info(
-        f"Returning data with userType: {user_type}, hasSystemRole: {has_system_role}, hasBusinessRole: {has_business_role}"
-    )
     return response_base.success(data=data)
 
 
