@@ -1,4 +1,5 @@
 """重置 processing 状态的记录回 pending"""
+
 import asyncio
 from backend.database.db import async_db_session
 from sqlalchemy import update
@@ -21,10 +22,10 @@ async def reset_processing_to_pending():
                 clustering_metadata=None,
             )
         )
-        
+
         result = await db.execute(stmt)
         count = result.rowcount
-        
+
         print(f"✅ 成功重置 {count} 条记录从 processing 到 pending")
 
 

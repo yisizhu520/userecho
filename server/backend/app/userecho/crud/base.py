@@ -117,11 +117,20 @@ class TenantAwareCRUD(Generic[ModelType]):
         obj = self.model(**obj_data)
 
         # 手动注入时间字段（如果模型支持且未提供）
+        # 通用处理：自动为所有带 default=timezone.now 的时间字段注入当前时间
         now = timezone.now()
-        if hasattr(obj, "created_time") and getattr(obj, "created_time") is None:
-            obj.created_time = now
-        if hasattr(obj, "updated_time") and getattr(obj, "updated_time") is None:
-            obj.updated_time = now
+        time_fields = [
+            "created_time",
+            "updated_time",
+            "submitted_at",
+            "joined_at",
+            "assigned_at",
+            "changed_at",
+            "adjusted_at",
+        ]
+        for field in time_fields:
+            if hasattr(obj, field) and getattr(obj, field) is None:
+                setattr(obj, field, now)
 
         db.add(obj)
         # ❌ 禁止手动 commit 和 refresh (由 get_db 自动管理事务)

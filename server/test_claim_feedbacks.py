@@ -1,4 +1,5 @@
 """直接测试 claim_pending_clustering 函数"""
+
 import asyncio
 from datetime import datetime
 from backend.database.db import async_db_session
@@ -18,7 +19,7 @@ async def test_claim():
             started_at=started_at,
         )
         print(f"领取到的反馈数量: {len(feedbacks)}")
-        
+
         if feedbacks:
             print(f"第一条反馈: {feedbacks[0]}")
         else:

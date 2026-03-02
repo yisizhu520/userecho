@@ -15,7 +15,7 @@ from backend.utils.ai_client import ai_client
 
 class SubCluster(BaseModel):
     """子聚类信息"""
-    
+
     theme: str = Field(..., description="主题名称")
     feedback_indices: list[int] = Field(..., description="反馈索引列表（从1开始）")
     description: str = Field("", description="主题描述")
@@ -23,7 +23,7 @@ class SubCluster(BaseModel):
 
 class ClusterValidationResult(BaseModel):
     """聚类验证结果"""
-    
+
     is_valid: bool = Field(..., description="聚类是否有效")
     confidence: float = Field(..., ge=0.0, le=1.0, description="置信度 0.0-1.0")
     common_theme: str | None = Field(None, description="共同主题")
@@ -34,27 +34,24 @@ class ClusterValidationResult(BaseModel):
 
 class ClusteringValidator:
     """聚类验证器"""
-    
+
     async def validate_cluster_with_llm(
         self,
         cluster_feedbacks: list[Feedback],
     ) -> ClusterValidationResult:
         """
         使用 LLM 验证聚类的语义一致性
-        
+
         Args:
             cluster_feedbacks: 聚类中的反馈列表
-        
+
         Returns:
             验证结果
         """
         try:
             # 1. 构建验证 prompt
-            feedbacks_text = "\n".join([
-                f"{i+1}. {f.content}"
-                for i, f in enumerate(cluster_feedbacks)
-            ])
-            
+            feedbacks_text = "\n".join([f"{i + 1}. {f.content}" for i, f in enumerate(cluster_feedbacks)])
+
             prompt = f"""
 你是一个产品经理，需要判断以下用户反馈是否在讨论同一个需求或主题。
 
@@ -127,7 +124,7 @@ class ClusteringValidator:
 
 现在请分析上述反馈：
 """
-            
+
             # 2. 调用 LLM
             response = await ai_client.chat(
                 prompt=prompt,
@@ -135,19 +132,19 @@ class ClusteringValidator:
                 max_tokens=1000,  # 增加 token 数以支持返回子聚类
                 temperature=0.3,
             )
-            
+
             # 3. 解析结果
             result_data = json.loads(response)
             result = ClusterValidationResult(**result_data)
-            
+
             log.info(
                 f"LLM validation completed: is_valid={result.is_valid}, "
                 f"confidence={result.confidence:.2f}, theme={result.common_theme}, "
                 f"sub_clusters={len(result.sub_clusters or [])}"
             )
-            
+
             return result
-        
+
         except Exception as e:
             log.error(f"Failed to validate cluster with LLM: {e}")
             # 验证失败时返回低置信度的结果
@@ -157,19 +154,19 @@ class ClusteringValidator:
                 common_theme=None,
                 reason=f"验证失败: {str(e)}",
                 suggested_action="review",
-                sub_clusters=None
+                sub_clusters=None,
             )
-    
+
     async def refine_clusters_with_llm(
         self,
         initial_clusters: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """
         用 LLM 优化初步聚类结果
-        
+
         Args:
             initial_clusters: 初步聚类结果，每个聚类包含 'feedbacks' 列表
-        
+
         Returns:
             优化后的聚类结果:
             {
@@ -181,40 +178,40 @@ class ClusteringValidator:
         validated_clusters = []
         uncertain_clusters = []
         split_feedbacks = []
-        
+
         for cluster in initial_clusters:
-            feedbacks = cluster['feedbacks']
-            
+            feedbacks = cluster["feedbacks"]
+
             # 只验证大聚类（5条以上）或多样性高的聚类
             if len(feedbacks) >= 5:
                 validation = await self.validate_cluster_with_llm(feedbacks)
-                
+
                 if validation.is_valid and validation.confidence >= 0.8:
                     # 高置信度，保留
-                    cluster['validation'] = validation.model_dump()
+                    cluster["validation"] = validation.model_dump()
                     validated_clusters.append(cluster)
-                    
-                elif validation.suggested_action == 'split':
+
+                elif validation.suggested_action == "split":
                     # 需要拆分，返回单独处理
                     split_feedbacks.extend(feedbacks)
-                    
+
                 else:
                     # 置信度低，标记为待人工复核
-                    cluster['validation'] = validation.model_dump()
+                    cluster["validation"] = validation.model_dump()
                     uncertain_clusters.append(cluster)
             else:
                 # 小聚类，直接保留（小聚类相似度高，通常不会误判）
                 validated_clusters.append(cluster)
-        
+
         log.info(
             f"LLM refinement completed: validated={len(validated_clusters)}, "
             f"uncertain={len(uncertain_clusters)}, to_recluster={len(split_feedbacks)}"
         )
-        
+
         return {
-            'validated': validated_clusters,
-            'uncertain': uncertain_clusters,
-            'to_recluster': split_feedbacks,
+            "validated": validated_clusters,
+            "uncertain": uncertain_clusters,
+            "to_recluster": split_feedbacks,
         }
 
 

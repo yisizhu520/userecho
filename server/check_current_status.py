@@ -1,4 +1,5 @@
 """检查当前反馈状态分布"""
+
 import asyncio
 from backend.database.db import async_db_session
 from sqlalchemy import select, func
@@ -20,18 +21,18 @@ async def check_status():
             )
             .group_by(Feedback.clustering_status)
         )
-        
+
         result = await db.execute(status_query)
         rows = result.all()
-        
+
         print("=== 反馈状态分布（topic_id IS NULL）===")
         total = 0
         for status, count in rows:
             print(f"  {status}: {count} 条")
             total += count
-        
+
         print(f"\n总计: {total} 条")
-        
+
         # 检查最近更新为 processing 的记录
         recent_processing = (
             select(
@@ -49,10 +50,10 @@ async def check_status():
             .order_by(Feedback.updated_time.desc())
             .limit(5)
         )
-        
+
         result2 = await db.execute(recent_processing)
         rows2 = result2.all()
-        
+
         if rows2:
             print("\n=== 最近标记为 processing 的记录（前5条）===")
             for row in rows2:

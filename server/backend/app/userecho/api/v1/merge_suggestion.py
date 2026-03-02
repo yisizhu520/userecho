@@ -1,6 +1,6 @@
 """合并建议 API"""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from backend.app.userecho.crud.crud_feedback import crud_feedback
 from backend.app.userecho.crud.crud_merge_suggestion import crud_merge_suggestion

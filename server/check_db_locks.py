@@ -1,4 +1,5 @@
 """检查数据库锁和活跃事务"""
+
 import asyncio
 from sqlalchemy import text
 from backend.database.db import async_db_session
@@ -21,10 +22,10 @@ async def check_locks():
               AND pid != pg_backend_pid()
             ORDER BY duration DESC
         """)
-        
+
         result = await db.execute(lock_query)
         rows = result.all()
-        
+
         print("=== 活跃事务 ===")
         if rows:
             for row in rows:
@@ -35,7 +36,7 @@ async def check_locks():
                 print()
         else:
             print("没有活跃事务")
-        
+
         # 2. 检查锁定的 feedback 记录
         feedback_lock_query = text("""
             SELECT 
@@ -53,10 +54,10 @@ async def check_locks():
               AND l.pid != pg_backend_pid()
             ORDER BY a.query_start
         """)
-        
+
         result2 = await db.execute(feedback_lock_query)
         rows2 = result2.all()
-        
+
         print("\n=== Feedback 表的锁 ===")
         if rows2:
             for row in rows2:

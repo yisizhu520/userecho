@@ -21,40 +21,40 @@ const emit = defineEmits<{
 
 // 5个状态列配置 (增加视觉配色配置)
 const statuses = [
-  { 
-    key: 'pending', 
-    label: '待处理', 
+  {
+    key: 'pending',
+    label: '待处理',
     color: 'gray',
     bgColor: 'bg-gray-50/50 dark:bg-gray-900/20',
-    borderColor: 'border-t-gray-400 dark:border-t-gray-600'
+    borderColor: 'border-t-transparent'
   },
-  { 
-    key: 'planned', 
-    label: '已规划', 
+  {
+    key: 'planned',
+    label: '已规划',
     color: 'blue',
-    bgColor: 'bg-blue-50/50 dark:bg-blue-900/20',
-    borderColor: 'border-t-blue-500'
+    bgColor: 'bg-gray-50/50 dark:bg-gray-900/20',
+    borderColor: 'border-t-transparent'
   },
-  { 
-    key: 'in_progress', 
-    label: '进行中', 
+  {
+    key: 'in_progress',
+    label: '进行中',
     color: 'purple',
-    bgColor: 'bg-purple-50/50 dark:bg-purple-900/20',
-    borderColor: 'border-t-purple-500' 
+    bgColor: 'bg-gray-50/50 dark:bg-gray-900/20',
+    borderColor: 'border-t-transparent'
   },
-  { 
-    key: 'completed', 
-    label: '已完成', 
+  {
+    key: 'completed',
+    label: '已完成',
     color: 'green',
-    bgColor: 'bg-green-50/50 dark:bg-green-900/20',
-    borderColor: 'border-t-green-500'
+    bgColor: 'bg-gray-50/50 dark:bg-gray-900/20',
+    borderColor: 'border-t-transparent'
   },
-  { 
-    key: 'ignored', 
-    label: '已忽略', 
+  {
+    key: 'ignored',
+    label: '已忽略',
     color: 'rose',
-    bgColor: 'bg-rose-50/50 dark:bg-rose-900/20',
-    borderColor: 'border-t-rose-400'
+    bgColor: 'bg-gray-50/50 dark:bg-gray-900/20',
+    borderColor: 'border-t-transparent'
   },
 ] as const;
 

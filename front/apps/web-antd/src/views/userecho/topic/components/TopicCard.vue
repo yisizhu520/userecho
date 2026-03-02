@@ -40,7 +40,7 @@ const createdTime = computed(() => {
 const priorityConfig = computed(() => {
   const score = props.topic.priority_score?.total_score ?? 0;
   if (!props.topic.priority_score) return { color: 'text-gray-400', bg: 'bg-gray-100', label: '待评估' };
-  
+
   if (score >= 15) return { color: 'text-red-500', bg: 'bg-red-50', label: '紧急' };
   if (score >= 10) return { color: 'text-orange-500', bg: 'bg-orange-50', label: '高' };
   if (score >= 5) return { color: 'text-blue-500', bg: 'bg-blue-50', label: '中' };
@@ -60,8 +60,8 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
     <div class="card-header">
       <div class="flex items-center gap-2">
         <!-- 优先级指示器 -->
-        <div 
-          class="priority-indicator" 
+        <div
+          class="priority-indicator"
           :class="priorityConfig.bg"
           :title="`优先级: ${priorityConfig.label} (${topic.priority_score?.total_score ?? 0})`"
         >
@@ -69,7 +69,7 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
           <span class="iconify lucide--signal text-[10px] opacity-70" />
           <span class="text-[10px] font-medium" :class="priorityConfig.color">{{ priorityConfig.label }}</span>
         </div>
-        
+
         <!-- AI 标识 -->
         <div v-if="isAiGenerated" class="ai-badge" title="AI 自动生成">
           <span class="iconify lucide--sparkles text-[10px]" />
@@ -81,7 +81,7 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
         <div v-if="boardName" class="board-badge">
           {{ boardName }}
         </div>
-        
+
         <a-dropdown :trigger="['click']" placement="bottomRight">
           <div class="action-btn p-1 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center">
             <MoreOutlined class="text-lg text-gray-500" />
@@ -146,14 +146,14 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
 <style scoped>
 .topic-card {
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.6);
+  border: 1px solid hsl(var(--border));
   border-radius: 8px; /* 更圆润的圆角 */
   padding: 12px;
   margin-bottom: 10px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .topic-card:hover {
@@ -216,7 +216,7 @@ const isAiGenerated = computed(() => props.topic.ai_generated);
   color: hsl(var(--foreground));
   font-weight: 600; /* 加粗标题 */
   margin: 0;
-  
+
   /* 多行截断 */
   display: -webkit-box;
   -webkit-line-clamp: 2;

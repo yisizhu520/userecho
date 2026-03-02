@@ -1,4 +1,5 @@
 """检查聚类数据不一致问题"""
+
 import asyncio
 from backend.database.db import async_db_session
 from sqlalchemy import select, func
@@ -26,7 +27,9 @@ async def check_feedbacks():
             Feedback.board_id == "default-board",  # Worker 有 board_id 过滤
         )
         worker_count = await db.scalar(worker_query) or 0
-        print(f"Worker查询（clustering_status IN ('pending','failed') AND board_id='default-board'）: {worker_count} 条")
+        print(
+            f"Worker查询（clustering_status IN ('pending','failed') AND board_id='default-board'）: {worker_count} 条"
+        )
 
         # 3. 检查所有 topic_id 为空的反馈分布
         all_null_query = (

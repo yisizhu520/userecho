@@ -1,4 +1,5 @@
 """检查是否有已存在的相似主题"""
+
 import asyncio
 import numpy as np
 from backend.database.db import async_db_session
@@ -20,30 +21,30 @@ async def check_similar_topics():
             )
             .limit(48)
         )
-        
+
         result = await db.execute(feedbacks_query)
         feedbacks = list(result.scalars().all())
-        
+
         if not feedbacks:
             print("没有找到反馈")
             return
-        
+
         # 2. 提取 embeddings
         embeddings = []
         for f in feedbacks:
             if f.embedding is not None:
                 embeddings.append(f.embedding)
-        
+
         if not embeddings:
             print("没有 embedding")
             return
-        
+
         # 3. 计算中心向量
         embeddings_array = np.array(embeddings)
         centroid = np.mean(embeddings_array, axis=0).astype(float).tolist()
-        
+
         print(f"计算了 {len(embeddings)} 条反馈的中心向量")
-        
+
         # 4. 搜索相似主题
         similar_topics = await crud_topic.search_by_semantic(
             db=db,
@@ -52,9 +53,9 @@ async def check_similar_topics():
             limit=5,
             min_similarity=0.80,
         )
-        
+
         print(f"\n=== 找到 {len(similar_topics)} 个相似主题（min_similarity=0.80）===")
-        
+
         if similar_topics:
             for topic in similar_topics:
                 similarity = getattr(topic, "similarity_score", "unknown")

@@ -46,14 +46,14 @@ const shadowMap: Record<string, string> = {
 
     <!-- Topic 卡片列表 -->
     <div class="column-body sortable-container" :data-status="status.key">
-      <TopicCard 
-        v-for="topic in topics" 
-        :key="topic.id" 
+      <TopicCard
+        v-for="topic in topics"
+        :key="topic.id"
         :topic="topic"
         @edit="(t) => emit('edit', t)"
-        @delete="(t) => emit('delete', t)" 
+        @delete="(t) => emit('delete', t)"
       />
-      
+
       <!-- 空状态 -->
       <div v-if="topics.length === 0" class="empty-state">
         <span class="iconify lucide--inbox text-2xl text-gray-300 dark:text-gray-600" />
@@ -74,14 +74,14 @@ const shadowMap: Record<string, string> = {
   overflow: hidden;
   height: 100%;
   transition: all 0.3s ease;
-  background-color: hsl(var(--background));
-  border: 1px solid hsl(var(--border) / 0.6);
+  background-color: hsl(var(--accent));
+  border: 1px solid hsl(var(--border));
 }
 
 /* 状态颜色主题（Tailwind 类名映射） */
 /* 注意：这些类需要确保被 Tailwind 扫描到，或者使用 style 绑定 */
-/* 
-   Pending: bg-gray-50 border-gray-200 
+/*
+   Pending: bg-gray-50 border-gray-200
    Planned: bg-blue-50 border-blue-200
    In Progress: bg-purple-50 border-purple-200
    Completed: bg-green-50 border-green-200
@@ -90,7 +90,6 @@ const shadowMap: Record<string, string> = {
 
 .column-header {
   padding: 12px 16px;
-  border-top-width: 4px; /* 顶部彩色条 */
   border-bottom: 1px solid hsl(var(--border) / 0.5);
   background: hsl(var(--background));
   display: flex;
@@ -127,8 +126,6 @@ const shadowMap: Record<string, string> = {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-  /* 轻微的内阴影增加层次感 */
-  background: linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 10px);
 }
 
 .empty-state {

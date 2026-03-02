@@ -15,22 +15,19 @@ async def check_tenants():
     async with async_db_session.begin() as db:
         # 统计每个租户的反馈数量
         query = (
-            select(
-                Feedback.tenant_id,
-                func.count(Feedback.id).label('count')
-            )
+            select(Feedback.tenant_id, func.count(Feedback.id).label("count"))
             .where(Feedback.deleted_at.is_(None))
             .group_by(Feedback.tenant_id)
             .order_by(func.count(Feedback.id).desc())
         )
-        
+
         result = await db.execute(query)
         tenants = result.all()
-        
+
         if not tenants:
             print("❌ 没有找到任何反馈数据")
             return
-        
+
         print(f"\n找到 {len(tenants)} 个租户:\n")
         for tenant_id, count in tenants:
             print(f"  租户: {tenant_id}")

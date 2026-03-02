@@ -16,7 +16,7 @@
 
 import asyncio
 
-from sqlalchemy import func, select, text
+from sqlalchemy import text
 
 
 async def diagnose_board_count():
@@ -57,7 +57,7 @@ async def diagnose_board_count():
             if feedback_count != actual_count:
                 print(f"   警告: 触发器计数与实际不符！差异: {feedback_count - actual_count}")
             else:
-                print(f"   OK: 触发器计数正确")
+                print("   OK: 触发器计数正确")
 
             # 详细分析：按不同维度统计
             print()
