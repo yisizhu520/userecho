@@ -29,14 +29,14 @@ _celery_async_session: async_sessionmaker[AsyncSession] | None = None
 def get_celery_db_session() -> async_sessionmaker[AsyncSession]:
     """
     获取 Celery Worker 专用的异步数据库 Session Factory
-    
+
     为每个 Celery Worker 进程创建独立的异步引擎，避免跨 loop 冲突
     """
     global _celery_async_engine, _celery_async_session
-    
+
     if _celery_async_engine is None:
         db_url = create_database_url()
-        
+
         _celery_async_engine = create_async_engine(
             db_url,
             echo=settings.DATABASE_ECHO,
@@ -46,16 +46,16 @@ def get_celery_db_session() -> async_sessionmaker[AsyncSession]:
             pool_recycle=3600,
             pool_pre_ping=True,
         )
-        
+
         _celery_async_session = async_sessionmaker(
             bind=_celery_async_engine,
             class_=AsyncSession,
             autoflush=False,
             expire_on_commit=True,
         )
-        
-        log.info(f"[Celery] Created async database engine for worker")
-    
+
+        log.info("[Celery] Created async database engine for worker")
+
     return _celery_async_session
 
 

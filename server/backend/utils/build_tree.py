@@ -13,7 +13,7 @@ def _normalize_vben_component(component: str | None) -> str | None:
 
     前端 pageMap 的 key 格式：/src/views/**/*.vue (由 import.meta.glob() 生成)
     数据库存储的 component：/system/dept/index
-    
+
     转换规则：
     - 输入：/system/dept/index
     - 输出：/src/views/system/dept/index.vue
@@ -38,7 +38,7 @@ def _normalize_vben_component(component: str | None) -> str | None:
     # 确保路径以 / 开头
     if not c.startswith("/"):
         c = "/" + c
-    
+
     # 添加 /src/views 前缀（如果尚未添加）
     if not c.startswith("/src/views/"):
         c = f"/src/views{c}"
@@ -46,7 +46,7 @@ def _normalize_vben_component(component: str | None) -> str | None:
     # 去掉多余的斜杠（保留开头那个）
     while "//" in c:
         c = c.replace("//", "/")
-    
+
     # 添加 .vue 后缀
     c = f"{c}.vue"
 

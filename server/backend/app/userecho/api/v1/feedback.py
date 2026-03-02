@@ -592,13 +592,17 @@ async def analyze_screenshot_url(
         return response_base.fail(res=CustomResponse(code=500, msg=f"提交识别任务失败: {e!s}"))
 
 
-@router.get("/screenshot/task/{task_id}", summary="查询截图分析任务状态")
+@router.get("/screenshot/task/{task_id}", summary="查询截图分析任务状态", deprecated=True)
 async def get_screenshot_task_status(
     task_id: str,
     tenant_id: str = CurrentTenantId,
 ) -> Any:
     """
     查询截图分析任务状态
+
+    .. deprecated::
+        请使用统一任务追踪接口 ``GET /api/v1/task-records/{celery_task_id}`` 替代。
+        本端点保留向后兼容，但不再增加新功能。
 
     返回字段：
     - task_id: 任务 ID

@@ -54,9 +54,7 @@ async def check_system_menus():
             status = "启用" if menu[5] == 1 else "禁用"
             display = "显示" if menu[6] == 1 else "隐藏"
             type_name = {0: "目录", 1: "菜单", 2: "按钮"}.get(menu[7], "未知")
-            print(
-                f"  {menu[0]:3d} | {menu[1]:20s} | {parent:10s} | {status:4s} | {display:4s} | {type_name}"
-            )
+            print(f"  {menu[0]:3d} | {menu[1]:20s} | {parent:10s} | {status:4s} | {display:4s} | {type_name}")
         print()
 
         # 3. 检查 System 父菜单

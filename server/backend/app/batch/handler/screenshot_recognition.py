@@ -30,19 +30,21 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
         # 提取 AI 识别结果（新格式：返回 feedback_list）
         feedback_list = result.get("feedback_list", [])
         raw_text = result.get("raw_text", "")
-        
+
         log.info(f"AI recognition result: {len(feedback_list)} feedback(s) found, raw_text length: {len(raw_text)}")
-        
+
         # 如果识别失败，创建一条空反馈
         if not feedback_list:
-            log.warning(f"No feedback extracted from screenshot, using raw_text as fallback")
-            feedback_list = [{
-                "content": raw_text or "图像识别失败，请手动填写",
-                "user_name": "",
-                "platform": "",
-                "confidence": 0,
-            }]
-        
+            log.warning("No feedback extracted from screenshot, using raw_text as fallback")
+            feedback_list = [
+                {
+                    "content": raw_text or "图像识别失败，请手动填写",
+                    "user_name": "",
+                    "platform": "",
+                    "confidence": 0,
+                }
+            ]
+
         # 3. 为每条反馈创建独立的 Feedback 记录
         created_feedbacks = []
         for idx, feedback_data in enumerate(feedback_list):
@@ -50,7 +52,7 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
             ai_user_name = feedback_data.get("user_name", "")
             ai_platform = feedback_data.get("platform", "")
             ai_confidence = feedback_data.get("confidence", 0)
-            
+
             log.info(
                 f"Creating feedback {idx + 1}/{len(feedback_list)}: "
                 f"content={ai_content[:50]}..., user={ai_user_name}, "
@@ -104,11 +106,13 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
             # 创建反馈
             feedback = Feedback(**feedback_dict)
             db.add(feedback)
-            created_feedbacks.append({
-                "feedback_id": feedback.id,
-                "content": feedback.content[:100] if feedback.content else "",
-                "confidence": ai_confidence,
-            })
+            created_feedbacks.append(
+                {
+                    "feedback_id": feedback.id,
+                    "content": feedback.content[:100] if feedback.content else "",
+                    "confidence": ai_confidence,
+                }
+            )
 
         # 4. 记录积分消耗（按识别出的反馈数量计费）
         try:

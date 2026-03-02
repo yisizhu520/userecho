@@ -121,6 +121,7 @@
     ]
   },
   "dependencies": {
-    "@vueuse/head": "^2.0.0"
+    "@vueuse/head": "^2.0.0",
+    "echarts": "catalog:"
   }
 }

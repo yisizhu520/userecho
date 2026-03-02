@@ -1,6 +1,6 @@
 """批量任务 API 接口"""
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.common.security.jwt import CurrentTenantId, CurrentUserId
@@ -64,13 +64,13 @@ async def create_job(
             created_by=str(user_id),
         )
         batch_job_id = batch_job.id
-        
+
         # 强制提交当前事务，确保数据持久化到数据库
         await db.commit()
-        
+
         # 现在数据已经在数据库中，触发 Celery 任务
         celery_task_id = await enqueue_batch_job(batch_job_id)
-        
+
         return response_base.success(data={"batch_id": batch_job_id, "celery_task_id": celery_task_id})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -214,10 +214,10 @@ async def screenshot_batch_upload(
         created_by=str(user_id),
     )
     batch_job_id = batch_job.id
-    
+
     # 强制提交当前事务，确保数据持久化到数据库
     await db.commit()
-    
+
     # 现在数据已经在数据库中，触发 Celery 任务
     celery_task_id = await enqueue_batch_job(batch_job_id)
 
