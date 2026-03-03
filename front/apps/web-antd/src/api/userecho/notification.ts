@@ -173,6 +173,13 @@ export async function markNotificationAsRead(notificationId: string) {
 }
 
 /**
+ * 删除单条通知
+ */
+export async function deleteNotification(notificationId: string) {
+    return requestClient.delete(`/api/v1/app/notifications/${notificationId}`);
+}
+
+/**
  * 标记所有通知为已读
  */
 export async function markAllNotificationsAsRead() {

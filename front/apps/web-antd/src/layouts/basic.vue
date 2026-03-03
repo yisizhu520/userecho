@@ -75,12 +75,14 @@ const { destroyWatermark, updateWatermark } = useWatermark();
 // 系统通知数据
 const notifications = ref<NotificationItem[]>([]);
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null);
+const notificationRef = ref<{ openPopover: () => void } | null>(null);
+const lastUnreadIds = ref<Set<string>>(new Set()); // 跟踪上次的未读消息 ID
 
-// 加载系统通知
+// 加载系统通知（默认只显示未读）
 async function loadNotifications() {
   try {
-    const result = await getSystemNotifications();
-    notifications.value = result.items.map((item) => ({
+    const result = await getSystemNotifications(true); // 只获取未读通知
+    const newNotifications = result.items.map((item) => ({
       avatar: item.avatar || 'https://avatar.vercel.sh/notification.svg?text=N',
       date: item.date || '',
       isRead: item.is_read,
@@ -90,6 +92,21 @@ async function loadNotifications() {
       actionUrl: item.action_url,
       id: item.id,
     }));
+
+    // 检测是否有新的未读消息
+    const currentUnreadIds = new Set(newNotifications.map((n) => n.id));
+    const hasNewMessages = Array.from(currentUnreadIds).some(
+      (id) => !lastUnreadIds.value.has(id),
+    );
+
+    // 如果有新消息且不是首次加载，自动弹出 popover
+    if (hasNewMessages && lastUnreadIds.value.size > 0) {
+      notificationRef.value?.openPopover();
+    }
+
+    // 更新状态
+    notifications.value = newNotifications;
+    lastUnreadIds.value = currentUnreadIds;
   } catch {
     // 静默处理错误，不打断用户
   }
@@ -158,10 +175,38 @@ async function handleNotificationClick(item: NotificationItem) {
 }
 
 // 处理"查看所有消息"按钮
-function handleViewAll() {
-  // 目前没有专门的通知列表页面，所以这里暂时不做跳转
-  // 未来可以实现：router.push('/app/notifications')
-  // 现在只是关闭弹窗（组件内部会自动处理）
+async function handleViewAll() {
+  try {
+    // 加载所有通知（包括已读和未读）
+    const result = await getSystemNotifications(false); // false 表示获取所有通知
+    notifications.value = result.items.map((item) => ({
+      id: item.id,
+      avatar: item.avatar || 'https://avatar.vercel.sh/notification.svg?text=N',
+      title: item.title,
+      message: item.message,
+      date: item.date || '',
+      isRead: item.is_read,
+      actionUrl: item.action_url,
+    }));
+  } catch {
+    // 静默处理
+  }
+}
+
+// 处理快速标记已读（不跳转）
+async function handleNotificationMarkRead(item: NotificationItem) {
+  try {
+    // 1. 调用 API 标记为已读
+    await markNotificationAsRead(item.id);
+
+    // 2. 更新本地状态
+    const notification = notifications.value.find((n) => n.id === item.id);
+    if (notification) {
+      notification.isRead = true;
+    }
+  } catch {
+    // 静默处理
+  }
 }
 
 // 启动轮询
@@ -221,12 +266,14 @@ watch(
     </template>
     <template #notification>
       <Notification
+        ref="notificationRef"
         :dot="showDot"
         :notifications="notifications"
         @clear="handleNoticeClear"
         @make-all="handleMakeAll"
         @read="handleNotificationClick"
         @view-all="handleViewAll"
+        @mark-read="handleNotificationMarkRead"
       />
     </template>
     <template #extra>

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { NotificationItem } from './types';
 
-import { Bell, MailCheck } from '@vben/icons';
+import { Bell, Check, MailCheck } from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import {
@@ -36,6 +36,7 @@ const emit = defineEmits<{
   makeAll: [];
   read: [NotificationItem];
   viewAll: [];
+  markRead: [NotificationItem];
 }>();
 
 const [open, toggle] = useToggle();
@@ -44,9 +45,19 @@ function close() {
   open.value = false;
 }
 
+function openPopover() {
+  open.value = true;
+}
+
+// 暴露给父组件使用
+defineExpose({
+  openPopover,
+});
+
 function handleViewAll() {
   emit('viewAll');
-  close();
+  // 不关闭弹窗，让用户继续查看通知
+  // close();
 }
 
 function handleMakeAll() {
@@ -59,6 +70,11 @@ function handleClear() {
 
 function handleClick(item: NotificationItem) {
   emit('read', item);
+}
+
+function handleMarkRead(item: NotificationItem, event: Event) {
+  event.stopPropagation();
+  emit('markRead', item);
 }
 </script>
 <template>
@@ -93,13 +109,23 @@ function handleClick(item: NotificationItem) {
         <ul class="!flex max-h-[360px] w-full flex-col">
           <template v-for="item in notifications" :key="item.title">
             <li
-              class="hover:bg-accent border-border relative flex w-full cursor-pointer items-start gap-5 border-t px-3 py-3"
+              class="hover:bg-accent border-border relative flex w-full cursor-pointer items-start gap-5 border-t px-3 py-3 group"
               @click="handleClick(item)"
             >
               <span
                 v-if="!item.isRead"
                 class="bg-primary absolute right-2 top-2 h-2 w-2 rounded"
               ></span>
+
+              <!-- 标记为已读按钮（仅未读通知显示，放在右下角） -->
+              <button
+                v-if="!item.isRead"
+                class="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/90 rounded-full p-1.5 shadow-sm"
+                title="标记为已读"
+                @click="handleMarkRead(item, $event)"
+              >
+                <Check class="size-2" />
+              </button>
 
               <span
                 class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"

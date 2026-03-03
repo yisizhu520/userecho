@@ -104,6 +104,27 @@ async def mark_as_read(
     return response_base.success(res=CustomResponse(code=200, msg="已标记为已读"))
 
 
+@router.delete("/{notification_id}", summary="删除单条通知")
+async def delete_notification(
+    notification_id: str,
+    db: CurrentSession,
+    tenant_id: str = CurrentTenantId,
+    current_user_id: int = Depends(get_current_user_id),
+):
+    """删除单条通知"""
+    success = await crud_system_notification.delete_notification(
+        db=db,
+        tenant_id=tenant_id,
+        notification_id=notification_id,
+        user_id=current_user_id,
+    )
+
+    if not success:
+        return response_base.fail(res=CustomResponse(code=400, msg="通知不存在或无权限"))
+
+    return response_base.success(res=CustomResponse(code=200, msg="已删除"))
+
+
 @router.post("/read-all", summary="标记所有通知为已读")
 async def mark_all_as_read(
     db: CurrentSession,

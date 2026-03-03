@@ -144,6 +144,27 @@ class CRUDSystemNotification(TenantAwareCRUD[SystemNotification]):
         # ❌ 禁止手动 commit
         return result.rowcount
 
+    async def delete_notification(
+        self,
+        db: AsyncSession,
+        tenant_id: str,
+        notification_id: str,
+        user_id: int,
+    ) -> bool:
+        """删除单条通知（需验证权限）"""
+        from sqlalchemy import delete, or_
+
+        # 验证通知属于该用户（或租户全员通知）
+        stmt = delete(self.model).where(
+            self.model.tenant_id == tenant_id,
+            self.model.id == notification_id,
+            or_(self.model.user_id == user_id, self.model.user_id.is_(None)),
+        )
+
+        result = await db.execute(stmt)
+        # ❌ 禁止手动 commit
+        return result.rowcount > 0
+
     async def create_topic_completed_notification(
         self,
         db: AsyncSession,
