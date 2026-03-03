@@ -8,6 +8,9 @@ import re
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.userecho.crud.crud_invitation_usage import invitation_usage_dao
+from backend.app.userecho.crud.crud_tenant_member import tenant_member_dao
+from backend.app.userecho.crud.crud_tenant_role import tenant_role_dao
 from backend.app.userecho.model.board import Board
 from backend.app.userecho.model.tenant import Tenant
 from backend.app.userecho.model.tenant_user import TenantUser
@@ -22,6 +25,7 @@ from backend.app.userecho.schema.onboarding import (
 )
 from backend.common.log import log
 from backend.database.db import uuid4_str
+from backend.app.userecho.service.tenant_role_service import tenant_role_service
 
 
 class OnboardingService:
@@ -206,9 +210,22 @@ class OnboardingService:
             db.add(tenant_user)
             await db.flush()
 
+            # 初始化租户内置角色和权限映射
+            await tenant_role_service.init_builtin_roles(db, tenant.id)
+
+            # 为创建者分配 admin 角色（RBAC）
+            admin_role = await tenant_role_dao.get_by_code(db, tenant.id, "admin")
+            if not admin_role:
+                raise RuntimeError(f"Failed to initialize admin role for tenant {tenant.id}")
+            await tenant_member_dao.set_member_roles(db, tenant_user.id, [admin_role.id], assigned_by=user_id)
+
+            from backend.app.userecho.service.auth_service import auth_service
+
+            await auth_service.activate_invitation_trial_for_tenant(db=db, user_id=user_id, tenant_id=tenant.id)
+
             log.info(f'Created tenant "{data.name}" (slug={data.slug}) for user {user_id}')
 
-            return CreateTenantOut(id=tenant.id, name=tenant.name, slug=tenant.slug, created_time=tenant.created_time)
+            return CreateTenantOut(id=tenant.id, name=tenant.name, slug=data.slug, created_time=tenant.created_time)
 
         except Exception as e:
             log.error(f"Failed to create tenant for user {user_id}: {e}")
@@ -371,10 +388,14 @@ class OnboardingService:
         if not board:
             raise ValueError("请先创建看板")
 
+        invitation_usage = await invitation_usage_dao.get_by_user(db, user_id)
+        if invitation_usage and not invitation_usage.completed_onboarding:
+            await invitation_usage_dao.mark_onboarding_completed(db, invitation_usage.id, tenant_user.tenant_id)
+
         log.info(f"User {user_id} completed onboarding for tenant {tenant_user.tenant_id}")
 
         return OnboardingCompleteOut(
-            success=True, tenant_id=tenant_user.tenant_id, board_id=board.id, redirect_path="/dashboard"
+            success=True, tenant_id=tenant_user.tenant_id, board_id=board.id, redirect_path="/app/dashboard/workspace"
         )
 
 

@@ -21,6 +21,17 @@ class CRUDInvitationUsage:
         result = await db.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_user(self, db: AsyncSession, user_id: int) -> InvitationUsage | None:
+        """根据用户获取最新一条邀请使用记录。"""
+        query = (
+            select(InvitationUsage)
+            .where(InvitationUsage.user_id == user_id)
+            .order_by(InvitationUsage.created_time.desc())
+            .limit(1)
+        )
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
     async def get_by_invitation(
         self, db: AsyncSession, invitation_id: str, skip: int = 0, limit: int = 100
     ) -> tuple[list[InvitationUsage], int]:
@@ -29,7 +40,7 @@ class CRUDInvitationUsage:
         query = (
             select(InvitationUsage)
             .where(InvitationUsage.invitation_id == invitation_id)
-            .order_by(InvitationUsage.used_at.desc())
+            .order_by(InvitationUsage.created_time.desc())
             .offset(skip)
             .limit(limit)
         )

@@ -42,3 +42,7 @@ class User(Base):
     tenant_id: Mapped[str | None] = mapped_column(sa.String(36), default="default-tenant", comment="租户ID")
     invitation_id: Mapped[str | None] = mapped_column(sa.String(36), default=None, comment="邀请ID")
     email_verified: Mapped[bool] = mapped_column(default=False, comment="邮箱是否已验证")
+
+    def __post_init__(self) -> None:
+        if not self.username and self.email:
+            self.username = self.email

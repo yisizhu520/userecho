@@ -17,7 +17,7 @@ class MenuService:
 
     # 路由前缀常量
     BUSINESS_PREFIX = "/app"  # 业务功能前缀
-    SYSTEM_PREFIX = "/system"  # 系统管理前缀
+    SYSTEM_PREFIX = "/admin"  # 系统管理前缀
 
     @staticmethod
     async def get(*, db: AsyncSession, pk: int) -> Menu:

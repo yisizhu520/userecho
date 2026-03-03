@@ -23,10 +23,12 @@ router = APIRouter(prefix="/email-blacklist", tags=["Admin - 邮箱黑名单"])
 async def add_blacklist(
     body: EmailBlacklistCreateReq,
     db: CurrentSession,
-    current_user: Annotated[dict, CurrentUser],
+    current_user: Annotated[Any, CurrentUser],
 ) -> Any:
     """添加邮箱域名到黑名单"""
-    added_by = current_user.get("id")
+    added_by = getattr(current_user, "id", None)
+    if not added_by:
+        return response_base.fail(msg="未登录或 Token 已过期")
     blacklist = await email_blacklist_service.add_blacklist(db, body, added_by)
     return response_base.success(data=EmailBlacklistSchema.model_validate(blacklist))
 

@@ -8,6 +8,16 @@ from backend.utils.serializers import select_list_serialize
 _sys_config_table_exists: bool | None = None
 
 
+def _is_enabled(value: object) -> bool:
+    """统一解析动态配置中的启用开关值。"""
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
 async def check_sys_config_table_exists() -> bool:
     """
     检查 sys_config 表是否存在
@@ -48,7 +58,7 @@ async def load_user_security_config(db: AsyncSession) -> None:
         password_require_special_char_key = "USER_PASSWORD_REQUIRE_SPECIAL_CHAR"
 
         configs = {dc["key"]: dc["value"] for dc in select_list_serialize(dynamic_config)}
-        if int(configs.get(security_config_status_key)):
+        if _is_enabled(configs.get(security_config_status_key)):
             if lock_threshold_key in configs:
                 settings.USER_LOCK_THRESHOLD = int(configs[lock_threshold_key])
             if lock_seconds_key in configs:
@@ -87,7 +97,7 @@ async def load_login_config(db: AsyncSession) -> None:
         login_captcha_enabled_key = "LOGIN_CAPTCHA_ENABLED"
 
         configs = {dc["key"]: dc["value"] for dc in select_list_serialize(dynamic_config)}
-        if int(configs.get(login_config_status_key)) and login_captcha_enabled_key in configs:
+        if _is_enabled(configs.get(login_config_status_key)) and login_captcha_enabled_key in configs:
             settings.LOGIN_CAPTCHA_ENABLED = configs[login_captcha_enabled_key] == "true"
 
 
@@ -107,7 +117,9 @@ async def load_email_config(db: AsyncSession) -> None:
     dynamic_config = await config_dao.get_all(db, ConfigType.email)
 
     if dynamic_config:
+        # 历史原因：初始化脚本使用 EMAIL_STATUS，部分环境可能遗留 EMAIL_CONFIG_STATUS
         email_config_status_key = "EMAIL_CONFIG_STATUS"
+        email_status_key = "EMAIL_STATUS"
         host_key = "EMAIL_HOST"
         port_key = "EMAIL_PORT"
         ssl_key = "EMAIL_SSL"
@@ -115,13 +127,15 @@ async def load_email_config(db: AsyncSession) -> None:
         password_key = "EMAIL_PASSWORD"
 
         configs = {dc["key"]: dc["value"] for dc in select_list_serialize(dynamic_config)}
-        if int(configs.get(email_config_status_key)):
-            settings.EMAIL_HOST = str(configs[host_key])
-        if configs.get(port_key):
-            settings.EMAIL_PORT = int(configs[port_key])
-        if configs.get(ssl_key):
-            settings.EMAIL_SSL = configs[ssl_key] == "true"
-        if configs.get(username_key):
-            settings.EMAIL_USERNAME = str(configs[username_key])
-        if configs.get(password_key):
-            settings.EMAIL_PASSWORD = str(configs[password_key])
+        email_enabled = _is_enabled(configs.get(email_config_status_key)) or _is_enabled(configs.get(email_status_key))
+        if email_enabled:
+            if configs.get(host_key):
+                settings.EMAIL_HOST = str(configs[host_key])
+            if configs.get(port_key):
+                settings.EMAIL_PORT = int(configs[port_key])
+            if configs.get(ssl_key):
+                settings.EMAIL_SSL = configs[ssl_key] == "true"
+            if configs.get(username_key):
+                settings.EMAIL_USERNAME = str(configs[username_key])
+            if configs.get(password_key):
+                settings.EMAIL_PASSWORD = str(configs[password_key])

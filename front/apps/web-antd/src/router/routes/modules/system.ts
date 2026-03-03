@@ -6,12 +6,22 @@ const routes: RouteRecordRaw[] = [
   {
     name: 'System',
     path: '/admin/system',
+    redirect: '/admin/system/overview',
     meta: {
       title: $t('page.menu.system'),
       icon: 'grommet-icons:system',
       order: 1,
     },
     children: [
+      {
+        name: 'SysOverview',
+        path: '/admin/system/overview',
+        component: () => import('#/views/system/overview/index.vue'),
+        meta: {
+          title: $t('page.menu.sysOverview'),
+          icon: 'lucide:layout-dashboard',
+        },
+      },
       {
         name: 'SysDept',
         path: '/admin/system/dept',

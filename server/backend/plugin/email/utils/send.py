@@ -71,3 +71,4 @@ async def send_email(
             await smtp_client.sendmail(settings.EMAIL_USERNAME, recipients, message)
     except Exception as e:
         log.error(f"电子邮件发送失败：{e}")
+        raise

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where:*)",
+      "Bash(echo:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

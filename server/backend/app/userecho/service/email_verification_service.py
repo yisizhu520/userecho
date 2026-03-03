@@ -16,9 +16,14 @@ from backend.utils.timezone import timezone
 class EmailVerificationService:
     """邮箱验证服务"""
 
+    CODE_LENGTH = 6
+    # 去掉 0/O/1/I 等易混字符，降低输入出错率
+    CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+    CODE_MAX_RETRY = 10
+
     def generate_verification_code(self) -> str:
-        """生成验证码"""
-        return secrets.token_urlsafe(32)
+        """生成 6 位验证码（数字+大写字母）。"""
+        return "".join(secrets.choice(self.CODE_ALPHABET) for _ in range(self.CODE_LENGTH))
 
     async def create_verification(
         self,
@@ -37,8 +42,18 @@ class EmailVerificationService:
         # 删除旧的未验证记录
         await email_verification_dao.delete_by_user(db, user_id, is_verified=False)
 
-        # 创建新记录
-        verification_code = self.generate_verification_code()
+        # 创建新记录（短码需做冲突重试）
+        verification_code: str | None = None
+        for _ in range(self.CODE_MAX_RETRY):
+            candidate = self.generate_verification_code()
+            if not await email_verification_dao.get_by_code(db, candidate):
+                verification_code = candidate
+                break
+
+        if not verification_code:
+            log.error("Failed to generate unique verification code after retries")
+            raise RuntimeError("生成验证码失败，请稍后重试")
+
         expires_at = timezone.now() + timedelta(hours=24)
 
         verification = EmailVerification(

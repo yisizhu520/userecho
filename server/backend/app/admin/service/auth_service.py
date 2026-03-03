@@ -120,7 +120,7 @@ class AuthService:
                 user.id,
                 multi_login=user.is_multi_login,
                 # extra info
-                username=user.username,
+                username=user.username or user.email,
                 nickname=user.nickname,
                 last_login_time=timezone.to_str(user.last_login_time),
                 ip=ctx.ip,
@@ -230,7 +230,7 @@ class AuthService:
             user.id,
             multi_login=user.is_multi_login,
             # extra info
-            username=user.username,
+            username=user.username or user.email,
             nickname=user.nickname,
             last_login_time=timezone.to_str(user.last_login_time),
             ip=ctx.ip,

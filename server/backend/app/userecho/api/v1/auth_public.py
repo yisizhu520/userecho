@@ -14,15 +14,30 @@ from backend.app.userecho.schema.email_verification import (
     EmailVerifyReq,
     EmailVerifyResp,
 )
+from backend.app.userecho.crud.crud_email_verification import email_verification_dao
 from backend.app.userecho.service.auth_service import auth_service
 from backend.app.userecho.service.email_verification_service import (
     email_verification_service,
 )
+from backend.common.exception import errors
 from backend.common.response.response_schema import response_base
 from backend.common.security.jwt import CurrentUser
 from backend.database.db import CurrentSession
 
 router = APIRouter(prefix="/auth", tags=["UserEcho - 认证（公开）"])
+
+
+def _get_user_id_from_current_user(current_user: Any) -> int:
+    """兼容对象/字典两种用户结构，统一提取 user_id。"""
+    user_id = None
+    if isinstance(current_user, dict):
+        user_id = current_user.get("id")
+    else:
+        user_id = getattr(current_user, "id", None)
+
+    if not user_id:
+        raise errors.AuthorizationError(msg="未登录或 Token 已过期")
+    return int(user_id)
 
 
 @router.post("/register/invite", summary="通过邀请码注册")
@@ -60,10 +75,13 @@ async def register_with_invitation(
 async def verify_email(
     body: EmailVerifyReq,
     db: CurrentSession,
-    current_user: dict = CurrentUser,
 ) -> Any:
     """验证邮箱并激活订阅"""
-    user_id = current_user.get("id")
+    verification = await email_verification_dao.get_by_code(db, body.verification_code)
+    if not verification:
+        return response_base.fail(msg="验证码无效")
+
+    user_id = int(verification.user_id)
 
     result = await auth_service.verify_email_and_activate_subscription(db, user_id, body.verification_code)
 
@@ -77,10 +95,10 @@ async def verify_email(
 async def resend_verification_email(
     body: EmailResendReq,
     db: CurrentSession,
-    current_user: dict = CurrentUser,
+    current_user: Any = CurrentUser,
 ) -> Any:
     """重新发送邮箱验证邮件"""
-    user_id = current_user.get("id")
+    user_id = _get_user_id_from_current_user(current_user)
 
     success, message, verification = await email_verification_service.resend_verification(db, user_id, body.email)
 

@@ -25,6 +25,16 @@ export const overridesPreferences = defineOverridesPreferences({
   footer: {
     enable: false,
   },
+  // 固定全局版权信息，避免被历史缓存或误配置污染
+  copyright: {
+    companyName: '回响',
+    date: '2026',
+    companySiteLink: 'https://userecho.app',
+    enable: true,
+    icp: '',
+    icpLink: '',
+    settingShow: false,
+  },
   logo: {
     source: '/logo.png',
   },

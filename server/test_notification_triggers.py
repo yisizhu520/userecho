@@ -13,16 +13,16 @@ from backend.database.db import async_db_session
 
 async def test_notification_creation():
     """测试通知创建功能"""
-    
+
     async with async_db_session() as db:
         async with db.begin():
             # 测试租户
             tenant_id = "test_tenant"
-            
-            print("\n" + "="*60)
+
+            print("\n" + "=" * 60)
             print("Test 1: Create topic completed notification")
-            print("="*60)
-            
+            print("=" * 60)
+
             notification1 = await crud_system_notification.create_topic_completed_notification(
                 db=db,
                 tenant_id=tenant_id,
@@ -35,11 +35,11 @@ async def test_notification_creation():
             print(f"     Message: {notification1.message}")
             print(f"     Action URL: {notification1.action_url}")
             print(f"     Type: {notification1.type}")
-            
-            print("\n" + "="*60)
+
+            print("\n" + "=" * 60)
             print("Test 2: Create batch reply completed notification")
-            print("="*60)
-            
+            print("=" * 60)
+
             notification2 = await crud_system_notification.create_batch_reply_completed_notification(
                 db=db,
                 tenant_id=tenant_id,
@@ -53,11 +53,11 @@ async def test_notification_creation():
             print(f"     Message: {notification2.message}")
             print(f"     Action URL: {notification2.action_url}")
             print(f"     Extra data: {notification2.extra_data}")
-            
-            print("\n" + "="*60)
+
+            print("\n" + "=" * 60)
             print("Test 3: Create screenshot batch completed notification")
-            print("="*60)
-            
+            print("=" * 60)
+
             notification3 = await crud_system_notification.create_screenshot_batch_completed_notification(
                 db=db,
                 tenant_id=tenant_id,
@@ -70,28 +70,28 @@ async def test_notification_creation():
             print(f"     Message: {notification3.message}")
             print(f"     Action URL: {notification3.action_url}")
             print(f"     Extra data: {notification3.extra_data}")
-            
-            print("\n" + "="*60)
+
+            print("\n" + "=" * 60)
             print("Test 4: Query all unread notifications")
-            print("="*60)
-            
+            print("=" * 60)
+
             notifications = await crud_system_notification.get_user_notifications(
                 db=db,
                 tenant_id=tenant_id,
                 user_id=1,  # 测试用户
                 unread_only=True,
             )
-            
+
             print(f"[OK] Found {len(notifications)} unread notifications:")
             for idx, notif in enumerate(notifications, 1):
                 print(f"\n   {idx}. {notif.title}")
                 print(f"      Message: {notif.message}")
                 print(f"      Type: {notif.type}")
                 print(f"      Is Read: {notif.is_read}")
-            
-            print("\n" + "="*60)
+
+            print("\n" + "=" * 60)
             print("ALL TESTS PASSED!")
-            print("="*60)
+            print("=" * 60)
 
 
 if __name__ == "__main__":

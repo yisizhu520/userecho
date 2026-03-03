@@ -84,7 +84,7 @@ onMounted(async () => {
 
     <!-- 底部信息 -->
     <div class="footer-info">
-      <p>© 2025 回响 userecho. 让每一条反馈都有价值。</p>
+      <p>© 2026 回响。让每一条反馈都有价值。</p>
     </div>
   </div>
 </template>

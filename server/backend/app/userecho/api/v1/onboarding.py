@@ -8,17 +8,14 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Request
 
 from backend.app.userecho.schema.onboarding import (
-    CreateBoardOut,
     CreateBoardParam,
-    CreateTenantOut,
     CreateTenantParam,
-    OnboardingCompleteOut,
     OnboardingStatusOut,
     SlugCheckOut,
 )
 from backend.app.userecho.service.onboarding_service import onboarding_service
 from backend.common.response.response_code import CustomResponse
-from backend.common.response.response_schema import ResponseSchemaModel, response_base
+from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 from backend.database.db import CurrentSession, CurrentSessionTransaction
 
@@ -70,7 +67,7 @@ async def create_tenant(
     request: Request,
     db: CurrentSessionTransaction,
     data: CreateTenantParam,
-) -> ResponseSchemaModel[CreateTenantOut]:
+) -> ResponseModel:
     """
     创建租户（团队/公司）
 
@@ -89,7 +86,7 @@ async def create_board(
     request: Request,
     db: CurrentSessionTransaction,
     data: CreateBoardParam,
-) -> ResponseSchemaModel[CreateBoardOut]:
+) -> ResponseModel:
     """
     创建第一个看板
 
@@ -107,7 +104,7 @@ async def create_board(
 async def complete_onboarding(
     request: Request,
     db: CurrentSession,
-) -> ResponseSchemaModel[OnboardingCompleteOut]:
+) -> ResponseModel:
     """
     完成引导流程
 

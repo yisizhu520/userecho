@@ -324,7 +324,8 @@ def get_current_user_obj(request: Request) -> GetUserInfoWithRelationDetail:
     获取当前通过中间件认证的用户对象
     """
     user = request.user
-    if not user:
+    # Starlette 在未登录时会注入 UnauthenticatedUser，需要显式拦截
+    if not user or getattr(user, "is_authenticated", True) is False:
         raise errors.TokenError(msg="未登录或 Token 已过期")
     return user
 

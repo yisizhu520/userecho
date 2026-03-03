@@ -131,12 +131,17 @@ async function handleStart() {
 .result-subtitle {
   font-size: 16px;
   color: #666;
+  display: inline-block;
+  max-width: 500px;
 }
 
 .completion-info {
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .resource-summary {
@@ -148,6 +153,7 @@ async function handleStart() {
   background: #f9fafb;
   border-radius: 12px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .summary-item {
@@ -182,6 +188,7 @@ async function handleStart() {
   background: rgba(13, 150, 137, 0.05);
   border-radius: 12px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .steps-list {

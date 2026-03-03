@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.admin.crud.crud_user import user_dao
@@ -14,7 +15,6 @@ from backend.app.userecho.crud.crud_subscription import (
     subscription_plan_dao,
     tenant_subscription_dao,
 )
-from backend.app.userecho.crud.crud_tenant import crud_tenant
 from backend.app.userecho.model.invitation import Invitation
 from backend.app.userecho.model.invitation_usage import InvitationUsage
 from backend.app.userecho.model.subscription import (
@@ -24,7 +24,6 @@ from backend.app.userecho.model.subscription import (
     SubscriptionStatus,
     TenantSubscription,
 )
-from backend.app.userecho.model.tenant import Tenant
 from backend.app.userecho.model.tenant_user import TenantUser
 from backend.app.userecho.service.credits_service import credits_service
 from backend.app.userecho.service.email_verification_service import (
@@ -32,7 +31,6 @@ from backend.app.userecho.service.email_verification_service import (
 )
 from backend.common.exception.errors import ForbiddenError
 from backend.common.log import log
-from backend.database.db import uuid4_str
 from backend.utils.timezone import timezone
 
 
@@ -142,8 +140,8 @@ class AuthService:
         核心流程：
         1. 验证 code 有效性
         2. 标记邮箱已验证
-        3. 创建租户（如果不存在）
-        4. 分配专业版试用订阅
+        3. 若用户已有租户，分配专业版试用订阅
+        4. 若用户暂无租户，等待 onboarding 创建租户后再激活试用
         """
         # 1. 验证邮箱
         success, message = await email_verification_service.verify_email(db, user_id, verification_code)
@@ -169,47 +167,63 @@ class AuthService:
             return {"verified": True, "message": "邮箱验证成功"}
 
         # 4. 检查用户是否已有租户（通过 TenantUser 查询）
-        from backend.app.userecho.crud.crud_tenant_member import tenant_member_dao
+        stmt = select(TenantUser).where(TenantUser.user_id == user_id).limit(1)
+        result = await db.execute(stmt)
+        tenant_user = result.scalar_one_or_none()
 
-        tenant_user = await tenant_member_dao.get_by_user_id(db, user_id)
-
-        if tenant_user:
-            # 用户已有租户，只需确保订阅正确
-            tenant_id = tenant_user.tenant_id
-        else:
-            # 用户还没有租户，创建一个默认租户
-            tenant = Tenant(
-                id=uuid4_str(),
-                name=f"{user.nickname}的团队",
-                slug=f"team-{uuid4_str()[:8]}",
-                status="active",
+        if not tenant_user:
+            log.info(
+                f"User {user_id} verified email without tenant, waiting onboarding to activate invitation subscription"
             )
-            tenant = await crud_tenant.create(db, tenant)
+            return {
+                "verified": True,
+                "message": "邮箱验证成功，请先完成团队创建",
+                "tenant_id": None,
+            }
 
-            # 创建租户关联
-            tenant_user_obj = TenantUser(
-                id=uuid4_str(),
-                tenant_id=tenant.id,
-                user_id=user_id,
-                user_type="admin",
-                status="active",
-            )
-            await tenant_member_dao.create(db, tenant_user_obj)
-            tenant_id = tenant.id
+        tenant_id = tenant_user.tenant_id
+        await self._activate_invitation_subscription_for_tenant(db=db, tenant_id=tenant_id, invitation=invitation)
 
-            log.info(f"Created default tenant for user {user_id}: tenant_id={tenant_id}")
+        return {
+            "verified": True,
+            "message": "邮箱验证成功，订阅已激活",
+            "tenant_id": tenant_id,
+        }
 
-        # 5. 分配试用订阅（关键）
+    async def activate_invitation_trial_for_tenant(self, db: AsyncSession, user_id: int, tenant_id: str) -> bool:
+        """在 onboarding 创建租户后，按邀请信息激活试用订阅。"""
+        user = await user_dao.get(db, user_id)
+        if not user:
+            return False
+
+        invitation_id = getattr(user, "invitation_id", None)
+        if not invitation_id:
+            return False
+
+        if not getattr(user, "email_verified", False):
+            log.info(f"Skip invitation trial activation for user {user_id}: email not verified")
+            return False
+
+        invitation = await invitation_dao.get(db, invitation_id)
+        if not invitation:
+            log.warning(f"Skip invitation trial activation for user {user_id}: invitation {invitation_id} not found")
+            return False
+
+        await self._activate_invitation_subscription_for_tenant(db=db, tenant_id=tenant_id, invitation=invitation)
+        return True
+
+    async def _activate_invitation_subscription_for_tenant(
+        self, db: AsyncSession, tenant_id: str, invitation: Invitation
+    ) -> None:
+        """按邀请配置为指定租户创建或更新试用订阅。"""
         plan = await subscription_plan_dao.get_by_code(db, invitation.plan_code)
         if not plan:
             log.error(f"Plan {invitation.plan_code} not found")
             raise ForbiddenError(msg="套餐配置错误，请联系管理员")
 
-        # 检查是否已有订阅
         existing_sub = await tenant_subscription_dao.get_by_tenant(db, tenant_id)
 
         if existing_sub:
-            # 如果已有订阅，检查是否是试用订阅，如果是则延长
             if existing_sub.status == SubscriptionStatus.TRIAL:
                 new_expires = timezone.now() + timedelta(days=invitation.trial_days)
                 await tenant_subscription_dao.update(
@@ -218,45 +232,37 @@ class AuthService:
                 log.info(f"Extended trial subscription for tenant {tenant_id}")
             else:
                 log.warning(f"Tenant {tenant_id} already has active subscription")
-        else:
-            # 创建新的试用订阅
-            expires_at = timezone.now() + timedelta(days=invitation.trial_days)
-            subscription = TenantSubscription(
-                tenant_id=tenant_id,
-                plan_id=plan.id,
-                status=SubscriptionStatus.TRIAL,
-                started_at=timezone.now(),
-                expires_at=expires_at,
-                trial_ends_at=expires_at,
-                source=SubscriptionSource.MANUAL,
-                notes=f"通过邀请注册获得试用订阅（邀请ID: {invitation.id}）",
-            )
-            await tenant_subscription_dao.create(db, subscription)
+            return
 
-            # 记录订阅历史
-            from backend.app.userecho.crud.crud_subscription import subscription_history_dao
+        expires_at = timezone.now() + timedelta(days=invitation.trial_days)
+        subscription = TenantSubscription(
+            tenant_id=tenant_id,
+            plan_id=plan.id,
+            status=SubscriptionStatus.TRIAL,
+            started_at=timezone.now(),
+            expires_at=expires_at,
+            trial_ends_at=expires_at,
+            source=SubscriptionSource.MANUAL,
+            notes=f"通过邀请注册获得试用订阅（邀请ID: {invitation.id}）",
+        )
+        await tenant_subscription_dao.create(db, subscription)
 
-            history = SubscriptionHistory(
-                tenant_id=tenant_id,
-                subscription_id=subscription.id,
-                action=SubscriptionAction.CREATED,
-                old_plan_code=None,
-                new_plan_code=plan.code,
-                changed_by=None,
-                reason=f"Invitation registration: {invitation.token[:8]}...",
-            )
-            await subscription_history_dao.create(db, history)
+        from backend.app.userecho.crud.crud_subscription import subscription_history_dao
 
-            # 同步积分
-            await credits_service.sync_subscription_plan(db, tenant_id, plan.code, plan.ai_credits_monthly)
+        history = SubscriptionHistory(
+            tenant_id=tenant_id,
+            subscription_id=subscription.id,
+            action=SubscriptionAction.CREATED,
+            old_plan_code=None,
+            new_plan_code=plan.code,
+            changed_by=None,
+            reason=f"Invitation registration: {invitation.token[:8]}...",
+        )
+        await subscription_history_dao.create(db, history)
 
-            log.info(f"Created trial subscription for tenant {tenant_id}: {plan.code} for {invitation.trial_days} days")
+        await credits_service.sync_subscription_plan(db, tenant_id, plan.code, plan.ai_credits_monthly)
 
-        return {
-            "verified": True,
-            "message": "邮箱验证成功，订阅已激活",
-            "tenant_id": tenant_id,
-        }
+        log.info(f"Created trial subscription for tenant {tenant_id}: {plan.code} for {invitation.trial_days} days")
 
     async def _validate_invitation(self, db: AsyncSession, token: str) -> Invitation:
         """验证邀请有效性"""

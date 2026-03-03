@@ -82,7 +82,6 @@ class InvitationUsageSchema(SchemaBase):
     user_agent: str | None = Field(None, description="浏览器信息")
     completed_onboarding: bool = Field(..., description="是否完成引导")
     created_tenant_id: str | None = Field(None, description="创建的租户ID")
-    used_at: datetime = Field(..., description="使用时间")
 
     model_config = ConfigDict(from_attributes=True)
 

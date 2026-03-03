@@ -30,9 +30,6 @@ async def create_invitation(
 
     invitation, url, short_url, qr_code_url = await invitation_service.create_invitation(db, creator_id, body)
 
-    # 提交事务
-    await db.commit()
-
     # 构造详细响应
     data = {
         **InvitationSchema.model_validate(invitation).model_dump(),
@@ -161,7 +158,6 @@ async def update_invitation(
 ) -> Any:
     """更新邀请信息"""
     invitation = await invitation_service.update_invitation(db, invitation_id, body)
-    await db.commit()
     return response_base.success(data=InvitationSchema.model_validate(invitation))
 
 
@@ -173,5 +169,4 @@ async def delete_invitation(
 ) -> Any:
     """删除邀请（软删除，标记为disabled）"""
     success = await invitation_service.delete_invitation(db, invitation_id)
-    await db.commit()
     return response_base.success(data={"success": success})

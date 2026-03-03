@@ -159,10 +159,10 @@ function setupAccessGuard(router: Router) {
 
       if (userType === 'admin') {
         // 超级管理员 → 系统管理首页
-        redirectPath = '/admin/system/user';
+        redirectPath = '/admin/system/overview';
       } else if (userType === 'staff') {
         // 系统管理员 → 系统管理首页
-        redirectPath = '/admin/system/user';
+        redirectPath = '/admin/system/overview';
       } else if (userType === 'hybrid') {
         // 混合用户 → 默认业务工作台（可切换到系统管理）
         redirectPath = '/app/dashboard/workspace';

@@ -51,10 +51,12 @@ async def update_tenant_subscription(
     tenant_id: str,
     body: SubscriptionUpdateReq,
     db: CurrentSession,
-    current_user: Annotated[dict, CurrentUser],
+    current_user: Annotated[Any, CurrentUser],
 ) -> Any:
     """管理员手动更新租户订阅"""
-    operator_id = current_user.get("id")
+    operator_id = getattr(current_user, "id", None)
+    if not operator_id:
+        return response_base.fail(msg="未登录或 Token 已过期")
 
     sub = await subscription_service.manual_update_subscription(
         db,

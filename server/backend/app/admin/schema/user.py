@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, model_validator
+from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, field_validator, model_validator
 from typing_extensions import Self
 
 from backend.app.admin.schema.dept import GetDeptDetail
@@ -70,6 +70,11 @@ class UserInfoSchemaBase(SchemaBase):
     email: CustomEmailStr | None = Field(None, description="邮箱")
     phone: CustomPhoneNumber | None = Field(None, description="手机号")
 
+    @field_validator("username", mode="before")
+    @classmethod
+    def normalize_username(cls, value: Any) -> str:
+        return value or ""
+
 
 class UpdateUserParam(UserInfoSchemaBase):
     """更新用户参数"""
@@ -132,16 +137,21 @@ class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
             role_names = [role["name"] for role in raw_roles]
             data["roles"] = role_names
 
-        # 计算 homePath - 根据角色类型
-        data.get("is_superuser", False)
+        # 计算 homePath - 系统角色优先进入系统概览
+        is_superuser = bool(data.get("is_superuser", False))
+        has_system_role = is_superuser
+        has_business_role = bool(data.get("tenant_id"))
 
-        if raw_roles:
-            for role in raw_roles:
-                role_type = role.get("role_type", "business")
-                if role_type == "system" or role_type == "business":
-                    pass
+        for role in raw_roles or []:
+            role_type = role.get("role_type", "business")
+            if role_type == "system":
+                has_system_role = True
+            elif role_type == "business":
+                has_business_role = True
 
-        # 首页路径 - 统一跳转到工作台
-        data["homePath"] = "/app/dashboard/workspace"
+        if is_superuser or (has_system_role and not has_business_role):
+            data["homePath"] = "/admin/system/overview"
+        else:
+            data["homePath"] = "/app/dashboard/workspace"
 
         return data

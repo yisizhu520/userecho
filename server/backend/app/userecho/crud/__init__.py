@@ -22,7 +22,7 @@ __all__ = [
     "crud_status_history",
     "crud_system_notification",
     "crud_tenant",
-    "crud_tenant_config_dao",
+    "tenant_config_dao",
     "crud_topic",
     "crud_topic_notification",
 ]

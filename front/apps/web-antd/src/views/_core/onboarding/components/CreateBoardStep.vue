@@ -5,7 +5,7 @@
  * 功能：
  * 1. 输入看板名称
  * 2. 输入看板描述（可选）
- * 3. 选择访问模式
+ * 3. 默认使用私有访问模式
  */
 import { computed, reactive } from 'vue';
 
@@ -16,8 +16,6 @@ import {
   FormItem,
   Input,
   message,
-  Radio,
-  RadioGroup,
   Typography,
 } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -35,22 +33,8 @@ const onboardingStore = useOnboardingStore();
 const formState = reactive({
   name: '',
   description: '',
-  access_mode: 'private' as 'private' | 'public' | 'restricted',
+  access_mode: 'private' as 'private', // 目前只支持私有
 });
-
-// 访问模式选项
-const accessModeOptions = [
-  {
-    value: 'private',
-    label: '仅内部可见',
-    description: '只有团队成员可以查看和管理',
-  },
-  {
-    value: 'public',
-    label: '公开',
-    description: '任何人都可以查看（需要登录才能提交反馈）',
-  },
-];
 
 // 验证规则
 const rules: Record<string, Rule[]> = {
@@ -140,25 +124,6 @@ async function handleSubmit() {
         />
       </FormItem>
 
-      <!-- 访问模式 -->
-      <FormItem label="访问权限" name="access_mode">
-        <RadioGroup v-model:value="formState.access_mode" class="access-modes">
-          <div
-            v-for="option in accessModeOptions"
-            :key="option.value"
-            class="access-option"
-            :class="{ selected: formState.access_mode === option.value }"
-          >
-            <Radio :value="option.value">
-              <div class="option-content">
-                <span class="option-label">{{ option.label }}</span>
-                <span class="option-desc">{{ option.description }}</span>
-              </div>
-            </Radio>
-          </div>
-        </RadioGroup>
-      </FormItem>
-
       <!-- 错误提示 -->
       <Alert
         v-if="onboardingStore.error"
@@ -224,48 +189,6 @@ async function handleSubmit() {
   font-size: 12px;
 }
 
-.access-modes {
-  width: 100%;
-}
-
-.access-option {
-  padding: 12px 16px;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.access-option:hover {
-  border-color: hsl(181, 84%, 32%);
-}
-
-.access-option.selected {
-  border-color: hsl(181, 84%, 32%);
-  background: rgba(13, 150, 137, 0.05);
-}
-
-.access-option:last-child {
-  margin-bottom: 0;
-}
-
-.option-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.option-label {
-  font-weight: 500;
-  color: #1f1f1f;
-}
-
-.option-desc {
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
-}
-
 .error-alert {
   margin-bottom: 16px;
 }
@@ -285,9 +208,5 @@ async function handleSubmit() {
   flex: 1;
   height: 48px;
   font-size: 15px;
-}
-
-:deep(.ant-radio-wrapper) {
-  width: 100%;
 }
 </style>
