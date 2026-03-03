@@ -31,7 +31,9 @@ services:
       - TZ=Asia/Shanghai
 
       # ======= 前端配置（运行时注入）=======
-      - VITE_APP_TITLE=${VITE_APP_TITLE:-回响}
+      # 支持 VITE_APP_TITLE 或 APP_TITLE 两种命名
+      - VITE_APP_TITLE=${VITE_APP_TITLE:-}
+      - APP_TITLE=${APP_TITLE:-}
       - VITE_GLOB_API_URL=${VITE_GLOB_API_URL:-/}
       - VITE_APP_NAMESPACE=${VITE_APP_NAMESPACE:-userecho-admin}
       - VITE_DEVTOOLS=${VITE_DEVTOOLS:-false}
