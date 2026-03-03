@@ -5,15 +5,19 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { AuthenticationRegister, z } from '@vben/common-ui';
+import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { message } from 'ant-design-vue';
 
+import { getAccessCodesApi, getUserInfoApi } from '#/api';
 import { registerWithInvitation, validateInvitation } from '#/api/userecho/invitation';
 
 defineOptions({ name: 'RegisterInvite' });
 
 const route = useRoute();
 const router = useRouter();
+const accessStore = useAccessStore();
+const userStore = useUserStore();
 
 const loading = ref(false);
 const validating = ref(true);
@@ -115,22 +119,29 @@ async function handleSubmit(values: any) {
   try {
     loading.value = true;
 
-    await registerWithInvitation({
+    const result = await registerWithInvitation({
       invitation_token: inviteToken.value,
       email: values.email,
       password: values.password,
       nickname: values.nickname,
     });
 
-    message.success('注册成功！请前往邮箱验证');
+    if (result.access_token) {
+      accessStore.setAccessToken(result.access_token);
+      accessStore.setAccessSessionUuid(result.session_uuid);
 
-    // 跳转到邮箱验证页面
-    router.push({
-      path: '/auth/verify-email',
-      query: {
-        email: values.email,
-      },
-    });
+      const [userInfo, accessCodes] = await Promise.all([
+        getUserInfoApi(),
+        getAccessCodesApi(),
+      ]);
+
+      userStore.setUserInfo(userInfo);
+      accessStore.setAccessCodes(accessCodes);
+
+      message.success('注册成功！正在进入引导页...');
+
+      await router.push('/onboarding');
+    }
   } catch (error: any) {
     const errorMsg = error.response?.data?.msg || error.message || '注册失败';
     message.error(errorMsg);

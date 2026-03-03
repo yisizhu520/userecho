@@ -31,6 +31,7 @@ from backend.app.userecho.service.email_verification_service import (
 )
 from backend.common.exception.errors import ForbiddenError
 from backend.common.log import log
+from backend.common.security.jwt import create_access_token
 from backend.utils.timezone import timezone
 
 
@@ -112,7 +113,17 @@ class AuthService:
         # 8. 更新邀请使用次数
         await invitation_dao.increment_usage(db, invitation.id)
 
-        # 9. 记录日志
+        # 9. 生成 JWT tokens（自动登录）
+        access_token_data = await create_access_token(
+            user.id,
+            multi_login=user.is_multi_login,
+            username=user.email,
+            nickname=user.nickname,
+            last_login_time=timezone.to_str(timezone.now()),
+            ip=ip_address,
+        )
+
+        # 10. 记录日志
         log.info(
             f"User registered with invitation: user_id={user.id}, email={email}, invitation={invitation_token[:8]}..."
         )
@@ -126,9 +137,12 @@ class AuthService:
                 "nickname": user.nickname,
                 "email_verified": False,
             },
+            "access_token": access_token_data.access_token,
+            "session_uuid": access_token_data.session_uuid,
+            "access_token_expire_time": access_token_data.access_token_expire_time,
             "verification_code": verification.verification_code,  # 临时返回，后续通过邮件发送
             "verification_email_sent": False,  # 邮件服务实现后改为 True
-            "next_step": "verify_email",
+            "next_step": "onboarding",  # 自动登录后跳转到 onboarding
         }
 
     async def verify_email_and_activate_subscription(

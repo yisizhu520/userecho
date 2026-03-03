@@ -40,6 +40,9 @@ export interface RegisterWithInvitationResponse {
     nickname: string;
     email_verified: boolean;
   };
+  access_token: string;
+  session_uuid: string;
+  access_token_expire_time: string;
   verification_email_sent: boolean;
   next_step: string;
 }

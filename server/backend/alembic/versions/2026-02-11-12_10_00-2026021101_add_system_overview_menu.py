@@ -17,7 +17,7 @@ depends_on = None
 
 def upgrade():
     """新增系统概览菜单并关联到系统角色。
-    
+
     兼容新旧路径格式：
     - 新格式: /admin/system (已执行路径迁移)
     - 旧格式: /system (未执行路径迁移)

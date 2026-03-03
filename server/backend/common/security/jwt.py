@@ -203,6 +203,7 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
     :param pk: 用户 ID
     :return:
     """
+
     from backend.app.admin.crud.crud_user import user_dao
 
     user = await user_dao.get_join(db, user_id=pk)
@@ -222,7 +223,19 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
         role_status = [role.status for role in user.roles]
         if all(status == 0 for status in role_status):
             raise errors.AuthorizationError(msg="用户所属角色已被锁定，请联系系统管理员")
+
+    user.tenant_id = await _get_user_primary_tenant(db, pk)
     return user
+
+
+async def _get_user_primary_tenant(db: AsyncSession, user_id: int) -> str | None:
+    from sqlalchemy import select
+
+    from backend.app.userecho.model.tenant_user import TenantUser
+
+    stmt = select(TenantUser.tenant_id).where(TenantUser.user_id == user_id).limit(1)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 def superuser_verify(request: Request, _token: str = DependsJwtAuth) -> bool:
