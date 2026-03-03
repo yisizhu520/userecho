@@ -105,6 +105,99 @@ async def get_job_results(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/jobs/{batch_id}/items", summary="获取批量任务项列表")
+async def get_job_items(
+    batch_id: str,
+    db: CurrentSession,
+):
+    """获取批量任务的所有任务项"""
+    from sqlalchemy import select
+    from backend.app.batch.model.batch_job import BatchTaskItem
+
+    try:
+        result = await db.execute(
+            select(BatchTaskItem).where(BatchTaskItem.batch_job_id == batch_id).order_by(BatchTaskItem.sequence_no)
+        )
+        items = result.scalars().all()
+
+        return response_base.success(
+            data=[
+                {
+                    "id": item.id,
+                    "batch_job_id": item.batch_job_id,
+                    "sequence_no": item.sequence_no,
+                    "input_data": item.input_data,
+                    "output_data": item.output_data,
+                    "status": item.status,
+                    "error_message": item.error_message,
+                    "error_code": item.error_code,
+                    "retry_count": item.retry_count,
+                    "max_retries": item.max_retries,
+                    "created_time": item.create_time.isoformat() if item.create_time else None,
+                    "started_time": item.started_time.isoformat() if item.started_time else None,
+                    "completed_time": item.completed_time.isoformat() if item.completed_time else None,
+                }
+                for item in items
+            ]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/jobs/{batch_id}/retry", summary="重试失败的任务项")
+async def retry_job(
+    batch_id: str,
+    db: CurrentSession,
+):
+    """重试批量任务中失败的任务项"""
+    from sqlalchemy import select
+    from backend.app.batch.model.batch_job import BatchJob, BatchTaskItem, TaskItemStatus
+
+    try:
+        # 获取批量任务
+        batch_job = await db.get(BatchJob, batch_id)
+        if not batch_job:
+            raise HTTPException(status_code=404, detail=f"Batch job {batch_id} not found")
+
+        # 将失败的任务项重置为待处理
+        result = await db.execute(
+            select(BatchTaskItem)
+            .where(BatchTaskItem.batch_job_id == batch_id)
+            .where(BatchTaskItem.status == TaskItemStatus.FAILED)
+        )
+        failed_items = list(result.scalars())
+
+        if not failed_items:
+            return response_base.success(data={"message": "No failed items to retry", "retry_count": 0})
+
+        # 重置失败的任务项
+        for item in failed_items:
+            item.status = TaskItemStatus.PENDING
+            item.error_message = None
+            item.error_code = None
+            item.started_time = None
+            item.completed_time = None
+
+        # 更新批量任务统计
+        batch_job.failed_count -= len(failed_items)
+        batch_job.pending_count += len(failed_items)
+
+        await db.commit()
+
+        # 重新触发 Celery 任务
+        celery_task_id = await enqueue_batch_job(batch_id)
+
+        return response_base.success(
+            data={
+                "message": f"Retrying {len(failed_items)} failed items",
+                "retry_count": len(failed_items),
+                "celery_task_id": celery_task_id,
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.delete("/jobs/{batch_id}", summary="取消批量任务")
 async def cancel_job(
     batch_id: str,

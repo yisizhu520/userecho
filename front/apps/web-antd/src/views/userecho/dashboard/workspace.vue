@@ -17,6 +17,7 @@ import { useUserStore } from '@vben/stores';
 
 import { getDashboardStats, type DashboardStats } from '#/api/userecho/dashboard';
 
+import BatchJobsCard from './components/BatchJobsCard.vue';
 import ConversionFunnelCard from './components/ConversionFunnelCard.vue';
 import CustomerStatsCard from './components/CustomerStatsCard.vue';
 import MyFeedbacksCard from './components/MyFeedbacksCard.vue';
@@ -120,7 +121,7 @@ const quickActions: WorkbenchQuickNavItem[] = [
 // 这可以防止因后端返回了非标准对象而导致 Vue 渲染时的 TypeError
 function normalizeStats(data: any): DashboardStats | null {
   if (!data) return null;
-  
+
   try {
     return {
       feedback_stats: {
@@ -244,7 +245,7 @@ async function loadStats() {
 function navTo(item: WorkbenchQuickNavItem) {
   const url = item.url;
   if (!url) return;
-  
+
   if (url.startsWith('http')) {
     window.open(url, '_blank');
   } else {
@@ -289,25 +290,25 @@ onMounted(() => {
       <!-- 左侧：待决策 + 趋势图 -->
       <div class="mr-0 w-full lg:mr-4 lg:w-3/5">
         <!-- 今日待决策（新增核心组件） -->
-        <PendingDecisionsCard 
-          :decisions="stats.pending_decisions || []" 
+        <PendingDecisionsCard
+          :decisions="stats.pending_decisions || []"
           @refresh="handleRefresh"
         />
-        
+
         <AnalysisChartCard class="mt-5" title="7天反馈趋势">
           <TrendChart :data="stats.weekly_trend" />
         </AnalysisChartCard>
-        
+
         <!-- 标签分布统计 -->
         <AnalysisChartCard class="mt-5" title="需求标签分布">
           <TagDistributionChart :data="stats.tag_distribution" />
         </AnalysisChartCard>
-        
+
         <!-- 需求转化漏斗 -->
         <ConversionFunnelCard :data="stats.conversion_funnel" class="mt-5" />
       </div>
 
-      <!-- 右侧：快捷操作 + 我的反馈 + TOP 需求 -->
+      <!-- 右侧：快捷操作 + 批处理任务 + 我的反馈 + TOP 需求 -->
       <div class="w-full lg:w-2/5">
         <WorkbenchQuickNav
           :items="quickActions"
@@ -315,10 +316,13 @@ onMounted(() => {
           title="快捷操作"
           @click="navTo"
         />
-        
+
+        <!-- 批处理任务卡片 -->
+        <BatchJobsCard class="mt-5" />
+
         <!-- 我的反馈卡片 -->
         <MyFeedbacksCard class="mt-5" />
-        
+
         <!-- 客户统计卡片 -->
         <CustomerStatsCard
           :total="stats.customer_stats?.total ?? 0"
@@ -329,7 +333,7 @@ onMounted(() => {
           :top-customers="stats.customer_stats?.top_customers ?? []"
           class="mt-5"
         />
-        
+
         <TopTopicsCard :topics="stats.top_topics" class="mt-5" />
       </div>
     </div>

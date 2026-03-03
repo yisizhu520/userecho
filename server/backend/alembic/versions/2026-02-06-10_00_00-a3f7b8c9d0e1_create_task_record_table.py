@@ -64,9 +64,7 @@ def upgrade():
     op.create_index("idx_task_record_batch_job_id", "task_record", ["batch_job_id"])
 
     # 部分索引：只索引非成功状态的记录（用于监控告警查询）
-    op.execute(
-        "CREATE INDEX idx_task_record_status_pending ON task_record (status) WHERE status NOT IN ('success')"
-    )
+    op.execute("CREATE INDEX idx_task_record_status_pending ON task_record (status) WHERE status NOT IN ('success')")
 
 
 def downgrade():

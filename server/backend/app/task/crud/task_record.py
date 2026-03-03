@@ -65,9 +65,7 @@ async def get_task_stats(
 
     # 按状态统计
     status_query = (
-        select(TaskRecord.status, func.count().label("count"))
-        .where(*all_filters)
-        .group_by(TaskRecord.status)
+        select(TaskRecord.status, func.count().label("count")).where(*all_filters).group_by(TaskRecord.status)
     )
     status_result = await db.execute(status_query)
     status_counts = {row.status: row.count for row in status_result}

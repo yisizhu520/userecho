@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from backend.app.batch.api.v1 import batch
+from backend.app.task.api.v1 import unified_tasks
 from backend.app.userecho.api.v1 import (
     board,
     clustering,
@@ -56,3 +57,6 @@ v1.include_router(tenant_member.router, prefix="/tenant/members", tags=["TenantM
 
 # 批量任务
 v1.include_router(batch.router)
+
+# 统一任务中心
+v1.include_router(unified_tasks.router)

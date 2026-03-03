@@ -27,9 +27,7 @@ async def check_role_menu_relation():
         print()
 
         # 1. 查询任务中心菜单
-        task_menu = await db.scalar(
-            select(Menu).where(Menu.name == "TaskCenter")
-        )
+        task_menu = await db.scalar(select(Menu).where(Menu.name == "TaskCenter"))
 
         if not task_menu:
             print("❌ 未找到任务中心菜单！")
@@ -39,9 +37,7 @@ async def check_role_menu_relation():
         print()
 
         # 2. 查询所有系统角色
-        system_roles = await db.scalars(
-            select(Role).where(Role.role_type == "system")
-        )
+        system_roles = await db.scalars(select(Role).where(Role.role_type == "system"))
 
         system_roles_list = list(system_roles)
         print(f"📋 系统角色列表（{len(system_roles_list)}个）：")
@@ -57,7 +53,7 @@ async def check_role_menu_relation():
                 JOIN sys_role_menu rm ON r.id = rm.role_id
                 WHERE rm.menu_id = :menu_id
             """),
-            {"menu_id": task_menu.id}
+            {"menu_id": task_menu.id},
         )
 
         associated_roles = result.all()
@@ -79,7 +75,7 @@ async def check_role_menu_relation():
                     WHERE rm.menu_id = :parent_id
                     GROUP BY r.id, r.name
                 """),
-                {"parent_id": task_menu.parent_id}
+                {"parent_id": task_menu.parent_id},
             )
 
             parent_roles = parent_result.all()

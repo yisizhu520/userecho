@@ -27,15 +27,13 @@ async def fix_task_center_path():
         print()
 
         # 查找任务中心菜单
-        task_menu = await db.scalar(
-            select(Menu).where(Menu.name == "TaskCenter")
-        )
+        task_menu = await db.scalar(select(Menu).where(Menu.name == "TaskCenter"))
 
         if not task_menu:
             print("❌ 未找到任务中心菜单！")
             return
 
-        print(f"当前配置：")
+        print("当前配置：")
         print(f"  路径: {task_menu.path}")
         print(f"  组件: {task_menu.component}")
         print()
@@ -52,7 +50,7 @@ async def fix_task_center_path():
 
         await db.commit()
 
-        print(f"✅ 已修正：")
+        print("✅ 已修正：")
         print(f"  路径: {old_path} → {new_path}")
         print(f"  组件: {old_component} → {new_component}")
         print()

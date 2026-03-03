@@ -27,12 +27,7 @@ async def assign_system_admin_role():
         print()
 
         # 1. 查找系统管理员角色
-        system_admin_role = await db.scalar(
-            select(Role).where(
-                Role.name == "系统管理员",
-                Role.role_type == "system"
-            )
-        )
+        system_admin_role = await db.scalar(select(Role).where(Role.name == "系统管理员", Role.role_type == "system"))
 
         if not system_admin_role:
             print("❌ 未找到系统管理员角色！请先运行 create_system_admin_role.py")
@@ -65,7 +60,7 @@ async def assign_system_admin_role():
                     SELECT 1 FROM sys_user_role
                     WHERE user_id = :user_id AND role_id = :role_id
                 """),
-                {"user_id": user.id, "role_id": system_admin_role.id}
+                {"user_id": user.id, "role_id": system_admin_role.id},
             )
 
             if existing:
@@ -77,7 +72,7 @@ async def assign_system_admin_role():
                         INSERT INTO sys_user_role (user_id, role_id)
                         VALUES (:user_id, :role_id)
                     """),
-                    {"user_id": user.id, "role_id": system_admin_role.id}
+                    {"user_id": user.id, "role_id": system_admin_role.id},
                 )
                 added_count += 1
                 print(f"✅ 已为用户 {user.username} 添加系统管理员角色")

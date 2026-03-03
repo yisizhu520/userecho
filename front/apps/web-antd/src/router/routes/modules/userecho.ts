@@ -138,6 +138,17 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    name: 'UserTaskCenter',
+    path: '/app/tasks',
+    component: () => import('#/views/userecho/batch-jobs/index.vue'),
+    meta: {
+      icon: 'lucide:list-checks',
+      order: 5,
+      title: '我的任务',
+      // 我的任务对所有人可见
+    },
+  },
+  {
     name: 'Settings',
     path: '/app/settings',
     meta: {

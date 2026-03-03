@@ -58,8 +58,6 @@ class TaskRecord(MappedBase):
     error_message: Mapped[str | None] = mapped_column(Text, default=None, comment="错误信息")
 
     # 时间戳
-    created_time: Mapped[datetime] = mapped_column(
-        TimeZone, nullable=False, default=timezone.now, comment="创建时间"
-    )
+    created_time: Mapped[datetime] = mapped_column(TimeZone, nullable=False, default=timezone.now, comment="创建时间")
     started_time: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment="开始时间")
     completed_time: Mapped[datetime | None] = mapped_column(TimeZone, default=None, comment="完成时间")
