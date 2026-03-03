@@ -1,16 +1,20 @@
 <script lang="ts" setup>
-import { onMounted } from 'vue';
+import { onMounted, defineAsyncComponent } from 'vue';
 import { useRouter } from 'vue-router';
 import { useHead } from '@vueuse/head';
 
+// 首屏立即加载
 import HeroSection from './components/HeroSection.vue';
-import PainPointsSection from './components/PainPointsSection.vue';
-import FeaturesSection from './components/FeaturesSection.vue';
-import WorkflowSection from './components/WorkflowSection.vue';
-import RoadmapSection from './components/RoadmapSection.vue';
-import PricingSection from './components/pricing/index.vue';
-import CTASection from './components/CTASection.vue';
 import LandingNavbar from './components/LandingNavbar.vue';
+
+// 非首屏组件懒加载（性能优化）
+const PainPointsSection = defineAsyncComponent(() => import('./components/PainPointsSection.vue'));
+const FeaturesSection = defineAsyncComponent(() => import('./components/FeaturesSection.vue'));
+const WorkflowSection = defineAsyncComponent(() => import('./components/WorkflowSection.vue'));
+const RoadmapSection = defineAsyncComponent(() => import('./components/RoadmapSection.vue'));
+const PricingSection = defineAsyncComponent(() => import('./components/pricing/index.vue'));
+const CTASection = defineAsyncComponent(() => import('./components/CTASection.vue'));
+
 import { useLandingTheme } from '#/composables/useLandingTheme';
 
 const router = useRouter();

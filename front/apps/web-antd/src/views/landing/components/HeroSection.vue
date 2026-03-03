@@ -18,6 +18,8 @@ withDefaults(defineProps<Props>(), {
 const { theme } = useLandingTheme();
 const canvasRef = ref<HTMLCanvasElement>();
 const animationId = ref<number>();
+const isCanvasVisible = ref(true); // 控制Canvas是否在视口内
+const isMobile = ref(false); // 检测移动设备
 
 const isDark = computed(() => theme.value === 'dark');
 
@@ -509,6 +511,11 @@ const initParticles = () => {
 watch(theme, initParticles);
 
 const animate = () => {
+  // 性能优化：Canvas不可见时停止渲染
+  if (!isCanvasVisible.value || isMobile.value) {
+    return;
+  }
+
   const canvas = canvasRef.value;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -910,20 +917,64 @@ const animate = () => {
 };
 
 onMounted(() => {
+  // 检测移动设备（性能优化）
+  isMobile.value = window.innerWidth < 768 || 
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // 初始化Canvas元素
   const canvas = canvasRef.value;
   if (canvas) {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
-    initParticles();
-    animate();
   }
+  
+  // 移动端不启动Canvas动画
+  if (isMobile.value) {
+    return;
+  }
+  
+  initParticles();
+  
+  // 使用 Intersection Observer 监听Canvas可见性（节省CPU）
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        isCanvasVisible.value = entry.isIntersecting;
+        
+        if (entry.isIntersecting) {
+          // Canvas进入视口，恢复动画
+          if (!animationId.value) {
+            animationId.value = requestAnimationFrame(animate);
+          }
+        } else {
+          // Canvas离开视口，暂停动画释放CPU
+          if (animationId.value) {
+            cancelAnimationFrame(animationId.value);
+            animationId.value = undefined;
+          }
+        }
+      });
+    },
+    { threshold: 0.1 } // 10%可见时触发
+  );
+
+  if (canvasRef.value) {
+    observer.observe(canvasRef.value);
+  }
+  
+  // 组件卸载时清理
+  onUnmounted(() => {
+    observer.disconnect();
+    if (animationId.value) {
+      cancelAnimationFrame(animationId.value);
+    }
+  });
+  
+  // 启动动画
+  animationId.value = requestAnimationFrame(animate);
 });
 
-onUnmounted(() => {
-  if (animationId.value) {
-    cancelAnimationFrame(animationId.value);
-  }
-});
+// 原有的onUnmounted已合并到上面的observer清理逻辑中
 </script>
 
 <template>
