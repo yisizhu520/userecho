@@ -11,9 +11,13 @@ WINDOW_VAR="_VBEN_ADMIN_PRO_APP_CONF_"
 APP_TITLE="${VITE_APP_TITLE:-回响}"
 API_URL="${VITE_GLOB_API_URL:-/}"
 APP_NAMESPACE="${VITE_APP_NAMESPACE:-userecho-admin}"
-DEVTOOLS="${VITE_DEVTOOLS:-false}"
-DEMO_MODE="${VITE_DEMO_MODE:-${DEMO_MODE:-${ENV_DEMO_MODE:-false}}}"
+DEVTOOLS_RAW="${VITE_DEVTOOLS:-false}"
+DEMO_MODE_RAW="${VITE_DEMO_MODE:-${DEMO_MODE:-${ENV_DEMO_MODE:-false}}}"
 TURNSTILE_SITE_KEY="${VITE_TURNSTILE_SITE_KEY:-}"
+
+# 统一转换布尔值为小写（兼容 true/TRUE/True/false/FALSE/False）
+DEVTOOLS=$(echo "$DEVTOOLS_RAW" | tr '[:upper:]' '[:lower:]')
+DEMO_MODE=$(echo "$DEMO_MODE_RAW" | tr '[:upper:]' '[:lower:]')
 
 # 生成 JSON 配置
 cat > "$CONFIG_FILE" << EOF
