@@ -1,14 +1,20 @@
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { Button, Card, Progress, Select, Spin, Tag, Empty, Drawer, Tooltip } from 'ant-design-vue';
+import { Button, Input, Select, Spin, Drawer, Tooltip, Progress, Empty } from 'ant-design-vue';
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   SyncOutlined,
-  EyeOutlined,
   StopOutlined,
-  FileTextOutlined,
+  SearchOutlined,
+  CalendarOutlined,
+  RightOutlined,
+  CloudServerOutlined,
+  FileExcelOutlined,
+  FileImageOutlined,
+  ExperimentOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons-vue';
 import { Page } from '@vben/common-ui';
 import { getUnifiedTasks, cancelUnifiedTask, type UnifiedTask, type TaskType, type TaskStatus } from '#/api/userecho/batch';
@@ -19,6 +25,7 @@ const jobs = ref<UnifiedTask[]>([]);
 const loading = ref(true);
 const taskTypeFilter = ref<TaskType | undefined>(undefined);
 const statusFilter = ref<TaskStatus | undefined>(undefined);
+const searchText = ref('');
 
 // 详情抽屉
 const detailVisible = ref(false);
@@ -30,47 +37,66 @@ let pollingTimer: ReturnType<typeof setInterval> | null = null;
 // 任务类型选项
 const taskTypeOptions = [
   { label: '全部类型', value: undefined },
-  { label: '批量截图识别', value: 'batch_screenshot_recognition' },
-  { label: '批量AI聚类', value: 'batch_ai_clustering' },
-  { label: '批量导出', value: 'batch_export' },
-  { label: 'Excel导入', value: 'excel_import' },
-  { label: 'AI聚类', value: 'clustering' },
-  { label: '截图识别', value: 'screenshot_recognition' },
-  { label: 'AI截图分析', value: 'ai_screenshot' },
-  { label: '批处理任务', value: 'batch' },
+  { label: '截图识别', value: 'batch_screenshot_recognition' },
+  { label: 'AI 聚类分析', value: 'batch_ai_clustering' },
+  { label: '数据导出', value: 'batch_export' },
+  { label: '数据导入', value: 'excel_import' },
 ];
 
 // 状态选项
 const statusOptions = [
   { label: '全部状态', value: undefined },
-  { label: '待处理', value: 'pending' },
   { label: '处理中', value: 'processing' },
   { label: '已完成', value: 'completed' },
   { label: '失败', value: 'failed' },
   { label: '已取消', value: 'cancelled' },
 ];
 
-// 任务类型显示名称
-const taskTypeNameMap: Record<string, string> = {
-  batch_screenshot_recognition: '批量截图识别',
-  batch_ai_clustering: '批量AI聚类',
-  batch_export: '批量导出',
-  excel_import: 'Excel导入',
-  clustering: 'AI聚类',
-  screenshot_recognition: '截图识别',
-  ai_screenshot: 'AI截图分析',
-  batch: '批处理任务',
-  data_export: '数据导出',
+// 类型定义
+interface TaskConfig {
+  icon: any;
+  color: string;
+  bg: string;
+  label: string;
+}
+
+interface StatusConfigItem {
+  icon: any;
+  color: string;
+  bg: string;
+  text: string;
+  border: string;
+  spin?: boolean;
+}
+
+// 任务类型配置（图标和颜色）
+const taskTypeConfig: Record<string, TaskConfig> = {
+  batch_screenshot_recognition: { icon: FileImageOutlined, color: 'text-purple-600', bg: 'bg-purple-50', label: '批量截图识别' },
+  batch_ai_clustering: { icon: ExperimentOutlined, color: 'text-indigo-600', bg: 'bg-indigo-50', label: '批量 AI 聚类' },
+  batch_export: { icon: CloudServerOutlined, color: 'text-blue-600', bg: 'bg-blue-50', label: '批量导出' },
+  excel_import: { icon: FileExcelOutlined, color: 'text-green-600', bg: 'bg-green-50', label: 'Excel 导入' },
+  clustering: { icon: ExperimentOutlined, color: 'text-indigo-600', bg: 'bg-indigo-50', label: 'AI 聚类' },
+  screenshot_recognition: { icon: FileImageOutlined, color: 'text-purple-600', bg: 'bg-purple-50', label: '截图识别' },
+  ai_screenshot: { icon: ThunderboltOutlined, color: 'text-orange-600', bg: 'bg-orange-50', label: 'AI 截图分析' },
+  default: { icon: CloudServerOutlined, color: 'text-gray-600', bg: 'bg-gray-50', label: '通用任务' },
 };
 
 // 状态配置
-const statusConfig = {
-  pending: { icon: ClockCircleOutlined, color: 'default', text: '待处理' },
-  processing: { icon: SyncOutlined, color: 'processing', text: '处理中', spin: true },
-  completed: { icon: CheckCircleOutlined, color: 'success', text: '已完成' },
-  failed: { icon: CloseCircleOutlined, color: 'error', text: '失败' },
-  cancelled: { icon: StopOutlined, color: 'default', text: '已取消' },
+const statusConfig: Record<string, StatusConfigItem> = {
+  pending: { icon: ClockCircleOutlined, color: 'text-gray-500', bg: 'bg-gray-100', text: '等待开始', border: 'border-gray-200' },
+  processing: { icon: SyncOutlined, color: 'text-blue-600', bg: 'bg-blue-50', text: '正在处理', spin: true, border: 'border-blue-200' },
+  completed: { icon: CheckCircleOutlined, color: 'text-green-600', bg: 'bg-green-50', text: '已完成', border: 'border-green-200' },
+  failed: { icon: CloseCircleOutlined, color: 'text-red-600', bg: 'bg-red-50', text: '执行失败', border: 'border-red-200' },
+  cancelled: { icon: StopOutlined, color: 'text-gray-400', bg: 'bg-gray-50', text: '已取消', border: 'border-gray-200' },
 };
+
+function getTaskConfig(type: string): TaskConfig {
+  return taskTypeConfig[type] || taskTypeConfig['default']!;
+}
+
+function getStatusConfig(status: string): StatusConfigItem {
+  return statusConfig[status] || statusConfig['pending']!;
+}
 
 // 加载任务列表
 async function loadJobs() {
@@ -82,30 +108,27 @@ async function loadJobs() {
       page: 1,
       page_size: 100,
     });
-    // 处理响应：后端返回 { data: { total: number, items: [] } }
+    // 处理响应结构兼容性
     if (Array.isArray(res)) {
       jobs.value = res;
     } else if ('items' in res && Array.isArray(res.items)) {
-      // 直接返回 { total, items } 的情况
       jobs.value = res.items;
     } else if (res.data && 'items' in res.data && Array.isArray(res.data.items)) {
-      // 嵌套 data 的情况
       jobs.value = res.data.items;
     } else if (res.data && Array.isArray(res.data)) {
       jobs.value = res.data;
     } else {
       jobs.value = [];
-      console.warn('Unexpected response format:', res);
     }
   } catch (error) {
-    console.error('Failed to load unified tasks:', error);
+    console.error('Failed to load tasks:', error);
     jobs.value = [];
   } finally {
     loading.value = false;
   }
 }
 
-// 筛选后的任务列表
+// 筛选逻辑
 const filteredJobs = computed(() => {
   let result = jobs.value;
 
@@ -115,6 +138,14 @@ const filteredJobs = computed(() => {
 
   if (statusFilter.value) {
     result = result.filter(job => job.status === statusFilter.value);
+  }
+
+  if (searchText.value) {
+    const query = searchText.value.toLowerCase();
+    result = result.filter(job =>
+      getTaskDescription(job).toLowerCase().includes(query) ||
+      (taskTypeConfig[job.type]?.label || job.type).toLowerCase().includes(query)
+    );
   }
 
   return result;
@@ -127,7 +158,8 @@ function viewDetail(jobId: string) {
 }
 
 // 取消任务
-async function handleCancelJob(jobId: string) {
+async function handleCancelJob(jobId: string, event: Event) {
+  event.stopPropagation(); // 防止触发卡片点击
   try {
     await cancelUnifiedTask(jobId);
     await loadJobs();
@@ -136,9 +168,9 @@ async function handleCancelJob(jobId: string) {
   }
 }
 
-// 格式化时间
-function formatTime(time: string | null): string {
-  if (!time) return '-';
+// 格式化相对时间
+function formatRelativeTime(time: string | null): string {
+  if (!time) return '';
   const date = new Date(time);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
@@ -146,108 +178,53 @@ function formatTime(time: string | null): string {
   if (diff < 60000) return '刚刚';
   if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
+  if (diff < 2592000000) return `${Math.floor(diff / 86400000)} 天前`;
 
-  return date.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return date.toLocaleDateString();
 }
 
-// 计算执行时长
-function getExecutionDuration(job: UnifiedTask): string {
+// 获取任务耗时友好显示
+function getDurationText(job: UnifiedTask): string {
   if (!job.started_time) return '-';
-
   const start = new Date(job.started_time).getTime();
   const end = job.completed_time ? new Date(job.completed_time).getTime() : Date.now();
   const duration = end - start;
 
-  if (duration < 60000) return `${Math.floor(duration / 1000)} 秒`;
-  if (duration < 3600000) return `${Math.floor(duration / 60000)} 分钟`;
-  return `${Math.floor(duration / 3600000)} 小时 ${Math.floor((duration % 3600000) / 60000)} 分钟`;
+  if (duration < 1000) return '< 1秒';
+  if (duration < 60000) return `${Math.floor(duration / 1000)}秒`;
+  if (duration < 3600000) return `${Math.floor(duration / 60000)}分 ${Math.floor((duration % 60000) / 1000)}秒`;
+  return `${Math.floor(duration / 3600000)}小时 ${Math.floor((duration % 3600000) / 60000)}分`;
 }
 
-// 截断描述文本
-function truncateDescription(text: string | undefined, maxLength: number = 50): { text: string; truncated: boolean } {
-  if (!text) return { text: '-', truncated: false };
-  if (text.length <= maxLength) return { text, truncated: false };
-  return { text: text.substring(0, maxLength) + '...', truncated: true };
-}
-
-// 获取任务描述
+// 获取任务描述（与之前逻辑一致，只需确保引用正确）
 function getTaskDescription(job: UnifiedTask): string {
-  // 优先使用 description 字段
   if (job.description) return job.description;
   if (job.metadata?.description) return job.metadata.description;
   if (job.summary?.description) return job.summary.description;
 
-  // 根据任务类型生成默认描述
   switch (job.type) {
     case 'excel_import':
       return job.metadata?.filename || job.metadata?.file_name || 'Excel 数据导入';
     case 'batch_ai_clustering':
-      return `聚类分析 - ${job.total_count || 0} 条反馈`;
+      return `聚类分析任务`;
     case 'batch_screenshot_recognition':
-      return `截图识别 - ${job.total_count || 0} 张图片`;
+      return `截图识别任务`;
     case 'batch_export':
       return `数据导出 - ${job.metadata?.export_type || '反馈数据'}`;
-    case 'clustering':
-      return job.metadata?.board_name ? `${job.metadata.board_name} 聚类分析` : 'AI 聚类分析';
-    case 'screenshot_recognition':
-      return '单张截图识别';
-    case 'ai_screenshot':
-      return 'AI 截图分析';
     default:
-      return job.name || '任务处理中';
+      return taskTypeConfig[job.type]?.label || '未知任务';
   }
 }
 
-// 获取元数据关键信息（根据任务类型定制）
-function getMetadataInfo(job: UnifiedTask): Array<{ label: string; value: string }> {
-  const info: Array<{ label: string; value: string }> = [];
-
-  switch (job.type) {
-    case 'excel_import':
-      if (job.metadata?.filename) info.push({ label: '文件名', value: job.metadata.filename });
-      if (job.metadata?.sheet_name) info.push({ label: '工作表', value: job.metadata.sheet_name });
-      break;
-
-    case 'batch_ai_clustering':
-    case 'clustering':
-      if (job.metadata?.board_name) info.push({ label: '看板', value: job.metadata.board_name });
-      if (job.summary?.cluster_count) info.push({ label: '聚类数', value: String(job.summary.cluster_count) });
-      if (job.metadata?.min_similarity) info.push({ label: '相似度阈值', value: String(job.metadata.min_similarity) });
-      break;
-
-    case 'batch_screenshot_recognition':
-    case 'screenshot_recognition':
-      if (job.metadata?.board_name) info.push({ label: '看板', value: job.metadata.board_name });
-      if (job.metadata?.recognition_type) info.push({ label: '识别类型', value: job.metadata.recognition_type });
-      break;
-
-    case 'batch_export':
-      if (job.metadata?.export_type) info.push({ label: '导出类型', value: job.metadata.export_type });
-      if (job.metadata?.format) info.push({ label: '格式', value: job.metadata.format });
-      if (job.metadata?.board_name) info.push({ label: '看板', value: job.metadata.board_name });
-      break;
-  }
-
-  return info;
-}
-
-// 启动轮询
+// 轮询控制
 function startPolling() {
   stopPolling();
   pollingTimer = setInterval(() => {
     const hasProcessing = jobs.value.some(job => job.status === 'processing');
-    if (hasProcessing) {
-      loadJobs();
-    }
-  }, 3000); // 每3秒轮询一次
+    if (hasProcessing) loadJobs();
+  }, 4000);
 }
 
-// 停止轮询
 function stopPolling() {
   if (pollingTimer) {
     clearInterval(pollingTimer);
@@ -255,11 +232,10 @@ function stopPolling() {
   }
 }
 
-// 关闭详情抽屉时刷新列表
 function handleDetailClose() {
   detailVisible.value = false;
   currentJobId.value = null;
-  loadJobs();
+  loadJobs(); // 刷新以获取最新状态
 }
 
 onMounted(() => {
@@ -273,184 +249,161 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Page
-    title="我的任务"
-    description="查看和管理我的所有异步任务"
-  >
-    <!-- 筛选器 -->
-    <div class="mb-6 flex items-center gap-4">
-      <Select
-        v-model:value="taskTypeFilter"
-        :options="taskTypeOptions"
-        placeholder="选择任务类型"
-        style="width: 200px"
-        @change="loadJobs"
-      />
+  <Page title="我的任务中心" description="实时监控和管理所有后台处理任务">
+    <!-- 顶部工具栏 -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <Input
+          v-model:value="searchText"
+          placeholder="搜索任务..."
+          class="w-full md:w-64"
+          allow-clear
+        >
+          <template #prefix><SearchOutlined class="text-gray-400" /></template>
+        </Input>
 
-      <Select
-        v-model:value="statusFilter"
-        :options="statusOptions"
-        placeholder="选择状态"
-        style="width: 200px"
-        @change="loadJobs"
-      />
+        <Select
+          v-model:value="taskTypeFilter"
+          :options="taskTypeOptions"
+          placeholder="任务类型"
+          class="w-40 hidden md:block"
+          allow-clear
+        />
 
-      <Button @click="loadJobs">
-        刷新
-      </Button>
-    </div>
-
-    <!-- 任务列表 -->
-    <Spin :spinning="loading">
-      <div v-if="filteredJobs.length === 0" class="py-12">
-        <Empty description="暂无任务" />
+        <Select
+          v-model:value="statusFilter"
+          :options="statusOptions"
+          placeholder="执行状态"
+          class="w-32 hidden md:block"
+          allow-clear
+        />
       </div>
 
-      <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card
+      <div class="flex items-center gap-2">
+        <Button class="bg-white" @click="loadJobs">
+          <template #icon><SyncOutlined :spin="loading" /></template>
+          刷新
+        </Button>
+      </div>
+    </div>
+
+    <!-- 任务网格 -->
+    <Spin :spinning="loading">
+      <div v-if="filteredJobs.length === 0" class="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+        <Empty description="暂无符合条件的任务" />
+      </div>
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div
           v-for="job in filteredJobs"
           :key="job.id"
-          class="hover:shadow-lg transition-shadow"
+          class="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+          @click="viewDetail(job.id)"
         >
-          <!-- 任务头部：类型标签 + 状态标签 -->
-          <div class="flex items-center gap-2 mb-3">
-            <Tag color="blue">
-              {{ taskTypeNameMap[job.type] || job.type }}
-            </Tag>
+          <!-- 顶部状态条 -->
+          <div :class="`h-1 w-full ${getStatusConfig(job.status).color.replace('text-', 'bg-')}`"></div>
 
-            <Tag
-              :color="statusConfig[job.status]?.color"
-              :class="{ 'animate-pulse': job.status === 'processing' }"
-            >
-              <component
-                :is="statusConfig[job.status]?.icon"
-                :spin="(statusConfig[job.status] as any)?.spin"
-                class="mr-1"
+          <div class="p-6">
+            <!-- 头部：图标与状态 -->
+            <div class="flex justify-between items-start mb-4">
+              <div :class="`w-12 h-12 rounded-xl flex items-center justify-center ${getTaskConfig(job.type).bg}`">
+                <component :is="getTaskConfig(job.type).icon" class="text-xl" :class="getTaskConfig(job.type).color" />
+              </div>
+
+              <div :class="`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${getStatusConfig(job.status).bg} ${getStatusConfig(job.status).color}`">
+                <component :is="getStatusConfig(job.status).icon" :spin="getStatusConfig(job.status).spin" />
+                {{ getStatusConfig(job.status).text }}
+              </div>
+            </div>
+
+            <!-- 内容：标题与描述 -->
+            <div class="mb-5">
+              <h3 class="font-bold text-gray-900 text-lg mb-1 truncate" :title="getTaskDescription(job)">
+                {{ getTaskDescription(job) }}
+              </h3>
+              <p class="text-sm text-gray-500 line-clamp-2 min-h-[40px]">
+                <span v-if="getDurationText(job) !== '-'" class="mr-2 inline-flex items-center text-xs bg-gray-50 px-2 py-0.5 rounded text-gray-400">
+                  <ClockCircleOutlined class="mr-1 text-[10px]" /> 耗时 {{ getDurationText(job) }}
+                </span>
+                <span class="text-xs text-gray-400">ID: {{ job.id.slice(0, 8) }}</span>
+              </p>
+            </div>
+
+            <!-- 进度区域 -->
+            <div class="mb-5">
+              <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+                <span>处理进度</span>
+                <span class="font-medium text-gray-700">{{ Math.floor(job.progress) }}%</span>
+              </div>
+              <Progress
+                :percent="job.progress"
+                :show-info="false"
+                :stroke-color="job.status === 'failed' ? '#ef4444' : job.status === 'completed' ? '#22c55e' : '#3b82f6'"
+                track-color="#f3f4f6"
+                size="small"
+                class="!m-0"
               />
-              {{ statusConfig[job.status]?.text }}
-            </Tag>
-          </div>
-
-          <!-- 任务描述：带 Tooltip 的截断文本 -->
-          <div class="mb-3">
-            <Tooltip
-              v-if="truncateDescription(getTaskDescription(job)).truncated"
-              :title="getTaskDescription(job)"
-            >
-              <div class="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-1 line-clamp-2">
-                <FileTextOutlined class="mt-0.5 flex-shrink-0 text-gray-400" />
-                <span>{{ truncateDescription(getTaskDescription(job)).text }}</span>
-              </div>
-            </Tooltip>
-            <div
-              v-else
-              class="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-1 line-clamp-2"
-            >
-              <FileTextOutlined class="mt-0.5 flex-shrink-0 text-gray-400" />
-              <span>{{ getTaskDescription(job) }}</span>
             </div>
-          </div>
 
-          <!-- 元数据关键信息（根据任务类型定制）-->
-          <div v-if="getMetadataInfo(job).length > 0" class="mb-3 flex flex-wrap gap-2">
-            <Tag
-              v-for="(info, idx) in getMetadataInfo(job)"
-              :key="idx"
-              color="default"
-              class="text-xs"
-            >
-              {{ info.label }}: {{ info.value }}
-            </Tag>
-          </div>
-
-          <!-- 进度条 -->
-          <div class="mb-4">
-            <Progress
-              :percent="job.progress"
-              :status="job.status === 'failed' ? 'exception' : job.status === 'completed' ? 'success' : 'active'"
-              :stroke-color="job.status === 'processing' ? '#1890ff' : undefined"
-            />
-          </div>
-
-          <!-- 两列布局：左侧统计数据 + 右侧时间信息 -->
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <!-- 左侧：统计数据 -->
-            <div>
-              <!-- 判断是否为批量任务：如果 total_count 不为 null 则认为是批量任务 -->
-              <div v-if="job.total_count !== null && job.total_count !== undefined" class="space-y-2">
-                <div class="flex justify-between text-xs">
-                  <span class="text-gray-500">总数</span>
-                  <span class="font-semibold">{{ job.total_count ?? 0 }}</span>
-                </div>
-                <div class="flex justify-between text-xs">
-                  <span class="text-gray-500">成功</span>
-                  <span class="font-semibold text-green-600">{{ job.completed_count ?? 0 }}</span>
-                </div>
-                <div class="flex justify-between text-xs">
-                  <span class="text-gray-500">失败</span>
-                  <span class="font-semibold text-red-600">{{ job.failed_count ?? 0 }}</span>
-                </div>
-                <div class="flex justify-between text-xs">
-                  <span class="text-gray-500">待处理</span>
-                  <span class="font-semibold text-blue-600">
-                    {{ job.pending_count ?? ((job.total_count ?? 0) - (job.completed_count ?? 0) - (job.failed_count ?? 0)) }}
-                  </span>
-                </div>
+            <!-- 底部：详细数据统计 -->
+            <div v-if="job.total_count" class="grid grid-cols-3 gap-2 py-3 bg-gray-50/50 rounded-lg border border-gray-100/50">
+              <div class="flex flex-col items-center">
+                <span class="text-[10px] uppercase tracking-wider text-gray-400 font-medium">总数</span>
+                <span class="text-sm font-semibold text-gray-700">{{ job.total_count }}</span>
               </div>
-              <div v-else class="text-xs text-gray-500">
-                单次任务
+              <div class="flex flex-col items-center border-l border-gray-100">
+                <span class="text-[10px] uppercase tracking-wider text-gray-400 font-medium">成功</span>
+                <span class="text-sm font-semibold text-green-600">{{ job.completed_count }}</span>
+              </div>
+              <div class="flex flex-col items-center border-l border-gray-100">
+                <span class="text-[10px] uppercase tracking-wider text-gray-400 font-medium">失败</span>
+                <span class="text-sm font-semibold text-red-600">{{ job.failed_count }}</span>
               </div>
             </div>
 
-            <!-- 右侧：时间信息 -->
-            <div class="space-y-2">
-              <div class="text-xs">
-                <div class="text-gray-500 mb-0.5">创建时间</div>
-                <div class="text-gray-700 dark:text-gray-300">{{ formatTime(job.created_time) }}</div>
-              </div>
-              <div v-if="job.started_time" class="text-xs">
-                <div class="text-gray-500 mb-0.5">开始时间</div>
-                <div class="text-gray-700 dark:text-gray-300">{{ formatTime(job.started_time) }}</div>
-              </div>
-              <div v-if="job.started_time" class="text-xs">
-                <div class="text-gray-500 mb-0.5">执行耗时</div>
-                <div class="text-gray-700 dark:text-gray-300 font-medium">{{ getExecutionDuration(job) }}</div>
-              </div>
+            <div v-else class="flex items-center justify-center h-[54px] bg-gray-50/50 rounded-lg border border-gray-100/50 text-xs text-gray-400">
+              单项任务
             </div>
           </div>
 
-          <!-- 操作按钮 -->
-          <div class="flex gap-2">
-            <Button
-              type="primary"
-              size="small"
-              block
-              @click="viewDetail(job.id)"
-            >
-              <EyeOutlined />
+          <!-- 底部动作栏 (Hover时更明显) -->
+          <div class="border-t border-gray-100 px-6 py-3 flex items-center justify-between bg-gray-50/30">
+            <div class="flex items-center text-xs text-gray-400">
+              <CalendarOutlined class="mr-1.5" />
+              {{ formatRelativeTime(job.created_time) }}
+            </div>
+
+            <button class="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center transition-colors group-hover:translate-x-1 duration-300">
               查看详情
-            </Button>
-
-            <Button
-              v-if="job.status === 'processing'"
-              danger
-              size="small"
-              @click.stop="handleCancelJob(job.id)"
-            >
-              <StopOutlined />
-              取消
-            </Button>
+              <RightOutlined class="ml-1 text-xs" />
+            </button>
           </div>
-        </Card>
+
+          <!-- 悬浮取消按钮 (仅处理中显示) -->
+          <div v-if="job.status === 'processing'" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Tooltip title="取消任务">
+              <Button
+                type="text"
+                danger
+                shape="circle"
+                size="small"
+                class="bg-white shadow-md border border-gray-100 flex items-center justify-center"
+                @click="handleCancelJob(job.id, $event)"
+              >
+                <StopOutlined />
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
       </div>
     </Spin>
 
-    <!-- 详情抽屉 -->
     <Drawer
       v-model:open="detailVisible"
       title="任务详情"
       width="800"
       @close="handleDetailClose"
+      class="task-detail-drawer"
     >
       <BatchJobDetail
         v-if="currentJobId"
@@ -461,25 +414,32 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+/* 自定义进度条高度 */
+:deep(.ant-progress-bg) {
+  height: 6px !important;
+  border-radius: 4px !important;
 }
 
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+:deep(.ant-progress-inner) {
+  background-color: #f3f4f6;
+  border-radius: 4px !important;
 }
 
-/* 限制描述文本为最多2行 */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
+:deep(.ant-input-affix-wrapper) {
+  border-radius: 8px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  border-color: #e5e7eb;
+}
+
+:deep(.ant-select-selector) {
+  border-radius: 8px !important;
+  height: 38px !important;
+  display: flex items-center;
+  border-color: #e5e7eb !important;
+}
+
+:deep(.ant-select-selection-item) {
+  line-height: 36px !important;
 }
 </style>
