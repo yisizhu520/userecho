@@ -107,17 +107,35 @@ class TopicService:
                     reason=data.reason,
                 )
 
-                # 当状态变更为 completed 时，自动创建通知记录
+                # 当状态变更为 completed 时，自动创建通知记录和系统提醒
                 if old_status != "completed" and new_status == "completed":
+                    from backend.app.userecho.crud import crud_system_notification, crud_topic_notification
                     from backend.app.userecho.service.notification_service import (
                         notification_service,
                     )
 
                     try:
+                        # 1. 创建议题通知记录（用于通知客户）
                         created_count = await notification_service.create_notifications_for_topic(
                             db=db, tenant_id=tenant_id, topic_id=topic_id
                         )
                         log.info(f"Auto-created {created_count} notification records for topic {topic_id}")
+
+                        # 2. 统计待通知的用户数量
+                        pending_count = await crud_topic_notification.count_by_topic_id(
+                            db=db, tenant_id=tenant_id, topic_id=topic_id, status="pending"
+                        )
+
+                        # 3. 创建系统提醒（显示在右上角 Bell 图标）
+                        await crud_system_notification.create_topic_completed_notification(
+                            db=db,
+                            tenant_id=tenant_id,
+                            topic_id=topic_id,
+                            topic_title=topic.title,
+                            pending_count=pending_count,
+                            user_id=None,  # 全员通知
+                        )
+                        log.info(f"Created system notification for topic {topic_id} completion")
                     except Exception as e:
                         log.error(f"Failed to auto-create notifications for topic {topic_id}: {e}")
                         # 不抛出异常，避免影响状态更新的主流程

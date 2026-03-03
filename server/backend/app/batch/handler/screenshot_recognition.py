@@ -158,6 +158,22 @@ class ScreenshotRecognitionHandler(BatchTaskHandler):
             "failed": batch_job.failed_count,
         }
 
+        # 创建系统提醒：批量截图识别完成
+        try:
+            from backend.app.userecho.crud.crud_system_notification import crud_system_notification
+
+            await crud_system_notification.create_screenshot_batch_completed_notification(
+                db=db,
+                tenant_id=batch_job.tenant_id,
+                total_count=batch_job.total_count,
+                success_count=batch_job.completed_count,
+                failed_count=batch_job.failed_count,
+                user_id=None,  # 全员通知
+            )
+            log.info(f"Created screenshot batch completed notification for batch {batch_job.id}")
+        except Exception as e:
+            log.error(f"Failed to create screenshot batch notification for batch {batch_job.id}: {e}")
+
         # FIXME: task_notification 在 Celery Worker 中会导致 event loop 冲突
         # 临时注释，后续使用同步 Redis Pub/Sub 实现
         # try:

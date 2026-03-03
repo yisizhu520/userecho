@@ -123,6 +123,8 @@ class NotificationService:
         language: str = "zh-CN",
     ) -> dict:
         """批量生成 AI 回复"""
+        from backend.app.userecho.crud import crud_system_notification, crud_topic
+
         # 获取待处理的通知记录
         notifications = await crud_topic_notification.get_pending_by_topic_id(
             db=db, tenant_id=tenant_id, topic_id=topic_id
@@ -146,6 +148,23 @@ class NotificationService:
                 failed_count += 1
                 errors.append({"id": notification.id, "error": str(e)})
                 log.error(f"Failed to generate reply for notification {notification.id}: {e}")
+
+        # 批量生成完成后，创建系统提醒
+        try:
+            topic = await crud_topic.get_by_id(db, tenant_id, topic_id)
+            if topic and success_count > 0:
+                await crud_system_notification.create_batch_reply_completed_notification(
+                    db=db,
+                    tenant_id=tenant_id,
+                    topic_id=topic_id,
+                    topic_title=topic.title,
+                    success_count=success_count,
+                    failed_count=failed_count,
+                    user_id=None,  # 全员通知
+                )
+                log.info(f"Created batch reply completed notification for topic {topic_id}")
+        except Exception as e:
+            log.error(f"Failed to create batch reply notification for topic {topic_id}: {e}")
 
         return {
             "success": success_count,

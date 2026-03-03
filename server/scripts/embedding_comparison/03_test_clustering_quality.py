@@ -140,7 +140,6 @@ async def test_clustering_with_model(
                         "text1": text1[:50] + "...",
                         "text2": text2[:50] + "...",
                         "similarity": float(sim),
-                        "prefix_similarity": float(prefix_sim),
                     }
                 )
 

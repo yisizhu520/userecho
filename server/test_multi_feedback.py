@@ -1,13 +1,14 @@
 """测试批量识别多反馈功能"""
 
 import asyncio
+from typing import Any
 
 
-async def test_multi_feedback():
+async def test_multi_feedback() -> None:
     """测试多反馈识别逻辑"""
 
     # 模拟 AI 返回多条反馈
-    mock_result = {
+    mock_result: dict[str, Any] = {
         "raw_text": "用户A：建议增加批量截图识别\n用户B：希望支持更多平台",
         "feedback_list": [
             {
@@ -48,7 +49,7 @@ async def test_multi_feedback():
 
     print(f"✅ 识别到 {len(feedback_list)} 条反馈：\n")
 
-    created_feedbacks = []
+    created_feedbacks: list = []
     for idx, feedback_data in enumerate(feedback_list):
         ai_content = feedback_data.get("content", "")
         ai_user_name = feedback_data.get("user_name", "")

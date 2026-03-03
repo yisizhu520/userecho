@@ -23,6 +23,7 @@ import {
   updateClusteringPreset,
   getSystemNotifications,
   markAllNotificationsAsRead,
+  markNotificationAsRead,
   clearAllNotifications,
 } from '#/api';
 import { router } from '#/router';
@@ -135,6 +136,34 @@ async function handleMakeAll() {
   }
 }
 
+// 处理点击单个通知
+async function handleNotificationClick(item: NotificationItem) {
+  try {
+    // 1. 标记为已读
+    await markNotificationAsRead(item.id);
+
+    // 2. 更新本地状态
+    const notification = notifications.value.find((n) => n.id === item.id);
+    if (notification) {
+      notification.isRead = true;
+    }
+
+    // 3. 跳转到目标页面
+    if (item.actionUrl) {
+      router.push(item.actionUrl);
+    }
+  } catch {
+    // 静默处理
+  }
+}
+
+// 处理"查看所有消息"按钮
+function handleViewAll() {
+  // 目前没有专门的通知列表页面，所以这里暂时不做跳转
+  // 未来可以实现：router.push('/app/notifications')
+  // 现在只是关闭弹窗（组件内部会自动处理）
+}
+
 // 启动轮询
 function startPolling() {
   // 每 60 秒刷新一次
@@ -196,6 +225,8 @@ watch(
         :notifications="notifications"
         @clear="handleNoticeClear"
         @make-all="handleMakeAll"
+        @read="handleNotificationClick"
+        @view-all="handleViewAll"
       />
     </template>
     <template #extra>
