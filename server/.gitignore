@@ -76,3 +76,45 @@ pip-wheel-metadata/
 *.bak
 *.swp
 *~
+
+# ===== 临时诊断/调试/测试脚本（根目录一次性脚本）=====
+# 这些文件是开发过程中的临时产物，不应提交到开源仓库
+check_*.py
+check_*.sh
+diagnose_*.py
+diagnose_*.sh
+fix_*.py
+fix_*.sh
+test_*.py
+test_*.sh
+test_*.bat
+verify_*.py
+monitor_*.py
+kill_*.py
+kill_*.bat
+kill_*.ps1
+force_kill_*.ps1
+quick_check.py
+simple_check.py
+refactor_clustering.py
+reset_*.py
+run_import_demo.py
+gen_report.py
+lower_quality_threshold.py
+add_system_menus.py
+add_task_center_menu.py
+assign_system_admin.py
+create_system_admin_role.py
+list_roles.py
+# 诊断输出文件
+*_diagnosis.txt
+*_result.txt
+*_output.txt
+*_output2.txt
+*_after_*.txt
+*_verification.txt
+precommit_output.txt
+# 一次性 SQL 补丁
+clean_duplicate_board.sql
+# Windows 特殊文件
+NUL

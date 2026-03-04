@@ -107,6 +107,17 @@ htmlcov/
 site/
 docs/_build/
 
+# ===== AI 工具私人配置 =====
+.agent/
+.claude/
+.cursor/plans/
+# 注意：保留 .cursor/rules/ 作为项目代码规范
+
+# ===== 临时诊断/测试/调试脚本（根目录） =====
+check_data.py
+test_redis_connection.py
+test_feedbacks*.xlsx
+
 # ===== 其他 =====
 .VSCodeCounter/
 *.pid

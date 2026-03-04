@@ -76,8 +76,8 @@ async def submit_trial_application(
 请尽快联系该用户！
 """
 
-        # 发送邮件通知
-        admin_email = "1914731404@qq.com"
+        # 发送邮件通知（收件人使用配置的邮箱）
+        admin_email = settings.EMAIL_USERNAME
 
         await send_notification_email(
             recipients=admin_email,
