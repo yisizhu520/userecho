@@ -51,6 +51,12 @@ lerna-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+# 真实部署配置（含密钥，永远不提交）
+.env.prod
+.env.demo
+.env.staging
+.env.demo.patch
+.env.*.patch
 
 # ===== 依赖目录 (根级别) =====
 node_modules/
