@@ -116,6 +116,17 @@ userecho/
 - [部署指南](docs/guides/deployment/) — Dokploy / Docker 部署
 - [开发指南](docs/development/) — 本地开发、代码规范
 
+### 致谢
+
+userecho 站在以下优秀开源项目的肩膀上构建：
+
+| 项目 | 用途 |
+|------|------|
+| [fastapi-practices/fastapi_best_architecture](https://github.com/fastapi-practices/fastapi_best_architecture) | 后端基础架构（伪三层架构、RBAC 权限、多租户框架、Celery 任务系统） |
+| [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin) | 前端基础框架（Vue 3 + Ant Design Vue 管理后台） |
+
+感谢这些项目的维护者和贡献者！
+
 ### 贡献
 
 欢迎提交 Issue 和 Pull Request！请先阅读 [CONTRIBUTING.md](./server/CONTRIBUTING.md)。
@@ -185,6 +196,17 @@ docker compose up -d
 cd server
 python db_migrate.py upgrade head
 ```
+
+### Acknowledgements
+
+userecho is built on top of these excellent open-source projects:
+
+| Project | Usage |
+|---------|-------|
+| [fastapi-practices/fastapi_best_architecture](https://github.com/fastapi-practices/fastapi_best_architecture) | Backend foundation — pseudo 3-tier architecture, RBAC, multi-tenant framework, Celery task system |
+| [vbenjs/vue-vben-admin](https://github.com/vbenjs/vue-vben-admin) | Frontend foundation — Vue 3 + Ant Design Vue admin dashboard |
+
+Many thanks to the maintainers and contributors of these projects!
 
 ### Contributing
 
