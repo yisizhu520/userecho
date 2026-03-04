@@ -116,6 +116,12 @@ class AuthService:
 
             await user_dao.update_login_time(db, obj.email)
             await db.refresh(user)
+
+            from backend.app.admin.crud.user_tenant_helper import get_user_primary_tenant_id
+
+            tenant_id = await get_user_primary_tenant_id(db, user.id)
+            user.tenant_id = tenant_id
+
             access_token_data = await create_access_token(
                 user.id,
                 multi_login=user.is_multi_login,

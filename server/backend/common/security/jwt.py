@@ -205,37 +205,37 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
     """
 
     from backend.app.admin.crud.crud_user import user_dao
+    from backend.app.admin.crud.user_tenant_helper import get_user_primary_tenant_id
 
-    user = await user_dao.get_join(db, user_id=pk)
-    if not user:
+    user_result = await user_dao.get_join(db, user_id=pk)
+    if not user_result:
         raise errors.TokenError(msg="Token 无效")
-    if not user.status:
+    if not user_result.status:
         raise errors.AuthorizationError(msg="用户已被锁定，请联系系统管理员")
-    if user.dept_id:
-        if not user.dept:
-            log.error(f"User {user.id} has dept_id {user.dept_id} but dept object is None")
+    if user_result.dept_id:
+        if not user_result.dept:
+            log.error(f"User {user_result.id} has dept_id {user_result.dept_id} but dept object is None")
             raise errors.AuthorizationError(msg="用户所属部门数据异常，请联系系统管理员")
-        if not user.dept.status:
+        if not user_result.dept.status:
             raise errors.AuthorizationError(msg="用户所属部门已被锁定，请联系系统管理员")
-        if user.dept.del_flag:
+        if user_result.dept.del_flag:
             raise errors.AuthorizationError(msg="用户所属部门已被删除，请联系系统管理员")
-    if user.roles:
-        role_status = [role.status for role in user.roles]
+    if user_result.roles:
+        role_status = [role.status for role in user_result.roles]
         if all(status == 0 for status in role_status):
             raise errors.AuthorizationError(msg="用户所属角色已被锁定，请联系系统管理员")
 
-    user.tenant_id = await _get_user_primary_tenant(db, pk)
+    tenant_id = await get_user_primary_tenant_id(db, pk)
+
+    user_dict = user_result._asdict()
+    user_dict["tenant_id"] = tenant_id
+
+    from collections import namedtuple
+
+    UserWithTenant = namedtuple("Result", list(user_dict.keys()))  # noqa: PYI024
+    user = UserWithTenant(**user_dict)
+
     return user
-
-
-async def _get_user_primary_tenant(db: AsyncSession, user_id: int) -> str | None:
-    from sqlalchemy import select
-
-    from backend.app.userecho.model.tenant_user import TenantUser
-
-    stmt = select(TenantUser.tenant_id).where(TenantUser.user_id == user_id).limit(1)
-    result = await db.execute(stmt)
-    return result.scalar_one_or_none()
 
 
 def superuser_verify(request: Request, _token: str = DependsJwtAuth) -> bool:
@@ -282,6 +282,13 @@ async def jwt_authentication(token: str) -> GetUserInfoWithRelationDetail:
         # TODO: 在恰当的时机，应替换为使用 model_validate_json
         # https://docs.pydantic.dev/latest/concepts/json/#partial-json-parsing
         user = GetUserInfoWithRelationDetail.model_validate(from_json(cache_user, allow_partial=True))
+
+        if not user.tenant_id:
+            from backend.app.admin.crud.user_tenant_helper import get_user_primary_tenant_id
+
+            async with async_db_session() as db:
+                user.tenant_id = await get_user_primary_tenant_id(db, user_id)
+
     return user
 
 

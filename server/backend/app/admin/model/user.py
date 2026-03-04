@@ -39,7 +39,6 @@ class User(Base):
 
     # 逻辑外键
     dept_id: Mapped[int | None] = mapped_column(sa.BigInteger, default=None, comment="部门关联ID")
-    tenant_id: Mapped[str | None] = mapped_column(sa.String(36), default="default-tenant", comment="租户ID")
     invitation_id: Mapped[str | None] = mapped_column(sa.String(36), default=None, comment="邀请ID")
     email_verified: Mapped[bool] = mapped_column(default=False, comment="邮箱是否已验证")
 
