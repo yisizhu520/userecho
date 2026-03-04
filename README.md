@@ -4,6 +4,8 @@
 
 <p>开源的用户反馈管理与洞察平台 · An Open-Source User Feedback Analytics Platform</p>
 
+🌐 **[正式网站](https://userecho.app/)** &nbsp;|&nbsp; 🎮 **[在线 Demo](https://demo.userecho.app/demo)**
+
 [![License](https://img.shields.io/github/license/yisizhu520/userecho)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?logo=fastapi)](https://fastapi.tiangolo.com)
@@ -21,7 +23,11 @@
 
 ### 简介
 
-**userecho** 是一个开源的用户反馈收集与分析平台，帮助产品团队：
+**userecho** 是一个开源的用户反馈收集与分析平台，帮助产品团队。
+
+> 🎮 **想先看看效果？** 访问 [demo.userecho.app/demo](https://demo.userecho.app/demo) 体验在线 Demo（无需注册）。
+
+核心功能：
 
 - 📥 **收集反馈** — 通过嵌入式 Widget 或 API 收集用户反馈
 - 🤖 **AI 聚类** — 自动将相似反馈聚合成主题，发现高优先级需求
@@ -145,7 +151,11 @@ userecho 站在以下优秀开源项目的肩膀上构建：
 
 ### Introduction
 
-**userecho** is an open-source user feedback collection and analytics platform that helps product teams:
+**userecho** is an open-source user feedback collection and analytics platform that helps product teams.
+
+> 🎮 **Want to see it in action?** Try the [live demo at demo.userecho.app/demo](https://demo.userecho.app/demo) — no sign-up required.
+
+Core features:
 
 - 📥 **Collect Feedback** — via embeddable Widget or API
 - 🤖 **AI Clustering** — automatically group similar feedback into topics, surface high-priority needs
