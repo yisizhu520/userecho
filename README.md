@@ -121,6 +121,7 @@ userecho/
 - [AI 提供商配置](docs/guides/ai-provider/) — 各 AI 服务商接入指南
 - [部署指南](docs/guides/deployment/) — Dokploy / Docker 部署
 - [开发指南](docs/development/) — 本地开发、代码规范
+- [Git Commit 规范](docs/development/git-commit-best-practices.md) — 开源项目提交历史整理与提交信息标准
 
 ### 致谢
 

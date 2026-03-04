@@ -1,0 +1,4 @@
+commit-msg:
+  commands:
+    commit-message-check:
+      run: node scripts/git/validate-commit-msg.mjs {1}

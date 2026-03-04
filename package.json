@@ -1,6 +1,10 @@
 {
     "name": "userecho-root",
     "private": true,
+    "scripts": {
+        "prepare": "lefthook install",
+        "commit:check": "node scripts/git/validate-commit-msg.mjs .git/COMMIT_EDITMSG"
+    },
     "devDependencies": {
         "lefthook": "^1.10.10"
     }
