@@ -112,6 +112,9 @@ docs/_build/
 .claude/
 .cursor/plans/
 # 注意：保留 .cursor/rules/ 作为项目代码规范
+# AI 助手指令文件（各编辑器/工具私有，不应公开）
+AGENTS.md
+GEMINI.md
 
 # ===== 临时诊断/测试/调试脚本（根目录） =====
 check_data.py
