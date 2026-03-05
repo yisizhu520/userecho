@@ -236,7 +236,6 @@ class NotificationService:
             db.add(notification)
             created_count += 1
 
-        await db.commit()
         return created_count
 
     def _build_user_prompt(
