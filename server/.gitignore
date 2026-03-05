@@ -89,6 +89,8 @@ test_*.py
 test_*.sh
 test_*.bat
 verify_*.py
+verify_*.sh
+verify_*.bat
 monitor_*.py
 kill_*.py
 kill_*.bat
@@ -114,7 +116,28 @@ list_roles.py
 *_after_*.txt
 *_verification.txt
 precommit_output.txt
+migration_log.txt
+type_errors.txt
 # 一次性 SQL 补丁
 clean_duplicate_board.sql
+# backend/ 根目录临时脚本
+backend/test_*.py
+backend/test_*.sh
+backend/test_*.bat
+backend/verify_*.py
+backend/verify_*.sh
+backend/verify_*.bat
+backend/diagnose_*.py
+backend/create_test_*.py
+backend/create_test_*.sh
+backend/create_test_*.bat
+# scripts/ 子目录一次性脚本（fix_, diagnose_, verify_ 前缀）
+backend/scripts/fix_*.py
+backend/scripts/diagnose_*.py
+backend/scripts/verify_*.py
+backend/scripts/check_boss*.py
+backend/scripts/check_tenant*.py
+backend/scripts/check_screenshot*.py
+backend/scripts/*.sql
 # Windows 特殊文件
 NUL

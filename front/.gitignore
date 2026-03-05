@@ -30,6 +30,7 @@ dev-dist/
 # ===== 临时文件 =====
 .temp/
 *.local
+type_errors.txt
 
 # ===== 日志 =====
 logs/
