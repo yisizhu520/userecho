@@ -41,21 +41,20 @@ const props = withDefaults(defineProps<Props>(), {
 
 const router = useRouter();
 
-// 漏斗阶段配置
 const funnelStages = computed(() => [
   {
     key: 'total',
     label: '总反馈',
     count: props.data.total_feedbacks,
-    rate: 100,
-    color: '#1890ff',
+    rate: null as number | null,
+    color: '#4096ff',
     route: '/app/feedback/list',
   },
   {
     key: 'clustered',
     label: '已聚类',
     count: props.data.clustered,
-    rate: props.data.conversion_rates.clustering_rate,
+    rate: props.data.conversion_rates.clustering_rate as number | null,
     color: '#52c41a',
     route: '/app/feedback/list?clustered=true',
   },
@@ -63,15 +62,15 @@ const funnelStages = computed(() => [
     key: 'pending',
     label: '待审议题',
     count: props.data.pending_review,
-    rate: props.data.conversion_rates.review_rate,
-    color: '#faad14',
+    rate: props.data.conversion_rates.review_rate as number | null,
+    color: '#fa8c16',
     route: '/app/topic/list?status=pending',
   },
   {
     key: 'planned',
     label: '已排期',
     count: props.data.planned,
-    rate: props.data.conversion_rates.planning_rate,
+    rate: props.data.conversion_rates.planning_rate as number | null,
     color: '#13c2c2',
     route: '/app/topic/list?status=planned',
   },
@@ -79,7 +78,7 @@ const funnelStages = computed(() => [
     key: 'in_progress',
     label: '进行中',
     count: props.data.in_progress,
-    rate: props.data.conversion_rates.planning_rate,
+    rate: props.data.conversion_rates.planning_rate as number | null,
     color: '#722ed1',
     route: '/app/topic/list?status=in_progress',
   },
@@ -87,199 +86,238 @@ const funnelStages = computed(() => [
     key: 'completed',
     label: '已完成',
     count: props.data.completed,
-    rate: props.data.conversion_rates.completion_rate,
+    rate: props.data.conversion_rates.completion_rate as number | null,
     color: '#52c41a',
     route: '/app/topic/list?status=completed',
   },
 ]);
 
-// 获取转化率颜色
-const getRateColor = (rate: number) => {
-  if (rate >= 60) return '#52c41a'; // 绿色
-  if (rate >= 40) return '#faad14'; // 黄色
-  return '#ff4d4f'; // 红色
+const maxCount = computed(() =>
+  Math.max(...funnelStages.value.map((s) => s.count), 1),
+);
+
+// 条宽基于绝对数量，最小 3% 保证可见
+const getBarWidth = (count: number) => {
+  if (count === 0) return 0;
+  return Math.max((count / maxCount.value) * 100, 3);
 };
 
-// 跳转到对应列表
+const getRateStyle = (rate: number | null) => {
+  if (rate === null) return { color: '#8c8c8c', background: '#f5f5f5' };
+  if (rate >= 60) return { color: '#389e0d', background: '#f6ffed' };
+  if (rate >= 30) return { color: '#d46b08', background: '#fff7e6' };
+  return { color: '#cf1322', background: '#fff1f0' };
+};
+
 const goToList = (route: string) => {
   router.push(route);
 };
 </script>
 
 <template>
-  <Card title="📊 需求转化漏斗" class="conversion-funnel-card">
-    <div class="funnel-container">
-      <div
-        v-for="(stage, index) in funnelStages"
-        :key="stage.key"
-        class="funnel-stage-wrapper"
-      >
-        <!-- 梯形漏斗块 -->
-        <div
-          class="funnel-trapezoid"
-          :style="{
-            width: `${stage.rate}%`,
-            backgroundColor: stage.color,
-          }"
-          @click="goToList(stage.route)"
-        >
-          <div class="trapezoid-content">
-            <span class="stage-label">{{ stage.label }}</span>
+  <Card class="conversion-funnel-card" :bordered="false">
+    <template #title>
+      <span class="card-title">需求转化漏斗</span>
+    </template>
+
+    <div class="funnel-list">
+      <template v-for="(stage, index) in funnelStages" :key="stage.key">
+        <!-- 阶段行 -->
+        <div class="stage-row" @click="goToList(stage.route)">
+          <div class="stage-label-wrap">
+            <span class="stage-dot" :style="{ background: stage.color }"></span>
+            <span class="stage-name">{{ stage.label }}</span>
+          </div>
+          <div class="stage-bar-wrap">
+            <div
+              class="stage-bar"
+              :style="{
+                width: getBarWidth(stage.count) + '%',
+                background: `linear-gradient(90deg, ${stage.color}, ${stage.color}99)`,
+              }"
+            ></div>
+          </div>
+          <div class="stage-count-wrap">
             <span class="stage-count">{{ stage.count }}</span>
           </div>
         </div>
 
-        <!-- 转化率标签 -->
-        <div class="conversion-info" v-if="index > 0">
-          <span class="conversion-rate" :style="{ color: getRateColor(stage.rate) }">
-            {{ stage.rate }}%
+        <!-- 转化率连接器 -->
+        <div
+          v-if="index < funnelStages.length - 1"
+          class="rate-connector"
+        >
+          <span class="connector-arrow">↓</span>
+          <span
+            class="rate-badge"
+            :style="getRateStyle(funnelStages[index + 1].rate)"
+          >
+            {{
+              funnelStages[index + 1].rate !== null
+                ? funnelStages[index + 1].rate + '%'
+                : '—'
+            }}
           </span>
         </div>
-
-        <!-- 连接箭头 -->
-        <div v-if="index < funnelStages.length - 1" class="funnel-arrow">
-          <svg width="20" height="20" viewBox="0 0 20 20">
-            <path d="M10 2 L10 14 M10 14 L6 10 M10 14 L14 10" 
-                  stroke="#bfbfbf" 
-                  stroke-width="2" 
-                  fill="none" 
-                  stroke-linecap="round"/>
-          </svg>
-        </div>
-      </div>
+      </template>
     </div>
 
-    <!-- 关键指标提示 -->
+    <!-- 底部汇总指标 -->
     <div class="funnel-summary">
-      <div class="summary-item">
-        <span class="summary-label">聚类效率</span>
-        <span
-          class="summary-value"
-          :style="{ color: getRateColor(data.conversion_rates.clustering_rate) }"
+      <div class="summary-stat">
+        <div
+          class="stat-value"
+          :style="getRateStyle(data.conversion_rates.clustering_rate)"
         >
           {{ data.conversion_rates.clustering_rate }}%
-        </span>
+        </div>
+        <div class="stat-label">聚类效率</div>
       </div>
-      <div class="summary-item">
-        <span class="summary-label">完成率</span>
-        <span
-          class="summary-value"
-          :style="{ color: getRateColor(data.conversion_rates.completion_rate) }"
+      <div class="summary-divider"></div>
+      <div class="summary-stat">
+        <div
+          class="stat-value"
+          :style="getRateStyle(data.conversion_rates.completion_rate)"
         >
           {{ data.conversion_rates.completion_rate }}%
-        </span>
+        </div>
+        <div class="stat-label">完成率</div>
       </div>
     </div>
   </Card>
 </template>
 
 <style scoped>
-.conversion-funnel-card {
-  margin-bottom: 16px;
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
 }
 
-.funnel-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 16px 0;
+/* ── 漏斗列表 ── */
+.funnel-list {
+  padding: 4px 0;
 }
 
-.funnel-stage-wrapper {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.funnel-trapezoid {
-  position: relative;
-  height: 50px;
-  max-width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
-  margin: 4px 0;
-}
-
-.funnel-trapezoid:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.funnel-trapezoid:first-child {
-  clip-path: polygon(0% 0%, 100% 0%, 92% 100%, 8% 100%);
-}
-
-.trapezoid-content {
+/* ── 阶段行 ── */
+.stage-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: white;
-  font-weight: 500;
-  z-index: 1;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-.stage-label {
+.stage-row:hover {
+  background: #fafafa;
+}
+
+.stage-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 82px;
+  flex-shrink: 0;
+}
+
+.stage-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stage-name {
   font-size: 13px;
+  color: #595959;
+  white-space: nowrap;
+}
+
+.stage-bar-wrap {
+  flex: 1;
+  height: 22px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stage-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stage-count-wrap {
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .stage-count {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
+  color: #262626;
+  font-variant-numeric: tabular-nums;
 }
 
-.conversion-info {
+/* ── 转化率连接器 ── */
+.rate-connector {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-  padding: 0 20px;
-  margin-top: -2px;
+  gap: 6px;
+  padding: 1px 8px 1px 25px; /* 与 stage-name 左对齐 */
 }
 
-.conversion-rate {
+.connector-arrow {
+  font-size: 11px;
+  color: #d9d9d9;
+  line-height: 1;
+}
+
+.rate-badge {
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
-  background-color: rgba(255, 255, 255, 0.9);
+  padding: 1px 7px;
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  line-height: 18px;
 }
 
-.funnel-arrow {
-  display: flex;
-  justify-content: center;
-  margin: 2px 0;
-}
-
+/* ── 底部汇总 ── */
 .funnel-summary {
   display: flex;
-  justify-content: space-around;
-  margin-top: 24px;
-  padding-top: 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid #f0f0f0;
 }
 
-.summary-item {
+.summary-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
-.summary-label {
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0 6px;
+  border-radius: 6px;
+}
+
+.stat-label {
   font-size: 12px;
   color: #8c8c8c;
 }
 
-.summary-value {
-  font-size: 20px;
-  font-weight: 600;
+.summary-divider {
+  width: 1px;
+  height: 36px;
+  background: #f0f0f0;
 }
 </style>
