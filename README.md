@@ -39,13 +39,13 @@
 
 <table>
 <tr>
-<td width="50%">
+<td width="100%">
 
 ![首页](docs/image/home.png)
 **🌐 产品首页** — 简洁有力，核心价值主张一屏呈现，10 倍速洞察用户需求。
 
 </td>
-<td width="50%">
+<td width="100%">
 
 ![工作台](docs/image/dashboard.png)
 **⚡ 智能工作台** — 今日任务、7 天趋势、需求分布、TOP 主题，每天从这里开始。
@@ -99,6 +99,14 @@
 
 ![周度洞察简报](docs/image/insight.png)
 **📊 周度洞察简报** — 自动生成，关键变化、待处理事项、完成率全在一张报告里。
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+![系统管理后台](docs/image/admin_overview.png)
+**🔧 系统管理后台** — 用户、角色、部门、菜单、订阅权益一站式管控，多租户架构开箱即用。
 
 </td>
 </tr>
@@ -515,6 +523,14 @@ Core features:
 
 ![Weekly Insight Report](docs/image/insight.png)
 **📊 Weekly Insight Report** — Auto-generated. Key changes, pending items and completion rate in one report.
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+![System Admin Panel](docs/image/admin_overview.png)
+**🔧 System Admin Panel** — Users, roles, departments, menus and subscriptions under one roof. Multi-tenant RBAC out of the box.
 
 </td>
 </tr>
