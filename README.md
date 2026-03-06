@@ -35,6 +35,75 @@
 - 📈 **智能周报 & 洞察** — 自动生成周报与决策建议，识别 TOP 3 痛点，辅助科学决策
 - 🏢 **多租户工作空间** — 多工作空间隔离，适合 SaaS 场景和团队协作
 
+### 产品截图
+
+<table>
+<tr>
+<td width="50%">
+
+![首页](docs/image/home.png)
+**🌐 产品首页** — 简洁有力，核心价值主张一屏呈现，10 倍速洞察用户需求。
+
+</td>
+<td width="50%">
+
+![工作台](docs/image/dashboard.png)
+**⚡ 智能工作台** — 今日任务、7 天趋势、需求分布、TOP 主题，每天从这里开始。
+
+</td>
+</tr>
+<tr>
+<td>
+
+![反馈列表](docs/image/feedback_list.png)
+**📋 反馈列表** — 多渠道反馈汇聚一处，多维筛选 + 批量处理，再多反馈也不怕。
+
+</td>
+<td>
+
+![截图智能识别](docs/image/screenshot_feedback.png)
+**📸 截图智能识别** — 粘贴微信截图，AI 秒级提取用户名与反馈内容，告别手动录入。
+
+</td>
+</tr>
+<tr>
+<td>
+
+![智能回复助手](docs/image/reply.png)
+**🤖 智能回复助手** — 选择语气风格，一键生成专业回复，批量通知客户不费力。
+
+</td>
+<td>
+
+![AI 发现中心](docs/image/pending_topoc.png)
+**✨ AI 发现中心** — 自动识别高价值需求候选，把噪声挡在门外，把洞察推到面前。
+
+</td>
+</tr>
+<tr>
+<td>
+
+![需求池看板](docs/image/topic_list.png)
+**🗂️ 需求池看板** — Kanban 视图清晰呈现各阶段需求，研发优先级一目了然。
+
+</td>
+<td>
+
+![需求详情](docs/image/topic_detail.png)
+**🎯 需求详情** — AI 优先级打分 + 影响范围分析，告别拍脑袋排期，数据驱动决策。
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+![周度洞察简报](docs/image/insight.png)
+**📊 周度洞察简报** — 自动生成，关键变化、待处理事项、完成率全在一张报告里。
+
+</td>
+</tr>
+</table>
+
 ### 技术栈
 
 | 层级 | 技术 |
@@ -381,6 +450,75 @@ Core features:
 - 🤖 **AI Reply Assistant** — auto-adjusts tone by customer tier; one-click generation in 5 writing styles
 - 📈 **Weekly Reports & Insights** — auto-generates reports and decision suggestions; surfaces TOP 3 pain points
 - 🏢 **Multi-tenant Workspaces** — isolated workspaces for SaaS and team collaboration
+
+### Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+![Home](docs/image/home.png)
+**🌐 Landing Page** — Clear value proposition above the fold: 10× faster user insight with AI.
+
+</td>
+<td width="50%">
+
+![Dashboard](docs/image/dashboard.png)
+**⚡ Smart Dashboard** — Today's tasks, 7-day trends, demand distribution and TOP topics at a glance.
+
+</td>
+</tr>
+<tr>
+<td>
+
+![Feedback List](docs/image/feedback_list.png)
+**📋 Feedback List** — All channels in one place. Multi-filter, bulk actions — tame any volume of feedback.
+
+</td>
+<td>
+
+![Screenshot Recognition](docs/image/screenshot_feedback.png)
+**📸 Screenshot Recognition** — Paste a WeChat screenshot; AI extracts username and content in seconds.
+
+</td>
+</tr>
+<tr>
+<td>
+
+![AI Reply Assistant](docs/image/reply.png)
+**🤖 AI Reply Assistant** — Pick a tone, generate professional replies, and notify customers in bulk.
+
+</td>
+<td>
+
+![AI Discovery Center](docs/image/pending_topoc.png)
+**✨ AI Discovery Center** — Automatically surfaces high-value candidates, filtering out the noise.
+
+</td>
+</tr>
+<tr>
+<td>
+
+![Topic Board](docs/image/topic_list.png)
+**🗂️ Topic Board** — Kanban view across all stages; R&D priority is always crystal clear.
+
+</td>
+<td>
+
+![Topic Detail](docs/image/topic_detail.png)
+**🎯 Topic Detail** — AI priority score + impact analysis. Data-driven scheduling, no more guesswork.
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+![Weekly Insight Report](docs/image/insight.png)
+**📊 Weekly Insight Report** — Auto-generated. Key changes, pending items and completion rate in one report.
+
+</td>
+</tr>
+</table>
 
 ### Tech Stack
 
