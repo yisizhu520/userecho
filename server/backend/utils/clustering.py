@@ -193,8 +193,10 @@ class FeedbackClustering:
             similarity_matrix = cosine_similarity(embeddings)
 
             # 转换为距离矩阵 (1 - similarity)
+            # 注意：HDBSCAN 要求 float64，embeddings 通常是 float32，必须显式转换
             similarity_matrix = np.clip(similarity_matrix, -1.0, 1.0)
-            distance_matrix = 1 - similarity_matrix
+            distance_matrix = (1.0 - similarity_matrix).astype(np.float64)
+            np.fill_diagonal(distance_matrix, 0.0)
 
             # 初始化 HDBSCAN（使用预计算的距离矩阵）
             clusterer = HDBSCAN(
