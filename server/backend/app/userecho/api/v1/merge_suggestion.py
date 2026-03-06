@@ -117,7 +117,16 @@ async def process_suggestions(
                 success_count += 1
 
             elif data.action == "reject":
-                # 拒绝建议，反馈保持 pending 状态
+                # 拒绝建议：反馈回到 pending，允许后续重新聚类
+                await crud_feedback.batch_update_clustering(
+                    db=db,
+                    tenant_id=tenant_id,
+                    feedback_ids=suggestion.feedback_ids,
+                    clustering_status="pending",
+                    topic_id=None,
+                    clustering_metadata=None,
+                )
+
                 await crud_merge_suggestion.update_status(
                     db=db,
                     tenant_id=tenant_id,

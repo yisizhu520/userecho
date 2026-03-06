@@ -56,6 +56,7 @@ class ClusteringService:
                 "clusters_count": 0,
                 "topics_created": 0,
                 "topics_failed": 0,
+                "merge_suggestions": [],
                 "details": [],
             }
 
@@ -70,6 +71,7 @@ class ClusteringService:
                 aggregate_result["clusters_count"] += res.get("clusters_count", 0)
                 aggregate_result["topics_created"] += res.get("topics_created", 0)
                 aggregate_result["topics_failed"] += res.get("topics_failed", 0)
+                aggregate_result["merge_suggestions"].extend(res.get("merge_suggestions", []))
 
                 # 保留每次运行的简要信息
                 aggregate_result["details"].append(
@@ -631,13 +633,16 @@ class ClusteringService:
 
                         merge_suggestions.append(merge_suggestion)
 
-                        # 暂时将这些反馈标记为待处理（等待用户决策）
+                        # 将这些反馈标记为 suggested 状态，等待用户决策
+                        # ⚠️ 必须用 "suggested" 而非 "pending"：
+                        # claim_pending_clustering 只 claim "pending"/"failed"/"clustered"，
+                        # "suggested" 状态会被跳过，不会被下次聚类覆盖 merge_suggestion 数据
                         feedback_ids = [f["id"] for f in cluster_feedbacks_data]
                         await crud_feedback.batch_update_clustering(
                             db=db,
                             tenant_id=tenant_id,
                             feedback_ids=feedback_ids,
-                            clustering_status="pending",  # 保持 pending，等待用户决策
+                            clustering_status="suggested",  # 等待用户决策（不会被下次聚类 re-claim）
                             clustering_metadata={
                                 "cluster_label": int(label),
                                 "clustered_at": timezone.now().isoformat(),
@@ -964,13 +969,17 @@ class ClusteringService:
         try:
             from backend.app.userecho.model.feedback import Feedback
 
-            # 查询所有 pending 状态且包含 merge_suggestion 的反馈
+            # 查询待处理的合并建议反馈：
+            # 1) 新逻辑使用 suggested
+            # 2) 兼容历史数据（pending + merge_suggestion）
+            # 3) 仅处理尚未关联 topic 的反馈
             query = (
                 select(Feedback)
                 .where(
                     Feedback.tenant_id == tenant_id,
                     Feedback.deleted_at.is_(None),
-                    Feedback.clustering_status == "pending",
+                    Feedback.topic_id.is_(None),
+                    Feedback.clustering_status.in_(["suggested", "pending"]),
                     Feedback.clustering_metadata.is_not(None),
                 )
                 .order_by(Feedback.updated_time.desc())
