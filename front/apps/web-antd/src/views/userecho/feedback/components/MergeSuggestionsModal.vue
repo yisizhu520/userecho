@@ -11,7 +11,7 @@
  */
 import type { MergeSuggestion } from '#/api';
 
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 
@@ -33,10 +33,20 @@ const emit = defineEmits<Emits>();
 
 const router = useRouter();
 const processing = ref<string | null>(null);  // 当前正在处理的 suggestion cluster_label
+const localSuggestions = ref<MergeSuggestion[]>([]);
+
+watch(
+  () => props.suggestions,
+  (value) => {
+    // 使用本地副本，便于在处理成功后立即从 UI 移除，避免重复点击
+    localSuggestions.value = [...value];
+  },
+  { immediate: true },
+);
 
 const sortedSuggestions = computed(() => {
   // ✅ Linus 简化：按相似度排序，不区分 completed vs non-completed
-  return [...props.suggestions].sort((a, b) => b.similarity - a.similarity);
+  return [...localSuggestions.value].sort((a, b) => b.similarity - a.similarity);
 });
 
 const close = () => {
@@ -49,9 +59,24 @@ const close = () => {
 async function handleLinkToExisting(suggestion: MergeSuggestion) {
   processing.value = String(suggestion.cluster_label);
   try {
-    await linkFeedbacksToTopic(suggestion.suggested_topic_id, suggestion.feedback_ids);
-    message.success(`已将 ${suggestion.feedback_count} 条反馈关联到「${suggestion.suggested_topic_title}」`);
+    const res = await linkFeedbacksToTopic(suggestion.suggested_topic_id, suggestion.feedback_ids);
+    const updatedCount = Number(res?.count ?? 0);
+
+    if (updatedCount <= 0) {
+      message.warning('未关联到任何反馈，请刷新后重试');
+      emit('refresh');
+      return;
+    }
+
+    localSuggestions.value = localSuggestions.value.filter(
+      (item) => item.cluster_label !== suggestion.cluster_label,
+    );
+    message.success(`已关联 ${updatedCount} 条反馈到「${suggestion.suggested_topic_title}」`);
     emit('refresh');
+
+    if (localSuggestions.value.length === 0) {
+      close();
+    }
   } catch (error: any) {
     message.error(error.message || '关联失败');
   } finally {
