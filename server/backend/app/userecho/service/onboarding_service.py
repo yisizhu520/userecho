@@ -24,7 +24,9 @@ from backend.app.userecho.schema.onboarding import (
     SlugCheckOut,
 )
 from backend.common.log import log
+from backend.core.conf import settings
 from backend.database.db import uuid4_str
+from backend.database.redis import redis_client
 from backend.app.userecho.service.tenant_role_service import tenant_role_service
 
 
@@ -222,6 +224,9 @@ class OnboardingService:
             from backend.app.userecho.service.auth_service import auth_service
 
             await auth_service.activate_invitation_trial_for_tenant(db=db, user_id=user_id, tenant_id=tenant.id)
+
+            # 清除 Redis JWT 用户缓存，确保后续请求获取最新的 tenant 信息
+            await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user_id}")
 
             log.info(f'Created tenant "{data.name}" (slug={data.slug}) for user {user_id}')
 

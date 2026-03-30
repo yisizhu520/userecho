@@ -10,6 +10,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
+import { useAccessStore, useUserStore } from '@vben/stores';
 import { Button, message, Result, Typography } from 'ant-design-vue';
 
 import { useOnboardingStore } from '#/store';
@@ -20,6 +21,8 @@ const { Paragraph, Text } = Typography;
 
 const router = useRouter();
 const onboardingStore = useOnboardingStore();
+const accessStore = useAccessStore();
+const userStore = useUserStore();
 
 const isCompleting = ref(false);
 
@@ -32,6 +35,11 @@ async function handleStart() {
 
     if (redirectPath) {
       message.success('欢迎使用回响！正在进入控制台...');
+
+      // 重置权限状态，强制路由守卫重新获取用户信息和生成菜单
+      // 因为 onboarding 期间创建了租户，用户的 tenant 权限已变化
+      accessStore.setIsAccessChecked(false);
+      userStore.setUserInfo(null as any);
 
       // 短暂延迟让用户看到成功提示
       setTimeout(() => {
