@@ -64,6 +64,9 @@ async def register_with_invitation(
     return response_base.success(
         data=RegisterWithInvitationResp(
             user=result["user"],
+            access_token=result["access_token"],
+            session_uuid=result["session_uuid"],
+            access_token_expire_time=result["access_token_expire_time"],
             verification_email_sent=result["verification_email_sent"],
             next_step=result["next_step"],
         ),
