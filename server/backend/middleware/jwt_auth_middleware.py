@@ -76,11 +76,9 @@ class JwtAuthMiddleware(AuthenticationBackend):
             user = await jwt_authentication(token)
 
             # 自动注入 tenant_id 和 user_id 到上下文，供后续请求使用
+            # 注意：tenant_id 可能为 None（新注册用户尚未完成 onboarding）
+            # 需要 tenant 的端点通过 CurrentTenantId 依赖注入自行校验
             from backend.common.context import ctx
-
-            if not user.tenant_id:
-                log.error(f"User {user.id} has no tenant association in tenant_users table")
-                raise _AuthenticationError(code=403, msg="用户未关联任何租户，请联系管理员")
 
             ctx.tenant_id = user.tenant_id
             ctx.user_id = user.id

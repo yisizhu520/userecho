@@ -306,7 +306,7 @@ def get_current_tenant_id() -> str:
 
     tenant_id = ctx.tenant_id
     if not tenant_id:
-        raise errors.AuthorizationError(msg="租户信息缺失")
+        raise errors.AuthorizationError(msg="请先完成团队创建（引导流程）")
     return tenant_id
 
 
