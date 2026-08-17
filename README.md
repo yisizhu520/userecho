@@ -1,3 +1,5 @@
+
+
 <div align="center">
 
 <h1>userecho</h1>
@@ -84,7 +86,7 @@
 |------|------|------|
 | Python | 3.10+ | 后端运行环境 |
 | [uv](https://github.com/astral-sh/uv) | 最新版 | Python 包管理器 |
-| Node.js | 18+ | 前端运行环境 |
+| Node.js | 20.10+ | 前端运行环境 |
 | pnpm | 9+ | 前端包管理器 |
 | PostgreSQL | 16+ with pgvector | 数据库 |
 | Redis | 6+ | 缓存 & Celery Broker |
@@ -508,7 +510,7 @@ Core features:
 |------|---------|-------|
 | Python | 3.10+ | Backend runtime |
 | [uv](https://github.com/astral-sh/uv) | latest | Python package manager |
-| Node.js | 18+ | Frontend runtime |
+| Node.js | 20.10+ | Frontend runtime |
 | pnpm | 9+ | Frontend package manager |
 | PostgreSQL | 16+ with pgvector | Database |
 | Redis | 6+ | Cache & Celery Broker |
